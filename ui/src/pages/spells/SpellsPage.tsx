@@ -13,6 +13,7 @@ import { classesScope, EMPTY_FILTER, filterClass, type FilterScope, SpellFilterB
 import { catalogueClassOf, SlotsTable, sourceOf } from "./SlotsTable";
 import { SlotOptionsGrid } from "./SlotOptionsGrid";
 import { PickerStateProvider } from "../builder/pickerState";
+import { AddedPicks } from "../builder/AddedPicks";
 import "./magic.css";
 
 const OVERVIEW = "overview";
@@ -58,6 +59,8 @@ function ClassBlock({ cls, shownCls = cls, slotRows, focused, picked, onPick, fu
         </div>
         {full && <KnownSpells cls={cls} picked={picked} onPick={onPick} />}
         {children}
+        {/* B3 (GitHub #35): spells the DM grants this class */}
+        <AddedPicks kind="spell" spellcasting={cls.className} onDescribe={onPick} />
       </div>
     </section>
   );

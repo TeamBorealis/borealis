@@ -526,6 +526,9 @@ pub struct SpellEntry {
     /// Ready to cast now (Play tab): cantrips, a known caster's known spells, otherwise the
     /// prepared and always-prepared ones.
     pub ready: bool,
+    /// B3: added to this class in the builder (an extra the DM grants).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub added: bool,
 }
 
 /// Spellcasting of one class.
@@ -806,6 +809,9 @@ pub struct CharacterSnapshot {
     pub notices: Vec<String>,
     /// Resources, toggles, defences, senses, notes, Wild Shape, packages, compatibility, features.
     pub play: crate::play_dto::PlayStateDto,
+    /// B3 (GitHub #35): the feats, spells, languages and proficiencies added in the builder for
+    /// extras a DM grants. Their inventory lines are not in `inventory`.
+    pub added_picks: Vec<crate::added_picks::AddedPick>,
 }
 
 /// `get_ruleset_profile` result.

@@ -1,5 +1,6 @@
 import type { Api, ApiEvents, BookRuleset, EventName, Ruleset, SlotOption, SlotOptionsArgs, SwitchVersionResult } from "../contract";
 import type {
+  AddedKind,
   AiHostStatus,
   LinkDevice,
   LinkSelection,
@@ -14,6 +15,7 @@ import { MockFiveToolsUrls } from "./fivetools-urls";
 import { MockImportPreview } from "./import-preview";
 import { MockImportReports } from "./import-report";
 import * as rolled from "./rolled-charges";
+import * as added from "./added-picks";
 import { MockAppUpdate, recordOpenedLink } from "./app-update";
 import { classCounts, setClasslessEdition, startedOver } from "./edition-classes";
 import { MockDataFiles } from "./data-files";
@@ -522,6 +524,9 @@ export class MockApi implements Api {
   async equipItem(a: { characterId: string; inventoryId: string; slot: Parameters<typeof eq.equipItem>[2] }) { return this.mutate(a.characterId, (c) => eq.equipItem(c, a.inventoryId, a.slot)); }
   async unequipItem(a: { characterId: string; inventoryId: string }) { return this.mutate(a.characterId, (c) => eq.unequipItem(c, a.inventoryId)); }
   async setItemRequirementsOverride(a: { characterId: string; inventoryId: string; on: boolean }) { return this.mutate(a.characterId, (c) => eq.setRequirementsOverride(c, a.inventoryId, a.on)); }
+  async listAddedPickOptions(a: { characterId: string; kind: AddedKind; spellcasting?: string }) { await this.tick(); return added.listOptions(this.get(a.characterId), a.kind, a.spellcasting); }
+  async addPick(a: { characterId: string; kind: AddedKind; elementId: string; spellcasting?: string }) { return this.mutate(a.characterId, (c) => added.addPick(c, a.kind, a.elementId, a.spellcasting)); }
+  async removePick(a: { characterId: string; inventoryId: string }) { return this.mutate(a.characterId, (c) => added.removePick(c, a.inventoryId)); }
   async setRolledMax(a: { characterId: string; inventoryId: string; resourceId: string; value: number }) { return this.mutate(a.characterId, (c) => rolled.setRolledMax(c, a.inventoryId, a.resourceId, a.value)); }
   async rerollMax(a: { characterId: string; inventoryId: string; resourceId: string }) { return this.mutate(a.characterId, (c) => rolled.rerollMax(c, a.inventoryId, a.resourceId, this.rng)); }
   async addToAttacks(a: { characterId: string; inventoryId: string }) { return this.mutate(a.characterId, (c) => eq.addToAttacks(c, a.inventoryId)); }

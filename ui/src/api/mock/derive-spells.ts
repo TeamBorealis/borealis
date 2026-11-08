@@ -1,4 +1,4 @@
-import type { AbilityState, ClassSpellcasting, SpellEntry, SpellcastingState } from "../types";
+import type { AbilityState, AddedPick, ClassSpellcasting, SpellEntry, SpellcastingState } from "../types";
 import { SPELLS, getClass, getElement, getSpell, titleCase } from "./content";
 import { spellFacts } from "./facts";
 import { classIdOf } from "./slots";
@@ -21,7 +21,7 @@ export function preparedLimit(abilityMod: number, classLevel: number): number {
   return Math.max(1, abilityMod + classLevel); // Clamped to a minimum of 1
 }
 
-export function deriveSpellcasting(c: MockCharacter, ab: AbilityState): SpellcastingState {
+export function deriveSpellcasting(c: MockCharacter, ab: AbilityState, added: AddedPick[] = []): SpellcastingState {
   const classes: ClassSpellcasting[] = [];
   let casterLevel = 0;
   for (const cs of c.classes) {
@@ -44,6 +44,10 @@ export function deriveSpellcasting(c: MockCharacter, ab: AbilityState): Spellcas
         slotId: toWireSlotId(slotId), canReplace: !isCantrip && cls.caster.model === "spellbook",
         prepared: isCantrip || prepSet.has(id) || always.includes(id), alwaysPrepared: isCantrip,
       }));
+    }
+    // B3: spells added to this class in the builder
+    for (const p of added.filter((x) => x.kind === "spell" && x.applied && x.spellcasting === titleCase(cls.id) && getSpell(x.elementId))) {
+      if (!spells.some((s) => s.id === p.elementId)) spells.push(entry(p.elementId, { origin: "item", added: true, prepared: getSpell(p.elementId)!.level === 0 }));
     }
     if (cls.caster.model === "prepared") {
       const max = casterMaxSpellLevel(lvl);

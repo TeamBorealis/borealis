@@ -1,5 +1,6 @@
 import type { ClassSpellcasting, SpellEntry, SpellFacts } from "../../api/contract";
 import { RowDetail } from "../../components/RowDetail";
+import { AddedMark } from "../../components/AddedMark";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useAsync } from "../../state/useAsync";
@@ -69,7 +70,7 @@ export function SpellGrid({ cls, picked, onPick }: { cls: ClassSpellcasting; pic
                     title={locked ? (s.level === 0 ? "Cantrips are always prepared" : "Always prepared") : undefined}
                     onChange={(e) => void mutate((api, id) => api.setSpellPrepared({ characterId: id, classSlotId: cls.classSlotId, spellId: s.id, prepared: e.target.checked }))} />
                 </td>
-                <td className="sp-name"><button type="button" className="ap-name" onClick={() => onPick(s.id)}>{s.name}</button><RowDetail parts={[levelText(s), componentText(s.casting), sourceText(s)]} /></td>
+                <td className="sp-name"><button type="button" className="ap-name" onClick={() => onPick(s.id)}>{s.name}</button>{s.added && <AddedMark />}<RowDetail parts={[levelText(s), componentText(s.casting), sourceText(s)]} /></td>
                 <td className="sp-lvl">{levelText(s)}</td>
                 <ComponentCells casting={s.casting} />
                 <td className="sp-src">{sourceText(s)}</td>

@@ -18,7 +18,7 @@ fn index_of(state: &CharacterState, uid: &str) -> Result<usize, CommandError> {
         .ok_or_else(|| CommandError::Inventory(format!("no item {uid}")))
 }
 
-fn next_uid(state: &CharacterState) -> String {
+pub(super) fn next_uid(state: &CharacterState) -> String {
     let n = state
         .inventory
         .items
@@ -102,7 +102,7 @@ fn is_inventory_hidden(engine: &Engine, state: &CharacterState, item: &str) -> b
 
 /// Aurora's new line of an `inventory-hidden` item: left out of the sheet inventory, no item
 /// card, not in the sidebar (the user can turn each back on).
-fn hide_line(line: &mut InventoryItem) {
+pub(super) fn hide_line(line: &mut InventoryItem) {
     line.hidden = true;
     line.card = false;
     line.sidebar = false;

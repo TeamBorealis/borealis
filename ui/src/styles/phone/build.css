@@ -29,3 +29,23 @@ html.phone .abil-src .danger-text { color: var(--ph-danger); }
 html.phone .abil-restore { width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-pill); color: var(--ph-text-2); }
 html.phone .abil-restore:active { background: var(--ph-fill); }
 html.phone .abil-page .build-empty { font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }
+
+/* B3 (GitHub #35): added picks on phones. The lines are the picker footers of lists.css (grouped rows, 44 pt remove);
+   the Add button is a full 44 pt control; the dialog is the bottom sheet, its list page-length with no nested scroller. */
+html.phone .added-picks { margin: 16px 0 0; }
+html.phone .added-head { gap: 12px; margin: 0 0 8px; }
+html.phone .added-head .pick-group-label { margin: 0 4px; }
+html.phone .added-add { min-height: var(--ph-hit); border-radius: var(--ph-r-pill); font: 600 var(--ph-t-foot)/1.2 var(--ph-font-ui); }
+html.phone .added-empty { margin: 0 4px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); font-style: normal; color: var(--ph-text-2); }
+html.phone .added-list { border: 0; display: flex; flex-direction: column; gap: 8px; }
+html.phone .added-name { font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .ed-chip.added-mark { border-color: var(--ph-field-line); color: var(--ph-text-2); }
+html.phone .added-withheld { margin: 4px var(--ph-gutter) 0; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); font-style: normal; color: var(--ph-text-2); }
+html.phone .addpick-hint, html.phone .addpick-empty { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .addpick-list { max-height: none; overflow: visible; gap: 8px; }
+html.phone .addpick-list button {
+  min-height: var(--ph-row); padding: 8px var(--ph-gutter); border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); color: var(--ph-text);
+}
+html.phone .addpick-list button:active { background: var(--ph-fill); }
+html.phone .addpick-name strong { font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .addpick-sub { font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); font-style: normal; color: var(--ph-text-2); }

@@ -1,5 +1,5 @@
 import type { CharacterSnapshot, ClassSpellcasting, PlayState, SpellEntry } from "../../api/contract";
-import { EmptyState, useToast } from "../../components";
+import { AddedMark, EmptyState, useToast } from "../../components";
 import { Expander } from "../../components/controls";
 import { Tag } from "../ai/Panes";
 import { type CastChoice, castChoices, choiceLabel, defaultChoice } from "./cast";
@@ -46,7 +46,7 @@ function SpellRow({ spell, play, selected, onSelect }: { spell: SpellEntry; play
   return (
     <li className={`v5-line pr-line ${selected ? "is-selected" : ""}`}>
       <button type="button" className="v5-row grow pr-name" aria-current={selected} aria-label={`${spell.name}, description`} onClick={() => onSelect(spell.id)}>
-        <span className="grow">{spell.name}</span>
+        <span className="grow">{spell.name}{spell.added && <> <AddedMark /></>}</span>
         {spell.concentration && <Tag title="Concentration">C</Tag>}
         {spell.ritual && <Tag title="Ritual">R</Tag>}
         <span className="meta">{spell.casting?.castingTime ?? ""}</span>

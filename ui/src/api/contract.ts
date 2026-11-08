@@ -21,6 +21,8 @@ import type {
   LinkStatus,
   LinkSummary,
   AbilityMethod,
+  AddedKind,
+  AddPickOption,
   AiEvent,
   AiHostStatus,
   AiInstallConsent,
@@ -288,6 +290,16 @@ export interface ApiMethods {
   unequipItem(args: Cid & { inventoryId: string }): Promise<CharacterSnapshot>;
   /** U12: switch "Override requirements" on a line (per item, saved with the character). */
   setItemRequirementsOverride(args: Cid & { inventoryId: string; on: boolean }): Promise<CharacterSnapshot>;
+  /**
+   * B3 (GitHub #35): what the builder's Add action of `kind` offers (a spell: for the spellcasting class named
+   * `spellcasting`, its `className`). Only options the character qualifies for, unless the "Ignore feat prerequisites"
+   * house rule is on: then every installed option, the others with `qualifies: false`.
+   */
+  listAddedPickOptions(args: Cid & { kind: AddedKind; spellcasting?: string }): Promise<AddPickOption[]>;
+  /** B3: add an extra the DM grants (listed in `addedPicks`, never in the inventory). */
+  addPick(args: Cid & { kind: AddedKind; elementId: string; spellcasting?: string }): Promise<CharacterSnapshot>;
+  /** B3: remove an added pick (its `inventoryId`). */
+  removePick(args: Cid & { inventoryId: string }): Promise<CharacterSnapshot>;
   setAttuned(args: Cid & { inventoryId: string; attuned: boolean }): Promise<CharacterSnapshot>;
   /** Aurora's "Add to Attacks & Spellcasting" (GitHub #28): the weapon's row stays in the attacks while it is not held; `removeAttack` takes it off again. */
   addToAttacks(args: Cid & { inventoryId: string }): Promise<CharacterSnapshot>;
@@ -609,6 +621,9 @@ export const COMMANDS = {
   equipItem: "equip_item",
   unequipItem: "unequip_item",
   setItemRequirementsOverride: "set_item_requirements_override",
+  listAddedPickOptions: "list_added_pick_options",
+  addPick: "add_pick",
+  removePick: "remove_pick",
   setAttuned: "set_attuned",
   addToAttacks: "add_to_attacks",
   setRolledMax: "set_rolled_max",

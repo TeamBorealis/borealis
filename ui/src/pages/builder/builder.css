@@ -218,3 +218,31 @@
 /* phones: a 44 px tall touch target around the inline action, without moving the text */
 html.phone .pick-why-act { padding: 12px 4px; margin: -12px 0 -12px 2px; }
 html.phone .bp-notices-toggle { min-height: 44px; width: 100%; }
+
+/* B3 (GitHub #35): a section's extras the DM grants. The heading row carries "Add <kind>"; each pick is a chosen-pick line
+   (a picker's footer) with the "Added" chip (neutral, the square chip of the edition marks) and the remove button. */
+.added-picks { margin: 12px 0 0 10px; }
+.added-head { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; }
+.added-head .pick-group-label { margin: 0; flex: 1; }
+.added-empty { margin: 0 0 4px; font-size: var(--fs-xs); font-style: italic; color: var(--text-secondary); }
+.added-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--bp-box); }
+.added-name { padding: 0; background: transparent; border: 0; text-align: left; cursor: pointer; font: inherit; }
+@media (hover: hover) and (pointer: fine) { .added-name:hover { text-decoration: underline; } }
+.added-name:focus-visible { outline: 1px solid var(--gold); outline-offset: 1px; }
+.ed-chip.added-mark { border-color: var(--border-strong); color: var(--text-secondary); vertical-align: middle; }
+.sp-name .added-mark { margin-left: 5px; }
+.added-withheld { margin: 4px 6px 6px; }
+/* The Add dialog: the companion picker's rows (a list of buttons; the name, then group, level, prerequisite or source). */
+.addpick-hint, .addpick-empty { margin: 0; font-size: var(--fs-sm); color: var(--text-secondary); }
+.addpick-list { list-style: none; margin: 0; padding: 0; max-height: min(50vh, 420px); overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+.addpick-list button { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 5px 10px; min-height: 36px; background: var(--light-2); border: 1px solid transparent; border-left: 4px solid var(--aur-success); color: var(--text); text-align: left; cursor: pointer; border-radius: 0; }
+.addpick-list button:disabled { cursor: default; opacity: 0.6; }
+.addpick-name { display: flex; align-items: center; gap: 6px; }
+.addpick-name strong { font-size: var(--fs-md); font-weight: 600; }
+.addpick-sub { font-size: 11px; font-style: italic; color: var(--text-muted); }
+@media (hover: hover) and (pointer: fine) { .addpick-list button:hover { border-color: var(--gray-3); border-left-color: var(--aur-success); } }
+@media (max-width: 899px) {
+  .added-picks { margin-left: 6px; }
+  .added-add { min-height: 44px; }
+  .addpick-list button { min-height: 44px; }
+}

@@ -122,6 +122,8 @@ export interface PlayFeature {
   displayed: boolean;
   /** HR3: a feat taken under "Ignore feat prerequisites" whose prerequisites are not met. */
   prerequisitesUnmet?: boolean;
+  /** B3: added in the builder for an extra the DM grants. */
+  added?: boolean;
 }
 
 export interface PlayCompatEntry { [k: string]: unknown }

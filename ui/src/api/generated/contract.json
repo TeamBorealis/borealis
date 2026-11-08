@@ -59,6 +59,19 @@
     "name": "CharacterSnapshot"
    }
   },
+  "add_pick": {
+   "args": {
+    "characterId": false,
+    "elementId": false,
+    "kind": false,
+    "spellcasting": true
+   },
+   "method": "addPick",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "add_to_attacks": {
    "args": {
     "characterId": false,
@@ -959,6 +972,21 @@
     }
    }
   },
+  "list_added_pick_options": {
+   "args": {
+    "characterId": false,
+    "kind": false,
+    "spellcasting": true
+   },
+   "method": "listAddedPickOptions",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "AddPickOption"
+    }
+   }
+  },
   "list_base_items": {
    "args": {
     "characterId": false,
@@ -1264,6 +1292,17 @@
      "k": "ref",
      "name": "ContentPack"
     }
+   }
+  },
+  "remove_pick": {
+   "args": {
+    "characterId": false,
+    "inventoryId": false
+   },
+   "method": "removePick",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
    }
   },
   "remove_tracker": {
@@ -2567,6 +2606,106 @@
     }
    }
   },
+  "AddPickOption": {
+   "k": "object",
+   "props": {
+    "group": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prerequisite": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "qualifies": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AddedPick": {
+   "k": "object",
+   "props": {
+    "applied": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "inventoryId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prerequisitesUnmet": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "spellcasting": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "AiHostDevice": {
    "k": "object",
    "props": {
@@ -3704,6 +3843,16 @@
      "t": {
       "k": "ref",
       "name": "AbilityState"
+     }
+    },
+    "addedPicks": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "AddedPick"
+      }
      }
     },
     "attacks": {
@@ -8056,6 +8205,12 @@
   "PlayFeature": {
    "k": "object",
    "props": {
+    "added": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "description": {
      "opt": false,
      "t": {
@@ -10590,6 +10745,12 @@
   "SpellEntry": {
    "k": "object",
    "props": {
+    "added": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "alwaysPrepared": {
      "opt": false,
      "t": {

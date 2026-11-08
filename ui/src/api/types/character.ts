@@ -271,6 +271,8 @@ export interface SpellEntry {
   sourceName: string;
   /** Ready to cast now: a known caster's known spell, otherwise a prepared or always-prepared one; cantrips always. */
   ready: boolean;
+  /** B3: added to this class in the builder (an extra the DM grants). */
+  added?: boolean;
 }
 
 export interface ClassSpellcasting {
@@ -565,6 +567,42 @@ export interface CharacterSnapshot {
   notices: string[];
   /** Resources, toggles, defences, senses, notes, Wild Shape, packages, compatibility, features. */
   play: PlayState;
+  /** B3 (GitHub #35): feats, spells, languages and proficiencies added in the builder; their lines are not in `inventory`. */
+  addedPicks: AddedPick[];
+}
+
+/** B3: the kinds of extra the builder's Add actions add. */
+export type AddedKind = "feat" | "spell" | "language" | "proficiency";
+
+/** B3: a pick added in the builder for an extra the DM grants. */
+export interface AddedPick {
+  /** The line that holds it (what `removePick` names). */
+  inventoryId: string;
+  kind: AddedKind;
+  elementId: string;
+  name: string;
+  sourceName: string;
+  /** The spellcasting class (its name) a spell was added to. */
+  spellcasting: string | null;
+  /** Registered; false while it is kept but withheld (prerequisites not met, the house rule off). */
+  applied: boolean;
+  /** Applies only because "Ignore feat prerequisites" is on. */
+  prerequisitesUnmet: boolean;
+}
+
+/** B3: one row of an Add dialog. */
+export interface AddPickOption {
+  id: string;
+  name: string;
+  sourceName: string;
+  /** Prerequisite text, empty for none. */
+  prerequisite: string;
+  /** Spell level (spells; 0 = cantrip). */
+  level: number | null;
+  /** Proficiency group: Skill, Saving Throw, Armor, Weapon, Tool or Other. */
+  group: string | null;
+  /** The character meets its prerequisites; false rows appear only under "Ignore feat prerequisites". */
+  qualifies: boolean;
 }
 
 /** One foreign-edition element registered on a character. */

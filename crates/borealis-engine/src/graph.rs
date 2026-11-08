@@ -210,8 +210,11 @@ pub struct Graph<'u> {
     pub(crate) allow_cross_edition: bool,
     /// Play-time state (toggles, exhaustion).
     pub(crate) runtime: crate::runtime::Runtime,
-    /// Inventory uids whose grants bypass the granted elements' own requirements (U12).
+    /// Inventory uids whose grants bypass the granted elements' own requirements (U12, and B3
+    /// added picks while "Ignore feat prerequisites" is on).
     pub(crate) overridden_items: std::collections::HashSet<String>,
+    /// Inventory uids of the picks added in the builder (B3, [`crate::added_picks`]).
+    pub(crate) added_items: std::collections::HashSet<String>,
     /// Rolled resource maximums per inventory uid (`InventoryItem.rolled_max`).
     pub(crate) rolled_max: HashMap<String, std::collections::BTreeMap<String, u32>>,
     /// Carried items without an equip slot: not nodes, only their resource rules are read
@@ -292,7 +295,17 @@ impl<'u> Graph<'u> {
                 .inventory
                 .items
                 .iter()
-                .filter(|i| i.override_requirements)
+                .filter(|i| {
+                    i.override_requirements
+                        || (i.added_pick && state.house_rules.ignore_feat_prerequisites)
+                })
+                .map(|i| i.uid.clone())
+                .collect(),
+            added_items: state
+                .inventory
+                .items
+                .iter()
+                .filter(|i| i.added_pick)
                 .map(|i| i.uid.clone())
                 .collect(),
             rolled_max: state
@@ -1409,7 +1422,7 @@ impl<'u> Graph<'u> {
 
     /// The character has `id` or a `maps_to` equivalent of it (the duplicate check
     /// of `engine.md` 6.2 step 4 is by element; two ids of one element are one element).
-    fn held_or_equivalent(&self, id: &str) -> bool {
+    pub(crate) fn held_or_equivalent(&self, id: &str) -> bool {
         self.ids.count(id) > 0
             || self
                 .uni

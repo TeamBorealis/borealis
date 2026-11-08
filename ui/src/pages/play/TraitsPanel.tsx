@@ -1,5 +1,5 @@
 import type { PlayDefenseEntry, PlayFeature, PlayState } from "../../api/contract";
-import { EmptyState, PrereqUnmetMark, SafeHtml } from "../../components";
+import { AddedMark, EmptyState, PrereqUnmetMark, SafeHtml } from "../../components";
 import { Expander } from "../../components/controls";
 import { Tag } from "../ai/Panes";
 
@@ -78,7 +78,7 @@ export function FeaturesCard({ features, selectedId, onSelect }: { features: Pla
           {features.map((f) => (
             <li key={f.id} className={f.id === selectedId ? "is-selected" : ""}>
               <button type="button" className="v5-row" aria-current={f.id === selectedId} onClick={() => onSelect(f.id)}>
-                <span className="grow">{f.name}{f.prerequisitesUnmet && <> <PrereqUnmetMark /></>}</span>
+                <span className="grow">{f.name}{f.added && <> <AddedMark /></>}{f.prerequisitesUnmet && <> <PrereqUnmetMark /></>}</span>
                 <span className="meta">{f.level ? `Level ${f.level}` : f.source}</span>
               </button>
             </li>

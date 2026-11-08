@@ -268,6 +268,7 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
                     if c.prepare { "prepared" } else { "known" },
                     s,
                 ),
+                added: crate::added_picks::is_added_spell(snap, &c.name, &s.id),
             }
         })
         .collect();
@@ -404,10 +405,19 @@ pub fn inventory(input: &MapInput<'_>, snap: &Engine) -> InventoryState {
     let state = &input.character.build;
     let store = &input.hub.store;
     let names = &state.inventory.storages;
+    // B3: an added pick's line is listed in its builder section, not in the inventory
+    let added = |uid: &str| {
+        state
+            .inventory
+            .items
+            .iter()
+            .any(|x| x.uid == uid && x.added_pick)
+    };
     let items = snap
         .inventory
         .items
         .iter()
+        .filter(|i| !added(&i.uid))
         .map(|i| {
             let el = store.element(&i.item.id);
             let line = state.inventory.items.iter().find(|x| x.uid == i.uid);

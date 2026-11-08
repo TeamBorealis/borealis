@@ -2,6 +2,7 @@
 //! multiclass and spellcasting, with ruleset profile hooks.
 
 pub mod adapter;
+pub mod added_picks;
 pub mod ammo;
 mod appended_supports;
 pub mod attack_rules;

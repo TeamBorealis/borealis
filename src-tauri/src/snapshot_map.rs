@@ -96,6 +96,7 @@ pub fn build_snapshot(input: &MapInput<'_>) -> CharacterSnapshot {
             ),
             &input.character.build.play,
         ),
+        added_picks: crate::added_picks::added_picks(&engine_snap),
     }
 }
 

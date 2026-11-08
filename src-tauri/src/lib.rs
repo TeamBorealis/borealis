@@ -4,6 +4,7 @@
 //! `impl AppState`), `snapshot_map`/`extras`/`elements` (engine -> contract DTO mapping), `dto`/`dto_ext`
 //! (contract types), `magic`/`equipment`/`sheet_api`/`compendium` (play services), `error` (typed `{code, message}` errors) and `commands` (Tauri wrappers).
 
+pub mod added_picks;
 #[cfg(ai_cli)]
 pub mod ai_dto;
 #[cfg(ai_cli)]
@@ -31,6 +32,7 @@ pub mod bundled_content;
 pub mod commands;
 #[cfg(debug_assertions)]
 pub mod commands_acceptance;
+pub mod commands_added;
 #[cfg(ai_cli)]
 pub mod commands_ai;
 #[cfg(ai_cli)]
@@ -393,6 +395,9 @@ pub fn run() {
             commands_gear::equip_item,
             commands_gear::unequip_item,
             commands_gear::set_item_requirements_override,
+            commands_added::list_added_pick_options,
+            commands_added::add_pick,
+            commands_added::remove_pick,
             commands_gear::add_to_attacks,
             commands_gear::set_attuned,
             commands_gear::set_rolled_max,

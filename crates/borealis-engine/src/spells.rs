@@ -12,7 +12,7 @@ use crate::snapshot::{
 use crate::spell_rules::{class_rules, progression};
 use crate::state::CharacterState;
 use crate::stats::StatSet;
-use crate::universe::{URule, UStat, Universe};
+use crate::universe::{UElem, URule, UStat, Universe};
 
 /// Caster levels contributed by a class level for a slot-source kind (the suffix of
 /// `ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_<KIND>`).
@@ -365,12 +365,7 @@ pub fn spellcasting_snapshots(
                     if lvl == 0 || lvl > top || known_ids.iter().any(|s| s.id == cand.el.id) {
                         continue;
                     }
-                    if lists.iter().any(|l| {
-                        if l.is_spell_id() {
-                            return l.supports.trim() == cand.el.id;
-                        }
-                        matches!(l.expr(), Ok(Some(e)) if supports_match(&e, cand, &NoDynamics))
-                    }) {
+                    if on_lists(lists, cand) {
                         out.push(SpellEntry {
                             id: cand.el.id.clone(),
                             name: cand.el.name.clone(),
@@ -491,6 +486,58 @@ pub fn spellcasting_snapshots(
     crate::item_spells::add_item_blocks(graph, stats, &mut out);
     crate::granted_casting::add_granted_blocks(graph, stats, &mut out);
     out
+}
+
+/// Is `cand` on one of `lists` (a single spell id, or a supports expression over spells)?
+pub(crate) fn on_lists(lists: &[&borealis_content::SpellcastingList], cand: &UElem) -> bool {
+    lists.iter().any(|l| {
+        if l.is_spell_id() {
+            return l.supports.trim() == cand.el.id;
+        }
+        matches!(l.expr(), Ok(Some(e)) if supports_match(&e, cand, &NoDynamics))
+    })
+}
+
+/// The spell lists of spellcasting class `name` (its own list and extensions, the extension
+/// blocks that apply to it, 10.4, and the lists its class rules add) and the highest spell level
+/// it casts at its class level. `None` when the character has no such block.
+pub(crate) fn class_spell_lists(
+    graph: &Graph<'_>,
+    name: &str,
+) -> Option<(Vec<borealis_content::SpellcastingList>, u32)> {
+    let infos = graph.spell_infos();
+    let info = infos
+        .iter()
+        .find(|i| i.sc.extend != Some(true) && i.name == name)?;
+    let level = graph
+        .class_levels
+        .get(&name.to_lowercase())
+        .copied()
+        .unwrap_or(0);
+    let top = graph.highest_slot_level(name, u32::try_from(level).unwrap_or(0).max(1));
+    let mut lists: Vec<borealis_content::SpellcastingList> = info
+        .sc
+        .list
+        .iter()
+        .chain(info.sc.extends.iter())
+        .cloned()
+        .collect();
+    lists.extend(
+        infos
+            .iter()
+            .filter(|i| {
+                i.sc.extend == Some(true)
+                    && (i.sc.all == Some(true) || i.name.eq_ignore_ascii_case(name))
+            })
+            .flat_map(|i| i.sc.extends.iter().cloned()),
+    );
+    lists.extend(
+        class_rules(graph, name)
+            .extend_lists
+            .iter()
+            .map(borealis_content::SpellcastingList::new),
+    );
+    Some((lists, top))
 }
 
 /// Per-class merge sources `(target, source)` for DC and attack groups.

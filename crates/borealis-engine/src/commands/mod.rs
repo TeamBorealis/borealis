@@ -1,6 +1,7 @@
 //! Pure command functions: each takes a state and returns a new one (nothing is mutated).
 
 mod abilities;
+mod added;
 mod forms;
 mod gear;
 mod hit_points;
@@ -14,6 +15,7 @@ mod version;
 mod withheld;
 
 pub use abilities::*;
+pub use added::*;
 pub use forms::*;
 pub use gear::*;
 pub use hit_points::*;

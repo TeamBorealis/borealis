@@ -148,6 +148,24 @@ fn category_name(kind: Kind, cast: &str) -> String {
     }
 }
 
+/// The generated category whose proxies grant elements of type `ty` (`Feat`, `Language`,
+/// `Proficiency`, `Spell`) for the spellcasting name `cast` (spells only; empty for none), as
+/// [`Proxies::in_category`] takes it. `None` for any other type.
+#[must_use]
+pub fn category_for_type(ty: &str, cast: &str) -> Option<String> {
+    let kind = match ty {
+        "Feat" => Kind::Feat,
+        "Language" => Kind::Language,
+        "Proficiency" => Kind::Proficiency,
+        "Spell" => Kind::Spell,
+        _ => return None,
+    };
+    Some(category_name(
+        kind,
+        if kind == Kind::Spell { cast } else { "" },
+    ))
+}
+
 /// How a proxy names its target ("Skill Proficiency (Stealth)" for a skill).
 fn shown_name(target: &UElem, kind: Kind) -> String {
     match kind {
@@ -311,26 +329,43 @@ impl ProxyTable {
                 continue;
             }
             let abbr = source_abbreviation(&abbrs, &e.el, kind).to_uppercase();
-            table.list((kind, abbr, kept.to_uppercase()), (i, at));
+            table.list(uni, (kind, abbr, kept.to_uppercase()), (i, at));
         }
         // An id that no book element claims resolves to the Core element it is listed for; the
         // loose fallback above already did so whenever that element was the only one.
         for (kind, kept, i, at) in base_book {
-            table.list((kind, BASE_BOOK_ABBR.to_string(), kept), (i, at));
+            table.list(uni, (kind, BASE_BOOK_ABBR.to_string(), kept), (i, at));
         }
         table
     }
 
     /// Index a target under its exact key and list it, unless an earlier one has that key.
-    fn list(&mut self, key: (Kind, String, String), at: (usize, usize)) {
-        if let Entry::Vacant(v) = self.targets.entry(key) {
-            let (kind, abbr, _) = v.key().clone();
-            v.insert(at);
-            self.listed.push(Listed {
-                kind,
-                abbr,
-                target: at.0,
-            });
+    ///
+    /// Two books may share an abbreviation (the bundled SRD 5.1 and SRD 5.2.1 are both `SRD`),
+    /// so one proxy id names an element of each edition (`ID_SRD_INTERNAL_ITEM_WIZARD_SPELL_PROXY_
+    /// SPELL_MAGIC_MISSILE`). Each universe then keeps the element of its own edition, the one a
+    /// character of that edition means (B3); otherwise the first element wins, as in Aurora.
+    fn list(&mut self, uni: &Universe, key: (Kind, String, String), at: (usize, usize)) {
+        let foreign = |i: usize| uni.at(i).is_some_and(|e| e.edition.is_foreign());
+        match self.targets.entry(key) {
+            Entry::Vacant(v) => {
+                let (kind, abbr, _) = v.key().clone();
+                v.insert(at);
+                self.listed.push(Listed {
+                    kind,
+                    abbr,
+                    target: at.0,
+                });
+            }
+            Entry::Occupied(mut o) => {
+                let old = o.get().0;
+                if foreign(old) && !foreign(at.0) {
+                    o.insert(at);
+                    if let Some(l) = self.listed.iter_mut().find(|l| l.target == old) {
+                        l.target = at.0;
+                    }
+                }
+            }
         }
     }
 

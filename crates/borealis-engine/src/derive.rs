@@ -696,6 +696,7 @@ impl<'u> Evaluation<'u> {
             BTreeMap::new()
         };
         let (features, sheet_summary) = self.features();
+        let added_picks = crate::added_picks::snapshots(&self.graph, self.uni, state);
         let budget = state
             .house_rules
             .point_buy_budget
@@ -774,6 +775,7 @@ impl<'u> Evaluation<'u> {
             invalid_selections: invalid,
             diagnostics,
             compatibility: self.compatibility(),
+            added_picks,
             features,
             sheet_summary,
             provenance: prov,

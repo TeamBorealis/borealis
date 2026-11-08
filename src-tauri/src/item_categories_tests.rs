@@ -264,3 +264,6 @@ fn the_command_lists_imported_categories_and_gates_class_spell_ones() {
 
 #[path = "proxy_items_tests.rs"]
 mod proxy_items;
+
+#[path = "added_picks_tests.rs"]
+mod added_picks;

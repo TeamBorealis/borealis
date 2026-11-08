@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
-import type { BuilderTab, RulesetProfile } from "../../api/contract";
+import type { AddedKind, BuilderTab, RulesetProfile } from "../../api/contract";
 import { Alert, Button, TabPanel, Tabs, type TabDef } from "../../components";
 import { RequireCharacter } from "../../components/RequireCharacter";
 import { useShell } from "../../components/shell/ShellContext";
@@ -15,10 +15,13 @@ import type { DescribeFn, PickChoice } from "./PickerGroup";
 import { usePhone } from "../../lib/phone";
 import { scrollToStart } from "../../lib/scrollReveal";
 import { SlotList } from "./SlotList";
+import { AddedPicks } from "./AddedPicks";
 import { NoticesBanner } from "./NoticesBanner";
 import { PickerStateProvider } from "./pickerState";
 
 type TabId = BuilderTab;
+/** B3: the Build tabs with an Add action for extras the DM grants (spells are added on Magic). */
+const ADDED_KIND: Partial<Record<BuilderTab, AddedKind>> = { feats: "feat", languages: "language", proficiencies: "proficiency" };
 const SLOT_TABS: BuilderTab[] = ["race", "class", "background", "abilities", "feats", "languages", "proficiencies", "companion"];
 
 /** Page a slot is picked on: spell slots live on Magic (`/spells`), every other tab on its own Build tab. */
@@ -79,6 +82,7 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   if (tab === "levels") return <LevelsRedirect />;
   if (!tabs.some((t) => t.id === tab)) return <Navigate to="/builder/race" replace />;
   const active = tab as TabId;
+  const addedKind = ADDED_KIND[active];
   const slots = snapshot.slots.filter((s) => s.tab === active && SLOT_TABS.includes(s.tab) && !s.locked); // locked slots are hidden (E31 SO-3)
   // List entries (e.g. a background's ability increase) are not elements: the pane keeps the last element instead.
   const elementChoices = slots.filter((s) => s.chosen && s.chosen.type !== "list");
@@ -111,6 +115,8 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
         <TabPanel active={active} idPrefix="build">
           {active === "abilities" ? <AbilitiesTab describedId={shownId} onDescribe={onDescribe} />
             : <SlotList slots={slots} describedId={shownId} onDescribe={onDescribe} />}
+          {/* B3 (GitHub #35): extras the DM grants, after the section's own picks */}
+          {addedKind && <AddedPicks kind={addedKind} onDescribe={(id) => onDescribe(id)} />}
         </TabPanel>
         <div className="sr-only" aria-live="polite">{snapshot.progress.remaining} choices remaining</div>
       </div>

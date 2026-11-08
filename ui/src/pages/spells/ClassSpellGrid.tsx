@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from "react";
 import type { ClassSpellcasting, SpellEntry } from "../../api/contract";
-import { Button } from "../../components";
+import { AddedMark, Button } from "../../components";
 import { useCharacter } from "../../state/CharacterContext";
 import { setStatus } from "../../state/status";
 import { Glyph } from "../equipment/Glyph";
@@ -78,7 +78,7 @@ export function ClassSpellGrid({ cls, picked, onPick }: { cls: ClassSpellcasting
               <tr key={`${s.id}:${s.slotId ?? ""}`} data-spell-id={s.id} className={picked === s.id ? "sel" : ""} onMouseDown={() => onPick(s.id)}
                 onDoubleClick={() => void toggle(s)} onKeyDown={(e) => onKey(e, s)}>
                 <td className="sp-ck"><Mark on={isKnown(s)} label={s.prepared ? "Prepared" : "Always prepared"} /></td>
-                <td className="sp-name"><button type="button" className="ap-name" onClick={() => onPick(s.id)}>{s.name}</button><RowDetail parts={[levelText(s), componentText(s.casting), sourceText(s)]} /></td>
+                <td className="sp-name"><button type="button" className="ap-name" onClick={() => onPick(s.id)}>{s.name}</button>{s.added && <AddedMark />}<RowDetail parts={[levelText(s), componentText(s.casting), sourceText(s)]} /></td>
                 <td className="sp-lvl">{levelText(s)}</td>
                 <ComponentCells casting={s.casting} />
                 <td className="sp-src">{sourceText(s)}</td>

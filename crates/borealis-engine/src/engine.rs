@@ -1,6 +1,7 @@
 //! The public entry point.
 
 use crate::adapter::{EditionAdapter, StandardAdapter};
+use crate::added_picks::{AddOption, AddedKind};
 use crate::derive::{thresholds, Evaluation};
 use crate::profile::{all_profiles, profile_for};
 use crate::provenance::{EvaluateOptions, StatTrace};
@@ -144,6 +145,24 @@ impl Engine {
     ) -> R {
         let uni = self.universe(state.ruleset);
         f(&Evaluation::run(uni, state, &self.settings, false))
+    }
+
+    /// B3 (GitHub #35): what the builder's Add action of `kind` offers the character (for
+    /// spells, to spellcasting class `spellcasting`): see [`crate::added_picks`]. Empty for a
+    /// spell without a class, or a class the character does not cast with.
+    #[must_use]
+    pub fn added_pick_options(
+        &self,
+        state: &CharacterState,
+        kind: AddedKind,
+        spellcasting: Option<&str>,
+    ) -> Vec<AddOption> {
+        if kind == AddedKind::Spell && spellcasting.is_none() {
+            return Vec::new();
+        }
+        self.with_evaluation(state, |ev| {
+            crate::added_picks::options(&ev.graph, ev.uni, state, kind, spellcasting)
+        })
     }
 
     /// XP needed to reach `level` (1..=20) in the state's ruleset.

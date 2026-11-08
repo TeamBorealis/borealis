@@ -404,7 +404,12 @@ impl AppState {
                 .iter()
                 .position(|x| x.uid == uid)
                 .ok_or_else(|| ApiError::not_found("That item is not in the inventory."))?;
-            if let Some(j) = i.checked_add_signed(step).filter(|j| *j < items.len()) {
+            // B3: added picks' lines are not listed, so a move steps over them
+            let mut j = i.checked_add_signed(step);
+            while let Some(k) = j.filter(|k| *k < items.len() && items[*k].added_pick) {
+                j = k.checked_add_signed(step);
+            }
+            if let Some(j) = j.filter(|j| *j < items.len()) {
                 items.swap(i, j);
             }
             Ok(())

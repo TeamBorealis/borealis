@@ -1,6 +1,7 @@
 import type { MockCompanions } from "./companions";
 import type { MockPlay } from "./play";
 import type {
+  AddedPick,
   AbilityKey, AbilityMethod, AbilityRecord, Attack, CharacterDetails, CharacterOptions, Coins,
   InventoryItem, RollRecord, Ruleset,
 } from "../types";
@@ -50,6 +51,8 @@ export interface MockCharacter {
   /** Edits on the granted companion and companions added by hand (GitHub #13); absent = none. */
   companions?: MockCompanions;
   sourceRestrictions: string[] | null;
+  /** B3: picks added in the builder (the host keeps them as hidden proxy lines). */
+  addedPicks?: AddedPick[];
   notices: string[];
   warnings: string[];
 }

@@ -287,6 +287,9 @@ pub struct FeatureDetail {
     /// "Ignore feat prerequisites" house rule.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub prerequisites_unmet: bool,
+    /// B3 (GitHub #35): a pick added in the builder for an extra the DM grants.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub added: bool,
 }
 
 /// A statistic group with its sources.
@@ -885,6 +888,10 @@ pub struct CharacterSnapshot {
     /// Foreign-edition content in use and how it was adapted.
     #[serde(default)]
     pub compatibility: crate::compat::CompatibilityReport,
+    /// B3 (GitHub #35): the picks added in the builder (feats, spells, languages and
+    /// proficiencies a DM grants), in inventory order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub added_picks: Vec<crate::added_picks::AddedPickSnapshot>,
     /// Features, traits and feats with descriptions, in registration order.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub features: Vec<FeatureDetail>,

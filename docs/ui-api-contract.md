@@ -78,6 +78,15 @@ Clean-room note: sample data in the mock is original and SRD-generic.
   choice can't be read (its own filter, or options whose requirements can't be parsed); such a problem is not repeated
   in `notices`, and an unreadable expression of content the character neither holds nor meets is not a notice at all.
   `apply_selection` must re-validate and fail with `requirement_failed` if the element is no longer valid.
+- B3 (GitHub #35): extras a DM grants. `list_added_pick_options({ kind, spellcasting? })` (`kind`: `feat`, `spell`,
+  `language`, `proficiency`; a spell names its spellcasting class by `className`) returns `AddPickOption`s: the kind's
+  options in the character's edition and unrestricted sources that it does not have yet, only those whose prerequisites
+  hold (a spell: on the class's lists, of a level it casts) unless `ignoreFeatPrerequisites` is on, then every one
+  (`qualifies: false` on the rest). `add_pick` adds one (`requirement_failed` when it is not offered, `invalid_argument`
+  for a spell without a class); `remove_pick({ inventoryId })` removes it. Under the hood a pick is Aurora's own
+  "Additional ..." proxy item, equipped and hidden, so it behaves like one from the equipment screen; it is listed in
+  `CharacterSnapshot.addedPicks` (`applied: false` while kept but withheld, `prerequisitesUnmet` under the house rule)
+  and never in `inventory`. An added spell's `SpellEntry.added` and an added feat's play feature `added` are true.
 - B-55 (`specs/version-rows-and-filters.md`): `get_slot_options` returns one row per name (type family + normalized
   name). A row with two or more offered options lists them in `versions` (`versions[0]` is the row itself: the chosen
   version, else the default order: character's edition, imported before bundled, source A-Z, id). Paging is by row and

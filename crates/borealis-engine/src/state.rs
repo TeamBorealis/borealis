@@ -209,6 +209,12 @@ pub struct InventoryItem {
     /// epic boon added through Additional Feat before level 19). Off, as in Aurora, by default.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub override_requirements: bool,
+    /// B3 (GitHub #35): a pick added in a builder section (Add Feat, Add Spell, Add Language,
+    /// Add Proficiency) for an extra the DM grants. The line holds the Aurora proxy item of the
+    /// pick, equipped and hidden; it is listed in its builder section instead of the inventory.
+    /// Absent (false) on every other line, and in files written before it.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub added_pick: bool,
 }
 
 fn yes() -> bool {
@@ -240,6 +246,7 @@ impl InventoryItem {
             notes: None,
             rolled_max: BTreeMap::new(),
             override_requirements: false,
+            added_pick: false,
         }
     }
 }
