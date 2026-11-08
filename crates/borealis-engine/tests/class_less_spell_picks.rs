@@ -30,6 +30,7 @@ fn aurora_xml() -> ContentFile {
     <rules>
       <select type="Spell" name="Cantrip (Spark Initiate)" supports="0,Wizard" number="2" />
       <select type="Spell" name="Level 1 Spell (Spark Initiate)" supports="1,Wizard" />
+      <grant type="Spell" id="ID_2024_SPELL_LIGHT" />
     </rules>
   </element>
 </elements>"#;
@@ -166,4 +167,21 @@ fn aurora_feat_spells_picked_without_a_spellcasting_name_form_a_block_named_afte
     );
     let block = snap.caster("Spark Initiate").unwrap();
     assert!(block.spells.iter().all(|x| x.known));
+}
+
+/// Only picks get a block: a spell an element grants with no spellcasting name (Aurora's
+/// invocations, disciplines and totem rituals) keeps its place and adds no block per element.
+#[test]
+fn aurora_spells_granted_without_a_spellcasting_name_add_no_block() {
+    let Some(e) = engine(true) else { return };
+    let s = human_bard(
+        &e,
+        &[
+            ("Versatile", "Spark Initiate"),
+            ("Spark Initiate", "Wizard"),
+        ],
+    );
+    let snap = e.derive(&s);
+    let blocks: Vec<&str> = snap.spellcasting.iter().map(|b| b.name.as_str()).collect();
+    assert_eq!(blocks, vec!["Bard"]);
 }

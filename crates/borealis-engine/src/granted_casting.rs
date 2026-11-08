@@ -21,10 +21,11 @@
 //!   option takes the owner's last word (`Infernal` of Fiendish Legacy -> `Infernal Legacy`,
 //!   the SRD's "Infernal legacy"). A spell another trait grants with the same parameter
 //!   (Tiefling Otherworldly Presence: Thaumaturgy) joins that block.
-//! - spells picked or granted with no spellcasting name and no ability at all (Aurora-format
-//!   feats pick theirs in `Cantrip (Magic Initiate)` selects, #38): one block named in the
-//!   select's parentheses (`Magic Initiate`), else after the owner, so the sheet, the spell cards
-//!   and Play list them; its ability is the owner's when it has one, else none (no DC).
+//! - spells picked with no spellcasting name and no ability at all (Aurora-format feats pick
+//!   theirs in `Cantrip (Magic Initiate)` selects, #38): one block named in the select's
+//!   parentheses (`Magic Initiate`), else after the owner, so the sheet, the spell cards and Play
+//!   list them; its ability is the owner's when it has one, else none (no DC). Spells *granted*
+//!   that way (Aurora's invocations, disciplines, totem rituals) get no block, as before.
 
 use crate::custom_rules::{param_key, X_SPELL_ABILITY};
 use crate::graph::{Graph, Node, NodeId, Origin};
@@ -160,7 +161,7 @@ pub(crate) fn block_name(graph: &Graph<'_>, owner: NodeId, class: &str) -> Strin
         .map_or_else(|| class.to_string(), |l| format!("{class} ({l})"))
 }
 
-/// Block of a spell picked or granted with no spellcasting name and no ability field
+/// Block of a spell picked with no spellcasting name and no ability field
 /// (Aurora-format feats: `<select type="Spell" name="Cantrip (Magic Initiate)">`): the name in
 /// the select's closing parentheses (`Magic Initiate`), else the owner's name; a name a block
 /// already carries falls back to the owner's name. The ability is the owner's (or its parent's)
@@ -182,8 +183,8 @@ fn unlabelled_block(
             let name = inner.rsplit_once('(')?.1.trim();
             (!name.is_empty()).then(|| name.to_string())
         }),
-        Origin::Granted(_) => None,
-        Origin::Root | Origin::Manual => return None,
+        // a grant (an invocation's or a discipline's spell) would make one block per element
+        Origin::Granted(_) | Origin::Root | Origin::Manual => return None,
     };
     let name = from_select
         .filter(|n| !taken.iter().any(|b| &b.name == n))
