@@ -46,9 +46,19 @@ impl Engine {
         settings: EngineSettings,
         adapter: &dyn EditionAdapter,
     ) -> Self {
+        // PF1 (B-235): the two universes are independent, so they are built side by side.
+        let [first, second] = all_profiles().map(|p| p.ruleset());
+        let universes = std::thread::scope(|scope| {
+            let other = scope.spawn(|| Universe::with_adapter(store, second, adapter));
+            let one = Universe::with_adapter(store, first, adapter);
+            let two = other
+                .join()
+                .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
+            [one, two]
+        });
         Self {
             settings,
-            universes: all_profiles().map(|p| Universe::with_adapter(store, p.ruleset(), adapter)),
+            universes,
             serial: NEXT_SERIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
         }
     }
