@@ -44,6 +44,7 @@ import type {
   ContentUpdateStatus,
   DataDirs,
   PortraitLibrary,
+  AppLifecycle,
   VaultAttachment,
   VaultBacklink,
   VaultChange,
@@ -848,6 +849,8 @@ export interface ApiEvents {
   "link:status": LinkStatus;
   /** Another app changed files in the open vault (debounced batches). */
   "vault:changed": VaultChange;
+  /** Phones: the app went to the background or came back to the foreground. */
+  "app:lifecycle": AppLifecycle;
 }
 export type EventName = keyof ApiEvents;
 
@@ -868,6 +871,7 @@ export const EVENTS = {
   "semantic:index": "borealis://semantic-index",
   "link:status": "borealis://link-status",
   "vault:changed": "borealis://vault-changed",
+  "app:lifecycle": "borealis://app-lifecycle",
 } as const satisfies Record<EventName, string>;
 
 export interface Api extends ApiMethods {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Api, VaultBacklink, VaultChange, VaultSearchHit, VaultTag, VaultTree } from "../../api/contract";
 import { errorMessage } from "../../state/useAsync";
+import { useAppLifecycle } from "./useAppLifecycle";
 
 /** How long search waits after the last keystroke. */
 const SEARCH_DELAY_MS = 250;
@@ -14,8 +15,15 @@ export interface VaultData {
   tags: VaultTag[];
 }
 
-/** The vault tree and tag list, kept fresh by the backend's watcher (`vault:changed`). */
-export function useVaultData(api: Api, onChange: (c: VaultChange) => void): VaultData {
+/** Read everything again: what a phone does when the app comes back, since it has no watcher. */
+export const RESCAN: VaultChange = { paths: [], all: true, config: true };
+
+/**
+ * The vault tree and tag list. On desktop the backend's watcher keeps them fresh (`vault:changed`). Phones have none (B-221):
+ * the vault is read again when Notes opens and whenever the app comes back to the foreground, and the open note is checked
+ * then, exactly as for a watcher's change (`onChange` with everything changed). `onBackground` runs when the app leaves.
+ */
+export function useVaultData(api: Api, onChange: (c: VaultChange) => void, phone: { mobile: boolean; onBackground: () => void } = { mobile: false, onBackground: () => undefined }): VaultData {
   const [tree, setTree] = useState<VaultTree | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
@@ -33,8 +41,13 @@ export function useVaultData(api: Api, onChange: (c: VaultChange) => void): Vaul
   useEffect(() => { void reload(); }, [reload]);
 
   const live = !!tree?.dir && !tree.unavailable;
+  useAppLifecycle(api, phone.mobile, () => {
+    setVersion((v) => v + 1);
+    void reload();
+    onChange(RESCAN);
+  }, phone.onBackground);
   useEffect(() => {
-    if (!live) return;
+    if (!live || phone.mobile) return;
     void api.vaultWatch({ enabled: true }).catch(() => undefined);
     const off = api.subscribe("vault:changed", (c) => {
       setVersion((v) => v + 1);
@@ -42,7 +55,7 @@ export function useVaultData(api: Api, onChange: (c: VaultChange) => void): Vaul
       onChange(c);
     });
     return () => { off(); void api.vaultWatch({ enabled: false }).catch(() => undefined); };
-  }, [api, live, reload, onChange]);
+  }, [api, live, reload, onChange, phone.mobile]);
 
   return { tree, error, version, reload, tags };
 }

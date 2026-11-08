@@ -12,6 +12,8 @@ export interface VaultEntry {
   kind: VaultEntryKind;
   size: number;
   mtimeMs: number;
+  /** iOS: iCloud Drive has not downloaded this file yet; opening it starts the download. */
+  cloud?: boolean;
 }
 
 /** `.obsidian/app.json`, read only (Borealis never writes under `.obsidian/`). */
@@ -106,6 +108,12 @@ export interface VaultAttachment {
   path: string;
   /** The link to insert, written the way `.obsidian/app.json` says. */
   link: string;
+}
+
+/** `app:lifecycle` (phones): the app went to the background or came back. Phones have no vault watcher, so the notes view
+ * saves when the app leaves and reads the vault again when it returns. */
+export interface AppLifecycle {
+  foreground: boolean;
 }
 
 /** `vault:changed`: changes other apps made. */

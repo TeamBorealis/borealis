@@ -1,4 +1,4 @@
-import { mdiContentSave, mdiDeleteOutline, mdiLinkVariant, mdiPaperclip, mdiRenameOutline } from "@mdi/js";
+import { mdiChevronLeft, mdiContentSave, mdiDeleteOutline, mdiLinkVariant, mdiPaperclip, mdiRenameOutline } from "@mdi/js";
 import { useEffect, useRef, useState } from "react";
 import type { VaultEntry } from "../../api/contract";
 import { Alert } from "../../components";
@@ -26,6 +26,10 @@ interface PaneProps {
   onTag: (tag: string) => void;
   onRename: () => void;
   onDelete: () => void;
+  /** Attach file needs a file picker that copies into the vault: desktop only (B-221). */
+  canAttach: boolean;
+  /** Phones: back to the file list (the note is saved first); null where the files stay on screen. */
+  onBack: (() => void) | null;
 }
 
 const MODES = [{ id: "read", label: "Read" }, { id: "edit", label: "Edit" }];
@@ -57,7 +61,7 @@ function ImageView({ entry, version }: { entry: VaultEntry; version: number }) {
 }
 
 /** The open file: a note (Read / Edit), a text file shown as text, an image, or another file that is only listed. */
-export function NotePane({ entry, entries, editor, mode, setMode, version, scrollTo, onLink, onTag, onRename, onDelete }: PaneProps) {
+export function NotePane({ entry, entries, editor, mode, setMode, version, scrollTo, onLink, onTag, onRename, onDelete, canAttach, onBack }: PaneProps) {
   const api = useApi();
   const area = useRef<HTMLTextAreaElement>(null);
   const [picking, setPicking] = useState(false);
@@ -108,13 +112,16 @@ export function NotePane({ entry, entries, editor, mode, setMode, version, scrol
 
   return (
     <section className="nt-note" aria-label={displayName(entry.name, entry.kind)}>
+      {onBack && (
+        <button type="button" className="nt-back" onClick={onBack}><Svg d={mdiChevronLeft} /><span>Files</span></button>
+      )}
       <header className="nt-head">
         <h1 className="nt-title" title={entry.path}>{displayName(entry.name, entry.kind)}</h1>
         <span className="nt-state" role="status">{note ? saveState(editor) : ""}</span>
         <span className="v4-grid-cmds" role="toolbar" aria-label="Note commands">
           {isNote && <Cmd d={mdiContentSave} label="Save note" disabled={!editor.dirty || readOnly} onClick={() => void save()} />}
           {isNote && shown === "edit" && <Cmd d={mdiLinkVariant} label="Insert link" onClick={() => setPicking(true)} />}
-          {isNote && shown === "edit" && <Cmd d={mdiPaperclip} label="Attach file" onClick={() => void attach()} />}
+          {isNote && shown === "edit" && canAttach && <Cmd d={mdiPaperclip} label="Attach file" onClick={() => void attach()} />}
           <Cmd d={mdiRenameOutline} label="Rename" onClick={onRename} />
           <Cmd d={mdiDeleteOutline} label="Delete" onClick={onDelete} />
         </span>

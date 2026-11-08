@@ -1,0 +1,89 @@
+/*
+ * B-221 Notes on phones (decision U17b), in the B-48 phone layer (html.phone: phones, and tablets while the narrow shell
+ * shows). One pane at a time: the vault's files as a list of rows, or the open note with its backlinks and tags under it and
+ * a Files button back. Sentence case, 44/48 pt rows and buttons, the phone type scale and colour roles. An iPad in the wide
+ * shell keeps the desktop's three panes.
+ */
+
+/* ---------- One pane at a time ---------- */
+html.phone .nt-page { display: block; height: auto; min-height: 100%; }
+html.phone .nt-page.has-note .nt-files { display: none; }
+html.phone .nt-page:not(.has-note) .nt-main,
+html.phone .nt-page:not(.has-note) .nt-side { display: none; }
+
+/* ---------- Files ---------- */
+html.phone .nt-files { padding: 12px var(--ph-gutter) 24px; border: 0; }
+html.phone .nt-files-head { gap: 8px; min-height: var(--ph-hit); padding: 0; }
+html.phone .nt-vault { font: 700 var(--ph-t-title3)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .nt-search { margin: 8px 0 12px; }
+html.phone .nt-search .search .input, html.phone .nt-search .search .input:focus { border-color: var(--ph-field-line); }
+html.phone .nt-filter { margin: 0 0 12px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .nt-files-body { overflow: visible; padding: 0; }
+html.phone .nt-tree, html.phone .nt-results { overflow: hidden; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .nt-tree ul { background: none; }
+html.phone .nt-row,
+html.phone .nt-tree > li:nth-child(odd) > .nt-row,
+html.phone .nt-results > li:nth-child(odd) > .nt-row {
+  gap: 8px; min-height: var(--ph-row); padding-right: var(--ph-gutter); background: none; color: var(--ph-text);
+  font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .nt-tree li + li > .nt-row, html.phone .nt-tree ul > li > .nt-row { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .nt-row:active { background: var(--ph-raised); }
+html.phone .nt-row.sel,
+html.phone .nt-tree > li > .nt-row.sel,
+html.phone .nt-results > li > .nt-row.sel { background: var(--ph-accent-soft); color: var(--ph-text); }
+html.phone .nt-row .icon { width: 20px; height: 20px; color: var(--ph-text-2); }
+html.phone .nt-caret { width: 20px; }
+html.phone .nt-caret .icon { width: 18px; height: 18px; }
+html.phone .nt-cloud .icon { color: var(--ph-text-3); }
+html.phone .nt-results > li { border-bottom: 0; box-shadow: inset 0 -1px 0 var(--ph-line); }
+html.phone .nt-results .nt-snippet { padding: 0 var(--ph-gutter) 8px 36px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .nt-empty, html.phone .nt-muted { font: 400 var(--ph-t-sub)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+
+/* ---------- The open note ---------- */
+html.phone .nt-main { padding: 4px var(--ph-gutter) 0; }
+html.phone .nt-back {
+  display: inline-flex; align-items: center; gap: 2px; min-height: var(--ph-hit); margin: 0 0 4px -8px; padding: 0 8px; border: 0;
+  background: none; color: var(--ph-accent); font: 400 var(--ph-t-body)/1 var(--ph-font-ui); cursor: pointer;
+}
+html.phone .nt-back .icon { width: 24px; height: 24px; }
+html.phone .nt-head { flex-wrap: wrap; gap: 8px; min-height: var(--ph-hit); }
+html.phone .nt-title { flex: 1 1 100%; white-space: normal; font: 700 var(--ph-t-title2)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .nt-state { flex: 1 1 auto; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .nt-modes { margin: 8px 0 12px; border-bottom: 0; }
+html.phone .nt-notice { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .nt-body { overflow: visible; padding-bottom: 16px; }
+/* 16 px or more, or iOS zooms the page when the text box takes focus. */
+html.phone .nt-editor {
+  min-height: 60vh; padding: 12px; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); color: var(--ph-text);
+  font: 400 max(16px, var(--ph-t-body))/1.5 var(--ph-font-ui);
+}
+html.phone .nt-editor:focus { outline: 2px solid var(--ph-accent); outline-offset: 0; }
+html.phone .nt-plain { font-size: var(--ph-t-foot); }
+
+/* Reading view: the phone type scale, sentence case. */
+html.phone .md-preview { font: 400 var(--ph-t-body)/1.55 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .md-preview h1 { font: 700 var(--ph-t-title2)/1.25 var(--ph-font-ui); text-transform: none; }
+html.phone .md-preview h2 { font: 700 var(--ph-t-title3)/1.25 var(--ph-font-ui); text-transform: none; border-bottom-color: var(--ph-line); }
+html.phone .md-preview h3, html.phone .md-preview h4, html.phone .md-preview h5, html.phone .md-preview h6 { font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .md-preview th { font: 600 var(--ph-t-foot)/1.3 var(--ph-font-ui); text-transform: none; }
+html.phone .md-preview .callout-title, html.phone .md-preview .md-embed-title { font: 600 var(--ph-t-sub)/1.3 var(--ph-font-ui); text-transform: none; }
+html.phone .md-preview code, html.phone .md-preview pre { font-size: var(--ph-t-foot); }
+html.phone .md-preview .task-checkbox { width: 20px; height: 20px; }
+html.phone .nt-props-title { font: 600 var(--ph-t-foot)/1.3 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .nt-prop { grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 4px 0; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); }
+html.phone .nt-chip { min-height: 28px; padding: 0 10px; border-radius: var(--ph-r-pill); background: var(--ph-fill); color: var(--ph-text); font: 400 var(--ph-t-foot)/1 var(--ph-font-ui); }
+
+/* Backlinks and tags: a card under the note. */
+html.phone .nt-side { margin: 8px var(--ph-gutter) 24px; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .nt-backlinks > li { padding: 8px 0; border-bottom: 0; box-shadow: inset 0 -1px 0 var(--ph-line); }
+html.phone .nt-link { min-height: 32px; color: var(--ph-accent); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .nt-snippet { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .nt-tags { gap: 8px; }
+
+/* Dialogs: the two versions one under the other. */
+html.phone .nt-compare { grid-template-columns: minmax(0, 1fr); }
+html.phone .nt-compare label { font: 600 var(--ph-t-foot)/1.3 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .nt-compare textarea { height: 30vh; font: 400 max(16px, var(--ph-t-body))/1.4 var(--ph-font-ui); }
+html.phone .nt-changes h4 { font: 600 var(--ph-t-foot)/1.3 var(--ph-font-ui); text-transform: none; }
+html.phone .nt-change { font-size: var(--ph-t-foot); }

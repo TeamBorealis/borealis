@@ -4,6 +4,7 @@ import { Navigate } from "react-router";
 import type { VaultEntry, VaultEntryKind } from "../../api/contract";
 import { Alert, Button, SearchInput, useConfirm, useShell } from "../../components";
 import { VAULT_UNAVAILABLE } from "../../components/shell/useFolderNotice";
+import { notesOnThisDevice, usePhone } from "../../lib/phone";
 import { useApi } from "../../state/ApiContext";
 import { usePlatform } from "../../state/platform";
 import { useSettings } from "../../state/SettingsContext";
@@ -19,6 +20,10 @@ import { useNoteActions, type OpenPath } from "./useNoteActions";
 import { useNoteEditor } from "./useNoteEditor";
 import { useBacklinks, useVaultData, useVaultSearch } from "./useVaultData";
 import { ancestors, VaultTreeView } from "./VaultTreeView";
+
+/** While an opened file is still downloading from iCloud: how often the vault is read again, and for how long at most. */
+const CLOUD_POLL_MS = 2000;
+const CLOUD_POLL_TRIES = 150;
 
 function kindOf(path: string): VaultEntryKind {
   if (/\.md$/i.test(path)) return "note";
@@ -48,20 +53,27 @@ function NoVault({ unavailable, error }: { unavailable: boolean; error: string |
 
 /**
  * START > NOTES (GitHub #15): one Obsidian vault opened in place. Files on the left (tree or search results), the open note in
- * the middle (Read / Edit), and the description pane on the right with backlinks and tags. Desktop only for now.
+ * the middle (Read / Edit), and the description pane on the right with backlinks and tags. On a phone (B-221) one of them
+ * shows at a time: the files, or the open note with its backlinks and tags under it and a way back to the files. Phones have no
+ * watcher: the vault is read again when the app comes back to the foreground, and the open note is saved when it leaves.
  */
 export function NotesPage() {
-  const { mobile } = usePlatform();
-  if (mobile) return <Navigate to="/characters" replace />;
+  if (!notesOnThisDevice()) return <Navigate to="/characters" replace />;
   return <Notes />;
 }
 
 function Notes() {
   const api = useApi();
   const { settings } = useSettings();
+  const { mobile } = usePlatform();
+  const phone = usePhone();
   const confirm = useConfirm();
   const editor = useNoteEditor(api, settings.autosave);
-  const data = useVaultData(api, editor.external);
+  // Leaving the view, or the app going to the background on a phone, saves the open note, like leaving a character.
+  const save = useRef(editor.save);
+  save.current = editor.save;
+  const flush = useCallback(() => { void save.current(); }, []);
+  const data = useVaultData(api, editor.external, { mobile, onBackground: flush });
   const [selected, setSelected] = useState<string | null>(null);
   const [mode, setMode] = useState<NoteMode>("read");
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
@@ -84,9 +96,6 @@ function Notes() {
 
   const actions = useNoteActions({ api, editor, confirm, selected, reload: data.reload, openPath, setSelected, setScrollTo });
 
-  // Leaving the view saves the open note, like leaving a character.
-  const save = useRef(editor.save);
-  save.current = editor.save;
   useEffect(() => () => { void save.current(); }, []);
   useEffect(() => { if (!editor.conflict) setLater(false); }, [editor.conflict]);
 
@@ -105,6 +114,37 @@ function Notes() {
     void editor.save().then((ok) => ok && setStatus(`'${displayName(baseName(selected))}' saved.`));
   };
 
+  // A file iCloud Drive is still downloading: read the vault again until it is there, then open it.
+  const cloudSelected = !!(selected && data.tree?.entries.find((e) => e.path === selected)?.cloud);
+  const cloudPath = useRef<string | null>(null);
+  const reopen = editor.open;
+  useEffect(() => {
+    if (cloudSelected) { cloudPath.current = selected; return; }
+    if (selected && cloudPath.current === selected) { cloudPath.current = null; void reopen(selected); }
+  }, [cloudSelected, selected, reopen]);
+  const reload = data.reload;
+  useEffect(() => {
+    if (!cloudSelected) return;
+    let tries = 0;
+    const t = setInterval(() => { tries += 1; if (tries > CLOUD_POLL_TRIES) clearInterval(t); else void reload(); }, CLOUD_POLL_MS);
+    return () => clearInterval(t);
+  }, [cloudSelected, reload]);
+
+  // A vault chosen (or cleared) in Settings while Notes is open: read it now, not on the next visit.
+  const vaultDir = settings.vaultDir;
+  const shownDir = useRef(vaultDir);
+  useEffect(() => {
+    if (vaultDir === shownDir.current) return;
+    shownDir.current = vaultDir;
+    void reload();
+  }, [vaultDir, reload]);
+
+  /** Phones: back from the open note to the files (the note is saved first). */
+  const back = async () => {
+    if (await editor.close()) setSelected(null);
+    else setStatus("Save or resolve the open note first.");
+  };
+
   const tree = data.tree;
   if (!tree) return data.error ? <NoVault unavailable={false} error={data.error} /> : null;
   if (!tree.dir || tree.unavailable) return <NoVault unavailable={tree.unavailable} error={data.error} />;
@@ -112,7 +152,7 @@ function Notes() {
   const entry: VaultEntry | null = selected ? { path: selected, name: baseName(selected), kind: kindOf(selected), size: 0, mtimeMs: 0 } : null;
   const name = entry ? displayName(entry.name, entry.kind) : tree.name ?? "Notes";
   return (
-    <div className="nt-page" onKeyDown={onKeyDown}>
+    <div className={`nt-page${entry ? " has-note" : ""}`} onKeyDown={onKeyDown}>
       <aside className="nt-files" aria-label="Vault">
         <div className="nt-files-head">
           <span className="nt-vault" title={tree.dir}>{tree.name}</span>
@@ -151,7 +191,8 @@ function Notes() {
             <Alert tone="warning" role="status">This note changed in another app. <button type="button" className="nt-link" onClick={() => setLater(false)}>Resolve...</button></Alert>
           )}
           <NotePane entry={entry} entries={tree.entries} editor={editor} mode={mode} setMode={setMode} version={data.version} scrollTo={scrollTo}
-            onLink={(l) => void actions.followLink(l)} onTag={showTag} onRename={() => actions.startRename(entry.path)} onDelete={() => void actions.deleteFile(entry.path)} />
+            onLink={(l) => void actions.followLink(l)} onTag={showTag} onRename={() => actions.startRename(entry.path)} onDelete={() => void actions.deleteFile(entry.path)}
+            canAttach={!mobile} onBack={phone ? () => void back() : null} />
         </div>
       ) : (
         <section className="nt-main nt-none"><p className="nt-muted">Choose a note on the left, or create one.</p></section>
