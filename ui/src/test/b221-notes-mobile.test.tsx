@@ -86,21 +86,32 @@ describe("B-221 Notes on phones and tablets: entries and the vault setting", () 
     expect((await api.getSettings()).vaultDir).toBe(VAULT);
   });
 
-  it("Android waits for its folder access: no Notes entry, route or Settings row yet", async () => {
+  it("Android has Notes and the Settings row too", async () => {
     setPhoneOsForTests("android");
     const user = userEvent.setup();
     renderApp("/notes", { api: await withVault() });
-    await waitFor(() => expect(screen.queryByRole("tree", { name: "Vault files" })).toBeNull());
-    const sub = await screen.findByRole("navigation", { name: "Start sections" });
-    expect(within(sub).queryByRole("link", { name: "Notes" })).toBeNull();
+    expect(await screen.findByRole("tree", { name: "Vault files" })).toBeTruthy();
+    const sub = screen.getByRole("navigation", { name: "Start sections" });
+    expect(within(sub).getByRole("link", { name: "Notes" })).toBeTruthy();
     await user.click(screen.getByRole("menuitem", { name: "View" }));
-    expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).not.toContain("Notes");
-    await user.click(screen.getByRole("menuitem", { name: "Application Settings" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Application Settings" }));
     const dialog = await screen.findByRole("dialog", { name: "Application Settings" });
     await user.click(within(dialog).getByRole("tab", { name: "Content" }));
-    expect(within(dialog).queryByLabelText("Obsidian vault")).toBeNull();
+    expect(within(dialog).getByLabelText("Obsidian vault")).toBeTruthy();
   });
 
+  it("shows where an Android document tree is, not its URI", async () => {
+    const user = userEvent.setup();
+    const api = await withVault();
+    const dirs = await api.getDataDirs();
+    api.getDataDirs = async () => ({ ...dirs, vaultDir: "content://com.android.externalstorage.documents/tree/primary%3ADocuments%2FCampaign", vaultLabel: "Internal storage/Documents/Campaign" });
+    renderApp("/characters", { api });
+    await user.click(await screen.findByRole("menuitem", { name: "View" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Application Settings" }));
+    const dialog = await screen.findByRole("dialog", { name: "Application Settings" });
+    await user.click(within(dialog).getByRole("tab", { name: "Content" }));
+    await waitFor(() => expect((within(dialog).getByLabelText("Obsidian vault") as HTMLInputElement).value).toBe("Internal storage/Documents/Campaign"));
+  });
   it("a vault chosen in Settings while Notes shows its empty state opens at once", async () => {
     const user = userEvent.setup();
     const api = new MockApi({ aiChunkDelayMs: 1, mobile: true });

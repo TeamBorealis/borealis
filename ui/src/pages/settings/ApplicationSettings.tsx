@@ -21,7 +21,6 @@ import { formChanged, mergeForm } from "./settingsForm";
 import { resolveSettingsTab, visibleSettingsTabs } from "./settingsTabs";
 import { SettingsWindow } from "./SettingsWindow";
 import { SheetTab } from "./SheetTab";
-import { notesOnThisDevice } from "../../lib/phone";
 import { PhoneCase } from "../../lib/phoneCase";
 import type { PickPurpose } from "../../api/contract";
 
@@ -137,7 +136,7 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
       case "content": return (
         <ContentTab manage={() => leave(() => nav("/content"))}
           portraits={mobile ? null : { dirs, held: held.portraits, browse: () => void browse("portraits"), clear: () => setHeld((h) => ({ ...h, portraits: "clear" })) }}
-          vault={notesOnThisDevice() ? { dirs, held: held.vault, browse: () => void browse("vault"), clear: () => setHeld((h) => ({ ...h, vault: "clear" })) } : null} />
+          vault={{ dirs, held: held.vault, browse: () => void browse("vault"), clear: () => setHeld((h) => ({ ...h, vault: "clear" })) }} />
       );
       case "search": return <SearchTab />;
       case "ai": return <AiTab form={form} set={set} setup={() => leave(() => nav("/setup/ai"))} />;

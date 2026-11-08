@@ -54,12 +54,6 @@ export function usePhone(): boolean {
 /** The phone OS once the platform classes are installed (iOS and Android builds, the web mock), else null. */
 export const phoneOs = (): PhoneOs | null => os;
 
-/**
- * B-221: the Obsidian notes view (Notes, View > Notes, the More entry and the Settings vault row) is on desktop, iPhone and
- * iPad. Android follows once its folder access (Storage Access Framework) is in.
- */
-export const notesOnThisDevice = (): boolean => os !== "android";
-
 /** Tests pick a phone OS without a real platform. */
 export function setPhoneOsForTests(next: PhoneOs | null): void {
   os = next;

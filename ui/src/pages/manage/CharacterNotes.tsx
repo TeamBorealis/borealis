@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import { isApiError, type VaultEntry } from "../../api/contract";
 import { Alert, Button, useShell } from "../../components";
 import { VAULT_UNAVAILABLE } from "../../components/shell/useFolderNotice";
-import { notesOnThisDevice } from "../../lib/phone";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useSettings } from "../../state/SettingsContext";
@@ -46,7 +45,7 @@ export function CharacterNotes() {
   const { snapshot, mutate } = useCharacter();
   const [picking, setPicking] = useState<readonly VaultEntry[] | null>(null);
   const [problem, setProblem] = useState<Problem | null>(null);
-  if (!snapshot || !notesOnThisDevice()) return null;
+  if (!snapshot) return null;
   const linked = snapshot.vaultNote;
 
   const open = async () => {

@@ -1,4 +1,3 @@
-import { notesOnThisDevice } from "../../lib/phone";
 import type { IconName } from "../Icon";
 import { LINKS } from "../../lib/links";
 
@@ -32,16 +31,16 @@ export const MAIN_TABS: readonly MainTabDef[] = [
  * Borealis's NOTES (GitHub #15). START owns every screen that needs no character, and Borealis additions follow the classic
  * builder's own items. `desktopOnly` sub-tabs are hidden on phones.
  */
-export const START_SUBNAV: readonly { to: string; label: string; desktopOnly?: boolean; notes?: boolean }[] = [
+export const START_SUBNAV: readonly { to: string; label: string; desktopOnly?: boolean }[] = [
   { to: "/characters", label: "Character Collection" },
   { to: "/content/sources", label: "Sources" },
   { to: "/content", label: "Additional Content" },
-  { to: "/notes", label: "Notes", notes: true },
+  { to: "/notes", label: "Notes" },
 ];
 
 /** The START sub-tabs this build shows. */
 export function startSubnav(mobile: boolean): readonly { to: string; label: string }[] {
-  return START_SUBNAV.filter((s) => !(mobile && s.desktopOnly) && (!s.notes || notesOnThisDevice()));
+  return START_SUBNAV.filter((s) => !(mobile && s.desktopOnly));
 }
 
 export function activeTab(pathname: string): MainTabDef {
@@ -69,8 +68,6 @@ export interface MenuEntry {
   directOnly?: boolean;
   /** Hidden on phones (no entry uses it since Notes came to phones, B-221). */
   desktopOnly?: boolean;
-  /** The notes view: shown where `notesOnThisDevice()` (B-221). */
-  notes?: boolean;
 }
 export interface MenuDef { id: string; label: string; entries: MenuEntry[] }
 
@@ -100,7 +97,7 @@ export const MENUS: readonly MenuDef[] = [
     { id: "settings", label: "Application Settings", action: "settings" },
     { id: "s1", label: "", separator: true },
     { id: "content", label: "Additional Content", to: "/content" },
-    { id: "notes", label: "Notes", to: "/notes", notes: true },
+    { id: "notes", label: "Notes", to: "/notes" },
     { id: "ai", label: "AI Assistant", to: "/ai", ai: true },
   ] },
   { id: "help", label: "Help", entries: [
@@ -126,8 +123,7 @@ export function visibleMenus(aiEnabled: boolean, storeBuild = false, mobile = fa
     entries: m.entries
       .filter((e) => aiEnabled || (!e.ai && !e.noAiTo))
       .filter((e) => !(storeBuild && e.directOnly))
-      .filter((e) => !(mobile && e.desktopOnly))
-      .filter((e) => !e.notes || notesOnThisDevice()),
+      .filter((e) => !(mobile && e.desktopOnly)),
   }));
 }
 

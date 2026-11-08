@@ -129,7 +129,7 @@ describe("B-222 a character's vault note", () => {
     expect(await linkedNote(api, id)).toBeNull();
   });
 
-  it("is on Manage > Character on iPhone and iPad, and hidden on Android until it has vault access", async () => {
+  it("is on Manage > Character on iPhone, iPad and Android", async () => {
     setPhoneForTests(true);
     setPhoneOsForTests("ios");
     const { api, id } = await setup({ mobile: true });
@@ -138,7 +138,6 @@ describe("B-222 a character's vault note", () => {
     unmount();
     setPhoneOsForTests("android");
     renderApp("/manage", { api, openCharacterId: id });
-    await screen.findByLabelText("Character name");
-    expect(screen.queryByRole("region", { name: "Notes" })).toBeNull();
+    expect(within(await section()).getByRole("button", { name: "Create note" })).toBeTruthy();
   });
 });

@@ -84,7 +84,7 @@ export function DisplayTab({ form, set }: FormProps) {
 
 /**
  * CONTENT: registered content indexes and Borealis's own folders: the portrait library (GitHub #32, desktop only) and the
- * Obsidian vault (GitHub #15; on iPhone and iPad too since B-221, through the system folder picker).
+ * Obsidian vault (GitHub #15; on phones and tablets too since B-221, through the system folder picker).
  */
 function contentDesc(portraits: boolean, vault: boolean): string {
   if (portraits && vault) return "Content packs, the indexes they are updated from, your portrait library and your notes vault.";
