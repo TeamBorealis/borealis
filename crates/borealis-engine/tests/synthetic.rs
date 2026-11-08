@@ -706,7 +706,7 @@ fn legacy_race_in_a_2024_character_is_offered_flagged_and_converted() {
         .unwrap();
     let badge = opt.edition.as_ref().expect("flagged as foreign");
     assert!(badge.converted && badge.from == Ruleset::Dnd2014);
-    assert!(badge.notes.iter().any(|n| n.contains("dexterity 2")));
+    assert!(badge.notes.iter().any(|n| n.contains("Dexterity +2")));
     assert!(snap
         .slot("ID_LEVEL_1", "Race")
         .unwrap()
