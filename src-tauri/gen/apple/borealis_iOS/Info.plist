@@ -165,6 +165,8 @@
 	</array>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<false/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

@@ -61,6 +61,8 @@ targets:
         CFBundleShortVersionString: 1.3.0
         CFBundleVersion: "1.3.0"
         LSSupportsOpeningDocumentsInPlace: false
+        # B-90: only standard TLS and authentication (Device Link pairing), exempt; no compliance question per build.
+        ITSAppUsesNonExemptEncryption: false
         NSLocalNetworkUsageDescription: Borealis connects to your other devices on this Wi-Fi to send and receive characters.
         NSBonjourServices: [_borealis-link._tcp]
         NSCameraUsageDescription: Borealis uses the camera only to scan the QR code shown by your other device when you send or receive characters.
