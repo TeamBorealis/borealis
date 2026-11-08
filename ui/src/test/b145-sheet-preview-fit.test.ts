@@ -61,3 +61,30 @@ describe("B-145 sheet preview keeps the printed page and scales it", () => {
     expect(parseRules(css).filter((r) => r.selectors.includes("body.sheet .desk")).length).toBeGreaterThan(10);
   });
 });
+
+// B-95: on the iPad 13" in portrait the preview was wider than its pane, cut off on the right, with labels overlapping.
+// The desktop two-pane layout gives the preview frame 414 px at a 1024 px window and 422 px at 1032 px (the iPad 13"
+// portrait width), measured in Chromium and WebKit. The page must scale down whole to that frame, as on a phone.
+describe("B-95 sheet preview fits the iPad portrait pane", () => {
+  const IPAD_PORTRAIT_FRAMES = [414, 422];
+
+  it.each(IPAD_PORTRAIT_FRAMES)("scales Letter and A4 pages to a %i px frame, every page by the same factor", (width) => {
+    for (const [html, paper] of [[LETTER, "letter"], [A4, "a4"]] as const) {
+      const css = styleOf(framePreviewHtml(html));
+      const zoom = zoomAt(css, width);
+      expect(zoom).toBeLessThan(1);
+      expect(PAGE_PX[paper] * zoom).toBeLessThanOrEqual(width - SCROLLBAR);
+      expect(PAGE_PX[paper] * zoom).toBeGreaterThan(width - SCROLLBAR - 12);
+      // One zoom on the whole desk (width and height together), never a width on the page: the paper shape is kept.
+      for (const r of parseRules(css).filter((x) => x.selectors.some((s) => /\.desk$/.test(s)))) {
+        expect(r.body).not.toMatch(/(^|;)\s*(width|max-width|height|transform)\s*:/);
+      }
+    }
+  });
+
+  it("keeps iOS from enlarging the scaled-down text inside the frame, as the app does for itself", () => {
+    const html = parseRules(PREVIEW_CSS).find((r) => r.selectors.includes("html") && r.atRules.length === 0)!;
+    expect(html.body).toMatch(/-webkit-text-size-adjust:\s*100%/);
+    expect(html.body).toMatch(/(^|;)\s*text-size-adjust:\s*100%/);
+  });
+});

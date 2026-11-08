@@ -35,10 +35,11 @@ function scaleCss(paper: PreviewPaper): string {
 
 /**
  * Presentation CSS for the sandboxed preview: the generated sheet pages sit on a dark canvas with the app's own scrollbar.
- * It only restyles the container; the pages keep the renderer's printed size and look.
+ * It only restyles the container; the pages keep the renderer's printed size and look. B-95: the frame is its own
+ * document, so it repeats the app's `text-size-adjust` (base.css); iOS must not enlarge the scaled-down sheet text.
  */
 export const PREVIEW_CSS = `
-html{background:#131313}
+html{background:#131313;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body.sheet{background:#131313;margin:0}
 body.sheet .page{margin:0 auto 12px;box-shadow:none;border-radius:0}
 ::-webkit-scrollbar{width:${SCROLLBAR_PX}px;height:${SCROLLBAR_PX}px;background:#131313}
