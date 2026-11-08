@@ -182,6 +182,49 @@ describe.each(LAYOUTS)("hit dice through the rests (%s)", (_layout, phone) => {
     expect(screen.queryByRole("dialog", { name: "Short Rest" })).toBeNull();
   });
 
+  // B-212 (decision FU1): both SRDs need at least 1 hit point for a long rest's benefit, so at 0 the Long Rest asks first.
+  const downAndSpent = async (api: MockApi, id: string) => {
+    await api.spendHitDie({ characterId: id, classId: "wizard", roll: 1 });
+    await api.takeDamage({ characterId: id, amount: 999 });
+  };
+
+  it("a Long Rest at 0 hit points asks first, and Cancel leaves everything as it was", async () => {
+    const { api, characterId, user } = await openPlay("Seraphine", { phone, prep: downAndSpent });
+    const before = await api.getSnapshot({ characterId });
+    await waitFor(() => expect(hpText()).toBe("0"));
+    await user.click(screen.getByRole("button", { name: "Long Rest" }));
+    const dialog = await screen.findByRole("dialog", { name: "Long Rest" });
+    expect(within(dialog).getByText("At 0 hit points a long rest gives no benefit by the rules. Rest anyway?")).toBeTruthy();
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Long Rest" })).toBeNull());
+    await new Promise((r) => setTimeout(r, 50));
+    expect(hpText()).toBe("0");
+    expect(screen.getByRole("status", { name: /^Wizard hit dice: / }).textContent).toBe("1/2");
+    expect((await api.getSnapshot({ characterId })).play).toEqual(before.play);
+  });
+
+  it("a Long Rest at 0 hit points goes ahead on confirm", async () => {
+    const { user, snap } = await openPlay("Seraphine", { phone, prep: downAndSpent });
+    await waitFor(() => expect(hpText()).toBe("0"));
+    await user.click(screen.getByRole("button", { name: "Long Rest" }));
+    const dialog = await screen.findByRole("dialog", { name: "Long Rest" });
+    await user.click(within(dialog).getByRole("button", { name: "Rest anyway" }));
+    await waitFor(() => expect(hpText()).toBe(String(snap.play.hitPoints.max)));
+    expect(screen.getByRole("status", { name: /^Wizard hit dice: / }).textContent).toBe("2/2");
+  });
+
+  it("a Long Rest at 1 hit point asks nothing", async () => {
+    const prep = async (api: MockApi, id: string) => {
+      const { play } = await api.getSnapshot({ characterId: id });
+      await api.takeDamage({ characterId: id, amount: play.hitPoints.max - 1 });
+    };
+    const { user, snap } = await openPlay("Seraphine", { phone, prep });
+    await waitFor(() => expect(hpText()).toBe("1"));
+    await user.click(screen.getByRole("button", { name: "Long Rest" }));
+    await waitFor(() => expect(hpText()).toBe(String(snap.play.hitPoints.max)));
+    expect(screen.queryByRole("dialog", { name: "Long Rest" })).toBeNull();
+  });
+
   it("a 2014 Long Rest brings half the total hit dice back (at least one)", async () => {
     const prep = async (api: MockApi, id: string) => {
       for (const roll of [1, 1, 1]) await api.spendHitDie({ characterId: id, classId: "fighter", roll });

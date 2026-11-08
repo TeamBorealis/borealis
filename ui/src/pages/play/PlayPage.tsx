@@ -87,7 +87,7 @@ function Body({ s }: { s: CharacterSnapshot }) {
     // hit points and hit dice next to the rests (B-194), then slots, resources and trackers.
     play: () => <PlaySplit label="Play" title={selectionName(s, sel)} onClose={() => setSel(null)}
       detail={<PlayDetail selected={sel} resources={play.resources} toggles={play.toggles} />}
-      list={(<><RestBar /><ConcentrationBanner concentration={play.concentration} />{statRow}<HitPointsCard hp={play.hitPoints} />
+      list={(<><RestBar hp={play.hitPoints} /><ConcentrationBanner concentration={play.concentration} />{statRow}<HitPointsCard hp={play.hitPoints} />
         <HitDiceCard hitDice={play.hitDice} /><SpellSlotsCard play={play} />
         <ResourcesCard resources={play.resources} toggles={play.toggles} selected={sel} onSelect={setSel} /><TrackersCard trackers={play.trackers} />
         <TogglesCard toggles={play.toggles} resources={play.resources} selected={sel} onSelect={setSel} /><ExhaustionCard exhaustion={play.exhaustion} inspiration={play.inspiration} /></>)} />,
