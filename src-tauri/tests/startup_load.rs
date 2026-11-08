@@ -27,6 +27,34 @@ fn time_load(paths: &AppPaths) -> (Duration, usize) {
 }
 
 #[test]
+fn a_bad_user_pack_is_skipped_with_a_warning_and_the_rest_load() {
+    let data = tempfile::tempdir().unwrap();
+    let paths = AppPaths {
+        content_root: synthetic_library::content_root(),
+        data: data.path().to_path_buf(),
+    };
+    synthetic_library::write_library(&paths.library(), 3, 9);
+    std::fs::write(
+        paths.library().join("5etools-syn001").join("spells.json"),
+        "{ not json",
+    )
+    .unwrap();
+    let hub =
+        ContentHub::load_with(&paths, &AppSettings::default(), &ContentPrefs::default()).unwrap();
+    assert_eq!(hub.load_warnings.len(), 1, "{:?}", hub.load_warnings);
+    assert!(hub.load_warnings[0].starts_with("A user content pack could not be loaded"));
+    let ids: Vec<&str> = hub.store.packs().iter().map(|p| p.id.as_str()).collect();
+    assert!(!ids.contains(&"5etools-syn001"), "{ids:?}");
+    assert!(ids.contains(&"5etools-syn000") && ids.contains(&"5etools-syn002"));
+    assert!(hub
+        .store
+        .files()
+        .iter()
+        .all(|f| !f.starts_with("5etools-syn001/")));
+    assert!(hub.store.element("ID_SOURCE_SYN002").is_some());
+}
+
+#[test]
 #[ignore = "benchmark: run in release with --ignored --nocapture"]
 fn bench_startup_load_of_a_large_library() {
     let _ = tracing_subscriber::fmt()

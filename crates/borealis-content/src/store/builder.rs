@@ -30,6 +30,83 @@ struct PendingFile {
     file: ContentFile,
 }
 
+/// One pack folder read and parsed but not yet added to a builder ([`ParsedPack::read`],
+/// [`ContentStoreBuilder::add_parsed_pack`]).
+#[derive(Debug, Clone)]
+pub struct ParsedPack {
+    info: PackInfo,
+    origin: PackOrigin,
+    entries: Vec<ParsedEntry>,
+}
+
+#[derive(Debug, Clone)]
+enum ParsedEntry {
+    Content(String, ContentFile),
+    Index(String, IndexFile),
+}
+
+impl ParsedPack {
+    /// Read a pack directory: `pack.json` plus the files it lists, in manifest order.
+    ///
+    /// # Errors
+    /// I/O and JSON errors, and [`ContentError::UnsafePath`] for manifest entries that
+    /// escape the directory.
+    pub fn read(dir: &Path) -> Result<Self, ContentError> {
+        let manifest_path = dir.join("pack.json");
+        let manifest = PackManifest::from_json_str(&read_text(&manifest_path)?)
+            .map_err(|e| e.in_file(&manifest_path))?;
+        let mut entries = Vec::with_capacity(manifest.files.len());
+        for entry in &manifest.files {
+            let path = safe_join(dir, &entry.path)?;
+            let text = read_text(&path)?;
+            let name = format!("{}/{}", manifest.id, entry.path);
+            entries.push(match entry.kind {
+                PackFileKind::Content => {
+                    let mut file =
+                        ContentFile::from_json_str(&text).map_err(|e| e.in_file(&path))?;
+                    if file.ruleset.is_none() && manifest.rulesets.len() == 1 {
+                        file.ruleset = manifest.rulesets.first().copied();
+                    }
+                    ParsedEntry::Content(name, file)
+                }
+                PackFileKind::Index => ParsedEntry::Index(
+                    name,
+                    IndexFile::from_json_str(&text).map_err(|e| e.in_file(&path))?,
+                ),
+            });
+        }
+        Ok(Self {
+            info: PackInfo {
+                id: manifest.id,
+                name: manifest.name,
+                version: manifest.version,
+                origin: manifest.origin,
+                rulesets: manifest.rulesets,
+            },
+            origin: manifest.origin,
+            entries,
+        })
+    }
+
+    /// The pack's manifest summary.
+    #[must_use]
+    pub fn info(&self) -> &PackInfo {
+        &self.info
+    }
+
+    /// Number of content elements over the pack's files.
+    #[must_use]
+    pub fn element_count(&self) -> usize {
+        self.entries
+            .iter()
+            .map(|e| match e {
+                ParsedEntry::Content(_, f) => f.elements.len(),
+                ParsedEntry::Index(..) => 0,
+            })
+            .sum()
+    }
+}
+
 /// Collects files and packs, then applies the load semantics in [`build`](Self::build).
 ///
 /// Methods consume and return the builder so a store is assembled as one expression.
@@ -106,40 +183,22 @@ impl ContentStoreBuilder {
     /// # Errors
     /// I/O and JSON errors, and [`ContentError::UnsafePath`] for manifest entries that
     /// escape the directory.
-    pub fn add_pack_dir(mut self, dir: &Path) -> Result<Self, ContentError> {
-        let manifest_path = dir.join("pack.json");
-        let manifest = PackManifest::from_json_str(&read_text(&manifest_path)?)
-            .map_err(|e| e.in_file(&manifest_path))?;
-        self.packs.push(PackInfo {
-            id: manifest.id.clone(),
-            name: manifest.name.clone(),
-            version: manifest.version.clone(),
-            origin: manifest.origin,
-            rulesets: manifest.rulesets.clone(),
-        });
-        for entry in &manifest.files {
-            let path = safe_join(dir, &entry.path)?;
-            let text = read_text(&path)?;
-            match entry.kind {
-                PackFileKind::Content => {
-                    let mut file =
-                        ContentFile::from_json_str(&text).map_err(|e| e.in_file(&path))?;
-                    if file.ruleset.is_none() && manifest.rulesets.len() == 1 {
-                        file.ruleset = manifest.rulesets.first().copied();
-                    }
-                    self = self.add_file(
-                        format!("{}/{}", manifest.id, entry.path),
-                        manifest.origin,
-                        file,
-                    );
-                }
-                PackFileKind::Index => {
-                    let index = IndexFile::from_json_str(&text).map_err(|e| e.in_file(&path))?;
-                    self = self.add_index(format!("{}/{}", manifest.id, entry.path), index);
-                }
-            }
+    pub fn add_pack_dir(self, dir: &Path) -> Result<Self, ContentError> {
+        Ok(self.add_parsed_pack(ParsedPack::read(dir)?))
+    }
+
+    /// Add a pack read with [`ParsedPack::read`]: the same result as [`add_pack_dir`](Self::add_pack_dir)
+    /// on that folder. Reading first lets a caller skip a broken pack without touching the builder.
+    #[must_use]
+    pub fn add_parsed_pack(mut self, pack: ParsedPack) -> Self {
+        self.packs.push(pack.info);
+        for entry in pack.entries {
+            self = match entry {
+                ParsedEntry::Content(name, file) => self.add_file(name, pack.origin, file),
+                ParsedEntry::Index(name, index) => self.add_index(name, index),
+            };
         }
-        Ok(self)
+        self
     }
 
     /// Load every content `*.json` below `dir` (skipping `pack.json` and `*.index.json`),
@@ -422,6 +481,22 @@ fn collect_json(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), Co
 }
 
 impl ContentStoreBuilder {
+    /// True when both builders hold the same files, packs, indexes, diagnostics and editions, in the
+    /// same order (a snapshot round trip must give `true`).
+    #[must_use]
+    pub fn same_content(&self, other: &Self) -> bool {
+        self.files.len() == other.files.len()
+            && self
+                .files
+                .iter()
+                .zip(&other.files)
+                .all(|(a, b)| a.name == b.name && a.origin == b.origin && a.file == b.file)
+            && self.packs == other.packs
+            && self.indexes == other.indexes
+            && self.diagnostics == other.diagnostics
+            && self.source_editions == other.source_editions
+    }
+
     /// Append an existing diagnostic (for callers that load files themselves).
     #[must_use]
     pub fn with_diagnostic(mut self, issue: Issue) -> Self {

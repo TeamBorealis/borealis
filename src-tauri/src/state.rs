@@ -7,7 +7,9 @@ use crate::error::{ApiError, ApiResult};
 use crate::load_timing::LoadTimer;
 use crate::settings::AppSettings;
 use borealis_character::Character;
-use borealis_content::{ContentStore, ContentStoreBuilder, Element, PackManifest, Ruleset};
+use borealis_content::{
+    ContentStore, ContentStoreBuilder, Element, PackManifest, ParsedPack, Ruleset,
+};
 use borealis_engine::Engine;
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
@@ -185,8 +187,9 @@ impl ContentHub {
                 total,
                 custom: true,
             });
-            match builder.clone().add_pack_dir(dir) {
-                Ok(next) => builder = next,
+            // Read the pack on its own first: a broken pack leaves the builder untouched.
+            match ParsedPack::read(dir) {
+                Ok(pack) => builder = builder.add_parsed_pack(pack),
                 Err(e) => {
                     tracing::warn!("skipping user pack {}: {e}", dir.display());
                     load_warnings.push(format!("A user content pack could not be loaded: {e}"));

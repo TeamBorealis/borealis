@@ -6,7 +6,7 @@ pub mod load_order;
 mod merge;
 mod restriction;
 
-pub use builder::{ContentStoreBuilder, PackInfo};
+pub use builder::{ContentStoreBuilder, PackInfo, ParsedPack};
 pub use merge::apply_append;
 pub use restriction::{
     is_unrestrictable_source, SourceRestriction, UNRESTRICTABLE_SOURCES, UNRESTRICTABLE_TYPES,
