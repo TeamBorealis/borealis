@@ -11,6 +11,9 @@ workspace = true
 
 [dependencies]
 jsonschema = { version = "0.33.0", default-features = false }
+rayon = "1.12"
+# PF1 (B-235): the startup content snapshot (self-describing, so skipped fields and JSON values round-trip).
+rmp-serde = "1.3"
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

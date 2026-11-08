@@ -269,6 +269,8 @@ impl AppState {
             tracing::warn!("search: keyword indexes not cleared: {}", e.kind());
         }
         self.refresh_semantic_index();
+        // PF1: the startup content cache is derived too; the next launch loads from the files and remakes it.
+        crate::content_cache::remove(&self.paths.data);
         let mut prefs = self.content_prefs();
         let mut indexes_reset = 0;
         for index in prefs

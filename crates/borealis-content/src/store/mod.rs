@@ -5,12 +5,14 @@ mod builder;
 pub mod load_order;
 mod merge;
 mod restriction;
+mod snapshot;
 
 pub use builder::{ContentStoreBuilder, PackInfo, ParsedPack};
 pub use merge::apply_append;
 pub use restriction::{
     is_unrestrictable_source, SourceRestriction, UNRESTRICTABLE_SOURCES, UNRESTRICTABLE_TYPES,
 };
+pub use snapshot::SnapshotError;
 
 use crate::element::Element;
 use crate::file::{IndexFile, PackOrigin};
@@ -46,7 +48,7 @@ pub fn source_key(name: &str) -> String {
 }
 
 /// An index file loaded alongside the packs (metadata only).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct LoadedIndex {
     /// The file it was loaded from.
     pub file: String,

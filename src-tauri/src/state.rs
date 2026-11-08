@@ -1,5 +1,6 @@
 //! Application state: content store + engine, settings, and open-character sessions.
 
+use crate::content_cache::{self, CacheKey};
 use crate::content_prefs::ContentPrefs;
 use crate::derive_cache::DeriveCache;
 use crate::dto::RollRecord;
@@ -11,7 +12,7 @@ use borealis_content::{
     ContentStore, ContentStoreBuilder, Element, PackManifest, ParsedPack, Ruleset,
 };
 use borealis_engine::Engine;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
@@ -85,6 +86,8 @@ pub struct ContentHub {
     pub load_warnings: Vec<String>,
     /// The engine's last full derives (see [`ContentHub::derive`]).
     derived: DeriveCache,
+    /// The background write of the content cache after a full load (PF1).
+    cache_write: Mutex<Option<std::thread::JoinHandle<()>>>,
 }
 
 impl ContentHub {
@@ -167,7 +170,36 @@ impl ContentHub {
         let mut timer = LoadTimer::new();
         let (bundled, custom) = pack_dirs(paths, prefs);
         let total = bundled.len() + custom.len();
+        let editions = prefs.source_editions();
+        let key = CacheKey::new(
+            &folders(&bundled),
+            &folders(&custom),
+            &prefs.disabled_packs,
+            &editions,
+        );
         timer.step("pack list", &format!("{total} packs"));
+        let cache_file = content_cache::cache_file(&paths.data);
+        match content_cache::load(&cache_file, &key) {
+            Ok(cached) => {
+                timer.step("cache read", "hit");
+                for warning in &cached.load_warnings {
+                    tracing::warn!(
+                        "skipping user pack (as when the content cache was made): {warning}"
+                    );
+                }
+                on_step(LoadStep::Engine);
+                return Ok(Self::assemble(
+                    cached.builder,
+                    cached.load_warnings,
+                    settings,
+                    editions,
+                    timer,
+                ));
+            }
+            Err(miss) => {
+                timer.step("cache read", &format!("miss: {}", miss.reason()));
+            }
+        }
         let mut builder = ContentStoreBuilder::new();
         for (i, (name, dir)) in bundled.iter().enumerate() {
             on_step(LoadStep::Pack {
@@ -201,13 +233,25 @@ impl ContentHub {
             &format!("{} packs, {} skipped", custom.len(), load_warnings.len()),
         );
         on_step(LoadStep::Engine);
-        Ok(Self::assemble(
-            builder,
-            load_warnings,
-            settings,
-            prefs,
-            timer,
-        ))
+        let hub = Self::assemble(builder, load_warnings, settings, editions, timer);
+        let write = content_cache::save_in_background(
+            cache_file,
+            key,
+            Arc::clone(&hub.builder),
+            hub.load_warnings.clone(),
+        );
+        if let Ok(mut slot) = hub.cache_write.lock() {
+            *slot = write;
+        }
+        Ok(hub)
+    }
+
+    /// Wait until the content cache this load writes in the background is on disk (tests, benchmarks).
+    pub fn wait_for_cache_write(&self) {
+        let handle = self.cache_write.lock().ok().and_then(|mut h| h.take());
+        if let Some(handle) = handle {
+            let _ = handle.join();
+        }
     }
 
     /// Build the store and the engine over a builder holding every enabled pack.
@@ -215,11 +259,11 @@ impl ContentHub {
         builder: ContentStoreBuilder,
         load_warnings: Vec<String>,
         settings: &AppSettings,
-        prefs: &ContentPrefs,
+        editions: BTreeMap<String, Ruleset>,
         mut timer: LoadTimer,
     ) -> Self {
         // IM14: books whose edition the user set are re-tagged at load (also in AI draft builds)
-        let builder = builder.with_source_editions(prefs.source_editions());
+        let builder = builder.with_source_editions(editions);
         // The builder is kept for later rebuilds, so the store is built from a copy.
         let store = builder.clone().build();
         timer.step("build", &format!("{} elements", store.len()));
@@ -236,6 +280,7 @@ impl ContentHub {
             builder: Arc::new(builder),
             load_warnings,
             derived: DeriveCache::default(),
+            cache_write: Mutex::new(None),
         }
     }
 
@@ -248,8 +293,13 @@ impl ContentHub {
             builder: Arc::clone(&self.builder),
             load_warnings: self.load_warnings.clone(),
             derived: DeriveCache::default(),
+            cache_write: Mutex::new(None),
         }
     }
+}
+
+fn folders(packs: &[(String, PathBuf)]) -> Vec<PathBuf> {
+    packs.iter().map(|(_, dir)| dir.clone()).collect()
 }
 
 /// Pack folders to load, in load order: `(folder name, folder)`.
@@ -410,6 +460,7 @@ impl AppState {
             builder: Arc::new(builder),
             load_warnings: vec![reason.to_string()],
             derived: DeriveCache::default(),
+            cache_write: Mutex::new(None),
         };
         Ok(Self::from_hub(paths, settings, hub))
     }

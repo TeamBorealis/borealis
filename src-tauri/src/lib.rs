@@ -65,6 +65,7 @@ pub mod base_items;
 #[allow(unsafe_code)]
 pub mod console_attach;
 pub mod content_auto;
+pub mod content_cache;
 pub mod content_dto;
 pub mod content_fetch_retry;
 pub mod content_fetch_text;

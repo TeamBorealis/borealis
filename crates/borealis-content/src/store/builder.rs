@@ -4,12 +4,13 @@ use crate::error::ContentError;
 use crate::file::{ContentFile, IndexFile, PackFileKind, PackManifest, PackOrigin};
 use crate::issue::{Issue, IssueCode};
 use crate::ruleset::Ruleset;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 /// Summary of a loaded pack manifest.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PackInfo {
     /// Pack id.
     pub id: String,
@@ -23,11 +24,11 @@ pub struct PackInfo {
     pub rulesets: Vec<Ruleset>,
 }
 
-#[derive(Debug, Clone)]
-struct PendingFile {
-    name: String,
-    origin: PackOrigin,
-    file: ContentFile,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(super) struct PendingFile {
+    pub(super) name: String,
+    pub(super) origin: PackOrigin,
+    pub(super) file: ContentFile,
 }
 
 /// One pack folder read and parsed but not yet added to a builder ([`ParsedPack::read`],
@@ -112,12 +113,12 @@ impl ParsedPack {
 /// Methods consume and return the builder so a store is assembled as one expression.
 #[derive(Debug, Clone, Default)]
 pub struct ContentStoreBuilder {
-    files: Vec<PendingFile>,
-    packs: Vec<PackInfo>,
-    indexes: Vec<LoadedIndex>,
-    diagnostics: Vec<Issue>,
+    pub(super) files: Vec<PendingFile>,
+    pub(super) packs: Vec<PackInfo>,
+    pub(super) indexes: Vec<LoadedIndex>,
+    pub(super) diagnostics: Vec<Issue>,
     /// IM14: the user's edition per imported book, by [`super::source_key`].
-    source_editions: BTreeMap<String, Ruleset>,
+    pub(super) source_editions: BTreeMap<String, Ruleset>,
 }
 
 fn read_text(path: &Path) -> Result<String, ContentError> {

@@ -3,7 +3,8 @@
 //!
 //! * [`NO_BACKUP_DIRS`] under the app data folder: `link/` (paired-device registry), `sync/` (sync
 //!   state, staging, incoming files and the trash), `search/` (indexes and extracted text) and `models/` (the
-//!   semantic search model: 210-310 MB, downloaded again on request, local-search-spec sec. 8).
+//!   semantic search model: 210-310 MB, downloaded again on request, local-search-spec sec. 8) and `cache/`
+//!   (the startup content cache, PF1: rebuilt from the packs on the next launch).
 //! * Android: `res/xml/data_extraction_rules.xml` (cloud backup and device-to-device transfer,
 //!   Android 12+) and `res/xml/backup_rules.xml` (`fullBackupContent`, Android 11 and older)
 //!   exclude the same folders plus the secure-store preferences file
@@ -15,7 +16,7 @@
 use std::path::Path;
 
 /// Folders of the app data folder that never go into a backup.
-pub const NO_BACKUP_DIRS: &[&str] = &["link", "sync", "search", "models"];
+pub const NO_BACKUP_DIRS: &[&str] = &["link", "sync", "search", "models", "cache"];
 
 /// The SharedPreferences file of the Android secure store (`android-native-keyring-store`: store
 /// `default`, file `keyring-default`): its values are encrypted with a Keystore key that a restore
