@@ -5,7 +5,7 @@ import {
   mdiHammer, mdiInformationOutline, mdiLink, mdiLock, mdiMagnify, mdiMenu, mdiMinus, mdiOpenInApp, mdiPackageVariantClosed,
   mdiPencil, mdiPlus, mdiRobotOutline, mdiScriptText, mdiSend, mdiShield, mdiStar, mdiStop, mdiSwordCross, mdiTrashCanOutline,
   mdiUpload, mdiWeb, mdiCheckboxMarkedOutline, mdiDotsVertical, mdiTagMultiple, mdiImageMultipleOutline, mdiMicrophone,
-  mdiFolderSearchOutline, mdiFolderRemoveOutline, mdiBackupRestore, mdiChevronDoubleDown, mdiQrcode, mdiQrcodeScan, mdiKeyboardOutline, mdiDevices, mdiMenuDown,
+  mdiFolderSearchOutline, mdiFolderRemoveOutline, mdiBackupRestore, mdiChevronDoubleDown, mdiQrcode, mdiQrcodeScan, mdiKeyboardOutline, mdiDevices, mdiMenuDown, mdiHelpCircleOutline,
 } from "@mdi/js";
 
 /** Icon set: Material Design Icons (Apache-2.0) via @mdi/js. */
@@ -67,6 +67,8 @@ const PATHS = {
   "qr-scan": mdiQrcodeScan,
   keyboard: mdiKeyboardOutline,
   devices: mdiDevices,
+  /** Section help button: opens the website guide (U18). */
+  help: mdiHelpCircleOutline,
   /** Small solid down arrow (version column, source filter). */
   caret: mdiMenuDown,
 } as const;

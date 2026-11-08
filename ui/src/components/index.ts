@@ -21,3 +21,4 @@ export * from "./EditionMarks";
 export * from "./PrereqMark";
 export * from "./RowDetail";
 export * from "./AddedMark";
+export * from "./GuideLink";

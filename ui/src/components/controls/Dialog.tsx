@@ -8,8 +8,10 @@ import { useScrimClose } from "./useScrimClose";
 import { usePhone } from "../../lib/phone";
 
 /** Classic builder dialog window: accent title bar (13px SemiBold, left aligned), flat body, footer button row. Bottom sheet on phones. */
-export function Dialog({ title, onClose, children, footer, wide, full, className }: {
+export function Dialog({ title, onClose, children, footer, wide, full, className, headAction }: {
   title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean; full?: boolean; className?: string;
+  /** A small control in the title bar before Close, outside the title (e.g. a GuideLink, U18). */
+  headAction?: ReactNode;
 }) {
   const { ref, onKeyDown } = useModalBehavior(onClose);
   const titleId = useId();
@@ -23,6 +25,7 @@ export function Dialog({ title, onClose, children, footer, wide, full, className
           {phone && <div className="sheet-grabber" aria-hidden="true" />}
           <div className="dialog-head">
             <h2 id={titleId}>{title}</h2>
+            {headAction}
             <IconButton icon="x" label="Close" onClick={onClose} />
           </div>
           <div className="dialog-body">{children}</div>

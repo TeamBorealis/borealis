@@ -14,6 +14,12 @@ export const LINKS = {
   /** Help > Privacy Policy (B-86), on every platform including store builds. */
   privacy: "https://borealisbuilder.com/privacy",
   download: "https://borealisbuilder.com/#download",
+  /** The website guides, each opened by the help button of the section it explains (decision U18, B-234). */
+  guideCreateCharacter: "https://borealisbuilder.com/guides/create-a-character",
+  guideImportAurora: "https://borealisbuilder.com/guides/import-aurora-content",
+  guideImport5etools: "https://borealisbuilder.com/guides/import-5etools-data",
+  guideMoveCharacters: "https://borealisbuilder.com/guides/move-characters-between-devices",
+  guidePrintSheet: "https://borealisbuilder.com/guides/print-character-sheet",
 } as const;
 
 export const EXTERNAL_LINKS: readonly string[] = Object.values(LINKS);

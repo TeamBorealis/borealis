@@ -1,7 +1,7 @@
 import { CheckBox } from "../../components/controls";
 import { useState } from "react";
 import { ABILITY_KEYS, type Api, type AbilityMethod, type CharacterSnapshot, type ClassCounts, type OptionDef, type Ruleset } from "../../api/contract";
-import { Button, ComboBox, Expander, Flyout, IconButton, TextBox } from "../../components";
+import { Button, ComboBox, Expander, Flyout, GuideLink, IconButton, TextBox } from "../../components";
 import { abilityMethodOptions, STANDARD_ARRAY as SHARED_STANDARD_ARRAY } from "../../lib/abilityMethods";
 import { randomName } from "../../lib/format";
 import { useApi } from "../../state/ApiContext";
@@ -96,7 +96,7 @@ export function NewCharacterDialog({ onCreate, onClose }: { onCreate: (f: NewCha
   const arrangeable = f.abilityMethod === "standard_array";
   const preview = abilityPreview(f.abilityMethod, f.standardArray);
   return (
-    <Flyout title="New character" onClose={onClose}
+    <Flyout title="New character" onClose={onClose} headAction={<GuideLink guide="create-a-character" />}
       footer={<div className="v4-foot"><Button data-testid="create-character" onClick={create}>Create character</Button><Button onClick={onClose}>Cancel</Button></div>}>
       <form className="v4-new" onSubmit={(e) => { e.preventDefault(); create(); }}>
         <div className="v4-portraits" aria-hidden="true">

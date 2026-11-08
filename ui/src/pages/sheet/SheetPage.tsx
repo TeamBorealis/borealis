@@ -9,7 +9,7 @@ import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useSettings } from "../../state/SettingsContext";
 import { errorMessage } from "../../state/useAsync";
-import { useShell, useToast } from "../../components";
+import { GuideLink, useShell, useToast } from "../../components";
 import { DetailField } from "../manage/DetailField";
 import { mdiFileFind } from "@mdi/js";
 import { MgIcon } from "../manage/mgIcons";
@@ -76,7 +76,7 @@ function Body() {
     <ShellSubTabs><div className="tabs sub"><span className="tab" aria-current="page">Character Sheet</span></div></ShellSubTabs>
     <div className="v4-sheet">
       <div className="v4-sheet-left">
-        <h2>Generate preview</h2>
+        <div className="v4-sheet-head"><h2>Generate preview</h2><GuideLink guide="print-character-sheet" /></div>
         <p className="lead">Build a preview of your sheet here, or write it straight to a PDF file. The app settings let you decide whether the form fields can be typed into, and whether spell, item, attack and feature cards are added after the sheet pages.</p>
         <div className="v4-sheet-link"><Link to="/settings?tab=sheet" onClick={(e) => { e.preventDefault(); openSettings("sheet"); }}><MgIcon name="cog" />Character sheet settings</Link></div>
         <div className="v4-sheet-btns">

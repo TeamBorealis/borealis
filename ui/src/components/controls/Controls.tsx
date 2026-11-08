@@ -75,10 +75,10 @@ export function NumericUpDown({ value, onChange, min = 0, max = 999, step = 1, l
 }
 
 /** Hover/focus tooltip for icon buttons. The tip text is also the accessible description. */
-export function ToolTip({ text, children }: { text: string; children: ReactNode }) {
+export function ToolTip({ text, children, className }: { text: string; children: ReactNode; className?: string }) {
   const id = useId();
   return (
-    <span className="aur-tip" aria-describedby={id}>
+    <span className={className ? `aur-tip ${className}` : "aur-tip"} aria-describedby={id}>
       {children}
       <span role="tooltip" id={id} className="aur-tip-text">{text}</span>
     </span>

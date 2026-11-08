@@ -11,10 +11,12 @@ export type FlyoutWidth = keyof typeof FLYOUT_WIDTHS;
 
 /** Right-side (or left-side) panel over a 50% scrim. Bordered centred uppercase title (no close button: Cancel, Esc or a scrim click closes), scrolling content, optional footer. Full width on phones. iOS and Android builds add a
  * Close button only screen readers see: VoiceOver cannot swipe the aria-hidden grabber, tap the scrim or press Escape. */
-export function Flyout({ title, onClose, children, footer, width = "default", position = "right", sheet }: {
+export function Flyout({ title, onClose, children, footer, width = "default", position = "right", sheet, headAction }: {
   title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode; width?: FlyoutWidth; position?: "right" | "left" | "bottom";
   /** Phones show every flyout as a full-height sheet; "auto" sizes it to its content (the hamburger menu). */
   sheet?: "auto";
+  /** A small control at the title box's right edge, outside the centred title (e.g. a GuideLink, U18). */
+  headAction?: ReactNode;
 }) {
   const { ref, onKeyDown } = useModalBehavior(onClose);
   const titleId = useId();
@@ -29,6 +31,7 @@ export function Flyout({ title, onClose, children, footer, width = "default", po
           {phone && <div className="sheet-grabber" aria-hidden="true" />}
           <div className="flyout-head">
             <h2 id={titleId} className="flyout-title">{title}</h2>
+            {headAction && <span className="flyout-head-action">{headAction}</span>}
             {srClose && <button type="button" className="sr-only" data-no-autofocus onClick={onClose}>Close</button>}
           </div>
           <div className="flyout-body">{children}</div>

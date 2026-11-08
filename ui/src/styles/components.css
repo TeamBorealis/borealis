@@ -272,6 +272,20 @@ table.data th { color: var(--dark-4b); font-weight: 600; font-size: var(--fs-2xs
 @media (hover: hover) and (pointer: fine) { .aur-tip:hover > .aur-tip-text { opacity: 1; visibility: visible; } }
 @media (hover: none) { .aur-tip-text { display: none; } }
 
+/* GuideLink (U18): quiet 16px help glyph beside a section heading; opens the website guide. It adds no height to the
+   heading row; on touch screens the padding widens the tap area and the negative margin keeps the layout unchanged. */
+.aur-guide { flex: none; vertical-align: middle; }
+.aur-guide > .aur-tip-text { right: auto; left: 0; text-transform: none; font-weight: 400; }
+.aur-guide-btn { display: inline-grid; place-items: center; width: 18px; height: 18px; padding: 0; background: transparent; border: 0; color: var(--text-muted); cursor: pointer; }
+.aur-guide-btn .icon { width: 16px; height: 16px; }
+.aur-guide-btn:focus-visible { outline: 1px solid var(--gold); outline-offset: 1px; }
+@media (hover: hover) and (pointer: fine) { .aur-guide-btn:hover { color: var(--gold); } }
+@media (pointer: coarse) { .aur-guide-btn { box-sizing: content-box; padding: 10px; margin: -10px; } }
+.dialog-head .aur-guide > .aur-tip-text, .flyout-head .aur-guide > .aur-tip-text { left: auto; right: 0; }
+.dialog-head .aur-guide-btn { color: #c1c1c1; }
+@media (pointer: coarse) { .dialog-head .aur-guide-btn { margin-right: 0; } }
+.flyout-head-action { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: inline-flex; }
+
 /* Selection picker: focus bar, picker rows, choices-remaining footer */
 .focus-bar { border-left: 4px solid var(--light-4); padding-left: 6px; margin-left: 0; transition: border-color 150ms var(--ease); }
 .focus-bar:focus-within { border-left-color: var(--gold); }

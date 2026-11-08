@@ -63,7 +63,7 @@ export function PacksTab() {
   );
   return (
     <>
-      <Section title="Custom content" actions={<>
+      <Section title="Custom content" guide="import-aurora-content" actions={<>
         <ImportLink />
         {!mobile && <Button icon="upload" onClick={() => void pickFolder()}>Import my content folder</Button>}
         <Button icon="upload" onClick={() => void chooseFiles()}>Import files</Button>

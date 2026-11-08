@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import type { BundleShare, LinkPackChoice, LinkSelection } from "../../api/contract";
-import { Alert, Button, Dialog, MessageBox } from "../../components";
+import { Alert, Button, Dialog, GuideLink, MessageBox } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { usePlatform } from "../../state/platform";
@@ -223,7 +223,7 @@ export function TransferDialog({ role: mode, initialIds, onClose }: { role: Tran
 
   return (
     <>
-      <Dialog title={title} onClose={close} className="xfer-dlg" footer={footer}>
+      <Dialog title={title} onClose={close} className="xfer-dlg" footer={footer} headAction={<GuideLink guide="move-characters-between-devices" />}>
         {error && step !== "type" && step !== "scan" && step !== "pick" && <Alert tone="danger" role="alert">{error}</Alert>}
         {body}
       </Dialog>

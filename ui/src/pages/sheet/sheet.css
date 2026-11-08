@@ -3,7 +3,9 @@
 .v4-sheet-left { padding: 10px 25px 30px 50px; overflow: auto; min-width: 0; }
 .v4-sheet-left h2 { margin: 0 0 1px; font-size: var(--fs-lg); font-weight: 600; text-transform: uppercase; line-height: 1.25; color: var(--text-primary-header); }
 /* Classic builder heading ink is y 136-144; nudge the heading onto it without moving the lead text. */
-.v4-sheet-left > h2:first-child { position: relative; top: 1px; }
+.v4-sheet-left > h2:first-child, .v4-sheet-head > h2 { position: relative; top: 1px; }
+/* Heading row with the print guide button right after the title (U18); same height as the bare heading. */
+.v4-sheet-head { display: flex; align-items: center; gap: 6px; }
 .v4-sheet-left p.lead { margin: 0; font-size: 11px; font-weight: 400; color: var(--text-muted); line-height: 14.5px; }
 .v4-sheet-link { display: flex; justify-content: flex-end; margin: 12px 0 29px; }
 .v4-sheet-link a { display: inline-flex; align-items: center; gap: 6px; margin-right: 3px; font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; color: var(--text-body); text-decoration: none; }

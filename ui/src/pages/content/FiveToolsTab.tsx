@@ -74,7 +74,7 @@ export function FiveToolsTab() {
   };
   return (
     <>
-      <Section title="5etools-format import">
+      <Section title="5etools-format import" guide="import-5etools-data">
         <div className="stack">
           <p className="muted">{mobile
             ? <>Choose a .zip of a 5etools-format <code>data/</code> folder.</>
