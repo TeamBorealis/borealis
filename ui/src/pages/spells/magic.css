@@ -41,6 +41,12 @@
 .sp-known-empty { padding: 3px 8px; color: var(--text-muted); font-size: var(--fs-md); }
 .sp-empty { margin: auto; width: 500px; max-width: 100%; text-align: center; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text-muted); }
 .ap-left:has(> .sp-page) { padding-top: 18px; }
+/* B-231: as on the Equipment page (B-61), the description pane takes the height the spell lists give the row and scrolls
+   inside it; a long spell description no longer grows the row and stretches the page. Two columns only. */
+@media (min-width: 900px) {
+  html:not(.phone) .ap-page:has(.sp-page) > .ap-right { position: relative; }
+  html:not(.phone) .ap-page:has(.sp-page) > .ap-right > .desc-pane { position: absolute; inset: 0; }
+}
 /* Slots live in the class band (right-hand stats) */
 .ap-band .mg-slots { padding: 0; gap: 4px; margin-left: 12px; }
 .ap-band .mg-slot { min-width: 0; padding: 1px 6px 2px; flex-direction: row; align-items: center; gap: 5px; }
