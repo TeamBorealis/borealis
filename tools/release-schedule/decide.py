@@ -174,9 +174,44 @@ def missing_updater_assets(version: str, names: Sequence[str], signing: bool) ->
     return [n for n in updater_assets(version) if n not in have]
 
 
+# B-215 (decision FU1): from this version a draft without the update feed or the Windows/AppImage signatures cannot
+# publish, since copies could not update to it from inside Borealis. The macOS archive (and its .sig) joins the draft
+# after the rest (release.yml attach-macos), so it stays a warning at every version, as does everything below this one.
+UPDATER_REQUIRED_FROM = "1.5.0"
+
+
+def required_updater_assets(version: str) -> tuple[str, ...]:
+    """The updater files whose absence blocks this version: the feed and the Windows and AppImage signatures from
+    UPDATER_REQUIRED_FROM, none before."""
+    if plan.parse_version(version) < plan.parse_version(UPDATER_REQUIRED_FROM):
+        return ()
+    v = version
+    return ("latest.json", f"Borealis_{v}_x64-setup.exe.sig", f"Borealis_{v}_amd64.AppImage.sig")
+
+
+def blocking_updater_assets(version: str, missing: Sequence[str]) -> list[str]:
+    """The missing updater files that block this version (the rest of `missing` only warns)."""
+    required = set(required_updater_assets(version))
+    return [n for n in missing if n in required]
+
+
+def warning_updater_assets(version: str, missing: Sequence[str]) -> list[str]:
+    """The missing updater files that are only reported for this version."""
+    required = set(required_updater_assets(version))
+    return [n for n in missing if n not in required]
+
+
+def updater_problem(version: str, blocking: Sequence[str]) -> Optional[str]:
+    """Why missing required updater files stop the release (B-215)."""
+    if not blocking:
+        return None
+    return (f"in-app updates: the draft lacks {', '.join(blocking)} (required from {UPDATER_REQUIRED_FROM}): copies "
+            f"could not install {version} from inside Borealis (release.yml publish-draft / `updater.sh feed`)")
+
+
 def updater_warning(missing: Sequence[str]) -> Optional[str]:
-    """A missing updater file never blocks the release (the installers still download by hand, and the macOS archive
-    joins the draft after the rest); it is reported instead."""
+    """A missing updater file that is not required (warning_updater_assets) never blocks the release: the installers
+    still download by hand, and the macOS archive joins the draft after the rest. It is reported instead."""
     if not missing:
         return None
     return (f"in-app updates: the draft lacks {', '.join(missing)}. Not blocking: the installers still download by "
@@ -203,7 +238,8 @@ def go_warnings(f: GoFacts) -> list[str]:
     """What the go/no-go summary reports without blocking the release."""
     if f.release is None:
         return []
-    warning = updater_warning(missing_updater_assets(f.version, f.assets, f.updater))
+    missing = missing_updater_assets(f.version, f.assets, f.updater)
+    warning = updater_warning(warning_updater_assets(f.version, missing))
     return [warning] if warning else []
 
 
@@ -220,6 +256,10 @@ def go_problems(f: GoFacts) -> list[str]:
         missing = missing_assets(f.version, f.assets)
         if missing:
             problems.append(f"the draft lacks {', '.join(missing)}")
+        updater = updater_problem(f.version, blocking_updater_assets(
+            f.version, missing_updater_assets(f.version, f.assets, f.updater)))
+        if updater:
+            problems.append(updater)
     if f.tag_ci != "success":
         problems.append(f"CI on the release commit: {f.tag_ci}")
     if f.tag_acceptance != "success":

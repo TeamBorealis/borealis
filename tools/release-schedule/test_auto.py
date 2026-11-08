@@ -37,7 +37,10 @@ class FakeGit:
 
 
 def tick(name: str, **overrides):
-    facts = {**json.loads((HERE / "scenarios" / f"{name}.json").read_text()), **overrides}
+    return tick_from({**json.loads((HERE / "scenarios" / f"{name}.json").read_text()), **overrides})
+
+
+def tick_from(facts: dict):
     lines: list[str] = []
     log = lines.append
     discord = clients.Discord(None, True, log, frozenset(facts.get("posted", [])))
@@ -51,10 +54,14 @@ def tick(name: str, **overrides):
 
 
 def run(name: str, **overrides):
-    t, discord, lines = tick(name, **overrides)
+    return run_from(tick(name, **overrides), SCHEDULE)
+
+
+def run_from(ticked, schedule):
+    t, discord, lines = ticked
     auto.log = lines.append  # module-level log of the tick
     try:
-        status = t.run(SCHEDULE)
+        status = t.run(schedule)
     finally:
         auto.log = print
     new_keys = sorted(k.split("/", 1)[1] for k in discord.posted() - frozenset(t.facts.get("posted", [])))
@@ -207,6 +214,55 @@ class UpdaterFiles(unittest.TestCase):
         t.facts, t.git = facts, KeyedGit()  # type: ignore[assignment]
         self.assertTrue(t.updater_signing("1.3.0"))
         self.assertEqual(t.git.asked, ["5ca1ab1e00000000000000000000000000000000:src-tauri/tauri.conf.json"])
+
+
+SCHEDULE_150 = (("1.5.0", date(2026, 11, 12)),)
+
+
+def as_150(name: str) -> dict:
+    """A 1.3.0 scenario retold as 1.5.0 (same week, same files), for the version-aware updater check (B-215)."""
+    text = (HERE / "scenarios" / f"{name}.json").read_text()
+    return json.loads(text.replace("1.3.0", "1.5.0").replace("1003000", "1005000"))
+
+
+def run_150(name: str, **overrides):
+    return run_from(tick_from({**as_150(name), **overrides}), SCHEDULE_150)
+
+
+class UpdaterFilesFrom150(unittest.TestCase):
+    """B-215 (decision FU1): from 1.5.0 a missing latest.json or Windows/AppImage .sig fails the release check."""
+
+    def test_the_scenario_retold_as_1_5_0_is_a_normal_week(self):
+        self.assertEqual(run_150("normal-3-gonogo")[:2], (0, ["go/2026-11-12"]))
+        self.assertEqual(run_150("normal-1-signed")[:2], (0, ["signed"]))
+
+    def test_go_no_go_is_no_go_without_the_feed_and_still_warns_about_the_mac_archive(self):
+        status, keys, out = run_150("updater-missing-gonogo")
+        self.assertEqual((status, keys), (0, ["nogo/2026-11-12"]))
+        self.assertIn("- in-app updates: the draft lacks latest.json (required from 1.5.0)", out)
+        self.assertIn("**Warning (not blocking):** in-app updates: the draft lacks Borealis_1.5.0_aarch64.app.tar.gz, "
+                      "Borealis_1.5.0_aarch64.app.tar.gz.sig.", out)
+
+    def test_a_missing_installer_signature_blocks_too(self):
+        rel = as_150("normal-3-gonogo")["release"]
+        rel = {**rel, "assets": [a for a in rel["assets"] if a["name"] != "Borealis_1.5.0_amd64.AppImage.sig"]}
+        status, keys, out = run_150("normal-3-gonogo", release=rel)
+        self.assertEqual(keys, ["nogo/2026-11-12"])
+        self.assertIn("the draft lacks Borealis_1.5.0_amd64.AppImage.sig (required from 1.5.0)", out)
+
+    def test_monday_calls_a_draft_without_the_feed_not_ready(self):
+        done = {"id": 41, "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "1"}
+        rel = as_150("updater-missing-gonogo")["release"]
+        status, keys, out = run_150("normal-1-signed", release=rel, release_runs=[done])
+        self.assertEqual((status, keys), (0, ["signed-late"]))
+        self.assertIn("signed builds not ready: the draft lacks latest.json", out)
+
+    def test_a_missing_mac_archive_alone_is_go_with_the_warning(self):
+        rel = as_150("normal-3-gonogo")["release"]
+        rel = {**rel, "assets": [a for a in rel["assets"] if "app.tar.gz" not in a["name"]]}
+        status, keys, out = run_150("normal-3-gonogo", release=rel)
+        self.assertEqual((status, keys), (0, ["go/2026-11-12"]))
+        self.assertIn("**Warning:** in-app updates: the draft lacks Borealis_1.5.0_aarch64.app.tar.gz", out)
 
 
 class KeyedGit(FakeGit):

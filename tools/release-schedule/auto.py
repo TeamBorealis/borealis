@@ -6,7 +6,8 @@ workflow; a GitHub cron is the backup) a tick reads the planned releases (schedu
 and the live state (tags, CI runs, the draft release, App Store Connect, the website repo), and does what is due:
 
   prep    Sun 23:59 freeze: bump, commit "chore: release X.Y.Z", tag, push, start CI + acceptance + release.yml
-          Mon 20:00 signed builds: check the draft is complete (in-app update files: a warning, never blocking)
+          Mon 20:00 signed builds: check the draft is complete (in-app update files: from 1.5.0 latest.json and the
+                   Windows/AppImage .sig are required; the macOS archive, and every file below 1.5.0, only warn)
           Tue 12:00 store submission: iOS version + build + What's New, submit for review; the signed Play bundle
                     to closed testing (alpha) for the testers (RL8, never production); notes to #mod-chat
   decide  Thu 18:00 go/no-go: approved + complete + not held, else no-go: a note and the release moves a week
@@ -126,9 +127,13 @@ class Tick:
             return decide.updater_signing(conf)
         return bool(self.fact("updater_signing", get))
 
-    def updater_warnings(self, version: str, rel: Optional[dict]) -> list[str]:
+    def missing_updater(self, version: str, rel: Optional[dict]) -> list[str]:
         names = [a["name"] for a in (rel or {}).get("assets", [])]
-        warning = decide.updater_warning(decide.missing_updater_assets(version, names, self.updater_signing(version)))
+        return decide.missing_updater_assets(version, names, self.updater_signing(version))
+
+    def updater_warnings(self, version: str, rel: Optional[dict]) -> list[str]:
+        missing = decide.warning_updater_assets(version, self.missing_updater(version, rel))
+        warning = decide.updater_warning(missing)
         if warning:
             log(f"::warning::{version}: {warning}")
         return [warning] if warning else []
@@ -217,6 +222,8 @@ class Tick:
     def signed(self, version: str, publish: date) -> None:
         tag, rel = self.tag(version), self.release(version)
         missing = decide.missing_assets(version, [a["name"] for a in (rel or {}).get("assets", [])])
+        if rel:  # from 1.5.0 the update feed and the Windows/AppImage signatures are part of a complete draft (B-215)
+            missing = missing + decide.blocking_updater_assets(version, self.missing_updater(version, rel))
         if tag and rel and not missing:
             self.sync_draft(version, rel)
             installers = len(decide.expected_assets(version))

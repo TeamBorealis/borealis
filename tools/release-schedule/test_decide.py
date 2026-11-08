@@ -7,6 +7,7 @@ import sys
 import unittest
 from datetime import date, datetime
 from pathlib import Path
+from typing import Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import decide  # noqa: E402
@@ -221,6 +222,68 @@ class GoWarnings(unittest.TestCase):
         facts = go(updater=True, release=None, assets=())
         self.assertEqual(decide.go_warnings(facts), [])
         self.assertIn("no draft release", decide.go_problems(facts))
+
+
+def go_150(missing: Sequence[str], version: str = "1.5.0", updater: bool = True) -> decide.GoFacts:
+    """A complete draft of `version` with updater signing on, less the updater files named in `missing`
+    (written with the version as {v})."""
+    gone = {m.format(v=version) for m in missing}
+    have = [n for n in (*decide.expected_assets(version), *decide.updater_assets(version)) if n not in gone]
+    return go(version=version, assets=tuple(have), updater=updater)
+
+
+class UpdaterRequiredFrom150(unittest.TestCase):
+    """B-215 (decision FU1): from 1.5.0 the feed and the Windows/AppImage .sig block; the macOS archive only warns."""
+
+    def test_only_the_feed_and_the_installer_signatures_are_required_and_only_from_1_5_0(self):
+        self.assertEqual(decide.required_updater_assets("1.5.0"), (
+            "latest.json", "Borealis_1.5.0_x64-setup.exe.sig", "Borealis_1.5.0_amd64.AppImage.sig"))
+        self.assertEqual(len(decide.required_updater_assets("2.0.0")), 3)
+        self.assertEqual(len(decide.required_updater_assets("1.5.1")), 3)
+        for older in ("1.4.0", "1.4.9", "1.3.0", "0.9.0"):
+            self.assertEqual(decide.required_updater_assets(older), ())
+
+    def test_each_required_file_missing_blocks_1_5_0(self):
+        for name in ("latest.json", "Borealis_{v}_x64-setup.exe.sig", "Borealis_{v}_amd64.AppImage.sig"):
+            facts = go_150([name])
+            problems = decide.go_problems(facts)
+            self.assertEqual(len(problems), 1, name)
+            self.assertIn(name.format(v="1.5.0"), problems[0])
+            self.assertIn("required from 1.5.0", problems[0])
+            self.assertEqual(decide.go_warnings(facts), [])
+
+    def test_a_missing_mac_archive_still_only_warns_at_1_5_0(self):
+        facts = go_150(["Borealis_{v}_aarch64.app.tar.gz", "Borealis_{v}_aarch64.app.tar.gz.sig"])
+        self.assertEqual(decide.go_problems(facts), [])
+        warnings = decide.go_warnings(facts)
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("Borealis_1.5.0_aarch64.app.tar.gz", warnings[0])
+        self.assertIn("Not blocking", warnings[0])
+
+    def test_both_kinds_missing_block_and_warn_separately(self):
+        facts = go_150(["latest.json", "Borealis_{v}_aarch64.app.tar.gz"])
+        problems, warnings = decide.go_problems(facts), decide.go_warnings(facts)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("latest.json", problems[0])
+        self.assertNotIn("aarch64", problems[0])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("Borealis_1.5.0_aarch64.app.tar.gz", warnings[0])
+        self.assertNotIn("latest.json", warnings[0])
+
+    def test_below_1_5_0_every_missing_updater_file_only_warns(self):
+        everything = ["latest.json", "Borealis_{v}_x64-setup.exe.sig", "Borealis_{v}_amd64.AppImage.sig",
+                      "Borealis_{v}_aarch64.app.tar.gz", "Borealis_{v}_aarch64.app.tar.gz.sig"]
+        facts = go_150(everything, version="1.4.9")
+        self.assertEqual(decide.go_problems(facts), [])
+        self.assertIn("latest.json", decide.go_warnings(facts)[0])
+
+    def test_nothing_is_required_while_signing_is_off(self):
+        facts = go_150(["latest.json", "Borealis_{v}_x64-setup.exe.sig"], updater=False)
+        self.assertEqual((decide.go_problems(facts), decide.go_warnings(facts)), ([], []))
+
+    def test_a_complete_1_5_0_draft_is_go(self):
+        facts = go_150([])
+        self.assertEqual((decide.go_problems(facts), decide.go_warnings(facts)), ([], []))
 
 
 class Slip(unittest.TestCase):
