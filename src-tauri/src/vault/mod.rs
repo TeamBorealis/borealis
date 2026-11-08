@@ -2,9 +2,10 @@
 //! its Markdown files where they are: nothing is copied or imported, and Obsidian sees every change at once.
 //!
 //! - The folder is a backend-picked token (`vault-dir`), remembered in `vaultDir` (Settings > Content), with a
-//!   security-scoped bookmark in the Mac App Store build and on iOS / iPadOS ([`crate::folder_access`]). A folder that
-//!   cannot be read is reported as unavailable and kept (as B-188).
-//! - All file access goes through a [`store::VaultStore`].
+//!   security-scoped bookmark in the Mac App Store build and on iOS / iPadOS ([`crate::folder_access`]). On Android it
+//!   is a Storage Access Framework document tree with a persisted permission ([`tree_store`]). A folder that cannot be
+//!   read is reported as unavailable and kept (as B-188).
+//! - All file access goes through a [`store::VaultStore`]: a local folder, or an Android document tree.
 //! - The webview names files only by vault-relative paths, and every one is checked here ([`paths`]): nothing outside
 //!   the vault, nothing hidden (so nothing under `.obsidian/` is ever written), no links out.
 //! - Notes are read and written as raw text ([`text`]); a write happens only on a user change and only while the file
@@ -23,6 +24,7 @@ pub mod store;
 pub mod syntax;
 pub mod text;
 pub mod tree;
+pub mod tree_store;
 #[cfg(desktop)]
 pub mod watch;
 pub mod write;
@@ -39,9 +41,10 @@ use index::{Backlink, SearchHit, TagCount};
 use paths::Vault;
 use resolve::FileSet;
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 use store::{FileBytes, LocalStore, VaultStore};
 use tree::{EntryKind, Listing};
+use tree_store::{DocumentTree, TreeStore};
 
 /// Largest image sent to the notes view (as a `data:` URL).
 pub const MAX_IMAGE_BYTES: u64 = 16 * 1024 * 1024;
@@ -52,12 +55,30 @@ pub const UNTITLED: &str = "Untitled";
 /// Most numbered names tried for a new file (`Untitled 1`, `Untitled 2`, ...).
 const MAX_NAME_TRIES: usize = 10_000;
 
-/// The notes view's backend state: the link and tag cache and, on desktop, the folder watcher.
+/// The notes view's backend state: the link and tag cache, on desktop the folder watcher, and on Android the document
+/// tree access.
 #[derive(Debug, Default)]
 pub struct VaultService {
     index: Mutex<index::Index>,
     #[cfg(desktop)]
     watcher: Mutex<Option<watch::VaultWatcher>>,
+    /// Android: the Storage Access Framework (the Kotlin `VaultPlugin`); tests install a fake.
+    tree: OnceLock<Arc<dyn DocumentTree>>,
+}
+
+impl VaultService {
+    /// Install the document tree access (once, at startup; later calls are ignored).
+    pub fn set_document_tree(&self, tree: Arc<dyn DocumentTree>) {
+        if self.tree.set(tree).is_err() {
+            tracing::warn!("vault: the document tree access was already installed");
+        }
+    }
+
+    /// The document tree access, where there is one.
+    #[must_use]
+    pub fn document_tree(&self) -> Option<Arc<dyn DocumentTree>> {
+        self.tree.get().cloned()
+    }
 }
 
 fn lock<T>(m: &Mutex<T>) -> ApiResult<MutexGuard<'_, T>> {
@@ -201,7 +222,7 @@ pub fn os_trash(path: &Path) -> Result<(), String> {
     crate::folder_access_ios::trash(path)
 }
 
-/// Android: no trash for app files.
+/// Android: no trash for app files (a document tree vault has none either, [`tree_store`]).
 ///
 /// # Errors
 /// Always.
@@ -217,8 +238,18 @@ enum Chosen {
 }
 
 impl AppState {
-    /// The vault in the folder `dir`, while it can be read.
+    /// The vault in the folder or document tree `dir`, while it can be read.
     fn open_store(&self, dir: &str) -> Option<Box<dyn VaultStore>> {
+        if tree_store::is_tree_uri(dir) {
+            let tree = self.vault.document_tree()?;
+            return match TreeStore::open(tree, dir) {
+                Ok(store) => Some(Box::new(store)),
+                Err(e) => {
+                    tracing::warn!("vault: the document tree cannot be read: {e}");
+                    None
+                }
+            };
+        }
         let scoped = crate::folder_access::access(
             &self.paths.data,
             crate::folder_access::RememberedFolder::Vault,
@@ -285,9 +316,21 @@ impl AppState {
         Ok(matches!(self.chosen_vault()?, Some(Chosen::Unavailable)))
     }
 
-    /// The folder behind a `vault-dir` pick, checked.
+    /// The folder (or Android document tree) behind a `vault-dir` pick, checked.
     fn picked_vault(&self, token: &str) -> ApiResult<String> {
         let picked = self.picked.take(token, PickPurpose::VaultDir)?;
+        let text = picked.to_string_lossy().into_owned();
+        if tree_store::is_tree_uri(&text) {
+            let tree = self
+                .vault
+                .document_tree()
+                .ok_or_else(|| ApiError::invalid("That folder does not exist."))?;
+            TreeStore::open(tree, &text).map_err(|e| {
+                tracing::warn!("vault: the picked document tree cannot be read: {e}");
+                ApiError::invalid("Borealis cannot read that folder. Choose it again.")
+            })?;
+            return Ok(text);
+        }
         // iOS: the picker's security scope is held while the folder is checked.
         let _access = crate::folder_access::access(
             &self.paths.data,
@@ -306,9 +349,18 @@ impl AppState {
     pub fn set_vault_dir(&self, token: Option<&str>) -> ApiResult<DataDirs> {
         let chosen = token.map(|t| self.picked_vault(t)).transpose()?;
         let mut next = self.settings()?;
+        let before = next.vault_dir.clone();
         next.vault_dir = chosen;
         next.save(&self.paths.settings_file())?;
+        let after = next.vault_dir.clone();
         self.set_settings(next)?;
+        if before != after {
+            if let (Some(old), Some(tree)) = (before, self.vault.document_tree()) {
+                if tree_store::is_tree_uri(&old) {
+                    tree.release(&old);
+                }
+            }
+        }
         #[cfg(desktop)]
         self.vault_watch_stop()?;
         self.data_dirs()
@@ -677,14 +729,21 @@ impl AppState {
     }
 }
 
-/// Where the vault setting `dir` is, for people (the folder path).
+/// Where the vault setting `dir` is, for people: the folder path, or an Android document tree's place.
 #[must_use]
 pub fn label(dir: &str) -> String {
-    dir.to_string()
+    if tree_store::is_tree_uri(dir) {
+        tree_store::display_path(dir).unwrap_or_else(|| dir.to_string())
+    } else {
+        dir.to_string()
+    }
 }
 
-/// The name to show for the vault setting `dir`: the folder's name.
+/// The name to show for the vault setting `dir`: the folder's name, or an Android document tree's.
 fn display_name(dir: &str) -> Option<String> {
+    if tree_store::is_tree_uri(dir) {
+        return tree_store::display_name(dir);
+    }
     Path::new(dir)
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())

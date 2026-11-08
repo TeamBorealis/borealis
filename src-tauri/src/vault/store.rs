@@ -2,6 +2,8 @@
 //! through a [`VaultStore`]:
 //! - [`LocalStore`]: a folder on a file system. Desktop, the Mac App Store build, and iOS / iPadOS, where the folder
 //!   comes from the document picker and is reached through a security-scoped bookmark ([`crate::folder_access`]).
+//! - [`super::tree_store::TreeStore`]: an Android Storage Access Framework document tree (a `content://` URI), which
+//!   has no file paths at all.
 //!
 //! Every store checks each path the webview sends with [`paths::parts`], never lists or opens hidden names
 //! (`.obsidian`, `.trash`, dot files), never writes under `.obsidian/`, and writes a note only while it still hashes to
