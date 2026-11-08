@@ -197,6 +197,8 @@
     "allow-vault-read",
     "allow-vault-save",
     "allow-vault-create-note",
+    "allow-set-character-note",
+    "allow-vault-create-character-note",
     "allow-vault-delete",
     "allow-vault-rename-preview",
     "allow-vault-rename",

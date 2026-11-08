@@ -2,6 +2,7 @@ import { useState } from "react";
 import { TextBox } from "../../components";
 import { randomName } from "../../lib/format";
 import { useCharacter } from "../../state/CharacterContext";
+import { CharacterNotes } from "./CharacterNotes";
 import { DetailField } from "./DetailField";
 import { MgField, MgSection } from "./Field";
 import { MgIcon } from "./mgIcons";
@@ -66,6 +67,7 @@ export function CharacterTab() {
       <MgSection title="Additional features" sub="Note any extra traits your character has that do not come from their race, class, or background." className="mg-gap-s">
         <DetailField k="features" label="Additional features" area />
       </MgSection>
+      <CharacterNotes key={snapshot.id} />
     </div>
   );
 }

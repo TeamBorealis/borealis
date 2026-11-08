@@ -53,6 +53,25 @@ pub fn vault_create_note(
     state.vault_create_note(name.as_deref(), from.as_deref(), folder.as_deref())
 }
 
+/// Link a character to a vault note (B-222), or unlink it (`path` = `None`).
+#[tauri::command(async)]
+pub fn set_character_note(
+    state: S<'_>,
+    character_id: String,
+    path: Option<String>,
+) -> ApiResult<crate::dto::CharacterSnapshot> {
+    state.set_character_note(&character_id, path.as_deref())
+}
+
+/// Create a note for a character from its details and link it (B-222).
+#[tauri::command(async)]
+pub fn vault_create_character_note(
+    state: S<'_>,
+    character_id: String,
+) -> ApiResult<crate::dto::CharacterSnapshot> {
+    state.vault_create_character_note(&character_id)
+}
+
 /// Delete a file to the OS trash, or for good when `permanent`.
 #[tauri::command(async)]
 pub fn vault_delete(state: S<'_>, path: String, permanent: bool) -> ApiResult<DeleteStatus> {

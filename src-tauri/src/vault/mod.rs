@@ -12,6 +12,7 @@
 //! - Links, backlinks, tags and search follow Obsidian's rules ([`syntax`], [`resolve`], [`index`]); renaming can
 //!   update the links to a file ([`rename`]); `.obsidian/app.json` is honoured read-only ([`config`]).
 
+pub mod character;
 pub mod config;
 pub mod dto;
 pub mod index;

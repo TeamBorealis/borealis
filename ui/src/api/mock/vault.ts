@@ -186,6 +186,23 @@ export class MockVault {
     return this.note(path, f);
   }
 
+  /** B-222: a note a character may link to (in the open vault, a Markdown note). */
+  checkNote(s: AppSettings, path: string): void {
+    this.ready(s);
+    this.file(path);
+    if (kindOf(path) !== "note") throw apiError("invalid_argument", "Only a Markdown note can be linked to a character.");
+  }
+
+  /** B-222: `Characters/<name>.md`, numbered from " 2" when taken (never replaced); returns its path. */
+  createCharacterNote(s: AppSettings, name: string, text: string): string {
+    this.ready(s);
+    const stem = name.replace(/[/\\:*?"<>|#^[\]]/g, "-").trim().replace(/^\.+|\.+$/g, "") || "Character";
+    for (let n = 0; ; n += 1) {
+      const path = `Characters/${n === 0 ? stem : `${stem} ${n + 1}`}.md`;
+      if (!this.files.has(path)) { this.files.set(path, { text, mtimeMs: this.tick() }); return path; }
+    }
+  }
+
   delete(s: AppSettings, path: string, permanent: boolean): VaultDeleteStatus {
     this.ready(s);
     this.file(path);

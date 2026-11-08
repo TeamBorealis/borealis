@@ -1623,6 +1623,17 @@
     "name": "CharacterSnapshot"
    }
   },
+  "set_character_note": {
+   "args": {
+    "characterId": false,
+    "path": false
+   },
+   "method": "setCharacterNote",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "set_character_options": {
    "args": {
     "characterId": false,
@@ -2200,6 +2211,16 @@
      "k": "ref",
      "name": "VaultBacklink"
     }
+   }
+  },
+  "vault_create_character_note": {
+   "args": {
+    "characterId": false
+   },
+   "method": "vaultCreateCharacterNote",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
    }
   },
   "vault_create_note": {
@@ -4255,6 +4276,12 @@
      "t": {
       "k": "ref",
       "name": "CharacterStats"
+     }
+    },
+    "vaultNote": {
+     "opt": false,
+     "t": {
+      "k": "prim"
      }
     }
    }

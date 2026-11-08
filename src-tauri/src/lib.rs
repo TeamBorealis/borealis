@@ -590,6 +590,8 @@ pub fn run() {
             commands_vault::vault_read,
             commands_vault::vault_save,
             commands_vault::vault_create_note,
+            commands_vault::set_character_note,
+            commands_vault::vault_create_character_note,
             commands_vault::vault_delete,
             commands_vault::vault_rename_preview,
             commands_vault::vault_rename,

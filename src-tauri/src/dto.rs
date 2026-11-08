@@ -784,6 +784,8 @@ pub struct CharacterSnapshot {
     pub portrait: Option<String>,
     pub group: String,
     pub favorite: bool,
+    /// The linked Obsidian vault note, vault-relative (B-222); `None` = no note linked.
+    pub vault_note: Option<String>,
     pub dirty: bool,
     /// Display-only path of the file this session saves to (never fed back into a command).
     pub display_path: String,

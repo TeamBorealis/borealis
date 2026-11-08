@@ -96,15 +96,17 @@ export function RenameLinksDialog({ plan, onRename, onClose }: { plan: VaultRena
   );
 }
 
-/** Pick a vault file to link to (the link is written the way `.obsidian/app.json` says). */
-export function LinkPickerDialog({ entries, onPick, onClose }: { entries: readonly VaultEntry[]; onPick: (path: string) => void; onClose: () => void }) {
+/** Pick a vault file to link to (the link is written the way `.obsidian/app.json` says). Also the character's note picker (B-222). */
+export function LinkPickerDialog({ entries, onPick, onClose, title = "Link to a note" }: {
+  entries: readonly VaultEntry[]; onPick: (path: string) => void; onClose: () => void; title?: string;
+}) {
   const [query, setQuery] = useState("");
   const files = useMemo(() => {
     const q = query.trim().toLowerCase();
     return entries.filter((e) => e.kind !== "folder" && (!q || e.path.toLowerCase().includes(q))).slice(0, 200);
   }, [entries, query]);
   return (
-    <Modal title="Link to a note" onClose={onClose} footer={<Button onClick={onClose}>Cancel</Button>}>
+    <Modal title={title} onClose={onClose} footer={<Button onClick={onClose}>Cancel</Button>}>
       <SearchInput value={query} onChange={setQuery} label="Find a note" data-autofocus />
       <ul className="nt-pick" aria-label="Vault files">
         {files.map((e) => (

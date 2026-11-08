@@ -455,6 +455,12 @@ export interface ApiMethods {
   vaultSave(args: { path: string; text: string; baseHash?: string }): Promise<VaultSave>;
   /** Create a note: `name` may be a path (from an unresolved link); without `folder` it goes where `.obsidian/app.json` says. */
   vaultCreateNote(args: { name?: string; from?: string; folder?: string }): Promise<VaultNote>;
+  /** Link the character to a note of the open vault (B-222), or unlink it with `null`. Refused for a path outside the vault,
+   * a missing file or a file that is not a note. */
+  setCharacterNote(args: Cid & { path: string | null }): Promise<CharacterSnapshot>;
+  /** Create `Characters/<Name>.md` (numbered " 2", " 3"... when taken; nothing is replaced) with front matter filled from the
+   * character and the headings Backstory, Notes and Sessions, and link it (B-222). */
+  vaultCreateCharacterNote(args: Cid): Promise<CharacterSnapshot>;
   /** Delete a file to the OS trash; `permanent` only after the user agreed because there is no trash. */
   vaultDelete(args: { path: string; permanent: boolean }): Promise<VaultDeleteStatus>;
   /** What renaming `path` to `newName` (no extension) would change in the links to it. */
@@ -748,6 +754,8 @@ export const COMMANDS = {
   vaultRead: "vault_read",
   vaultSave: "vault_save",
   vaultCreateNote: "vault_create_note",
+  setCharacterNote: "set_character_note",
+  vaultCreateCharacterNote: "vault_create_character_note",
   vaultDelete: "vault_delete",
   vaultRenamePreview: "vault_rename_preview",
   vaultRename: "vault_rename",

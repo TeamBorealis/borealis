@@ -123,7 +123,7 @@ export function buildSnapshot(input: MockCharacter, rules: RuleSettings): { char
   const spellcasting = deriveSpellcasting(c, abilities, addedPicks);
   const companions = buildCompanions(c.companionName, c.companionPortrait, c.companions);
   const snapshot: CharacterSnapshot = {
-    id: c.id, name: c.name, ruleset: c.ruleset, portrait: c.portrait, group: c.group, favorite: c.favorite, dirty: c.dirty, displayPath: c.path ?? "",
+    id: c.id, name: c.name, ruleset: c.ruleset, portrait: c.portrait, group: c.group, favorite: c.favorite, vaultNote: c.vaultNote ?? null, dirty: c.dirty, displayPath: c.path ?? "",
     level: deriveLevel(c), abilities, stats, slots, progress: progress(slots),
     spellcasting, inventory: inv, details: c.details, detailChoices: detailChoices(),
     attacks: resolveAttacks(c, mods, profBonus(totalLevel(c))),

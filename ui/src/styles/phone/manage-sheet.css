@@ -25,6 +25,11 @@ html.phone .mg-page .mg-f .aur-textbox input, html.phone .mg-page .mg-f .aur-com
 html.phone .mg-f .textarea { min-height: 120px; }
 html.phone .mg-f .textarea.tall { min-height: 220px; }
 html.phone .mg-hint { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+/* B-222: the character's vault note: its name over full-width buttons, two to a row. */
+html.phone .mg-note { flex-direction: column; align-items: stretch; gap: 10px; }
+html.phone .mg-note-name { font: 400 var(--ph-t-body)/1.4 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .mg-note-name.none { color: var(--ph-text-2); }
+html.phone .mg-note .mg-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 html.phone .mg-name .aur-textbox input { padding-right: var(--ph-hit); }
 html.phone .mg-name-dice { right: 0; width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-md); color: var(--ph-text-2); }
 html.phone .mg-name-dice .icon { width: 20px; height: 20px; }

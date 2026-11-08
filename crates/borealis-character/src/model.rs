@@ -325,6 +325,9 @@ pub struct Character {
     pub unresolved: Vec<UnresolvedSelection>,
     /// Edits on the granted companion and companions added by hand (GitHub #13).
     pub companions: crate::companions::Companions,
+    /// The character's note in the Obsidian vault, as a vault-relative `/` path (B-222). A top-level key written only
+    /// when set: files without a link are unchanged, and older versions keep it among their unknown keys.
+    pub vault_note: Option<String>,
     /// Unknown top-level keys, preserved for forward compatibility.
     pub extra: BTreeMap<String, Value>,
 }
@@ -381,6 +384,8 @@ struct Wire {
         skip_serializing_if = "crate::companions::Companions::is_empty"
     )]
     companions: crate::companions::Companions,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    vault_note: Option<String>,
     #[serde(flatten)]
     extra: BTreeMap<String, Value>,
 }
@@ -398,6 +403,7 @@ impl Serialize for Character {
             import: self.import.clone(),
             unresolved: self.unresolved.clone(),
             companions: self.companions.clone(),
+            vault_note: self.vault_note.clone(),
             extra: self.extra.clone(),
         }
         .serialize(s)
@@ -420,6 +426,7 @@ impl<'de> Deserialize<'de> for Character {
             import: w.import,
             unresolved: w.unresolved,
             companions: w.companions,
+            vault_note: w.vault_note,
             extra: w.extra,
         })
     }

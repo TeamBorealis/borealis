@@ -540,6 +540,8 @@ export interface CharacterSnapshot {
   portrait: string | null;
   group: string;
   favorite: boolean;
+  /** The linked Obsidian vault note, vault-relative (B-222); null = none. */
+  vaultNote: string | null;
   /** Unsaved changes. */
   dirty: boolean;
   /** Display-only path of the character file (empty when unsaved). Never sent back to a command. */

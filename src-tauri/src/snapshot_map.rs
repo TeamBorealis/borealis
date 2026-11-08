@@ -66,6 +66,7 @@ pub fn build_snapshot(input: &MapInput<'_>) -> CharacterSnapshot {
         portrait: extras::portrait_data_url(input.character),
         group: input.character.meta.group.clone(),
         favorite: input.character.meta.favorite,
+        vault_note: input.character.vault_note.clone(),
         dirty: input.dirty,
         display_path: input.display_path.clone(),
         level: level_state(input, &engine_snap),

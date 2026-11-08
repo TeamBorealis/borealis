@@ -746,6 +746,17 @@ export class MockApi implements Api {
   async vaultRead({ path }: { path: string }) { await this.tick(); return this.vault.read(this.settings, path); }
   async vaultSave({ path, text, baseHash }: { path: string; text: string; baseHash?: string }) { await this.tick(); return this.vault.save(this.settings, path, text, baseHash); }
   async vaultCreateNote({ name, from, folder }: { name?: string; from?: string; folder?: string }) { await this.tick(); return this.vault.create(this.settings, name, from, folder); }
+  async setCharacterNote({ characterId, path }: { characterId: string; path: string | null }) {
+    if (path !== null) this.vault.checkNote(this.settings, path);
+    return this.mutate(characterId, (c) => ({ ...c, vaultNote: path }));
+  }
+  async vaultCreateCharacterNote({ characterId }: { characterId: string }) {
+    const c = this.get(characterId);
+    const { character } = buildSnapshot(c, this.rules);
+    const text = `---\nname: ${JSON.stringify(c.name)}\nbuild: ${JSON.stringify(buildName(character))}\nlevel: ${c.levelOrder.length}\ntags: [character]\n---\n\n## Backstory\n\n## Notes\n\n## Sessions\n`;
+    const path = this.vault.createCharacterNote(this.settings, c.name, text);
+    return this.mutate(characterId, (cur) => ({ ...cur, vaultNote: path }));
+  }
   async vaultDelete({ path, permanent }: { path: string; permanent: boolean }) { await this.tick(); return this.vault.delete(this.settings, path, permanent); }
   async vaultRenamePreview({ path, newName }: { path: string; newName: string }) { await this.tick(); return this.vault.renamePreview(this.settings, path, newName); }
   async vaultRename({ path, newName, updateLinks }: { path: string; newName: string; updateLinks: boolean }) { await this.tick(); return this.vault.rename(this.settings, path, newName, updateLinks); }

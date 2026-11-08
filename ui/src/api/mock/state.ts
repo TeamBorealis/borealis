@@ -18,6 +18,8 @@ export interface MockCharacter {
   ruleset: Ruleset;
   group: string;
   favorite: boolean;
+  /** The linked vault note (B-222). */
+  vaultNote?: string | null;
   portrait: string | null;
   path: string | null;
   updatedAt: string;

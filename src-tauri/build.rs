@@ -193,6 +193,8 @@ const COMMANDS: &[&str] = &[
     "vault_read",
     "vault_save",
     "vault_create_note",
+    "set_character_note",
+    "vault_create_character_note",
     "vault_delete",
     "vault_rename_preview",
     "vault_rename",

@@ -148,3 +148,9 @@
 .v4-new .aur-combo { margin-top: -3px; }
 .v4-new .v4-row + .v4-fl { margin-top: 10px; }
 .v4-new .v4-row + .v4-fl + .aur-combo { margin-top: -2px; }
+
+/* B-222: the character's vault note (Manage > Character > Notes), laid out like the portrait row. */
+.mg-note { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.mg-note-name { font-size: var(--fs-sm); color: var(--text); min-width: 0; overflow-wrap: anywhere; }
+.mg-note-name.none { color: var(--text-muted); }
+.mg-note .mg-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }

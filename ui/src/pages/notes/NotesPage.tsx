@@ -1,6 +1,6 @@
 import { mdiFileDocumentPlusOutline, mdiRefresh } from "@mdi/js";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Navigate } from "react-router";
+import { Navigate, useLocation, useNavigate } from "react-router";
 import type { VaultEntry, VaultEntryKind } from "../../api/contract";
 import { Alert, Button, SearchInput, useConfirm, useShell } from "../../components";
 import { VAULT_UNAVAILABLE } from "../../components/shell/useFolderNotice";
@@ -11,6 +11,7 @@ import { useSettings } from "../../state/SettingsContext";
 import { setStatus } from "../../state/status";
 import "../builder/builder.css";
 import "../content/content.css";
+import type { OpenNoteState } from "../manage/CharacterNotes";
 import { ConflictDialog, MissingDialog, NameDialog, RenameLinksDialog } from "./NoteDialogs";
 import { NotePane, type NoteMode } from "./NotePane";
 import { NoteSidePane } from "./NoteSidePane";
@@ -93,6 +94,19 @@ function Notes() {
     setScrollTo(opts.subpath ?? null);
     if (opts.mode) setMode(opts.mode);
   }, [editor]);
+
+  // B-222: opened from a character (Manage > Character > Open note): show that note once the vault is read.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const wanted = (location.state as Partial<OpenNoteState> | null)?.openNote ?? null;
+  const ready = !!data.tree?.dir && !data.tree.unavailable;
+  const handled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!wanted || !ready || handled.current === location.key) return;
+    handled.current = location.key;
+    navigate(location.pathname, { replace: true, state: null });
+    void openPath(wanted, { mode: "read" });
+  }, [wanted, ready, openPath, navigate, location.pathname, location.key]);
 
   const actions = useNoteActions({ api, editor, confirm, selected, reload: data.reload, openPath, setSelected, setScrollTo });
 
