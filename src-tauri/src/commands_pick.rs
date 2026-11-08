@@ -158,10 +158,14 @@ fn pick_vault_folder(app: &AppHandle) -> ApiResult<Vec<PathBuf>> {
     Ok(picked.into_iter().collect())
 }
 
-/// Android: not yet (the Storage Access Framework tree follows, B-221).
+/// Android: a Storage Access Framework tree (its `content://` URI stands in for the path); empty when the user cancels.
 #[cfg(target_os = "android")]
-fn pick_vault_folder(_: &AppHandle) -> ApiResult<Vec<PathBuf>> {
-    Err(not_on_this_device())
+fn pick_vault_folder(app: &AppHandle) -> ApiResult<Vec<PathBuf>> {
+    let picked = crate::vault_android::pick_tree(app).map_err(|e| {
+        tracing::warn!("vault: the folder picker failed: {e}");
+        ApiError::invalid("The folder picker could not open.")
+    })?;
+    Ok(picked.into_iter().map(PathBuf::from).collect())
 }
 
 /// A native OK/Cancel dialog; `true` only when the user pressed the OK button (the AI program override and AI setup).

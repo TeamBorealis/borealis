@@ -140,6 +140,9 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
     };
     #[cfg(not(ai_cli))]
     let _ = data;
+    // Android (B-221): the Obsidian vault's document tree access, from the Kotlin plugin registered at build time.
+    #[cfg(target_os = "android")]
+    crate::vault_android::install(handle, &state);
     handle.manage::<AppState>(state);
     // Device transfer (B3): the service only; nothing listens until a Send/Receive dialog opens.
     #[cfg(feature = "device-link")]

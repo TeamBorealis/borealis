@@ -122,10 +122,20 @@ impl PickedPaths {
     /// `internal` if the lock is poisoned.
     pub fn grant(&self, path: PathBuf, purpose: PickPurpose) -> ApiResult<PickedPathDto> {
         let token = format!("pick_{}", uuid::Uuid::new_v4().simple());
-        let dto = PickedPathDto {
-            token: token.clone(),
-            name: file_name(&path),
-            path: path.to_string_lossy().into_owned(),
+        let text = path.to_string_lossy();
+        // An Android document tree (the vault folder, B-221) is shown by its place, not its URI.
+        let dto = if crate::vault::tree_store::is_tree_uri(&text) {
+            PickedPathDto {
+                token: token.clone(),
+                name: crate::vault::tree_store::display_name(&text).unwrap_or_default(),
+                path: crate::vault::label(&text),
+            }
+        } else {
+            PickedPathDto {
+                token: token.clone(),
+                name: file_name(&path),
+                path: text.into_owned(),
+            }
         };
         let mut map = self.entries.lock()?;
         let ttl = self.ttl;
