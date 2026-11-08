@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Icon } from "../../components";
+import { usePhone } from "../../lib/phone";
 import { NO_FILTER, yearOf, type EditionFilter, type PickerFilter, type SourceEntry } from "../../lib/versions";
 import { Popover } from "./Popover";
 
@@ -14,6 +15,9 @@ const entries = (n: number) => `${n} ${n === 1 ? "entry" : "entries"}`;
 
 /** "12 entries", or "9 of 12 entries" while filters hide rows. */
 export const countText = (shown: number, total: number): string => (shown === total ? entries(total) : `${shown} of ${entries(total)}`);
+
+/** B-125: the phone's short count, "12" or "9/12"; the full `countText` is its accessible name. */
+export const compactCountText = (shown: number, total: number): string => (shown === total ? `${total}` : `${shown}/${total}`);
 
 /** "All sources", or "3 of 4 sources" while some are unticked. */
 export const sourcesText = (f: PickerFilter, all: readonly SourceEntry[]): string => {
@@ -91,6 +95,8 @@ interface Props {
 /** B-55 sec. 1.5: search, Edition All/2024/2014, a Source checklist, the entry count and Clear, above a picker list. */
 export function PickerFilterBar({ title, filter, onChange, sources, shown, total }: Props) {
   const placeholder = `Search ${title.toLowerCase()}`;
+  const phone = usePhone();
+  const count = countText(shown, total);
   return (
     <div className="pick-fbar" role="search" aria-label={`Filter ${title}`}>
       <input type="search" className="pick-fsearch" placeholder={placeholder} aria-label={placeholder} value={filter.text}
@@ -100,7 +106,7 @@ export function PickerFilterBar({ title, filter, onChange, sources, shown, total
         <EditionSegments value={filter.edition} onChange={(edition) => onChange({ ...filter, edition })} />
         <span className="pick-flabel" aria-hidden="true">Source</span>
         <SourceFilterButton filter={filter} onChange={onChange} sources={sources} />
-        <span className="pick-fcount" role="status">{countText(shown, total)}</span>
+        <span className="pick-fcount" role="status" aria-label={phone ? count : undefined}>{phone ? compactCountText(shown, total) : count}</span>
         <button type="button" className="pick-fclear" onClick={() => onChange(NO_FILTER)}>Clear</button>
       </span>
     </div>

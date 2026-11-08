@@ -100,7 +100,8 @@ html.phone .pick-seg-btn:last-child { border-radius: 0 var(--ph-r-sm) var(--ph-r
 html.phone .pick-seg-btn[aria-pressed="true"] { background: var(--ph-accent); border-color: var(--ph-accent); color: var(--ph-on-accent, #fff); }
 html.phone .pick-fsrc { height: 36px; padding: 0 10px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-sm); background: var(--ph-surface); color: var(--ph-text); font: inherit; }
 html.phone .pick-fsrc { flex: none; }
-html.phone .pick-fcount { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; color: var(--ph-text-2); }
+/* B-125: the count reads "9/11" (its aria-label "9 of 11 entries"), short enough for the row, so it is never cut. */
+html.phone .pick-fcount { flex: 1 0 auto; white-space: nowrap; text-align: right; color: var(--ph-text-2); }
 html.phone .pick-fclear { flex: none; }
 html.phone .pick-fclear { min-height: var(--ph-hit); padding: 0 4px; color: var(--ph-accent); font: 600 var(--ph-t-foot)/1.3 var(--ph-font-ui); text-decoration: none; }
 /* The version menu sheet: rows are 44 pt targets, section heads in the gold caption style. */

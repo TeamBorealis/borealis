@@ -1,11 +1,13 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { AppProviders } from "../AppProviders";
 import type { Page, SelectionSlot, SlotOption, SlotOptionBase } from "../api/contract";
 import { MockApi } from "../api/mock";
+import { setPhoneForTests } from "../lib/phone";
 import { PickerGroup } from "../pages/builder/PickerGroup";
+import { parseRules, readCss } from "./cssRules";
 import { renderApp } from "./utils";
 
 /** B-55 / B-54 picker filter bar (specs/version-rows-and-filters.md sec. 1.5). */
@@ -145,6 +147,32 @@ describe("filters", () => {
     expect(screen.queryByText("Nothing matches. Check your source restrictions.")).toBeNull();
     await user.click(within(empty).getByRole("button", { name: "Clear" }));
     expect(await names()).toHaveLength(4);
+  });
+});
+
+describe("count on phones (B-125)", () => {
+  afterEach(() => {
+    setPhoneForTests(false);
+    document.documentElement.classList.remove("phone");
+  });
+
+  it("phone count is compact and labelled", async () => {
+    // At 392 px "9 of 11 entries" did not fit the row and was cut with an ellipsis ("9 of ..."); phones show "9/11".
+    document.documentElement.classList.add("phone");
+    setPhoneForTests(true);
+    renderPicker(ROWS);
+    const user = userEvent.setup();
+    const b = await bar();
+    const count = within(b).getByRole("status");
+    expect(count.textContent).toBe("4");
+    expect(count.getAttribute("aria-label")).toBe("4 entries");
+    await user.type(within(b).getByRole("searchbox"), "dragon");
+    await waitFor(() => expect(count.textContent).toBe("1/4"));
+    expect(within(b).getByRole("status", { name: "1 of 4 entries" })).toBe(count);
+    // No ellipsis: the phone count is never clipped.
+    const rule = parseRules(readCss("styles/phone/lists.css")).find((r) => r.selectors.includes("html.phone .pick-fcount"))!;
+    expect(rule.body).not.toMatch(/text-overflow|overflow\s*:/);
+    expect(rule.body).toMatch(/flex:\s*1 0 auto/);
   });
 });
 
