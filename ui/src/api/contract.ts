@@ -418,7 +418,7 @@ export interface ApiMethods {
   setSecondaryContentDir(args: { token: string }): Promise<SecondaryContentResult>;
   /** Classic builder "UNLINK SECONDARY DIRECTORY": forget the folder and remove its packs (hot-reload). */
   unlinkSecondaryContentDir(): Promise<SecondaryContentResult>;
-  /** Classic builder "Restore Defaults": reset and save at once (AI, default ruleset and autosave are kept). */
+  /** Classic builder "Restore Defaults": reset and save at once (AI, default ruleset, autosave and every folder are kept). */
   restoreDefaultSettings(): Promise<AppSettings>;
   /** Classic builder "Clear News Articles Cache" mapped to Borealis's caches (scratch folders, AI temp folders, index check results). Immediate, no Save needed. */
   clearCaches(): Promise<ClearCachesResult>;

@@ -73,6 +73,21 @@ describe("Settings > Content: portrait library row (#32)", () => {
     expect((await api.getSettings()).portraitLibraryDir).toBeNull();
   });
 
+  it("Restore defaults keeps the library folder (folders are user data, B-226)", async () => {
+    const user = userEvent.setup();
+    const api = fast();
+    await chooseLibrary(api);
+    await api.saveSettings({ patch: { playerName: "Old" } });
+    renderApp("/characters", { api });
+    const dialog = await openContentTab(user);
+    await waitFor(() => expect(libraryBox(dialog).value).toBe(LIBRARY));
+    await user.click(within(dialog).getByRole("button", { name: "Restore defaults" }));
+    await waitFor(async () => expect((await api.getSettings()).playerName).toBe("Player One"));
+    expect((await api.getSettings()).portraitLibraryDir).toBe(LIBRARY);
+    expect((await api.getDataDirs()).portraitLibraryDir).toBe(LIBRARY);
+    await waitFor(() => expect(libraryBox(dialog).value).toBe(LIBRARY));
+  });
+
   it("an unavailable folder keeps its path and shows a warning, also in the startup folder notice", async () => {
     const user = userEvent.setup();
     const api = fast();

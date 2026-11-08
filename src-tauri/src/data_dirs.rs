@@ -230,8 +230,8 @@ impl AppState {
     }
 
     /// Reference app "Restore Defaults": reset every setting the reference app dialog owns, save at once and
-    /// apply (documents directory back to the default, secondary directory unlinked). AI, default
-    /// ruleset and autosave (Borealis-only settings) are kept.
+    /// apply. AI, default ruleset and autosave (Borealis-only settings) are kept, and so are the folders
+    /// (documents, secondary content, portrait library), which are user data (B-226).
     ///
     /// # Errors
     /// `io_error` if the settings cannot be written; content errors from unlinking.
@@ -244,7 +244,7 @@ impl AppState {
             self.set_hub(hub)?;
         }
         self.set_settings(next.clone())?;
-        if current.secondary_content_dir.is_some() {
+        if next.secondary_content_dir != current.secondary_content_dir {
             self.sync_secondary_content(sink)?;
         }
         Ok(next)

@@ -39,6 +39,23 @@ describe("settings data files (mock)", () => {
     expect((await api.getSettings()).rowHeight).toBe("medium");
   });
 
+  it("restoring the defaults keeps every folder (B-226)", async () => {
+    const api = new MockApi();
+    const take = async (purpose: "documents-dir" | "secondary-content-dir" | "portrait-library-dir") => (await api.pickPath({ purpose }))[0]!;
+    const docs = await take("documents-dir");
+    await api.setDocumentsDir({ token: docs.token });
+    const side = await take("secondary-content-dir");
+    const linked = await api.setSecondaryContentDir({ token: side.token });
+    const lib = await take("portrait-library-dir");
+    await api.setPortraitLibraryDir({ token: lib.token });
+    const restored = await api.restoreDefaultSettings();
+    expect([restored.documentsDir, restored.secondaryContentDir, restored.portraitLibraryDir]).toEqual([docs.path, side.path, lib.path]);
+    const dirs = await api.getDataDirs();
+    expect([dirs.isDefault, dirs.secondaryContentDir, dirs.portraitLibraryDir]).toEqual([false, side.path, lib.path]);
+    // The secondary packs stay installed: unlinking now removes the same packs linking installed.
+    expect((await api.unlinkSecondaryContentDir()).report.removed).toEqual(linked.report.installed);
+  });
+
   it("clears caches once and reports the startup update", async () => {
     const api = new MockApi();
     expect((await api.clearCaches()).indexesReset).toBe(1);

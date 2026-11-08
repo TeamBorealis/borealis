@@ -418,13 +418,17 @@ impl AppSettings {
     }
 
     /// Factory values for everything the reference app's settings dialog owns (Restore Defaults); the
-    /// Borealis-only group (AI, default ruleset, autosave) is kept.
+    /// Borealis-only group (AI, default ruleset, autosave) is kept, and so is every folder (documents,
+    /// secondary content, portrait library): folders are user data (B-226, decision FU1).
     #[must_use]
     pub fn restored_defaults(&self) -> Self {
         Self {
             ai: self.ai.clone(),
             default_ruleset: self.default_ruleset,
             autosave: self.autosave,
+            documents_dir: self.documents_dir.clone(),
+            secondary_content_dir: self.secondary_content_dir.clone(),
+            portrait_library_dir: self.portrait_library_dir.clone(),
             ..Self::default()
         }
     }

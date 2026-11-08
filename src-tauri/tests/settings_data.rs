@@ -470,7 +470,7 @@ fn startup_update_never_blocks_startup() {
 // ---- settings flow ----
 
 #[test]
-fn restore_defaults_resets_general_rows_and_keeps_borealis_ones() {
+fn restore_defaults_resets_general_rows_and_keeps_borealis_ones_and_folders() {
     let (_d, app) = app();
     app.save_settings(&json!({
         "playerName": "Ada", "rowHeight": "large", "accentColor": "red", "portraitSize": 175,
@@ -489,6 +489,7 @@ fn restore_defaults_resets_general_rows_and_keeps_borealis_ones() {
     )
     .unwrap();
 
+    let before = app.settings().unwrap();
     let s = app.restore_default_settings(&NullSink).unwrap();
     let d = AppSettings::default();
     assert_eq!(
@@ -505,11 +506,14 @@ fn restore_defaults_resets_general_rows_and_keeps_borealis_ones() {
         "restoring defaults brings the import notice back"
     );
     assert_eq!(s.sheet, d.sheet);
-    assert!(s.documents_dir.is_none() && s.secondary_content_dir.is_none());
+    // B-226 (decision FU1): folders are user data, so the documents and secondary folders stay linked.
+    assert_eq!(s.documents_dir, before.documents_dir);
+    assert_eq!(s.secondary_content_dir, before.secondary_content_dir);
+    assert!(s.documents_dir.is_some() && s.secondary_content_dir.is_some());
     assert!(!s.autosave);
     assert_eq!(s.ai.provider, "codex");
-    assert!(app.data_dirs().unwrap().is_default);
-    assert!(app.hub().unwrap().store.get("ID_SIDE_FEAT_GIFT").is_none());
+    assert!(!app.data_dirs().unwrap().is_default);
+    assert!(app.hub().unwrap().store.get("ID_SIDE_FEAT_GIFT").is_some());
     // Saved at once.
     assert_eq!(AppSettings::load(&app.paths.settings_file()), s);
 }

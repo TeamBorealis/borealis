@@ -51,10 +51,15 @@ export class MockDataFiles {
     return { settings, result: { dirs: this.dirs(settings), report: { installed: [], removed, skipped: [], unavailable: false } } };
   }
 
-  /** Classic builder Restore Defaults: Borealis-only fields (AI, default ruleset, autosave) are kept. */
+  /**
+   * Classic builder Restore Defaults: Borealis-only fields (AI, default ruleset, autosave) are kept, and so is every folder
+   * (documents, secondary content, portrait library): folders are user data (B-226), so the secondary packs stay too.
+   */
   restore(s: AppSettings): AppSettings {
-    this.secondaryPacks = [];
-    return { ...DEFAULT_SETTINGS, ai: s.ai, mobile: s.mobile, storeBuild: s.storeBuild, aiAvailable: s.aiAvailable, defaultRuleset: s.defaultRuleset, autosave: s.autosave };
+    return {
+      ...DEFAULT_SETTINGS, ai: s.ai, mobile: s.mobile, storeBuild: s.storeBuild, aiAvailable: s.aiAvailable, defaultRuleset: s.defaultRuleset, autosave: s.autosave,
+      documentsDir: s.documentsDir, secondaryContentDir: s.secondaryContentDir, portraitLibraryDir: s.portraitLibraryDir,
+    };
   }
 
   clearCaches(): ClearCachesResult {

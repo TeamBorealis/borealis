@@ -192,10 +192,18 @@ fn an_unavailable_folder_is_reported_and_kept() {
 }
 
 #[test]
-fn restore_defaults_clears_the_library_like_the_other_folders() {
+fn restore_defaults_keeps_the_library_folder() {
+    // B-226 (decision FU1): folders are user data, so Restore Defaults keeps the library.
     let lib = library();
     let (_d, app) = linked(lib.path());
+    let chosen = app.settings().unwrap().portrait_library_dir;
+    assert!(chosen.is_some());
     let restored = app.restore_default_settings(&NullSink).unwrap();
-    assert_eq!(restored.portrait_library_dir, None);
+    assert_eq!(restored.portrait_library_dir, chosen);
+    assert_eq!(
+        AppSettings::load(&app.paths.settings_file()).portrait_library_dir,
+        chosen
+    );
     assert!(!app.data_dirs().unwrap().portrait_library_unavailable);
+    assert_eq!(app.portrait_library().unwrap().images.len(), 2);
 }
