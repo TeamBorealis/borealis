@@ -149,10 +149,11 @@ describe('w2 level up', { tags: ['w2'] }, () => {
     // Wizard d6: level 1 is fixed at the die maximum; level 2 has an adjustable roll (1..6).
     expectEqual('level 1 HP (fixed at max)', 'Lv 1 6 (max)', (await textOf(ctx, '.hp-rolls .lvl-roll')).replace(/\s+/g, ' ').trim());
     const roll = 'output[aria-label="Wizard level 2 HP roll value"]';
-    const before = Number(await rawTextOf(ctx, roll));
+    // B-152: an average level reads "4 (avg)"; a stepped one is a plain roll
+    const before = Number.parseInt(await rawTextOf(ctx, roll), 10);
     await clickCss(ctx, 'button[aria-label="Increase Wizard level 2 HP roll"]');
-    await waitFor(ctx, (a: { css: string; want: number }) => Number(document.querySelector(a.css)?.textContent) === a.want, { css: roll, want: before + 1 }, 'roll up by one');
+    await waitFor(ctx, (a: { css: string; want: number }) => Number.parseInt(document.querySelector(a.css)?.textContent ?? '', 10) === a.want, { css: roll, want: before + 1 }, 'roll up by one');
     await clickCss(ctx, 'button[aria-label="Decrease Wizard level 2 HP roll"]');
-    await waitFor(ctx, (a: { css: string; want: number }) => Number(document.querySelector(a.css)?.textContent) === a.want, { css: roll, want: before }, 'roll back');
+    await waitFor(ctx, (a: { css: string; want: number }) => Number.parseInt(document.querySelector(a.css)?.textContent ?? '', 10) === a.want, { css: roll, want: before }, 'roll back');
   });
 });
