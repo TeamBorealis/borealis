@@ -8,12 +8,15 @@ A scenario is JSON with any of these keys (each replaces that part of the live s
   updater_signing bool (updater signing on for the release commit; else read from its src-tauri/tauri.conf.json),
   asc {"versions": [appStoreVersion objects], "builds": [build objects]}   -> FakeAsc
   website_repo {"branch_state": "ready" | problem, "merged": bool}           -> FakeSite
+  play {"track": tracks resource of alpha, "bundles": [{"versionCode"}]}  -> FakePlay
+  play_artifact {"name", ...} | null (the release workflow's bundle artifact), play_bundle "<path>" (no download)
 """
 from __future__ import annotations
 
 from typing import Callable, Optional
 
 import asc as asc_api
+import play as play_mod
 import website as website_mod
 
 
@@ -71,3 +74,25 @@ class FakeSite(website_mod.Website):
     def indexnow(self) -> str:
         self.log("DRY-RUN would: submit the site to IndexNow")
         return "dry run"
+
+
+class FakePlay(play_mod.Play):
+    """Reads the alpha track and the uploaded bundles from the scenario; writes are printed (dry run)."""
+
+    def __init__(self, data: dict, log: Callable[[str], None] = print):
+        super().__init__("/dev/null", True, log)
+        self.data = data
+
+    def token(self) -> str:
+        return "scenario"
+
+    def call(self, method: str, path: str, body: Optional[dict] = None):
+        if (method, path) == ("POST", "/edits"):
+            return {"id": "scenario-edit"}
+        if method == "DELETE":
+            return None
+        if method == "GET" and path.endswith(f"/tracks/{play_mod.TRACK}"):
+            return self.data.get("track", {})
+        if method == "GET" and path.endswith("/bundles"):
+            return {"bundles": self.data.get("bundles", [])}
+        raise AssertionError(f"scenario Play: unexpected {method} {path}")

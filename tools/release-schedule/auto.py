@@ -7,7 +7,8 @@ and the live state (tags, CI runs, the draft release, App Store Connect, the web
 
   prep    Sun 23:59 freeze: bump, commit "chore: release X.Y.Z", tag, push, start CI + acceptance + release.yml
           Mon 20:00 signed builds: check the draft is complete (in-app update files: a warning, never blocking)
-          Tue 12:00 store submission: iOS version + build + What's New, submit for review; notes to #mod-chat
+          Tue 12:00 store submission: iOS version + build + What's New, submit for review; the signed Play bundle
+                    to closed testing (alpha) for the testers (RL8, never production); notes to #mod-chat
   decide  Thu 18:00 go/no-go: approved + complete + not held, else no-go: a note and the release moves a week
   publish Thu 20:00 GitHub release, iOS release, website merge, IndexNow, Discord announcement and bridge replies
 
@@ -22,6 +23,7 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 import traceback
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -35,6 +37,7 @@ import clients  # noqa: E402
 import decide  # noqa: E402
 import notes as notes_mod  # noqa: E402
 import plan  # noqa: E402
+import play as play_mod  # noqa: E402
 import remind  # noqa: E402
 import scenario  # noqa: E402
 import website as website_mod  # noqa: E402
@@ -52,9 +55,10 @@ class Tick:
     def __init__(self, now: datetime, dry_run: bool, hold: str, gh: Optional[clients.GitHub],
                  git: Optional[clients.Git], discord: clients.Discord,
                  asc: Optional[asc_api.Asc], site: Optional[website_mod.Website], facts: Optional[dict] = None,
-                 run_url: str = ""):
+                 run_url: str = "", play: Optional[play_mod.Play] = None):
         self.now, self.dry_run, self.hold = now, dry_run, hold
         self.gh, self.git, self.discord, self.asc, self.site = gh, git, discord, asc, site
+        self.play = play
         self.facts = facts or {}
         self.run_url = run_url
         self.releases: tuple[tuple[str, date], ...] = ()
@@ -262,6 +266,7 @@ class Tick:
         findings = notes_mod.cs1_findings(text)
         ios = self.submit_ios(version, text)
         site = self.prepare_site(version)
+        android = self.submit_play(version, publish, tag, text)
         link = (rel or {}).get("html_url") or f"https://github.com/{REPO}/releases"
         sections = notes_mod.sections(text)
         counts = ", ".join(f"{h}: {len(notes_mod.bullets(ls))}" for h, ls in sections.items()
@@ -271,7 +276,7 @@ class Tick:
             f"**Notes:** {source}{' (' + counts + ')' if counts else ''}",
             "", notes_mod.summary(text)[:900], "",
             f"**CS1:** {'; '.join(findings) if findings else 'clean'}",
-            f"**iOS:** {ios}", f"**Website:** {site}", "**Play:** manual (no production access yet).",
+            f"**iOS:** {ios}", f"**Website:** {site}", f"**Play (closed testing):** {android}",
             f"Publishes {decide.stamp(plan.milestone_at(publish, plan.MILESTONES[-2]))} if the App Store approves "
             "by go/no-go. **Silence = approval.**", decide.hold_help(version)])
 
@@ -318,6 +323,52 @@ class Tick:
                   "(approved) or remove it from review, or run the Release automation workflow with step "
                   "ios-supersede (review only). The submission retries every 15 minutes."])
         return choice.reason
+
+    def submit_play(self, version: str, publish: date, tag: clients.Tag, text: str) -> str:
+        """RL8: the signed bundle release.yml built from the tag goes to closed testing (alpha), rolled out to the
+        testers. Never production. A failure here never stops the iOS submission or the notes; the next tick
+        retries until go/no-go."""
+        if self.posted(version, "play-uploaded"):
+            return f"on {play_mod.TRACK}"
+        if not self.play:
+            msg = ("no Play service account in this run (secret PLAY_SERVICE_ACCOUNT_JSON): upload the bundle by "
+                   "hand, or add the secret and run step submit")
+            self.note(version, "play-manual", "Play needs a hand", [msg])
+            return msg
+        name = play_mod.artifact_name(version, tag.sha)
+        try:
+            # Testers see Play's notes at once, so notes with a CS1 finding are replaced by a bare line.
+            clean = not notes_mod.cs1_findings(text)
+            notes = play_mod.release_notes(notes_mod.whats_new(text) if clean else f"Borealis {version}.")
+            with tempfile.TemporaryDirectory() as tmp:
+                aab = self.play_bundle(version, name, Path(tmp))
+                if not aab:
+                    msg = f"waiting for the signed bundle (release.yml artifact `{name}`)"
+                    self.note(version, "play-wait", "Play waits for its bundle", [msg])
+                    return msg
+                did = self.play.release_to_testers(aab, version, bump.build_number(version), notes)
+        except Exception as err:  # noqa: BLE001 - reported once, retried by the next tick
+            traceback.print_exc()
+            log(f"::error::{version} Play: {err}")
+            self.note(version, f"play-error/{publish.isoformat()}", "Play upload failed", [
+                f"`{type(err).__name__}: {str(err)[:500]}`",
+                "The next tick retries until go/no-go. Fallback by hand: the release workflow's "
+                f"`{name}` artifact, uploaded in Play Console (Test and release > Closed testing > Alpha)."])
+            return f"failed ({type(err).__name__}); retrying"
+        log(f"{version}: Play: {did}")
+        self.note(version, "play-uploaded", "Android on closed testing", [f"Android {version}: {did}."])
+        return did
+
+    def play_bundle(self, version: str, name: str, dest: Path) -> Optional[Path]:
+        """The signed bundle from the release workflow's artifact `name`, downloaded into `dest`; None while there
+        is none. A scenario gives "play_artifact" (an artifact or null) and "play_bundle" (a path) instead."""
+        art = self.facts["play_artifact"] if "play_artifact" in self.facts else (
+            self.gh.artifact(name) if self.gh else None)
+        if not art:
+            return None
+        if "play_bundle" in self.facts:
+            return Path(self.facts["play_bundle"])
+        return self.gh.download_artifact(art, play_mod.bundle_file(version), dest)
 
     def prepare_site(self, version: str) -> str:
         if not self.site:
@@ -461,8 +512,8 @@ class Tick:
             self.freeze(version, publish)
             if self.now >= decide.milestone(publish, "signed") and not self.posted(version, "signed"):
                 self.signed(version, publish)
-            if self.now >= decide.milestone(publish, "submitted") and not (
-                    self.posted(version, "notes") and self.posted(version, "ios-submitted")):
+            if self.now >= decide.milestone(publish, "submitted") and not decide.submitted(
+                    version, self.discord.posted()):
                 self.submit(version, publish)
             return 0
         if self.posted(version, f"nogo/{publish.isoformat()}"):
@@ -595,19 +646,22 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     asc = (asc_api.Asc.from_config(args.asc_config, dry_run, log) if args.asc_config
            else asc_api.Asc.from_env(dry_run, log))
     site = website_mod.Website(dry_run, who, log) if website_mod.Website.available() else None
+    play = play_mod.Play.from_env(dry_run, log)
     if "asc" in facts:
         asc = scenario.FakeAsc(facts["asc"], log)
+    if "play" in facts:  # null: a run without the Play key
+        play = scenario.FakePlay(facts["play"], log) if facts["play"] is not None else None
     if "website_repo" in facts:
         site = scenario.FakeSite(facts["website_repo"], log)
     run_url = (f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/"
                f"{os.environ['GITHUB_RUN_ID']}") if os.environ.get("GITHUB_RUN_ID") else ""
     tick = Tick(now, dry_run, facts.get("hold", os.environ.get("RELEASE_HOLD", "")),
                 clients.GitHub(token, REPO, dry_run, log),
-                clients.Git(clients.ROOT, who, dry_run, log), discord, asc, site, facts, run_url)
+                clients.Git(clients.ROOT, who, dry_run, log), discord, asc, site, facts, run_url, play)
     releases = plan.load_schedule()
     log(f"release tick at {now.astimezone(plan.LOCAL_TZ).isoformat(timespec='minutes')} Israel"
         f"{' (dry run)' if dry_run else ''}; hold={tick.hold!r}; App Store key: {'yes' if asc else 'no'}; "
-        f"website key: {'yes' if site else 'no'}")
+        f"Play key: {'yes' if play else 'no'}; website key: {'yes' if site else 'no'}")
     if args.step == "plan":
         n = tick.plan(releases)
         if args.github_output:

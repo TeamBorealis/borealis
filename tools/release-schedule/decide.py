@@ -251,8 +251,19 @@ def key(version: str, name: str) -> str:
 @dataclass(frozen=True)
 class Needs:
     run: bool
-    env: bool  # the job needs the `release` environment (App Store Connect, website deploy key)
+    env: bool  # the job needs the `release` environment (App Store Connect, Play, website deploy key)
     why: str = ""
+
+
+# The Play step is finished once the bundle is on closed testing, or when the run had no Play key ("play-manual":
+# the bundle then goes up by hand, or with step submit once the secret exists).
+PLAY_DONE = ("play-uploaded", "play-manual")
+
+
+def submitted(version: str, posted: frozenset[str]) -> bool:
+    """Whether the Tuesday store step is finished: notes posted, iOS submitted, Play done."""
+    done = lambda name: key(version, name) in posted  # noqa: E731
+    return done("notes") and done("ios-submitted") and any(done(n) for n in PLAY_DONE)
 
 
 def needs(now: datetime, releases: Sequence[tuple[str, date]], posted: frozenset[str]) -> Needs:
@@ -264,7 +275,7 @@ def needs(now: datetime, releases: Sequence[tuple[str, date]], posted: frozenset
             todo = [] if done("frozen") else ["freeze"]
             if now >= milestone(publish, "signed") and not done("signed"):
                 todo.append("signed")
-            if now >= milestone(publish, "submitted") and not (done("notes") and done("ios-submitted")):
+            if now >= milestone(publish, "submitted") and not submitted(version, posted):
                 todo.append("submit")
                 env = True
             if todo:

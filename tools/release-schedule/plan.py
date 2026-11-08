@@ -58,11 +58,11 @@ MILESTONES: tuple[Milestone, ...] = (
         f"Privacy and attribution sweep ({CHECKLIST} §4); MCP spec version re-checked (§3)",
         "Tag pushed (automatic); release workflow green: signed APK, Windows, Linux, notarised macOS DMG, iOS upload",
         "Desktop e2e on macOS against the release DMG, with the data guard",
-        "Play store bundle made from the tag (by hand until production access)",
+        "Play bundle built and signed from the tag (automatic: release.yml, workflow artifact play-bundle-*)",
     )),
     Milestone("submitted", "Store submissions", -2, time(12, 0), timedelta(hours=3), (
         "App Store build submitted for review with manual release (automatic); notes posted here for approval",
-        "Play build submitted with managed publishing on (by hand)",
+        "Play bundle on closed testing (alpha), rolled out to the testers (automatic); production by hand later",
         "GitHub draft release complete: assets, SHA256SUMS, notes with Discord credits (tools/discord-issues/credits.py)",
     )),
     Milestone("buffer", "Last resubmission", -1, time(12, 0), timedelta(hours=3), (
@@ -75,7 +75,7 @@ MILESTONES: tuple[Milestone, ...] = (
     )),
     Milestone("publish", "Publish", 0, time(20, 0), timedelta(minutes=30), (
         "Automatic: GitHub release, App Store release, website merge + IndexNow, Discord announcer and bridge",
-        "Check: releases/latest, borealisbuilder.com, #announcements; Play released by hand",
+        "Check: releases/latest, borealisbuilder.com, #announcements; Play production stays manual",
     )),
     Milestone("follow", "Follow-ups", 1, time(12, 0), timedelta(0), (
         "winget manifest PR (needs the public release asset); AUR package bumped",

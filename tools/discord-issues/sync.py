@@ -68,8 +68,11 @@ def _retry_after(err, raw):
 
 
 def _error_message(raw):
+    """The API's error text: {"message": ...} (Discord, GitHub) or {"error": {"message": ...}} (Google)."""
     try:
-        return str(json.loads(raw).get("message", ""))[:200]
+        data = json.loads(raw)
+        nested = data.get("error")
+        return str(nested.get("message", "") if isinstance(nested, dict) else data.get("message", ""))[:200]
     except (ValueError, AttributeError):
         return ""
 

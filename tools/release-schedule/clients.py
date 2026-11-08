@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.error
+import urllib.parse
+import urllib.request
+import zipfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +27,9 @@ import remind  # noqa: E402
 ROOT = HERE.parents[1]
 MOD_CHAT = remind.MOD_CHAT
 HISTORY_PAGES = 3  # #mod-chat messages read for posted keys: 3 x 100
+ARTIFACT_TIMEOUT_S = 900
+# GitHub answers an artifact download with a redirect to blob storage, which must not get the GitHub token.
+NO_REDIRECT = urllib.request.build_opener(sync._NoRedirect)
 
 
 def _say(dry_run: bool, log: Callable[[str], None], what: str) -> None:
@@ -77,6 +85,33 @@ class GitHub:
     def release(self, tag: str) -> Optional[dict]:
         """The release (draft or published) for `tag`; drafts are listed only with push access."""
         return next((r for r in self.call("GET", "/releases?per_page=30") if r.get("tag_name") == tag), None)
+
+    def artifact(self, name: str) -> Optional[dict]:
+        """The newest unexpired workflow artifact called `name` (any run), or None."""
+        found = self.call("GET", f"/actions/artifacts?name={urllib.parse.quote(name)}&per_page=10")["artifacts"]
+        return next((a for a in found if not a.get("expired")), None)
+
+    def download_artifact(self, artifact: dict, file_name: str, dest: Path) -> Path:
+        """Download an artifact and extract `file_name` from it into `dest` (a read, so dry runs do it too)."""
+        req = urllib.request.Request(artifact["archive_download_url"], headers=self._headers)
+        try:
+            NO_REDIRECT.open(req, timeout=sync.TIMEOUT_S).close()
+            raise RuntimeError(f"artifact {artifact.get('name')}: GitHub did not redirect to the download")
+        except urllib.error.HTTPError as err:
+            if err.code not in (301, 302, 303, 307, 308) or not err.headers.get("Location"):
+                raise sync.ApiError("GET", f"/actions/artifacts/{artifact.get('id')}/zip", err.code) from None
+            location = err.headers["Location"]
+        archive = dest / "artifact.zip"
+        with urllib.request.urlopen(location, timeout=ARTIFACT_TIMEOUT_S) as resp, open(archive, "wb") as out:
+            shutil.copyfileobj(resp, out)
+        with zipfile.ZipFile(archive) as z:
+            if file_name not in z.namelist():
+                raise RuntimeError(f"artifact {artifact.get('name')} has no {file_name}")
+            target = dest / file_name
+            with z.open(file_name) as src, open(target, "wb") as out:
+                shutil.copyfileobj(src, out)
+        archive.unlink()
+        return target
 
     def dispatch(self, workflow: str, ref: str, inputs: Optional[dict] = None) -> None:
         body = {"ref": ref, **({"inputs": inputs} if inputs else {})}

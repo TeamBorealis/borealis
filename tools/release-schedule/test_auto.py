@@ -14,6 +14,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import auto  # noqa: E402
 import clients  # noqa: E402
+import play  # noqa: E402
 import remind  # noqa: E402
 import scenario  # noqa: E402
 import test_bump  # noqa: E402
@@ -43,7 +44,8 @@ def tick(name: str, **overrides):
     t = auto.Tick(remind.parse_now(facts["now"]), True, facts.get("hold", ""),
                   clients.GitHub("", auto.REPO, True, log), None, discord,
                   scenario.FakeAsc(facts["asc"], log) if "asc" in facts else None,
-                  scenario.FakeSite(facts["website_repo"], log) if "website_repo" in facts else None, facts)
+                  scenario.FakeSite(facts["website_repo"], log) if "website_repo" in facts else None, facts,
+                  play=scenario.FakePlay(facts["play"], log) if facts.get("play") is not None else None)
     t.git = FakeGit()  # type: ignore[assignment]
     return t, discord, lines
 
@@ -97,7 +99,7 @@ class NormalWeek(unittest.TestCase):
 
     def test_tuesday_submits_ios_and_posts_the_notes(self):
         status, keys, out = run("normal-2-submit")
-        self.assertEqual((status, keys), (0, ["ios-submitted", "notes"]))
+        self.assertEqual((status, keys), (0, ["ios-submitted", "notes", "play-uploaded"]))
         for step in ("create iOS version 1.3.0", "attach build 1003000", "set What's New", "submit for review",
                      "create release-1.3.0"):
             self.assertIn(step, out)
@@ -105,8 +107,48 @@ class NormalWeek(unittest.TestCase):
 
     def test_tuesday_waits_for_the_ios_build(self):
         status, keys, out = run("normal-2-submit", asc={"versions": [], "builds": []})
-        self.assertEqual((status, keys), (0, ["ios-wait", "notes"]))
+        self.assertEqual((status, keys), (0, ["ios-wait", "notes", "play-uploaded"]))
         self.assertNotIn("submit for review", out)
+
+    def test_tuesday_rolls_the_play_bundle_out_on_alpha_only(self):
+        status, keys, out = run("normal-2-submit")
+        self.assertIn("would: upload Borealis_1.3.0_play.aab to Play", out)
+        self.assertIn("would: put 1.3.0 (versionCode 1003000) on alpha, rolled out to its testers", out)
+        self.assertIn("would: commit the Play edit for 1.3.0", out)
+        self.assertIn("**Play (closed testing):** would roll out versionCode 1003000 on alpha", out)
+        self.assertNotIn("production", out)
+
+    def test_play_notes_with_a_cs1_finding_are_replaced(self):
+        def notes_sent(text: str) -> str:
+            t, _, _ = tick("normal-2-submit")
+            sent: list[str] = []
+            t.play.release_to_testers = lambda aab, v, code, notes: sent.append(notes) or "ok"  # type: ignore
+            t.submit_play("1.3.0", date(2026, 11, 12), t.tag("1.3.0"), text)
+            return sent[0]
+        self.assertEqual(notes_sent("Import from 5etools now.\n"), play.release_notes("Borealis 1.3.0."))
+        self.assertEqual(notes_sent("Dice rolls.\n"), play.release_notes("Dice rolls."))
+
+    def test_tuesday_play_waits_for_the_bundle_artifact(self):
+        status, keys, out = run("normal-2-submit", play_artifact=None)
+        self.assertEqual((status, keys), (0, ["ios-submitted", "notes", "play-wait"]))
+        self.assertIn("release.yml artifact `play-bundle-1.3.0-5ca1ab1e0000`", out)
+
+    def test_tuesday_play_leaves_a_live_release_alone(self):
+        live = {"track": {"releases": [{"versionCodes": ["1003000"], "status": "completed"}]}, "bundles": []}
+        status, keys, out = run("normal-2-submit", play=live)
+        self.assertIn("play-uploaded", keys)
+        self.assertIn("versionCode 1003000 is already on alpha (completed)", out)
+        self.assertNotIn("would: upload", out)
+
+    def test_tuesday_without_the_play_key_asks_for_a_hand_once(self):
+        status, keys, out = run("normal-2-submit", play=None)
+        self.assertEqual((status, keys), (0, ["ios-submitted", "notes", "play-manual"]))
+        self.assertIn("PLAY_SERVICE_ACCOUNT_JSON", out)
+
+    def test_a_held_release_does_not_reach_play(self):
+        status, keys, out = run("normal-2-submit", hold="1.3.0")
+        self.assertEqual(keys, ["hold/2026-11-12"])
+        self.assertNotIn("Play", out.replace("Play tab", ""))
 
     def test_thursday_go(self):
         self.assertEqual(run("normal-3-gonogo")[:2], (0, ["go/2026-11-12"]))

@@ -258,8 +258,10 @@ class Needs(unittest.TestCase):
         k = lambda n: decide.key("1.3.0", n)  # noqa: E731
         now = at("2026-11-10T12:15+02:00")
         self.assertEqual(decide.needs(now, SCHEDULE, frozenset({k("frozen"), k("signed")})).env, True)
-        done = frozenset({k("frozen"), k("signed"), k("notes"), k("ios-submitted")})
-        self.assertFalse(decide.needs(now, SCHEDULE, done).run)
+        stores = frozenset({k("frozen"), k("signed"), k("notes"), k("ios-submitted")})
+        self.assertTrue(decide.needs(now, SCHEDULE, stores).env)  # Play not done yet
+        for play in decide.PLAY_DONE:
+            self.assertFalse(decide.needs(now, SCHEDULE, stores | {k(play)}).run)
 
     def test_go_no_go_and_publish_run_until_their_note(self):
         k = lambda n: decide.key("1.3.0", n)  # noqa: E731

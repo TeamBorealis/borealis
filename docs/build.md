@@ -72,6 +72,14 @@ release asset; it is uploaded to Google Play). Gradle refuses every bundle task 
 is set (B-85, `gen/android/app/build.gradle.kts`), so a Play bundle cannot be built as a direct build;
 `tools/ci/check_play_bundle_guard.sh` proves it with Gradle dry runs (run in the CI Android job).
 
+Releases build it in CI (RL8, B-236): the `android-play` job of `.github/workflows/release.yml` builds the store
+bundle from the tag with the APK's keystore secrets, and `build/ci/play-bundle.sh` signs it with jarsigner if Gradle
+did not, then fails unless its one signer is the release key Play App Signing expects and its versionCode is the store
+build number. It is kept as the workflow artifact `play-bundle-<version>-<commit>` (30 days), and the release
+automation's Tuesday store step (`tools/release-schedule/play.py`) uploads it to the closed testing track (alpha),
+rolled out to the testers. Production stays a manual step. To build only the bundle: run the Release workflow with
+`play_only` (and `dry_run`, or a `tag`).
+
 ## iOS (simulator, debug, aarch64-sim) - verified 2026-10-08
 
 Prereqs (no sudo): Xcode 27 (license accepted), `brew install cocoapods xcodegen` (the gem route needs sudo),

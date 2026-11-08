@@ -2,8 +2,10 @@ name: Release
 
 # Builds a release from a tag (vX.Y.Z) into a DRAFT GitHub release: the Linux and Windows installers, the signed
 # Android APK, the signed and notarized macOS DMG, plus SHA256SUMS.txt. It also builds the iOS App Store IPA and
-# uploads it to App Store Connect (no review submission). Asset names are Tauri's defaults and must stay stable: the
-# website links to them.
+# uploads it to App Store Connect (no review submission), and the signed Google Play bundle (.aab), kept as the
+# workflow artifact play-bundle-<version>-<commit> (never a release asset; the release automation uploads it to
+# Play's closed testing track on Tuesday, RL8). Asset names are Tauri's defaults and must stay stable: the website
+# links to them.
 #
 # Start it by pushing the tag, or with "Run workflow" (workflow_dispatch) and the `tag` input. A tag pushed by
 # another workflow with GITHUB_TOKEN does not trigger `push`, so automation dispatches this workflow with `tag`.
@@ -11,7 +13,8 @@ name: Release
 # created or changed and the iOS build is validated, not uploaded.
 #
 # Signing keys live in the `release` environment, which only main, v* tags and listed branches may use. Only the
-# macOS and iOS jobs read them. The Android keystore is a repository secret (ANDROID_KEYSTORE_B64/_PASSWORD).
+# macOS and iOS jobs read them. The Android keystore is a repository secret (ANDROID_KEYSTORE_B64/_PASSWORD); it
+# signs the APK and the Play bundle alike (the key Play App Signing expects).
 #
 # macOS notarization: Apple usually answers in minutes, but a first submission can take many hours. The macOS job
 # waits up to APP_NOTARY_WAIT_MINUTES, then fails with the submission id; the signed app is kept as the
@@ -49,6 +52,10 @@ on:
         description: "Only build the signed Android APK and add it to the EXISTING release for this tag"
         type: boolean
         default: false
+      play_only:
+        description: "Only build the signed Google Play bundle (.aab), kept as a workflow artifact (no release)"
+        type: boolean
+        default: false
 
 concurrency:
   group: release-${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || github.ref }}
@@ -73,6 +80,7 @@ jobs:
       tag: ${{ steps.v.outputs.tag }}
       sha: ${{ steps.v.outputs.sha }}
       ios_build_number: ${{ steps.v.outputs.ios_build_number }}
+      build_number: ${{ steps.v.outputs.build_number }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -117,6 +125,7 @@ jobs:
             echo "tag=v$conf_version"
             echo "sha=$(git rev-parse HEAD)"
             echo "ios_build_number=$ios_build_number"
+            echo "build_number=$build_number"
           } >> "$GITHUB_OUTPUT"
           echo "Release $conf_version from $(git rev-parse HEAD) (tag ${tag_name:-none}, dry run: ${DRY_RUN:-false}); iOS build $ios_build_number"
       # Releases only ship commits that CI has already tested: the release itself builds but
@@ -151,7 +160,7 @@ jobs:
   build:
     name: bundle (${{ matrix.os }})
     needs: verify-version
-    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run }}
+    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run && !inputs.play_only }}
     runs-on: ${{ matrix.os }}
     # Only for the updater signing key (TAURI_SIGNING_PRIVATE_KEY), read by the bundle step when updater.sh says so.
     environment: release
@@ -293,7 +302,7 @@ jobs:
   android:
     name: signed Android APK
     needs: verify-version
-    if: ${{ !inputs.macos_resume_run }}
+    if: ${{ !inputs.macos_resume_run && !inputs.play_only }}
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.verify-version.outputs.version }}
@@ -365,10 +374,102 @@ jobs:
           path: dist-release/*
           if-no-files-found: error
 
+  # RL8 / B-236: the Google Play bundle, built, signed and checked here, so nobody types the keystore password for a
+  # release. It is a store build (BOREALIS_DISTRIBUTION=play: no GitHub update check, no Releases link; Gradle refuses
+  # a bundle without it, B-85), so it is a separate build from the sideloaded APK. Gradle signs it with the APK's
+  # keystore (alias borealis); build/ci/play-bundle.sh signs it with jarsigner if Gradle did not, and fails unless the
+  # one signer is the release key Play App Signing expects (SHA-1 DB:B4:...:13:FA) and the versionCode is the store
+  # build number (1.2.2 -> 1002002). The bundle stays a workflow artifact, play-bundle-<version>-<commit 12>, never a
+  # release asset: the release automation's Tuesday store step uploads it to Play's closed testing (alpha) track.
+  # It never blocks the draft release. Fallback by hand: ~/.borealis-signing/play-export/sign-play-aab.sh.
+  android-play:
+    name: signed Google Play bundle
+    needs: verify-version
+    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run }}
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.verify-version.outputs.version }}
+      BUILD_NUMBER: ${{ needs.verify-version.outputs.build_number }}
+      SHA: ${{ needs.verify-version.outputs.sha }}
+      BOREALIS_DISTRIBUTION: play
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.verify-version.outputs.sha }}
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools
+      - name: Install NDK, platform and build-tools
+        run: sdkmanager "ndk;27.2.12479018" "platforms;android-37.0" "build-tools;36.0.0"
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+        with:
+          toolchain: stable
+          targets: aarch64-linux-android
+      # The APK job's dependency cache (restore only: the two jobs run side by side). The store switch is read with
+      # option_env!, so only the borealis crate itself rebuilds.
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          workspaces: ". -> target"
+          shared-key: android
+          save-if: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
+        working-directory: ui
+      - name: Require signing secrets
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::secrets ANDROID_KEYSTORE_B64 and ANDROID_KEYSTORE_PASSWORD must both be set to sign the Play bundle"
+            exit 1
+          fi
+          umask 077
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/borealis.p12"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/borealis.p12" >> "$GITHUB_ENV"
+      - name: Build the release bundle (store build)
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
+          ANDROID_NDK: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
+        run: node "$GITHUB_WORKSPACE/ui/node_modules/@tauri-apps/cli/tauri.js" android build --aab --target aarch64 --ci
+      - name: Sign and check the bundle (release key, versionCode)
+        id: sign
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist-play
+          bash build/ci/play-bundle.sh \
+            src-tauri/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab \
+            "dist-play/Borealis_${VERSION}_play.aab" "$BUILD_NUMBER"
+          ls -l dist-play
+          echo "artifact=play-bundle-${VERSION}-${SHA:0:12}" >> "$GITHUB_OUTPUT"
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/borealis.p12"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ steps.sign.outputs.artifact }}
+          path: dist-play/Borealis_${{ env.VERSION }}_play.aab
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0 # an .aab is a zip already
+
   macos:
     name: signed macOS DMG
     needs: verify-version
-    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run }}
+    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run && !inputs.play_only }}
     runs-on: macos-26
     environment: release
     # Under the 6 h hosted-runner limit: build (~1 h) + APP_NOTARY_WAIT_MINUTES + the DMG round.
@@ -613,7 +714,7 @@ jobs:
   ios:
     name: App Store build (iOS)
     needs: verify-version
-    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run }}
+    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run && !inputs.play_only }}
     runs-on: macos-26
     environment: release
     timeout-minutes: 150
@@ -773,7 +874,7 @@ jobs:
   publish-draft:
     name: draft release
     needs: [verify-version, build, android]
-    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run && !inputs.dry_run }}
+    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run && !inputs.play_only && !inputs.dry_run }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

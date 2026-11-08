@@ -1,12 +1,15 @@
 name: Release automation
 
 # The weekly release, run by itself (tools/release-schedule/auto.py): freeze Sunday 23:59, signed builds Monday
-# 20:00, App Store submission and release notes to Discord #mod-chat Tuesday 12:00, go/no-go Thursday 18:00,
-# publish Thursday 20:00 (Israel time). Every run is one idempotent tick that does what is due.
+# 20:00, App Store submission, the signed Play bundle to closed testing (alpha, RL8) and release notes to Discord
+# #mod-chat Tuesday 12:00, go/no-go Thursday 18:00, publish Thursday 20:00 (Israel time). Every run is one
+# idempotent tick that does what is due.
 #
 # An external timer dispatches this workflow every 15 minutes, because GitHub's own schedule fires hours late; the
 # cron below is only a backup. The plan job decides cheaply whether anything is due; the tick job does it, inside
-# the `release` environment (App Store Connect key, website deploy key) only when that is needed.
+# the `release` environment (App Store Connect key, Play service account, website deploy key) only when needed.
+# The Play upload needs the `release` environment secret PLAY_SERVICE_ACCOUNT_JSON (the service account's JSON
+# key); without it the Tuesday note says the bundle goes up by hand. It only ever touches the alpha track.
 #
 # Repository variables: RELEASE_AUTO must be "on" for live runs (otherwise every tick is a dry run); RELEASE_HOLD
 # holds a version ("1.3.0", or "all"); RELEASE_GIT_NAME / RELEASE_GIT_EMAIL are the release commits' author.
@@ -111,6 +114,7 @@ jobs:
         env:
           ASC_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
           WEBSITE_DEPLOY_KEY: ${{ secrets.WEBSITE_DEPLOY_KEY }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
           set -euo pipefail
           umask 077
@@ -123,6 +127,10 @@ jobs:
           if [ -n "$WEBSITE_DEPLOY_KEY" ]; then
             printf '%s\n' "$WEBSITE_DEPLOY_KEY" > "$dir/website"
             echo "WEBSITE_DEPLOY_KEY_PATH=$dir/website" >> "$GITHUB_ENV"
+          fi
+          if [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > "$dir/play.json"
+            echo "PLAY_SERVICE_ACCOUNT_PATH=$dir/play.json" >> "$GITHUB_ENV"
           fi
       - name: Tick
         env:
