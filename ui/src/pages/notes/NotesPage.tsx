@@ -1,10 +1,9 @@
 import { mdiFileDocumentPlusOutline, mdiRefresh } from "@mdi/js";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Navigate } from "react-router";
 import type { VaultEntry, VaultEntryKind } from "../../api/contract";
 import { Alert, Button, SearchInput, useConfirm, useShell } from "../../components";
 import { VAULT_UNAVAILABLE } from "../../components/shell/useFolderNotice";
-import { notesOnThisDevice, usePhone } from "../../lib/phone";
+import { usePhone } from "../../lib/phone";
 import { useApi } from "../../state/ApiContext";
 import { usePlatform } from "../../state/platform";
 import { useSettings } from "../../state/SettingsContext";
@@ -58,7 +57,6 @@ function NoVault({ unavailable, error }: { unavailable: boolean; error: string |
  * watcher: the vault is read again when the app comes back to the foreground, and the open note is saved when it leaves.
  */
 export function NotesPage() {
-  if (!notesOnThisDevice()) return <Navigate to="/characters" replace />;
   return <Notes />;
 }
 

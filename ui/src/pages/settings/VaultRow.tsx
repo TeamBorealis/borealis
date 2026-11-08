@@ -7,8 +7,8 @@ import { FieldLabel, Help, PathBox } from "./rows";
 
 /**
  * CONTENT > OBSIDIAN VAULT (GitHub #15): the folder the Notes section opens in place. Any folder of Markdown notes works; a
- * `.obsidian` folder is optional. Browse and Clear wait for Save, like the portrait library and the DATA FILES folders. On an
- * iPhone or iPad (B-221) Browse opens the system folder picker (Files).
+ * `.obsidian` folder is optional. Browse and Clear wait for Save, like the portrait library and the DATA FILES folders.  On phones
+ * and tablets (B-221) Browse opens the system folder picker: Files on iOS and iPadOS, the Android folder picker.
  */
 export function VaultRow({ dirs, held, browse, clear }: {
   dirs: DataDirs | null; held: HeldPicks["vault"]; browse: () => void; clear: () => void;
@@ -21,7 +21,7 @@ export function VaultRow({ dirs, held, browse, clear }: {
       <FieldLabel>OBSIDIAN VAULT</FieldLabel>
       <PathBox label="Obsidian vault" value={path} onBrowse={browse} />
       <Help>Your Obsidian vault, or any folder of Markdown notes. Notes opens it in place: notes are read and saved where they are, and nothing under .obsidian is changed.</Help>
-      {mobile && <Help>Choose the vault folder itself, where Obsidian keeps it: in iCloud Drive or in Obsidian's folder in Files. Borealis keeps access to it until you clear it.</Help>}
+      {mobile && <Help>Choose the vault folder itself, where Obsidian keeps it: in iCloud Drive or Obsidian's folder in Files on an iPhone or iPad, or in your phone's storage on Android. Borealis keeps access to it until you clear it.</Help>}
       {offline && <Alert tone="warning" role="status">{VAULT_UNAVAILABLE} Clear it to stop using it.</Alert>}
       <div className="aur-set-right">
         <Button variant="clear" icon="folder-remove" disabled={!path} onClick={clear}>Clear vault</Button>
