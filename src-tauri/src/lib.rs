@@ -123,6 +123,7 @@ pub mod item_categories;
 pub mod levels_api;
 pub mod library;
 pub mod links;
+pub mod load_timing;
 pub mod magic;
 pub mod manage;
 pub mod mcp_mode;

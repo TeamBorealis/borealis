@@ -18,6 +18,7 @@ use borealis_assist::{
     choose_parent, continue_draft, import_anything, revise_draft, AnythingRequest, ImportDraft,
     ImportStep, VisionRunner,
 };
+use borealis_content::ContentStoreBuilder;
 use std::sync::{Arc, Mutex};
 
 /// Repair rounds the pipeline may spend per element.
@@ -165,7 +166,7 @@ impl AppState {
         em: &Emitter,
     ) -> ApiResult<ImportDraft> {
         let runner = ai.import_runner(self, &job.draft_id).await?;
-        let base = self.hub()?.builder.clone();
+        let base = ContentStoreBuilder::clone(&self.hub()?.builder);
         let short: String = job.draft_id.chars().rev().take(6).collect();
         let req = AnythingRequest {
             source: job.prepared.source.clone(),
@@ -225,7 +226,7 @@ impl AppState {
             .map(|c| c.group.clone())
             .ok_or_else(|| ApiError::requirement("There is no parent class to choose."))?;
         self.drafts.claim(id)?;
-        let base = self.hub()?.builder.clone();
+        let base = ContentStoreBuilder::clone(&self.hub()?.builder);
         match choose_parent(&base, &draft, &group, class_id) {
             Ok(next) => {
                 let stored = StoredDraft {
@@ -256,7 +257,7 @@ impl AppState {
                 .and_then(|p| p.draft.clone())
                 .ok_or_else(|| ApiError::not_found("That import no longer exists."))?;
             let runner = ai.import_runner(self, id).await?;
-            let base = self.hub()?.builder.clone();
+            let base = ContentStoreBuilder::clone(&self.hub()?.builder);
             let opts = RunOptions {
                 max_repairs: MAX_REPAIRS,
                 sink: None,
@@ -380,7 +381,7 @@ impl AppState {
                 .and_then(|p| p.draft.clone())
                 .ok_or_else(|| ApiError::not_found("That import no longer exists."))?;
             let runner = ai.import_runner(self, id).await?;
-            let base = self.hub()?.builder.clone();
+            let base = ContentStoreBuilder::clone(&self.hub()?.builder);
             let opts = RunOptions {
                 max_repairs: MAX_REPAIRS,
                 sink: None,
@@ -431,7 +432,7 @@ impl AppState {
                 .and_then(|p| p.draft.clone())
                 .ok_or_else(|| ApiError::not_found("That import no longer exists."))?;
             let runner = ai.import_runner(self, id).await?;
-            let base = self.hub()?.builder.clone();
+            let base = ContentStoreBuilder::clone(&self.hub()?.builder);
             let opts = RunOptions {
                 max_repairs: MAX_REPAIRS,
                 sink: None,

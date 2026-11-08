@@ -4,6 +4,7 @@ use crate::content_prefs::ContentPrefs;
 use crate::derive_cache::DeriveCache;
 use crate::dto::RollRecord;
 use crate::error::{ApiError, ApiResult};
+use crate::load_timing::LoadTimer;
 use crate::settings::AppSettings;
 use borealis_character::Character;
 use borealis_content::{ContentStore, ContentStoreBuilder, Element, PackManifest, Ruleset};
@@ -72,12 +73,12 @@ impl AppPaths {
 /// An immutable content snapshot: the store and the engine prepared for it.
 #[derive(Debug)]
 pub struct ContentHub {
-    /// All loaded elements.
-    pub store: ContentStore,
+    /// All loaded elements (shared with [`ContentHub::with_settings`] copies).
+    pub store: Arc<ContentStore>,
     /// Engine built for `store` with the settings in effect.
     pub engine: Engine,
     /// Builder holding every enabled pack (AI features load drafts on top of it).
-    pub builder: ContentStoreBuilder,
+    pub builder: Arc<ContentStoreBuilder>,
     /// Problems found while loading user packs (bundled packs failing is fatal).
     pub load_warnings: Vec<String>,
     /// The engine's last full derives (see [`ContentHub::derive`]).
@@ -161,18 +162,10 @@ impl ContentHub {
         prefs: &ContentPrefs,
         on_step: &mut dyn FnMut(LoadStep),
     ) -> ApiResult<Self> {
-        let disabled = &prefs.disabled_packs;
-        let bundled: Vec<(String, PathBuf)> = BUNDLED_PACKS
-            .iter()
-            .filter(|name| **name == CORE_PACK || !disabled.contains(**name))
-            .map(|name| ((*name).to_string(), paths.content_root.join(name)))
-            .collect();
-        let custom: Vec<(String, PathBuf)> = user_pack_dirs(&paths.library())
-            .into_iter()
-            .filter(|dir| !pack_id_of(dir).is_some_and(|id| disabled.contains(&id)))
-            .map(|dir| (dir_name(&dir), dir))
-            .collect();
+        let mut timer = LoadTimer::new();
+        let (bundled, custom) = pack_dirs(paths, prefs);
         let total = bundled.len() + custom.len();
+        timer.step("pack list", &format!("{total} packs"));
         let mut builder = ContentStoreBuilder::new();
         for (i, (name, dir)) in bundled.iter().enumerate() {
             on_step(LoadStep::Pack {
@@ -183,6 +176,7 @@ impl ContentHub {
             });
             builder = builder.add_pack_dir(dir)?;
         }
+        timer.step("bundled packs", &format!("{} packs", bundled.len()));
         let mut load_warnings = Vec::new();
         for (i, (name, dir)) in custom.iter().enumerate() {
             on_step(LoadStep::Pack {
@@ -199,31 +193,80 @@ impl ContentHub {
                 }
             }
         }
+        timer.step(
+            "user packs",
+            &format!("{} packs, {} skipped", custom.len(), load_warnings.len()),
+        );
         on_step(LoadStep::Engine);
-        // IM14: books whose edition the user set are re-tagged at load (also in AI draft builds)
-        let builder = builder.with_source_editions(prefs.source_editions());
-        let store = builder.clone().build();
-        let engine = Engine::with_settings(&store, settings.engine_settings());
-        Ok(Self {
-            store,
-            engine,
+        Ok(Self::assemble(
             builder,
             load_warnings,
-            derived: DeriveCache::default(),
-        })
+            settings,
+            prefs,
+            timer,
+        ))
     }
 
-    /// Rebuild the engine for new settings, reusing the store.
+    /// Build the store and the engine over a builder holding every enabled pack.
+    fn assemble(
+        builder: ContentStoreBuilder,
+        load_warnings: Vec<String>,
+        settings: &AppSettings,
+        prefs: &ContentPrefs,
+        mut timer: LoadTimer,
+    ) -> Self {
+        // IM14: books whose edition the user set are re-tagged at load (also in AI draft builds)
+        let builder = builder.with_source_editions(prefs.source_editions());
+        // The builder is kept for later rebuilds, so the store is built from a copy.
+        let store = builder.clone().build();
+        timer.step("build", &format!("{} elements", store.len()));
+        let engine = Engine::with_settings(&store, settings.engine_settings());
+        timer.step("engine", "");
+        timer.total(&format!(
+            "{} elements, {} files",
+            store.len(),
+            store.files().len()
+        ));
+        Self {
+            store: Arc::new(store),
+            engine,
+            builder: Arc::new(builder),
+            load_warnings,
+            derived: DeriveCache::default(),
+        }
+    }
+
+    /// Rebuild the engine for new settings, sharing the store and the builder.
     #[must_use]
     pub fn with_settings(&self, settings: &AppSettings) -> Self {
         Self {
-            store: self.store.clone(),
+            store: Arc::clone(&self.store),
             engine: Engine::with_settings(&self.store, settings.engine_settings()),
-            builder: self.builder.clone(),
+            builder: Arc::clone(&self.builder),
             load_warnings: self.load_warnings.clone(),
             derived: DeriveCache::default(),
         }
     }
+}
+
+/// Pack folders to load, in load order: `(folder name, folder)`.
+type PackDirs = Vec<(String, PathBuf)>;
+
+/// The bundled and user pack folders to load, in load order, without the disabled ones (`core`
+/// is never skipped). Each is `(folder name, folder)`.
+fn pack_dirs(paths: &AppPaths, prefs: &ContentPrefs) -> (PackDirs, PackDirs) {
+    let disabled = &prefs.disabled_packs;
+    let bundled = BUNDLED_PACKS
+        .iter()
+        .filter(|name| **name == CORE_PACK || !disabled.contains(**name))
+        .map(|name| ((*name).to_string(), paths.content_root.join(name)))
+        .collect();
+    let custom = user_pack_dirs(&paths.library())
+        .into_iter()
+        .filter(|dir| !pack_id_of(dir).is_some_and(|id| disabled.contains(&id)))
+        .map(|dir| (dir_name(&dir), dir))
+        .collect();
+    (bundled, custom)
 }
 
 /// A step of the content/state loading sequence, reported to a startup progress callback.
@@ -332,13 +375,16 @@ impl AppState {
         paths: AppPaths,
         on_step: &mut dyn FnMut(LoadStep),
     ) -> ApiResult<Self> {
+        let mut timer = LoadTimer::new();
         on_step(LoadStep::Directories);
         for dir in [paths.characters(), paths.library()] {
             std::fs::create_dir_all(&dir).map_err(|e| ApiError::io("create the data folder", e))?;
         }
+        timer.step("directories", "");
         on_step(LoadStep::Settings);
         let settings = AppSettings::load(&paths.settings_file());
         let prefs = ContentPrefs::load(&paths.prefs_file());
+        timer.step("settings", "");
         let hub = ContentHub::load_with_progress(&paths, &settings, &prefs, on_step)?;
         Ok(Self::from_hub(paths, settings, hub))
     }
@@ -353,11 +399,12 @@ impl AppState {
             std::fs::create_dir_all(&dir).map_err(|e| ApiError::io("create the data folder", e))?;
         }
         let settings = AppSettings::load(&paths.settings_file());
-        let store = ContentStoreBuilder::new();
+        let builder = ContentStoreBuilder::new();
+        let store = builder.clone().build();
         let hub = ContentHub {
-            store: store.clone().build(),
-            engine: Engine::with_settings(&store.clone().build(), settings.engine_settings()),
-            builder: store,
+            engine: Engine::with_settings(&store, settings.engine_settings()),
+            store: Arc::new(store),
+            builder: Arc::new(builder),
             load_warnings: vec![reason.to_string()],
             derived: DeriveCache::default(),
         };

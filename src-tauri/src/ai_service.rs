@@ -307,7 +307,7 @@ impl AiService {
                 return Ok(Arc::clone(idx));
             }
         }
-        let idx = Arc::new(LazyIndex::new(Arc::new(hub.store.clone())));
+        let idx = Arc::new(LazyIndex::new(Arc::clone(&hub.store)));
         *slot = Some((Arc::clone(hub), Arc::clone(&idx)));
         Ok(idx)
     }
