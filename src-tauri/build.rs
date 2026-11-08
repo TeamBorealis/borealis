@@ -32,6 +32,8 @@ const COMMANDS: &[&str] = &[
     "level_up",
     "level_down",
     "add_multiclass",
+    "split_multiclass",
+    "set_class_levels",
     "set_hp_roll",
     "set_ability_method",
     "set_base_score",

@@ -5,6 +5,7 @@ import { haptic } from "../../lib/haptics";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useAsync } from "../../state/useAsync";
+import type { SplitRow } from "./LevelSplit";
 
 const ABILITY_BY_NAME: Record<string, AbilityKey> = {
   strength: "str", dexterity: "dex", constitution: "con", intelligence: "int", wisdom: "wis", charisma: "cha",
@@ -55,12 +56,20 @@ function useMulticlassRows(snapshot: CharacterSnapshot): Row[] {
   return (rows.data ?? []).filter((r) => !have.has(r.id));
 }
 
-/** Bottom expander of the Level up & multiclassing flyout: one block per eligible class, name, prerequisite in green italics, NEW MULTICLASS. */
-export function MulticlassExpander({ snapshot, onAdded }: { snapshot: CharacterSnapshot; onAdded?: () => void }) {
+interface MulticlassExpanderProps {
+  snapshot: CharacterSnapshot;
+  onAdded?: () => void;
+  /** B2a: MOVE LEVELS, a multiclass of the row's class made from the main class's levels (the total level stays). */
+  onSplit?: (row: SplitRow) => void;
+}
+
+/** Bottom expander of the Level up & multiclassing flyout: one block per eligible class, name, prerequisite in green italics, MOVE LEVELS and NEW MULTICLASS. */
+export function MulticlassExpander({ snapshot, onAdded, onSplit }: MulticlassExpanderProps) {
   const { mutate } = useCharacter();
   const rows = useMulticlassRows(snapshot);
   const lv = snapshot.level;
   const ignorePrerequisites = snapshot.options.ignoreMulticlassPrerequisites;
+  const mainLevel = lv.classes.find((c) => c.isMain)?.level ?? 0;
   /** Classic builder: NEW MULTICLASS only adds the empty class slot; the class is picked from the Multiclass picker on Build > Class. */
   const add = async () => {
     haptic("levelUp");
@@ -84,8 +93,15 @@ export function MulticlassExpander({ snapshot, onAdded }: { snapshot: CharacterS
                 <h4>{r.name}{overridden && <> <PrereqUnmetMark /></>}</h4>
                 {r.prerequisites && <p className="lvl-prereq">Prerequisites: {formatPrerequisite(r.prerequisites)}</p>}
               </div>
-              <Button disabled={!lv.canMulticlass || !(met || overridden)} aria-label={`New multiclass ${r.name}`} title={met || overridden ? undefined : "You do not meet the prerequisite."}
-                onClick={() => void add()}>New multiclass</Button>
+              <div className="lvl-mc-actions">
+                {onSplit && (
+                  <Button disabled={!lv.canMulticlass || !(met || overridden) || mainLevel < 2} aria-label={`Move levels to ${r.name}`}
+                    title={met || overridden ? `Make some of your levels ${r.name} levels. Your level stays the same.` : "You do not meet the prerequisite."}
+                    onClick={() => onSplit({ name: r.name, multiId: r.multiId })}>Move levels</Button>
+                )}
+                <Button disabled={!lv.canMulticlass || !(met || overridden)} aria-label={`New multiclass ${r.name}`} title={met || overridden ? undefined : "You do not meet the prerequisite."}
+                  onClick={() => void add()}>New multiclass</Button>
+              </div>
             </div>
           );
         })}

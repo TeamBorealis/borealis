@@ -40,6 +40,21 @@
 .lvl-mc-row h4 { margin: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; }
 .lvl-mc-row .lvl-prereq { margin: 1px 0 0; line-height: 14px; }
 .lvl-mc-row button { height: 26px; min-height: 0; background: #242425; border: 0; font-size: 11px; text-transform: uppercase; white-space: nowrap; }
+.lvl-mc-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+
+/* B2a: moving levels between the main class and a multiclass (class card links and the Move levels dialog) */
+.lvl-class-actions { display: flex; justify-content: flex-end; gap: 14px; margin-top: 6px; }
+.lvl-link.move, .lvl-link.drop { color: var(--gray-5); font-size: 10px; font-weight: 600; min-height: 0; padding: 0; }
+.lvl-link.drop { color: var(--gray-3); }
+@media (hover: hover) and (pointer: fine) {
+  .lvl-link.move:hover:not(:disabled) { color: var(--text); }
+  .lvl-link.drop:hover:not(:disabled) { color: var(--aur-danger-bright); }
+}
+.flyout .lvl-link.move:disabled { color: #6c6c6d; }
+.lvl-split { display: flex; flex-direction: column; gap: 10px; }
+.lvl-split-text { margin: 0; font-size: 12px; line-height: 16px; color: var(--text-secondary); }
+.lvl-split-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.lvl-split-result { margin: 0; text-align: center; font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--gray-6); }
 
 /* Quick view */
 .qv-name { color: var(--gold, #c68a00); }

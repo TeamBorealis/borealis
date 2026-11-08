@@ -2,6 +2,7 @@
 
 mod abilities;
 mod added;
+mod class_levels;
 mod forms;
 mod gear;
 mod hit_points;
@@ -16,6 +17,7 @@ mod withheld;
 
 pub use abilities::*;
 pub use added::*;
+pub use class_levels::*;
 pub use forms::*;
 pub use gear::*;
 pub use hit_points::*;

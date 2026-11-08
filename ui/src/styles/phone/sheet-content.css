@@ -174,3 +174,8 @@ html.phone .lvl-mc-row + .lvl-mc-row { box-shadow: inset 0 1px 0 var(--ph-line);
 html.phone .lvl-mc-row h4 { font: 500 var(--ph-t-body)/1.3 var(--ph-font-ui); text-transform: none; }
 html.phone .lvl-prereq, html.phone .lvl-mc-row .lvl-prereq { margin-top: 2px; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); font-style: normal; color: var(--ph-text-2); }
 html.phone .lvl-mc-row button { height: auto; min-height: var(--ph-hit); background: var(--ph-fill); font: 600 var(--ph-t-foot)/1.2 var(--ph-font-ui); text-transform: none; }
+html.phone .lvl-mc-actions { gap: 8px; }
+html.phone .lvl-class-actions { justify-content: flex-start; gap: 8px; margin-top: 10px; }
+html.phone .lvl-split-text { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .lvl-split-row { font: 500 var(--ph-t-body)/1.3 var(--ph-font-ui); text-transform: none; color: var(--ph-text); }
+html.phone .lvl-split-result { font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); text-transform: none; color: var(--ph-text); }

@@ -241,6 +241,26 @@ pub fn add_multiclass(state: S<'_>, character_id: String) -> ApiResult<Character
 }
 
 #[tauri::command(async)]
+pub fn split_multiclass(
+    state: S<'_>,
+    character_id: String,
+    levels: u32,
+    element_id: Option<String>,
+) -> ApiResult<CharacterSnapshot> {
+    state.split_multiclass(&character_id, levels, element_id.as_deref())
+}
+
+#[tauri::command(async)]
+pub fn set_class_levels(
+    state: S<'_>,
+    character_id: String,
+    class_slot_id: String,
+    levels: u32,
+) -> ApiResult<CharacterSnapshot> {
+    state.set_class_levels(&character_id, &class_slot_id, levels)
+}
+
+#[tauri::command(async)]
 pub fn set_hp_roll(
     state: S<'_>,
     character_id: String,

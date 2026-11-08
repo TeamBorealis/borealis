@@ -203,6 +203,10 @@ export interface ApiMethods {
   levelUp(args: Cid & { classSlotId: string }): Promise<CharacterSnapshot>;
   levelDown(args: Cid): Promise<CharacterSnapshot>;
   addMulticlass(args: Cid): Promise<CharacterSnapshot>;
+  /** B2a: move `levels` of the main class's latest levels into a new multiclass; the total level stays. `elementId` (a multiclass element) is picked in its Multiclass slot, prerequisites applying; without it the slot waits for the picker. */
+  splitMulticlass(args: Cid & { levels: number; elementId?: string }): Promise<CharacterSnapshot>;
+  /** B2a: give a multiclass exactly `levels` levels, moved from or back to the main class (0 removes it); the total level stays. */
+  setClassLevels(args: Cid & { classSlotId: string; levels: number }): Promise<CharacterSnapshot>;
   /** `value` null: the level uses the average again. */
   setHpRoll(args: Cid & { classSlotId: string; level: number; value: number | null }): Promise<CharacterSnapshot>;
 
@@ -618,6 +622,8 @@ export const COMMANDS = {
   levelUp: "level_up",
   levelDown: "level_down",
   addMulticlass: "add_multiclass",
+  splitMulticlass: "split_multiclass",
+  setClassLevels: "set_class_levels",
   setHpRoll: "set_hp_roll",
   setAbilityMethod: "set_ability_method",
   setBaseScore: "set_base_score",

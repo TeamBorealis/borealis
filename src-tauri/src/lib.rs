@@ -120,6 +120,7 @@ pub mod import_service;
 #[cfg(ai_cli)]
 pub mod import_sources;
 pub mod item_categories;
+pub mod levels_api;
 pub mod library;
 pub mod links;
 pub mod magic;
@@ -375,6 +376,8 @@ pub fn run() {
             commands::level_up,
             commands::level_down,
             commands::add_multiclass,
+            commands::split_multiclass,
+            commands::set_class_levels,
             commands::set_hp_roll,
             commands::set_ability_method,
             commands::set_base_score,

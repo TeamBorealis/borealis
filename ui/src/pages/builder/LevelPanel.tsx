@@ -10,6 +10,7 @@ import { useCharacter } from "../../state/CharacterContext";
 import { useSettings } from "../../state/SettingsContext";
 import { FA5_LEVEL_DOWN_ALT, FA5_LEVEL_UP_ALT } from "../../components/controls/openIcons";
 import { PaneShell } from "./DescriptionPane";
+import { useClassLevelMoves } from "./LevelSplit";
 import { MulticlassExpander } from "./MulticlassList";
 
 /** Font Awesome Free 5 level-up-alt / level-down-alt (CC BY 4.0, see components/controls/openIcons.ts). */
@@ -63,6 +64,8 @@ export function LevelsPane() {
       <p className="desc-line">Your first level uses the largest value of the hit die. Later levels use the average. When the average setting is off, each level can use the average or a roll you enter here: step the value to enter a roll, or press Avg to go back to the average. Constitution adds to every level.</p>
       <h3 className="desc-h">Multiclassing</h3>
       <p className="desc-line">A new class needs the listed ability scores. Each class keeps its own level, hit die and features.</p>
+      <h3 className="desc-h">Dividing your levels</h3>
+      <p className="desc-line">Move levels gives some of your main class's levels to another class without changing your level: a level 9 Fighter can become a Fighter 5 / Wizard 4. Move levels on a class card changes the split, and Remove gives that class's levels back to your main class. Choices made at the moved levels are dropped, and the moved levels ask for their own.</p>
     </PaneShell>
   );
 }
@@ -90,6 +93,7 @@ export function LevelPanel({ embedded = false }: { embedded?: boolean }) {
   const { setLevelUpOpen } = useShell();
   const blurbs = useClassBlurbs(snapshot?.ruleset ?? "dnd2024");
   const phone = usePhone();
+  const moves = useClassLevelMoves(snapshot);
   if (!snapshot) return null;
   const lv = snapshot.level;
   const removeLevel = async () => {
@@ -100,6 +104,8 @@ export function LevelPanel({ embedded = false }: { embedded?: boolean }) {
     }
     await mutate((api, id) => api.levelDown({ characterId: id }));
   };
+  const toClassTab = () => { setLevelUpOpen(false); nav("/builder/class"); };
+  const mainLevel = lv.classes.find((c) => c.isMain)?.level ?? 0;
   const span = lv.nextLevelXp !== null ? lv.nextLevelXp - lv.currentLevelXp : 1;
   return (
     <div className="lvl">
@@ -124,6 +130,14 @@ export function LevelPanel({ embedded = false }: { embedded?: boolean }) {
               onClick={() => { haptic("levelUp"); void mutate((api, id) => api.levelUp({ characterId: id, classSlotId: c.slotId })); }}>Level up <BarArrow dir="up" /></button>
           </header>
           <p className="lvl-sub">{c.name ? ((c.classId && blurbs[c.classId]) || `d${c.hitDie} hit die${c.subclass ? ` - ${c.subclass.name}` : ""}`) : "Select a multiclass from the Multiclass (Level N) selection picker."}</p>
+          {!c.isMain && (
+            <div className="lvl-class-actions">
+              <button type="button" className="lvl-link move" aria-label={`Move levels to or from ${c.name ?? "the empty multiclass"}`} disabled={mainLevel + c.level < 3}
+                title="Move levels between this class and your main class. Your level stays the same." onClick={() => moves.moveLevels(c)}>Move levels</button>
+              <button type="button" className="lvl-link drop" aria-label={`Remove multiclass ${c.name ?? "(empty)"}`}
+                title="Give this class's levels back to your main class" onClick={() => void moves.removeMulticlass(c)}>Remove</button>
+            </div>
+          )}
           {c.name && !snapshot.options.averageHp && (
             <div className="hp-rolls" aria-label={`Hit point rolls (d${c.hitDie})`}>
               {c.hpRolls.map((r, i) => (
@@ -139,7 +153,8 @@ export function LevelPanel({ embedded = false }: { embedded?: boolean }) {
           )}
         </section>
       ))}
-      <MulticlassExpander snapshot={snapshot} onAdded={() => { setLevelUpOpen(false); nav("/builder/class"); }} />
+      <MulticlassExpander snapshot={snapshot} onAdded={toClassTab} onSplit={(row) => moves.splitInto(row, toClassTab)} />
+      {moves.dialog}
     </div>
   );
 }

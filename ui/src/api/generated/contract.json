@@ -1634,6 +1634,18 @@
     "name": "CharacterSnapshot"
    }
   },
+  "set_class_levels": {
+   "args": {
+    "characterId": false,
+    "classSlotId": false,
+    "levels": false
+   },
+   "method": "setClassLevels",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "set_concentration": {
    "args": {
     "characterId": false,
@@ -1936,6 +1948,18 @@
     "uses": true
    },
    "method": "spendTracker",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "split_multiclass": {
+   "args": {
+    "characterId": false,
+    "elementId": true,
+    "levels": false
+   },
+   "method": "splitMulticlass",
    "response": {
     "k": "ref",
     "name": "CharacterSnapshot"

@@ -36,6 +36,8 @@
     "allow-level-up",
     "allow-level-down",
     "allow-add-multiclass",
+    "allow-split-multiclass",
+    "allow-set-class-levels",
     "allow-set-hp-roll",
     "allow-set-ability-method",
     "allow-set-base-score",
