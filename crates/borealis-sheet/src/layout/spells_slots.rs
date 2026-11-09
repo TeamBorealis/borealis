@@ -66,8 +66,20 @@ pub(super) fn strip(
             Some(limit) => format!("{} / {limit}", k.prepared_count),
             None => k.prepared_count.to_string(),
         }
+    } else if k.other {
+        // Aurora leaves the prepare count of its "Other Spells" section blank
+        String::new()
     } else {
         format!("{} known", k.cantrips.len() + k.spells.len())
+    };
+    // a block without a casting ability ("Other Spells", a feat's spells in Aurora-format
+    // content) has no modifier, DC or attack: blank boxes to fill in, never a made-up 0
+    let known = |v: String| {
+        if k.ability_name.is_empty() {
+            String::new()
+        } else {
+            v
+        }
     };
     let prepared_label = if k.prepares { "PREPARED" } else { "SPELLS" };
     let cells: [(&str, &str, &str, String, f32); 6] = [
@@ -89,15 +101,21 @@ pub(super) fn strip(
             "MODIFIER",
             "mod",
             "Spellcasting modifier",
-            signed(i64::from(k.ability_modifier)),
+            known(signed(i64::from(k.ability_modifier))),
             15.0,
         ),
-        ("SAVE DC", "dc", "Spell save DC", k.dc.to_string(), 15.0),
+        (
+            "SAVE DC",
+            "dc",
+            "Spell save DC",
+            known(k.dc.to_string()),
+            15.0,
+        ),
         (
             "SPELL ATTACK",
             "attack",
             "Spell attack bonus",
-            signed(i64::from(k.attack)),
+            known(signed(i64::from(k.attack))),
             15.0,
         ),
         (

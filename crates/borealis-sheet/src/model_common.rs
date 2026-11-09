@@ -360,7 +360,8 @@ fn attacks(
                 engine_cantrip_row(a, caster_of)
             }),
     );
-    for c in casters {
+    // "Other Spells" have no casting ability to attack with (Aurora lists them on the spell page only)
+    for c in casters.iter().filter(|c| !c.other) {
         for sp in c.cantrips.iter().filter(|s| s.damage.is_some()) {
             if rows
                 .iter()

@@ -490,6 +490,13 @@ impl CasterData {
         table + pact
     }
 
+    /// Does the block print its own spell slot tracker? Not for a caster on the pooled multiclass
+    /// table, nor for "Other Spells" (Aurora's section has no slots).
+    #[must_use]
+    pub fn has_slot_tracker(&self) -> bool {
+        !self.slots_pooled && !self.other
+    }
+
     /// Leveled spells to print: all of them, or only prepared / always-prepared / non-preparing
     /// casters' spells when `include_unprepared` is false.
     #[must_use]

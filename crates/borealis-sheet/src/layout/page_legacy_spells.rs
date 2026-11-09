@@ -43,11 +43,20 @@ pub(crate) fn columns_avail(g: &Grid, compact: bool) -> f32 {
 
 fn strip(c: &mut Canvas, x: f32, y: f32, w: f32, caster: &CasterData) {
     let k = c.k;
+    // no casting ability ("Other Spells", a feat's spells in Aurora-format content): no DC or
+    // attack to print, as on the HTML basic page
+    let known = |v: String| {
+        if caster.ability_name.is_empty() {
+            String::new()
+        } else {
+            v
+        }
+    };
     let cells = [
         ("CLASS", caster.class.clone()),
         ("ABILITY", caster.ability_name.clone()),
-        ("SPELL SAVE DC", caster.dc.to_string()),
-        ("SPELL ATTACK", format!("{:+}", caster.attack)),
+        ("SPELL SAVE DC", known(caster.dc.to_string())),
+        ("SPELL ATTACK", known(format!("{:+}", caster.attack))),
     ];
     let cw = (w - 3.0 * CELL_GAP) / 4.0;
     let tint = c.pal.tint;

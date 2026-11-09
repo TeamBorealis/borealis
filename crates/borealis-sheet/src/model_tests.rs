@@ -545,7 +545,14 @@ fn caster_modifier_matches_the_ability_and_the_save_dc() {
         fighter_wizard_2014(),
     ] {
         let d = data(&pair);
-        for c in &d.spellcasting.casters {
+        // a block without a casting ability ("Other Spells", a feat's spells before its ability
+        // is chosen) prints blank modifier and DC boxes instead
+        for c in d
+            .spellcasting
+            .casters
+            .iter()
+            .filter(|c| !c.ability_name.is_empty())
+        {
             let ability = d
                 .abilities
                 .iter()

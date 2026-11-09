@@ -130,10 +130,10 @@ page 3
     char.player@3
     char.subclass@3
 page 4
-  roles: Artifact=145 H2=3 Lbl=10 P=98 TH=7
-  text-ops: 207
+  roles: Artifact=180 H2=4 Lbl=16 P=113 TH=14
+  text-ops: 305
   colours (8): 0.100 0.100 0.100 RG; 0.100 0.100 0.100 rg; 0.300 0.300 0.300 rg; 0.330 0.330 0.330 rg; 0.550 0.550 0.550 rg; 0.720 0.720 0.720 RG; 0.720 0.720 0.720 rg; 0.950 0.950 0.950 rg
-  fields (103):
+  fields (123):
     char.alignment@4
     char.lineage@4
     char.player@4
@@ -237,4 +237,24 @@ page 4
     spell.1.slot.2.used.3
     spell.1.slot.3.used.1
     spell.1.slot.3.used.2
-document fields: 218
+    spell.2.ability
+    spell.2.attack
+    spell.2.dc
+    spell.2.list.1.comp
+    spell.2.list.1.effect
+    spell.2.list.1.prep
+    spell.2.list.1.range
+    spell.2.list.1.time
+    spell.2.list.2.comp
+    spell.2.list.2.effect
+    spell.2.list.2.prep
+    spell.2.list.2.range
+    spell.2.list.2.time
+    spell.2.list.3.comp
+    spell.2.list.3.effect
+    spell.2.list.3.prep
+    spell.2.list.3.range
+    spell.2.list.3.time
+    spell.2.mod
+    spell.2.prepared
+document fields: 238

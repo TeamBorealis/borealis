@@ -132,7 +132,7 @@ impl<'a> Pager<'a> {
 /// Height of a caster's head (strip, slots, pact, table heading and first rows).
 fn head_height(c: &CasterData, k: f32) -> f32 {
     let mut h = spells_slots::STRIP_H * k + BLOCK_GAP;
-    if !c.slots_pooled {
+    if c.has_slot_tracker() {
         h += spells_slots::slots_height(k);
     }
     if c.pact.is_some() {
@@ -157,7 +157,7 @@ fn caster_block(p: &mut Pager<'_>, n: usize, c: &CasterData, include_unprepared:
     let sfx = p.sfx();
     let r = p.rect();
     p.y += spells_slots::strip(&mut p.c, r, n, c, &sfx) + BLOCK_GAP;
-    if !c.slots_pooled {
+    if c.has_slot_tracker() {
         let ids = SlotIds::Class(n);
         let head = ("Spell slots", "tick when expended", None);
         let r = p.rect();
@@ -171,7 +171,9 @@ fn caster_block(p: &mut Pager<'_>, n: usize, c: &CasterData, include_unprepared:
     p.y += spells_table::intro(&mut p.c, r);
     let rows = listed_rows(c, include_unprepared);
     let pooled = p.d.spellcasting.pooled.map(|s| s.slots);
-    let slots = if c.slots_pooled {
+    let slots = if c.other {
+        None
+    } else if c.slots_pooled {
         pooled
     } else {
         Some(c.slots)

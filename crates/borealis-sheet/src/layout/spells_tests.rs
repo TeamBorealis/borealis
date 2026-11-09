@@ -316,6 +316,35 @@ fn pooled_table_replaces_class_trackers() {
     assert!(!names.iter().any(|n| n.starts_with("spell.1.slot.")));
 }
 
+/// The 2024 wizard's Sage took Magic Initiate but chose no ability yet: its spells sit in the
+/// "Other Spells" block, which prints after the Wizard with no slot tracker (Aurora's section
+/// has no slots) and with the spells named after their source.
+#[test]
+fn other_spells_print_after_the_class_without_a_slot_tracker() {
+    let d = data(&wizard_2024());
+    let n = d.spellcasting.casters.len();
+    let other = &d.spellcasting.casters[n - 1];
+    assert!(
+        other.other && other.ability_name.is_empty(),
+        "{}",
+        other.class
+    );
+    assert!(other
+        .cantrips
+        .iter()
+        .all(|r| r.name.ends_with(" (Magic Initiate)")));
+    let pages = run(&d, &opts(Paper::Letter), true);
+    let names: Vec<&str> = fields(&pages)
+        .iter()
+        .map(|(_, f)| base_id(&f.name))
+        .collect();
+    assert!(names.contains(&format!("spell.{n}.dc").as_str()));
+    assert!(!names
+        .iter()
+        .any(|f| f.starts_with(&format!("spell.{n}.slot."))));
+    assert!(names.iter().any(|f| f.starts_with("spell.1.slot.")));
+}
+
 fn write_doc(path: &str, d: &SheetData, o: &LayoutOptions, include: bool) {
     let g = Grid::new(o.paper);
     let mut pages: Vec<_> = build(d, o, include, &g, 1);

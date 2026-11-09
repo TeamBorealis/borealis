@@ -539,6 +539,9 @@ fn other_spells_print_last_unprepared_and_named_with_their_source() {
             "spell.{n}.{part} is blank"
         );
     }
+    // no slot tracker (Aurora's section has no slots)
+    assert!(!html.contains(&format!("data-field=\"spell.{n}.slot.")));
+    assert!(html.contains("data-field=\"spell.1.slot.1.total\""));
     // the levelled spell's prepared mark is empty, and the row is not a spellbook entry
     let prep = crate::model_ids::spell_row(n, 2, "prep");
     assert_eq!(pip_class(&html, &prep), "pip ");

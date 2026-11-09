@@ -386,8 +386,9 @@ fn caster_fields(out: &mut Out, n: usize, c: &CasterData) {
     for part in ["class", "ability", "mod", "dc", "attack", "prepared"] {
         out.text(spell_head(n, part));
     }
-    // Pooled casters print one shared slot table (`pool.*` ids), not per-class trackers.
-    let class_slots: &[i32] = if c.slots_pooled { &[] } else { &c.slots };
+    // Pooled casters print one shared slot table (`pool.*` ids), not per-class trackers;
+    // "Other Spells" has none.
+    let class_slots: &[i32] = if c.has_slot_tracker() { &c.slots } else { &[] };
     for (i, total) in class_slots.iter().enumerate() {
         let level = i + 1;
         out.text(spell_slot_total(n, level));

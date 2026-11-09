@@ -142,7 +142,7 @@ fn caster_block(d: &SheetData, o: &HtmlOptions, n: usize, c: &CasterData) -> Str
         }
         out.push_str("</span></div>");
     }
-    if !c.slots_pooled {
+    if c.has_slot_tracker() {
         let _ = write!(
             out,
             "<div class=\"sec\">{}{}</div>",
@@ -188,7 +188,7 @@ fn spell_table(d: &SheetData, o: &HtmlOptions, n: usize, c: &CasterData) -> Stri
             let label = if row.level == 0 {
                 "Cantrips".to_string()
             } else {
-                let slots = if c.slots_pooled {
+                let slots = if !c.has_slot_tracker() {
                     String::new()
                 } else {
                     format!(

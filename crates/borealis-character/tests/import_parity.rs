@@ -169,11 +169,23 @@ fn proxy_items_grant_their_element() {
     assert!(has("ID_PHB_SPELL_FOG_CLOUD"));
     assert!(has("ID_PROFICIENCY_SKILL_STEALTH"));
     assert!(has("ID_PHB_FEAT_GRAPPLER"));
-    // the proxy spell is an additional spell, not an item spell block
-    assert!(snap
+    // the proxy spell is an additional spell, not an item spell block: like Aurora's sheet, it is
+    // listed under "Other Spells" as `Fog Cloud (Additional Spell)`
+    let holders: Vec<&str> = snap
         .spellcasting
         .iter()
-        .all(|b| b.spells.iter().all(|s| s.id != "ID_PHB_SPELL_FOG_CLOUD")));
+        .filter(|b| b.spells.iter().any(|s| s.id == "ID_PHB_SPELL_FOG_CLOUD"))
+        .map(|b| b.name.as_str())
+        .collect();
+    assert_eq!(holders, vec![borealis_engine::other_spells::OTHER_SPELLS]);
+    let fog = snap
+        .caster(borealis_engine::other_spells::OTHER_SPELLS)
+        .and_then(|b| b.spells.iter().find(|s| s.id == "ID_PHB_SPELL_FOG_CLOUD"))
+        .unwrap();
+    assert_eq!(
+        borealis_engine::other_spells::source_label(fog).as_deref(),
+        Some("Additional Spell")
+    );
     let proxy = engine
         .universe(borealis_content::Ruleset::Dnd2014)
         .get(spell)
