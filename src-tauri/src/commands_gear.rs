@@ -5,6 +5,8 @@ use crate::dto_ext::{
     CompendiumFacets, CompendiumQuery, ElementDetail, EquipRequest, ItemCategory, ItemFilter,
     ItemPatch, ItemSummary, SheetOptionsDto, SheetPreview, StatTraceDto,
 };
+// Only the desktop save dialog builds errors here (phones save through `sheet_save`).
+#[cfg(desktop)]
 use crate::error::ApiError;
 use crate::error::ApiResult;
 use crate::search_api::{SearchHit, SearchPassage, SearchQuery};
@@ -260,12 +262,12 @@ pub fn export_sheet(
     options: Option<SheetOptionsDto>,
 ) -> ApiResult<ExportResult> {
     let file = state.sheet_file(&character_id, &options.unwrap_or_default())?;
-    save_sheet(&app, file)
+    save_sheet(&app, &state, file)
 }
 
 /// Phones (TV2, B-144): open the system share sheet with the sheet PDF (print, mail, files).
-/// Android opens it from the backend; elsewhere `shared` is false and the web view shares the
-/// bytes `export_sheet` gave it.
+/// Android opens it from the backend; elsewhere `shared` is false and the bytes come back for the
+/// web view's own share sheet (B-148: `export_sheet` is Save on phones, so it no longer serves them).
 #[tauri::command(async)]
 pub fn share_sheet(
     app: tauri::AppHandle,
@@ -280,7 +282,7 @@ pub fn share_sheet(
     let file = state.sheet_file(&character_id, &options)?;
     let shared = if cfg!(target_os = "android") {
         let dir = state.paths.data.join("sheet-share");
-        let tmp = share_file_in(&dir, &file.bytes)?;
+        let tmp = crate::sheet_save::temp_copy(&dir, &file.bytes)?;
         crate::native_share::share_file(
             &app,
             &crate::native_share::ShareFileArgs {
@@ -293,42 +295,11 @@ pub fn share_sheet(
     } else {
         false
     };
-    Ok(crate::dto_ext::SheetShare {
-        file_name: file.file_name,
-        shared,
-    })
-}
-
-/// The sheet bytes in a temp file under `dir` (deleted when dropped, after the share sheet has
-/// copied it).
-fn share_file_in(dir: &std::path::Path, bytes: &[u8]) -> ApiResult<tempfile::NamedTempFile> {
-    use std::io::Write as _;
-    let io = |e| ApiError::io("prepare the sheet to share", e);
-    std::fs::create_dir_all(dir).map_err(io)?;
-    let mut tmp = tempfile::Builder::new()
-        .suffix(".pdf")
-        .tempfile_in(dir)
-        .map_err(io)?;
-    tmp.write_all(bytes).map_err(io)?;
-    Ok(tmp)
-}
-
-#[cfg(test)]
-mod share_tests {
-    #[test]
-    fn the_share_file_holds_the_sheet_and_goes_away_after() {
-        let dir = tempfile::tempdir().unwrap();
-        let tmp = super::share_file_in(&dir.path().join("sheet-share"), b"%PDF-1.4").unwrap();
-        let path = tmp.path().to_path_buf();
-        assert_eq!(std::fs::read(&path).unwrap(), b"%PDF-1.4");
-        assert_eq!(path.extension().and_then(|e| e.to_str()), Some("pdf"));
-        drop(tmp);
-        assert!(!path.exists());
-    }
+    Ok(crate::dto_ext::SheetShare::new(file, shared))
 }
 
 #[cfg(desktop)]
-fn save_sheet(app: &tauri::AppHandle, file: SheetFile) -> ApiResult<ExportResult> {
+fn save_sheet(app: &tauri::AppHandle, _: &AppState, file: SheetFile) -> ApiResult<ExportResult> {
     use tauri_plugin_dialog::DialogExt;
     let ext = if file.mime == "text/html" {
         "html"
@@ -358,9 +329,20 @@ fn save_sheet(app: &tauri::AppHandle, file: SheetFile) -> ApiResult<ExportResult
     Ok(result)
 }
 
-#[cfg(not(desktop))]
-fn save_sheet(_: &tauri::AppHandle, file: SheetFile) -> ApiResult<ExportResult> {
-    Ok(file.into_base64())
+/// B-148: Save on Android: the "Save to" picker, then the PDF viewer (`sheet_save`).
+#[cfg(target_os = "android")]
+fn save_sheet(
+    app: &tauri::AppHandle,
+    state: &AppState,
+    file: SheetFile,
+) -> ApiResult<ExportResult> {
+    crate::sheet_save::save(app, &file, &state.paths.data)
+}
+
+/// B-148: Save on iOS: the Files export picker (`sheet_save`).
+#[cfg(target_os = "ios")]
+fn save_sheet(app: &tauri::AppHandle, _: &AppState, file: SheetFile) -> ApiResult<ExportResult> {
+    crate::sheet_save::save(app, &file)
 }
 
 #[tauri::command(async)]

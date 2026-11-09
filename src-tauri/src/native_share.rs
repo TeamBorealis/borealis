@@ -161,6 +161,44 @@ pub fn share_file<R: tauri::Runtime>(
     Ok(false)
 }
 
+/// What the Kotlin `saveFile` command answers (B-148).
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SavedFile {
+    /// False when the user cancelled the picker.
+    #[serde(default)]
+    pub saved: bool,
+    /// Where the file went, as the user knows it ("Download/Brannoc.pdf"), when it can be told.
+    #[serde(default)]
+    pub location: Option<String>,
+}
+
+/// Save an existing file where the user picks (Android: `ACTION_CREATE_DOCUMENT`), then open it in
+/// the viewer for its type when there is one (`sheet_save`).
+///
+/// # Errors
+/// `Io` when the picker cannot open or the file cannot be written.
+#[cfg(target_os = "android")]
+pub fn save_file<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    args: &ShareFileArgs<'_>,
+) -> ApiResult<SavedFile> {
+    use tauri::Manager;
+    let handle = app
+        .try_state::<android::ShareHandle<R>>()
+        .ok_or_else(|| ApiError::new(ErrorCode::InvalidArgument, NOT_AVAILABLE))?;
+    handle
+        .0
+        .run_mobile_plugin::<SavedFile>("saveFile", args)
+        .map_err(|e| {
+            tracing::warn!("save picker failed");
+            ApiError::new(
+                ErrorCode::IoError,
+                format!("The sheet could not be saved: {e}"),
+            )
+        })
+}
+
 /// What the Kotlin `takeOpenedFiles` command answers.
 #[derive(Debug, Default, serde::Deserialize)]
 pub struct TakenFiles {

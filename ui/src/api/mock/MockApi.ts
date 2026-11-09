@@ -620,10 +620,11 @@ export class MockApi implements Api {
     return { fileName: `${this.get(characterId).name}.html`, mime: "text/html", path: null, dataBase64: b64(html) };
   }
 
-  /** The web mock has no native share sheet: the UI shares the exported bytes itself. */
-  async shareSheet({ characterId }: Parameters<Api["shareSheet"]>[0]): Promise<SheetShare> {
+  /** The web mock has no native share sheet: it answers the bytes and the UI shares them itself. */
+  async shareSheet({ characterId, options }: Parameters<Api["shareSheet"]>[0]): Promise<SheetShare> {
     await this.tick();
-    return { fileName: `${this.get(characterId).name}.pdf`, shared: false };
+    const html = renderSheetHtml(this.snap(this.get(characterId)), this.sheetPaper(options));
+    return { fileName: `${this.get(characterId).name}.html`, shared: false, mime: "text/html", dataBase64: b64(html) };
   }
 
   /* ---------- compendium & content ---------- */

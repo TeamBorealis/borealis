@@ -161,6 +161,7 @@ pub mod session;
 pub mod settings;
 pub mod settings_dto;
 pub mod sheet_api;
+pub mod sheet_save;
 pub mod snapshot_map;
 pub mod start_over;
 pub mod startup;

@@ -107,6 +107,25 @@ pub struct SheetShare {
     pub file_name: String,
     /// True when the backend opened the system share sheet (Android).
     pub shared: bool,
+    /// Media type of the file.
+    pub mime: String,
+    /// The bytes, for the web view's own share sheet, when the backend did not share (iOS).
+    pub data_base64: Option<String>,
+}
+
+impl SheetShare {
+    /// The answer for `file`: its bytes go back only when the backend did not share it.
+    #[must_use]
+    pub fn new(file: crate::sheet_api::SheetFile, shared: bool) -> Self {
+        use base64::engine::general_purpose::STANDARD;
+        use base64::Engine as _;
+        Self {
+            data_base64: (!shared).then(|| STANDARD.encode(&file.bytes)),
+            mime: file.mime.into(),
+            file_name: file.file_name,
+            shared,
+        }
+    }
 }
 
 /// HTML preview of the sheet.

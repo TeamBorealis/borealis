@@ -353,9 +353,12 @@ export interface ApiMethods {
 
   /* Sheet */
   renderSheet(args: Cid & { options?: SheetOptions }): Promise<SheetPreview>;
+  /** Save Character Sheet. Desktop: the save dialog (`path` set; neither path nor bytes when cancelled). Phones (B-148): the
+   * system save picker; `path` names where the file went (Android then opens it in the PDF viewer), nothing when cancelled.
+   * The browser mock answers the bytes to download. */
   exportSheet(args: Cid & { options?: SheetOptions }): Promise<ExportResult>;
   /** Phones (TV2, B-144): open the system share sheet with the sheet PDF. Android opens it from the backend (`shared` true);
-   * elsewhere `shared` is false and the web view shares the bytes `exportSheet` gave it. */
+   * elsewhere `shared` is false and the bytes come back (`dataBase64`) for the web view's share sheet. */
   shareSheet(args: Cid & { options?: SheetOptions }): Promise<SheetShare>;
 
   /* Compendium */

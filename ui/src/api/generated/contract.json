@@ -10710,7 +10710,19 @@
   "SheetShare": {
    "k": "object",
    "props": {
+    "dataBase64": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "fileName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "mime": {
      "opt": false,
      "t": {
       "k": "prim"

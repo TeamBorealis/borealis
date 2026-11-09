@@ -5,6 +5,7 @@ import { Alert, ShellSubTabs } from "../../components";
 import "./sheet.css";
 import { RequireCharacter } from "../../components/RequireCharacter";
 import { downloadBase64 } from "../../lib/files";
+import { whenSeen } from "../../lib/whenSeen";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useSettings } from "../../state/SettingsContext";
@@ -78,7 +79,11 @@ function Body() {
     try {
       const r = await api.exportSheet({ characterId: id, options: { format: "pdf", ...options } });
       if (r.dataBase64) downloadBase64(r.fileName, r.mime, r.dataBase64);
-      toast.push(r.path ? `Saved to ${displayPath(r.path)}` : `Exported ${r.fileName}`);
+      // B-148: a phone save names where the file went, once the app is back on screen (Android opens the PDF viewer over
+      // it); a cancelled picker says nothing. Desktop keeps its toast (U7).
+      if (r.path && phone) { const saved = `Saved to ${displayPath(r.path)}`; whenSeen(() => toast.push(saved)); }
+      else if (r.path) toast.push(`Saved to ${displayPath(r.path)}`);
+      else if (r.dataBase64 || !phone) toast.push(`Exported ${r.fileName}`);
     } catch (e) { toast.push(errorMessage(e), "error"); }
   };
   const s = settings.sheet;

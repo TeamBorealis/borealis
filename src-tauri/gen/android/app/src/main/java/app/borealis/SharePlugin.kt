@@ -1,9 +1,15 @@
 package app.borealis
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.Intent
+import android.net.Uri
+import android.provider.DocumentsContract
+import android.provider.OpenableColumns
+import androidx.activity.result.ActivityResult
 import androidx.core.content.FileProvider
+import app.tauri.annotation.ActivityCallback
 import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
 import app.tauri.annotation.TauriPlugin
@@ -97,6 +103,84 @@ class SharePlugin(private val activity: Activity) : Plugin(activity) {
       invoke.reject(e.message ?: "The share sheet could not open.")
     }
   }
+
+  /**
+   * "Save Character Sheet" on a phone (B-148): the system "Save to" picker (ACTION_CREATE_DOCUMENT) for
+   * `fileName`; the file at `path` (the backend's temp copy) is written where the user chose, then opened
+   * in the viewer for its type when there is one, as Aurora opens a saved sheet (printing happens there).
+   * Answers `{ saved, location, opened }`; a cancelled picker answers `saved: false`.
+   */
+  @Command
+  fun saveFile(invoke: Invoke) {
+    try {
+      val args = invoke.parseArgs(ShareFileArgs::class.java)
+      pendingSave = args
+      val pick = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+        addCategory(Intent.CATEGORY_OPENABLE)
+        type = args.mime
+        putExtra(Intent.EXTRA_TITLE, File(args.fileName).name)
+      }
+      startActivityForResult(invoke, pick, "saveFileResult")
+    } catch (e: Exception) {
+      invoke.reject(e.message ?: "The save picker could not open.")
+    }
+  }
+
+  @ActivityCallback
+  fun saveFileResult(invoke: Invoke, result: ActivityResult) {
+    val args = pendingSave
+    pendingSave = null
+    val uri = result.data?.data
+    if (result.resultCode != Activity.RESULT_OK || uri == null || args == null) {
+      invoke.resolve(JSObject().put("saved", false))
+      return
+    }
+    try {
+      activity.contentResolver.openOutputStream(uri, "wt")?.use { out ->
+        File(args.path).inputStream().use { it.copyTo(out) }
+      } ?: throw IllegalStateException("The chosen place cannot be written.")
+      val opened = openInViewer(uri, args.mime)
+      invoke.resolve(JSObject().put("saved", true).put("location", location(uri, args.fileName)).put("opened", opened))
+    } catch (e: Exception) {
+      invoke.reject(e.message ?: "The sheet could not be saved.")
+    }
+  }
+
+  /** Opens a saved document in the app the user has for its type; false when there is none. */
+  private fun openInViewer(uri: Uri, mime: String): Boolean {
+    val view = Intent(Intent.ACTION_VIEW).apply {
+      setDataAndType(uri, mime)
+      addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    return try {
+      activity.startActivity(view)
+      true
+    } catch (e: ActivityNotFoundException) {
+      false
+    }
+  }
+
+  /**
+   * Where a saved document is, as the user knows it: `Download/Brannoc.pdf` on the device's storage,
+   * `Downloads/Brannoc.pdf` from the Downloads provider (its ids are opaque), else the document's name.
+   */
+  private fun location(uri: Uri, fallback: String): String {
+    val name = displayName(uri) ?: File(fallback).name
+    return when (uri.authority) {
+      "com.android.externalstorage.documents" ->
+        DocumentsContract.getDocumentId(uri).substringAfter(':', name).ifEmpty { name }
+      "com.android.providers.downloads.documents" -> "Downloads/$name"
+      else -> name
+    }
+  }
+
+  private fun displayName(uri: Uri): String? =
+    activity.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+      if (it.moveToFirst()) it.getString(0) else null
+    }
+
+  /** The save waiting for its picker (one at a time: the picker covers the app). */
+  private var pendingSave: ShareFileArgs? = null
 
   /** Files opened with Borealis since the last call (see `MainActivity`), as `{ files: [...] }`. */
   @Command

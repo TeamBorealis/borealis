@@ -76,7 +76,7 @@ describe("B-144 phone preview opens full-screen", () => {
     asPhone("android");
     const user = userEvent.setup();
     const { api, id } = await openSheet();
-    const share = vi.spyOn(api, "shareSheet").mockResolvedValue({ fileName: "Brannoc.pdf", shared: true });
+    const share = vi.spyOn(api, "shareSheet").mockResolvedValue({ fileName: "Brannoc.pdf", shared: true, mime: "application/pdf", dataBase64: null });
     await user.click(screen.getByRole("button", { name: "Generate Preview" }));
     const dialog = await previewDialog();
     await within(dialog).findByTitle("Character sheet preview");
@@ -84,7 +84,7 @@ describe("B-144 phone preview opens full-screen", () => {
     await waitFor(() => expect(share).toHaveBeenCalledWith(expect.objectContaining({ characterId: id })));
   });
 
-  it("Share elsewhere hands the PDF to the web view's share sheet within the tap", async () => {
+  it("Share elsewhere hands the PDF, fetched as the preview opened, to the web view's share sheet within the tap", async () => {
     asPhone("ios");
     const shared: File[] = [];
     Object.defineProperty(navigator, "canShare", { configurable: true, value: () => true });
@@ -92,6 +92,7 @@ describe("B-144 phone preview opens full-screen", () => {
     const user = userEvent.setup();
     const { api } = await openSheet();
     const backend = vi.spyOn(api, "shareSheet");
+    const save = vi.spyOn(api, "exportSheet");
     await user.click(screen.getByRole("button", { name: "Generate Preview" }));
     const dialog = await previewDialog();
     await within(dialog).findByTitle("Character sheet preview");
@@ -99,7 +100,9 @@ describe("B-144 phone preview opens full-screen", () => {
     await waitFor(() => expect((share as HTMLButtonElement).disabled).toBe(false));
     await user.click(share);
     await waitFor(() => expect(shared.map((f) => f.name)).toEqual([expect.stringMatching(/^Brannoc.*\.(pdf|html)$/)]));
-    expect(backend).not.toHaveBeenCalled();
+    // B-148: the bytes come from shareSheet once, as the preview opened; exportSheet is Save (a picker) and is not called.
+    expect(backend).toHaveBeenCalledTimes(1);
+    expect(save).not.toHaveBeenCalled();
   });
 });
 

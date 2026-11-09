@@ -256,12 +256,16 @@ export interface SheetShare {
   fileName: string;
   /** True when the backend opened the system share sheet (Android). */
   shared: boolean;
+  /** Media type of the file. */
+  mime: string;
+  /** The bytes for the web view's own share sheet when the backend did not share (iOS, browser); null otherwise. */
+  dataBase64: string | null;
 }
 
 export interface ExportResult {
   fileName: string;
   mime: string;
-  /** Absolute path when the backend wrote the file (desktop); else null. */
+  /** Where the backend wrote the file: an absolute path (desktop) or the place the user picked (phones, B-148); else null. */
   path: string | null;
   /** Base64 bytes when there is no filesystem access (mobile share-sheet / browser). */
   dataBase64: string | null;
