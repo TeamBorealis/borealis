@@ -1,0 +1,77 @@
+{
+  "_meta": {
+    "sources": [
+      {"json": "QuillBrew", "abbreviation": "QB", "full": "The Quill Brew", "authors": ["A. Writer"], "version": "1.0.0", "url": "https://example.invalid/quill"}
+    ],
+    "dependencies": {"spell": ["InkwellExtras"]},
+    "dateAdded": 1700000000,
+    "dateLastModified": 1700000000
+  },
+  "class": [
+    {
+      "name": "Quillmancer", "source": "QuillBrew",
+      "hd": {"number": 1, "faces": 8},
+      "proficiency": ["int", "wis"],
+      "startingProficiencies": {
+        "armor": ["light"],
+        "weapons": ["simple"],
+        "skills": [{"choose": {"from": ["arcana", "history", "insight"], "count": 2}}]
+      },
+      "classFeatures": [
+        "Ink Sense|Quillmancer|QuillBrew|1",
+        {"classFeature": "Quill Path|Quillmancer|QuillBrew|2", "gainSubclassFeature": true}
+      ],
+      "subclassTitle": "Quill Path"
+    }
+  ],
+  "classFeature": [
+    {"name": "Ink Sense", "source": "QuillBrew", "className": "Quillmancer", "classSource": "QuillBrew", "level": 1,
+     "entries": ["You can sense fresh ink within 30 feet of you."]},
+    {"name": "Quill Path", "source": "QuillBrew", "className": "Quillmancer", "classSource": "QuillBrew", "level": 2,
+     "entries": ["You choose a path of the quill."]}
+  ],
+  "subclass": [
+    {"name": "Path of the Blot", "shortName": "Blot", "source": "QuillBrew", "className": "Quillmancer", "classSource": "QuillBrew",
+     "subclassFeatures": ["Ink Blot|Quillmancer|QuillBrew|Blot|QuillBrew|2"]}
+  ],
+  "subclassFeature": [
+    {"name": "Ink Blot", "source": "QuillBrew", "className": "Quillmancer", "classSource": "QuillBrew",
+     "subclassShortName": "Blot", "subclassSource": "QuillBrew", "level": 2,
+     "entries": ["Once per turn, a blot of ink stains one creature you hit."]}
+  ],
+  "race": [
+    {"name": "Inkling", "source": "QuillBrew", "size": ["S"], "speed": 30, "ability": [{"dex": 2}],
+     "languageProficiencies": [{"common": true}],
+     "entries": [{"type": "entries", "name": "Smudge", "entries": ["You can smudge into shadow."]}]}
+  ],
+  "background": [
+    {"name": "Copyist", "source": "QuillBrew", "skillProficiencies": [{"history": true, "arcana": true}],
+     "entries": ["You copied books for a living."]}
+  ],
+  "feat": [
+    {"name": "Steady Hand", "source": "QuillBrew", "ability": [{"dex": 1}], "entries": ["Your hand never shakes."]}
+  ],
+  "spell": [
+    {"name": "Ink Dart", "source": "QuillBrew", "level": 1, "school": "V",
+     "time": [{"number": 1, "unit": "action"}],
+     "range": {"type": "point", "distance": {"type": "feet", "amount": 60}},
+     "components": {"v": true, "s": true}, "duration": [{"type": "instant"}],
+     "entries": ["A dart of ink deals {@damage 2d6} necrotic damage to a creature in range."]}
+  ],
+  "item": [
+    {"name": "Bottomless Inkwell", "source": "QuillBrew", "type": "G", "rarity": "uncommon", "wondrous": true,
+     "entries": ["This inkwell never runs dry."]}
+  ],
+  "monster": [
+    {"name": "Ink Mite", "source": "QuillBrew", "size": ["T"], "type": "construct", "alignment": ["U"],
+     "ac": [12], "hp": {"average": 5, "formula": "2d4"}, "speed": {"walk": 20},
+     "str": 3, "dex": 14, "con": 10, "int": 2, "wis": 10, "cha": 3, "passive": 10, "cr": "1/8",
+     "action": [{"name": "Splash", "entries": ["{@atk rw} {@hit 4} to hit, range 10 ft., one target. {@h}2 ({@damage 1d4}) acid damage."]}]}
+  ],
+  "deity": [
+    {"name": "The First Scribe", "source": "QuillBrew", "pantheon": "Quill", "alignment": ["N"]}
+  ],
+  "vehicle": [
+    {"name": "Paper Skiff", "source": "QuillBrew", "vehicleType": "SHIP"}
+  ]
+}

@@ -30,7 +30,7 @@ pub const MAX_FILE_BYTES: usize = 64 * 1024 * 1024;
 
 /// Scratch folder (in the data directory) the latest zip is unpacked into. The `.tmp-` prefix lets
 /// the startup sweep remove a stale one.
-const STAGE_DIR: &str = ".tmp-5etools-zip";
+pub(crate) const STAGE_DIR: &str = ".tmp-5etools-zip";
 /// Every 5etools `data/` folder has this file at its root.
 const MARKER: &str = "books.json";
 /// Sub-folders whose `*.json` files the importer reads.
@@ -157,7 +157,7 @@ pub fn unpack_5etools_zip(zip: &[u8], dest: &Path) -> ApiResult<usize> {
     Ok(written)
 }
 
-fn decode_zip(input: &ImportFileInput) -> ApiResult<Vec<u8>> {
+pub(crate) fn decode_zip(input: &ImportFileInput) -> ApiResult<Vec<u8>> {
     if !input.file_name.to_lowercase().ends_with(".zip") {
         return Err(ApiError::invalid(
             "Choose a .zip of a 5etools-format data/ folder.",

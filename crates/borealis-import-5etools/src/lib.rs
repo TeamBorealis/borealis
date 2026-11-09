@@ -7,6 +7,7 @@ pub mod core_ids;
 pub mod editions;
 pub mod error;
 pub mod folder;
+pub mod homebrew;
 pub mod ids;
 pub mod import;
 pub mod model;

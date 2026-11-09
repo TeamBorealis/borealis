@@ -107,6 +107,7 @@ const COMMANDS: &[&str] = &[
     "clear_downloaded_content",
     "scan_5etools_folder",
     "stage_5etools_zip",
+    "stage_5etools_files",
     "stage_5etools_url",
     "list_5etools_urls",
     "remove_5etools_url",

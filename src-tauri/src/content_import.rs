@@ -299,6 +299,8 @@ impl AppState {
                     ruleset: s.ruleset,
                     category: s.category,
                     counts: s.counts,
+                    unsupported: s.unsupported,
+                    needs: s.needs,
                 })
                 .collect(),
         })

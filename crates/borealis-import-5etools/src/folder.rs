@@ -2,7 +2,7 @@
 
 use crate::error::ImportError;
 use serde_json::Value;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 /// A raw entry together with the file it came from.
@@ -36,10 +36,16 @@ pub struct Loaded {
     pub files: Vec<String>,
     /// Files that could not be read or parsed: `(path, reason)`.
     pub failed: Vec<(String, String)>,
+    /// Entries of homebrew files in arrays the importer does not read (`deity`, `vehicle`, ...),
+    /// with their property name, so the report can say why they were not imported.
+    pub unsupported: Vec<(String, RawEntry)>,
+    /// Sources each homebrew source needs beside it (`_meta.dependencies` / `_meta.includes`),
+    /// by the upper-case id of the source that needs them.
+    pub dependencies: BTreeMap<String, BTreeSet<String>>,
 }
 
 /// Properties read from data files.
-const PROPS: &[&str] = &[
+pub(crate) const PROPS: &[&str] = &[
     "race",
     "subrace",
     "background",
@@ -72,7 +78,7 @@ const PROPS: &[&str] = &[
 ];
 
 /// Fluff properties and the entity property they belong to.
-const FLUFF_PROPS: &[(&str, &str)] = &[
+pub(crate) const FLUFF_PROPS: &[(&str, &str)] = &[
     ("raceFluff", "race"),
     ("backgroundFluff", "background"),
     ("featFluff", "feat"),
@@ -243,7 +249,18 @@ fn absorb(loaded: &mut Loaded, rel: &str, value: Value) {
             .push((rel.to_string(), "top level is not an object".to_string()));
         return;
     };
+    let homebrew = rel.starts_with(&format!("{HOMEBREW_DIR}/"));
     if let Some(meta) = map.remove("_meta") {
+        if homebrew {
+            let needs = crate::homebrew::dependencies(&meta);
+            for source in crate::homebrew::declared_sources(&meta) {
+                loaded
+                    .dependencies
+                    .entry(source.to_uppercase())
+                    .or_default()
+                    .extend(needs.iter().cloned());
+            }
+        }
         // homebrew: `_meta.sources[] = {json: "ABBR", full: "Name"}`
         for s in meta
             .get("sources")
@@ -307,6 +324,24 @@ fn absorb(loaded: &mut Loaded, rel: &str, value: Value) {
                 file: rel.to_string(),
                 value,
             }));
+        }
+    }
+    if homebrew {
+        for (prop, value) in map {
+            let Value::Array(items) = value else {
+                continue;
+            };
+            if crate::homebrew::is_unsupported_prop(&prop) {
+                loaded.unsupported.extend(items.into_iter().map(|value| {
+                    (
+                        prop.clone(),
+                        RawEntry {
+                            file: rel.to_string(),
+                            value,
+                        },
+                    )
+                }));
+            }
         }
     }
 }

@@ -141,6 +141,7 @@ pub fn import_folder_with_progress(
     prog.send(Phase::Resolving, 0, 0, "_copy and _versions");
     let mut case = BTreeMap::new();
     let ents = select_entities(&loaded, options, &mut st, &mut case);
+    report_unsupported(&loaded, options, &mut st);
     prog.total = ents.total();
     let late = crate::editions::late_sources(&loaded.published);
     let sh = build_shared(&mut loaded, &ents, options, &mut st);
@@ -192,6 +193,22 @@ fn resolved(
         .zip(r.origins)
         .map(|(v, o)| (v, entries[o].file.clone()))
         .collect()
+}
+
+/// Entries of homebrew files in arrays Borealis does not import (deities, vehicles, ...): each is
+/// a skip with the reason, so the user sees what a file held that was not imported.
+fn report_unsupported(loaded: &Loaded, opts: &ImportOptions, st: &mut State) {
+    for (prop, entry) in &loaded.unsupported {
+        let field = |k: &str| entry.value.get(k).and_then(Value::as_str);
+        let source = field("source");
+        if !source.is_none_or(|s| opts.allows_source(s)) {
+            continue;
+        }
+        let name = field("name").unwrap_or("?");
+        let element = format!("{name}|{}", source.unwrap_or("?"));
+        let reason = crate::homebrew::unsupported_reason(prop);
+        st.report.skipped(&entry.file, prop, &element, &reason);
+    }
 }
 
 /// Apply the source / ruleset / SRD filters and wrap the survivors.

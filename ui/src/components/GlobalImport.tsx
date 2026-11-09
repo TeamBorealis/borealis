@@ -7,6 +7,7 @@ import { openBundleFile, openOsBundles } from "../pages/transfer/openBundle";
 import { startImportPreview } from "../state/importPreview";
 import { useApi } from "../state/ApiContext";
 import { stashImportFiles } from "../state/importInbox";
+import { routedMessage, sendToFiveTools } from "../state/fiveToolsInbox";
 import { usePlatform } from "../state/platform";
 import { errorMessage } from "../state/useAsync";
 import { Icon } from "./Icon";
@@ -17,6 +18,7 @@ const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types ?? []).inclu
 
 /**
  * Floating "+" and a window-wide drop target (HTML drops in a browser, native drops via `files:dropped` in the app). Aurora XML, .index, .dnd5e and .json go straight to the rules-based importers
+ * (a 5etools-format homebrew .json to the 5etools-format import)
  * (no AI needed); other files (PDF, photo, text) go to the optional AI import when it is on, else get a neutral message.
  */
 export function GlobalImport() {
@@ -32,11 +34,13 @@ export function GlobalImport() {
   const route = useCallback(async (files: File[]) => {
     const others: File[] = [];
     const packs: File[] = [];
+    const fiveTools: File[] = [];
     let target: string | null = null;
     for (const f of files) {
       try {
         const kind = await classifyImport(f);
         if (kind === "pack") packs.push(f);
+        else if (kind === "fivetools") fiveTools.push(f);
         else if (kind === "character") {
           const r = await api.importCharacter({ fileName: f.name, contentBase64: await fileToBase64(f) });
           toast.push(`Imported ${r.summary.name}.`);
@@ -47,6 +51,12 @@ export function GlobalImport() {
     if (packs.length && (await notice.ensure())) {
       // All content files from one pick or drop are converted together so references between them resolve.
       await startImportPreview(api, { files: await filesToInputs(packs) }, (m) => toast.push(m, "error"));
+    }
+    if (fiveTools.length) {
+      // B-238: 5etools-format homebrew goes to the 5etools-format import on Additional Content
+      sendToFiveTools(fiveTools);
+      toast.push(routedMessage(fiveTools.map((f) => f.name)));
+      target ??= "/content";
     }
     if (others.length && aiEnabled) { stashImportFiles(others); navigate("/import"); return; }
     if (others.length) toast.push(unsupportedImportMessage(others.map((f) => f.name), aiAvailable), "error");

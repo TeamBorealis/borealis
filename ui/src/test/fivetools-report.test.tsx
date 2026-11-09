@@ -8,7 +8,7 @@ import { groupNotes, isExpectedSkip, reasonKey, setPicked, visibleGroups } from 
 import { renderApp } from "./utils";
 
 const src = (abbr: string, ruleset: FiveToolsSource["ruleset"], category: FiveToolsSource["category"]): FiveToolsSource =>
-  ({ abbr, name: `Book ${abbr}`, ruleset, category, counts: { feat: 1 } });
+  ({ abbr, name: `Book ${abbr}`, ruleset, category, counts: { feat: 1 }, unsupported: {}, needs: [] });
 
 const SOURCES = [src("A", "dnd2014", "book"), src("B", "dnd2024", "book"), src("C", "mixed", "adventure"), src("D", "dnd2014", "homebrew"), src("E", "dnd2024", "other")];
 

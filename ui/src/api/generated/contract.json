@@ -1976,6 +1976,16 @@
     "name": "CharacterSnapshot"
    }
   },
+  "stage_5etools_files": {
+   "args": {
+    "files": false
+   },
+   "method": "stage5etoolsFiles",
+   "response": {
+    "k": "ref",
+    "name": "PickedPath"
+   }
+  },
   "stage_5etools_url": {
    "args": {
     "url": false
@@ -6221,10 +6231,28 @@
       "k": "prim"
      }
     },
+    "needs": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
     "ruleset": {
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "unsupported": {
+     "opt": false,
+     "t": {
+      "k": "record",
+      "t": {
+       "k": "prim"
+      }
      }
     }
    }

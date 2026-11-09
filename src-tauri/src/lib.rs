@@ -71,6 +71,7 @@ pub mod content_fetch_retry;
 pub mod content_fetch_text;
 pub mod content_fetch_tls;
 pub mod content_fivetools_fetch;
+pub mod content_fivetools_files;
 pub mod content_fivetools_remote;
 pub mod content_fivetools_url;
 pub mod content_fivetools_zip;
@@ -465,6 +466,7 @@ pub fn run() {
             commands_content::clear_downloaded_content,
             commands_content::scan_5etools_folder,
             commands_content::stage_5etools_zip,
+            commands_content::stage_5etools_files,
             commands_content::stage_5etools_url,
             commands_content::list_5etools_urls,
             commands_content::remove_5etools_url,

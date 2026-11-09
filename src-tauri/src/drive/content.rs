@@ -88,24 +88,31 @@ fn file_name(path: &Path) -> String {
         .unwrap_or_default()
 }
 
-/// A `5etools-folder` token for a data folder, or for a `.zip` unpacked by the app.
+/// A `5etools-folder` token for a data folder, for a `.zip` unpacked by the app, or for a
+/// 5etools-format homebrew `.json` file staged by the app.
 fn five_tools_token(d: &Drive, raw: &str) -> DriveResult<String> {
     let path = d.scoped_path(raw)?;
-    let is_zip = path
+    let ext = path
         .extension()
-        .is_some_and(|e| e.eq_ignore_ascii_case("zip"));
-    if is_zip {
+        .map(|e| e.to_string_lossy().to_lowercase())
+        .unwrap_or_default();
+    if ext == "zip" || ext == "json" {
         let (path, bytes) = read_scoped(d, raw)?;
         let input = ImportFileInput {
             file_name: file_name(&path),
             content_base64: STANDARD.encode(bytes),
         };
-        return Ok(d.app().stage_5etools_zip(&input)?.token);
+        let staged = if ext == "zip" {
+            d.app().stage_5etools_zip(&input)?
+        } else {
+            d.app().stage_5etools_files(std::slice::from_ref(&input))?
+        };
+        return Ok(staged.token);
     }
     if !path.is_dir() {
         return Err(DriveError::new(
             "not_found",
-            format!("no such folder or .zip: {raw}"),
+            format!("no such folder, .zip or .json: {raw}"),
         ));
     }
     Ok(d.app()

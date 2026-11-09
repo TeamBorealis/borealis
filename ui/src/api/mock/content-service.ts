@@ -1,5 +1,5 @@
 import type {
-  BookRuleset, CompendiumFacets, FiveToolsImportReport, FiveToolsImportRequest, FiveToolsScan, CompendiumQuery, ContentIndex, ContentPack, ContentProgress, ContentSource, ElementDetail, ElementSummary,
+  BookRuleset, CompendiumFacets, FiveToolsImportReport, FiveToolsImportRequest, FiveToolsScan, FiveToolsSource, CompendiumQuery, ContentIndex, ContentPack, ContentProgress, ContentSource, ElementDetail, ElementSummary,
   ImportPackRequest, ImportPackResult, ItemCategory, ItemQuery, ItemSummary, MigrationIssue, MigrationReport, Page, Ruleset, UpdateIndexesResult,
 } from "../types";
 import { issue, scanElements, xmlIssues } from "./import-issues";
@@ -264,12 +264,16 @@ export class ContentService {
 
   scan5etools(path: string): FiveToolsScan {
     if (!path.trim() || /missing|nonexistent/i.test(path)) throw apiError("not_found", "No 5etools-format data folder was found at that path.");
+    const brew: FiveToolsSource = { abbr: "HBX", name: "My Homebrew", ruleset: "dnd2014", category: "homebrew", counts: { feat: 2 }, unsupported: {}, needs: [] };
+    // staged homebrew files (`stage5etoolsFiles`): only the homebrew source, with what it holds that is not imported
+    if (path.includes("/.homebrew/")) return { sources: [{ ...brew, counts: { feat: 2, spell: 1 }, unsupported: { deity: 1 }, needs: ["OtherBrew"] }] };
+    const none = { unsupported: {}, needs: [] };
     return { sources: [
-      { abbr: "srd", name: "SRD 5.1 (2014)", ruleset: "dnd2014", category: "book", counts: { class: 4, spell: 24, item: 12 } },
-      { abbr: "srd52", name: "SRD 5.2.1 (2024)", ruleset: "dnd2024", category: "book", counts: { class: 4, spell: 30, feat: 8 } },
-      { abbr: "basicRules", name: "Basic Rules (2014)", ruleset: "dnd2014", category: "book", counts: { feat: 6, spell: 10 } },
-      { abbr: "QST", name: "Sample Quest", ruleset: "mixed", category: "adventure", counts: { item: 3 } },
-      { abbr: "HBX", name: "My Homebrew", ruleset: "dnd2014", category: "homebrew", counts: { feat: 2 } },
+      { abbr: "srd", name: "SRD 5.1 (2014)", ruleset: "dnd2014", category: "book", counts: { class: 4, spell: 24, item: 12 }, ...none },
+      { abbr: "srd52", name: "SRD 5.2.1 (2024)", ruleset: "dnd2024", category: "book", counts: { class: 4, spell: 30, feat: 8 }, ...none },
+      { abbr: "basicRules", name: "Basic Rules (2014)", ruleset: "dnd2014", category: "book", counts: { feat: 6, spell: 10 }, ...none },
+      { abbr: "QST", name: "Sample Quest", ruleset: "mixed", category: "adventure", counts: { item: 3 }, ...none },
+      brew,
     ] };
   }
 

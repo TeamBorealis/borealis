@@ -305,6 +305,14 @@ pub fn stage_5etools_zip(state: S<'_>, file: ImportFileInput) -> ApiResult<Picke
     state.stage_5etools_zip(&file)
 }
 
+/// Stage 5etools-format homebrew `.json` files (several at once, optionally with one `.zip` of a
+/// `data/` folder) and return a `5etools-folder` token for `scan_5etools_folder` and
+/// `import_5etools` (B-238).
+#[tauri::command(async)]
+pub fn stage_5etools_files(state: S<'_>, files: Vec<ImportFileInput>) -> ApiResult<PickedPathDto> {
+    state.stage_5etools_files(&files)
+}
+
 /// Download the 5etools `data/` folder at an address the user pasted (GitHub repository or folder
 /// URL) and return a `5etools-folder` token for `scan_5etools_folder` and `import_5etools`.
 #[tauri::command]

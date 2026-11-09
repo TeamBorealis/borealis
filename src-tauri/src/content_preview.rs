@@ -460,6 +460,8 @@ fn stage_files(
             name_scratch_file(&mut conv.raw, SCRATCH_XML, &first);
             conv
         } else {
+            // B-238: a 5etools-format homebrew file belongs to the 5etools import
+            crate::content_fivetools_files::refuse_5etools_json(&first, bytes)?;
             convert_json_single(out_dir, &first, &id, bytes)?
         };
         return Ok((name, id, first, 1, conv));
@@ -467,6 +469,9 @@ fn stage_files(
     let mut entries = Vec::new();
     let mut zip_names = Vec::new();
     for (name, bytes) in files {
+        if name.to_lowercase().ends_with(".json") {
+            crate::content_fivetools_files::refuse_5etools_json(base_name(&name), &bytes)?;
+        }
         if name.to_lowercase().ends_with(".zip") {
             zip_names.push(name);
             entries.extend(

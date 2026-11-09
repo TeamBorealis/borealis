@@ -172,6 +172,10 @@ pub struct FiveToolsSource {
     /// `book`, `adventure`, `homebrew` or `other`.
     pub category: String,
     pub counts: BTreeMap<String, usize>,
+    /// Homebrew entries Borealis does not import, by 5etools-format kind (`deity`, `vehicle`).
+    pub unsupported: BTreeMap<String, usize>,
+    /// Sources a homebrew file depends on (`_meta.dependencies`) that were not chosen with it.
+    pub needs: Vec<String>,
 }
 
 /// `scan_5etools_folder` result.

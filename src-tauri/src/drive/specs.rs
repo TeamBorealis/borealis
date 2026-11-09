@@ -164,8 +164,8 @@ fn content_tools() -> Vec<Value> {
     vec![
         tool("list_packs", "Installed content packs (bundled and imported).", &props(&[]), &[], Kind::Read),
         tool("import_index", "Add a content index URL (HTTPS) and download its files into deterministic packs. The only tool that uses the network.", &props(&[("url", s("HTTPS URL of a .index file."))]), &["url"], Kind::Network),
-        tool("scan_5etools", "List the sources found in a 5etools `data` folder or `.zip` inside the library.", &props(std::slice::from_ref(&path)), &["path"], Kind::Read),
-        tool("import_5etools", "Convert sources from a 5etools `data` folder or `.zip` inside the library into packs (deterministic).", &props(&[path.clone(), ("sources", json!({"type": "array", "items": {"type": "string"}, "description": "Source abbreviations (default: every source found)."})), ("include_fluff", flag("Include descriptive fluff text."))]), &["path"], Kind::Write),
+        tool("scan_5etools", "List the sources found in a 5etools `data` folder, `.zip` or homebrew `.json` file inside the library.", &props(std::slice::from_ref(&path)), &["path"], Kind::Read),
+        tool("import_5etools", "Convert sources from a 5etools `data` folder, `.zip` or homebrew `.json` file inside the library into packs (deterministic).", &props(&[path.clone(), ("sources", json!({"type": "array", "items": {"type": "string"}, "description": "Source abbreviations (default: every source found)."})), ("include_fluff", flag("Include descriptive fluff text."))]), &["path"], Kind::Write),
         tool("import_content_file", "Convert a content file inside the library (XML, JSON, .index or .zip) into a pack (deterministic).", &props(&[path]), &["path"], Kind::Write),
     ]
 }

@@ -1,7 +1,8 @@
 import { readBuffer } from "./files";
 
-/** What a file handed to Import ("+" button, window-wide drop) is, decided by name and, for .json, by content. */
-export type ImportKind = "pack" | "character" | "other";
+/** What a file handed to Import ("+" button, window-wide drop) is, decided by name and, for .json, by content.
+ *  `fivetools`: 5etools-format homebrew or data, which the 5etools-format import reads (B-238). */
+export type ImportKind = "pack" | "character" | "fivetools" | "other";
 
 /** Extensions the rules-based importers read. Everything else needs the optional AI assistant (desktop only). */
 export const RULES_IMPORT_ACCEPT = ".xml,.index,.zip,.dnd5e,.json,application/json,text/xml,application/zip";
@@ -20,7 +21,31 @@ function looksLikePack(text: string): boolean {
   }
 }
 
-/** XML, .index and .zip go to the pack importer, .dnd5e to the character importer, .json by sniffing; the rest is "other". */
+/** Entity arrays only 5etools-format data has (the importer reads more; these are enough to recognise a file). */
+const FIVETOOLS_ARRAYS = ["spell", "item", "baseitem", "magicvariant", "monster", "class", "subclass", "classFeature", "subclassFeature",
+  "race", "subrace", "feat", "background", "optionalfeature", "language", "condition"];
+
+/** A 5etools-format homebrew or data file: a `_meta` block or 5etools-format entity arrays, and no Borealis `elements`. */
+export function looksLikeFiveTools(text: string): boolean {
+  try {
+    const v: unknown = JSON.parse(text);
+    if (!v || typeof v !== "object" || Array.isArray(v)) return false;
+    const o = v as Record<string, unknown>;
+    if ("elements" in o) return false;
+    const meta = o._meta;
+    return (!!meta && typeof meta === "object" && !Array.isArray(meta)) || FIVETOOLS_ARRAYS.some((k) => Array.isArray(o[k]));
+  } catch {
+    return false;
+  }
+}
+
+/** True for a `.json` file whose content is 5etools-format data (TextDecoder drops a byte order mark). */
+export async function isFiveToolsFile(file: File): Promise<boolean> {
+  return ext(file.name) === "json" && looksLikeFiveTools(new TextDecoder().decode(await readBuffer(file)));
+}
+
+/** XML, .index and .zip go to the pack importer, .dnd5e to the character importer, .json by sniffing (a 5etools-format
+ *  file to the 5etools-format import); the rest is "other". */
 export async function classifyImport(file: File): Promise<ImportKind> {
   switch (ext(file.name)) {
     case "xml":
@@ -29,8 +54,11 @@ export async function classifyImport(file: File): Promise<ImportKind> {
       return "pack";
     case "dnd5e":
       return "character";
-    case "json":
-      return looksLikePack(new TextDecoder().decode(await readBuffer(file))) ? "pack" : "character";
+    case "json": {
+      const text = new TextDecoder().decode(await readBuffer(file));
+      if (looksLikePack(text)) return "pack";
+      return looksLikeFiveTools(text) ? "fivetools" : "character";
+    }
     default:
       return "other";
   }

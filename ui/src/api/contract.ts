@@ -408,6 +408,8 @@ export interface ApiMethods {
   scan5etoolsFolder(args: { folder: string }): Promise<FiveToolsScan>;
   /** Unpack a `.zip` of the user's 5etools `data/` folder (phones have no folder picker; desktop accepts it too). Returns a `5etools-folder` token for `scan5etoolsFolder` and `import5etools`. */
   stage5etoolsZip(args: { file: ImportFileInput }): Promise<PickedPath>;
+  /** Stage 5etools-format homebrew `.json` files (several at once, optionally beside one `.zip` of a `data/` folder they build on). A file that is not 5etools-format JSON is refused with a reason. Returns a `5etools-folder` token for `scan5etoolsFolder` and `import5etools`. */
+  stage5etoolsFiles(args: { files: ImportFileInput[] }): Promise<PickedPath>;
   /** Download the 5etools `data/` folder at an address the user pasted (a GitHub repository or any https:// folder address; none ships with the app). Emits `import5etools:progress` while downloading. Returns a `5etools-folder` token for `scan5etoolsFolder` and `import5etools`; importing from it remembers the address. */
   stage5etoolsUrl(args: { url: string }): Promise<PickedPath>;
   /** Addresses 5etools data was imported from. */
@@ -734,6 +736,7 @@ export const COMMANDS = {
   clearDownloadedContent: "clear_downloaded_content",
   scan5etoolsFolder: "scan_5etools_folder",
   stage5etoolsZip: "stage_5etools_zip",
+  stage5etoolsFiles: "stage_5etools_files",
   stage5etoolsUrl: "stage_5etools_url",
   list5etoolsUrls: "list_5etools_urls",
   remove5etoolsUrl: "remove_5etools_url",

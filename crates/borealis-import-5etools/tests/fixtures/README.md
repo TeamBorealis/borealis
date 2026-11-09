@@ -12,6 +12,9 @@ a few races, items, a background, two feats) used to test the converters.
 the same layout, kept apart so the rules fixtures keep their four sources; tests add them to
 a copy of `data/` when they need creatures.
 `srd_fixtures.rs` fails if an unflagged entry is ever added here.
+`homebrew/quill-brew.json` is an invented 5etools-format homebrew file (`_meta` plus one entry
+of each kind a homebrew file may hold, and a deity and a vehicle Borealis does not import) for
+the single-file import (B-238); it holds no SRD or other published text.
 
 ## Attribution
 

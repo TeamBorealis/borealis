@@ -232,6 +232,10 @@ export interface FiveToolsSource {
   category: FiveToolsSourceCategory;
   /** Element counts by type found for this book. */
   counts: Record<string, number>;
+  /** Homebrew entries Borealis does not import, by 5etools-format kind (e.g. "deity", "vehicle"). */
+  unsupported: Record<string, number>;
+  /** Sources a homebrew file depends on (`_meta.dependencies`) that were not chosen with it. */
+  needs: string[];
 }
 
 export interface FiveToolsScan {

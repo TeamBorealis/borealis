@@ -57,6 +57,17 @@ export function groupNotes(notes: ImportNote[]): NoteGroup[] {
     .sort((a, b) => b.notes.length - a.notes.length || a.label.localeCompare(b.label));
 }
 
+const counted = (counts: Record<string, number>): string => Object.entries(counts).map(([k, n]) => `${n} ${k}`).join(", ");
+
+/** A source's line in the list: what it holds, what Borealis does not import from it, and the homebrew sources it
+ *  depends on that were not chosen with it (B-238). */
+export function sourceDescription(s: FiveToolsSource): string {
+  const parts = [counted(s.counts)];
+  if (Object.keys(s.unsupported).length) parts.push(`not imported: ${counted(s.unsupported)}`);
+  if (s.needs.length) parts.push(`needs ${s.needs.join(", ")} (not chosen; choose its file too)`);
+  return parts.filter(Boolean).join(" · ");
+}
+
 /** Skips that are expected: entries the core rules already define (languages, skills, item types...). */
 export const isExpectedSkip = (n: ImportNote): boolean =>
   /core pack/.test(n.reason) || (n.kind === "language" && /already imported/.test(n.reason));

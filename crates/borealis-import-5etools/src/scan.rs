@@ -21,6 +21,11 @@ pub struct SourceSummary {
     pub category: String,
     /// Entry counts by kind (`race`, `class`, `spell`, `item`, ...). Kinds with no entry are absent.
     pub counts: BTreeMap<String, usize>,
+    /// Entries of a homebrew file that Borealis does not import, counted by their 5etools-format
+    /// property (`deity`, `vehicle`, ...).
+    pub unsupported: BTreeMap<String, usize>,
+    /// Sources a homebrew source depends on (`_meta.dependencies`) that are not in the folder.
+    pub needs: Vec<String>,
 }
 
 /// The `FiveToolsScan` DTO of the UI contract.
@@ -52,7 +57,20 @@ fn count_kind(prop: &str) -> Option<&'static str> {
 #[derive(Default)]
 struct Acc {
     counts: BTreeMap<String, usize>,
+    unsupported: BTreeMap<String, usize>,
     rulesets: BTreeSet<Ruleset>,
+}
+
+/// Dependencies of `upper` that are not a source of the folder (case-insensitive), sorted.
+fn missing_needs(loaded: &Loaded, upper: &str, present: &BTreeSet<String>) -> Vec<String> {
+    loaded
+        .dependencies
+        .get(upper)
+        .into_iter()
+        .flatten()
+        .filter(|d| !present.contains(&d.to_uppercase()))
+        .cloned()
+        .collect()
 }
 
 fn summarize(loaded: &Loaded) -> Vec<SourceSummary> {
@@ -76,6 +94,21 @@ fn summarize(loaded: &Loaded) -> Vec<SourceSummary> {
             a.rulesets.insert(ruleset_of_entry(&e.value));
         }
     }
+    for (prop, e) in &loaded.unsupported {
+        let Some(source) = e.value.get("source").and_then(|s| s.as_str()) else {
+            continue;
+        };
+        let upper = source.to_uppercase();
+        spelling
+            .entry(upper.clone())
+            .or_insert_with(|| source.to_string());
+        *acc.entry(upper)
+            .or_default()
+            .unsupported
+            .entry(prop.clone())
+            .or_default() += 1;
+    }
+    let present: BTreeSet<String> = acc.keys().chain(loaded.books.keys()).cloned().collect();
     acc.into_iter()
         .map(|(upper, a)| {
             let abbr = spelling.remove(&upper).unwrap_or_else(|| upper.clone());
@@ -84,10 +117,11 @@ fn summarize(loaded: &Loaded) -> Vec<SourceSummary> {
                 .get(&upper)
                 .cloned()
                 .unwrap_or_else(|| default_source_name(&abbr));
-            let ruleset = if a.rulesets.len() == 1 {
-                a.rulesets.iter().next().map_or("mixed", |r| r.as_str())
-            } else {
-                "mixed"
+            let ruleset = match a.rulesets.len() {
+                // only entries Borealis does not import: the source's own edition
+                0 => crate::source::ruleset_for(&abbr, None).as_str(),
+                1 => a.rulesets.iter().next().map_or("mixed", |r| r.as_str()),
+                _ => "mixed",
             };
             let category = loaded
                 .categories
@@ -95,11 +129,13 @@ fn summarize(loaded: &Loaded) -> Vec<SourceSummary> {
                 .cloned()
                 .unwrap_or_else(|| "other".to_string());
             SourceSummary {
+                needs: missing_needs(loaded, &upper, &present),
                 abbr,
                 name,
                 ruleset: ruleset.to_string(),
                 category,
                 counts: a.counts,
+                unsupported: a.unsupported,
             }
         })
         .collect()

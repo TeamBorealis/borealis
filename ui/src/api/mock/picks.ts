@@ -92,6 +92,27 @@ export class MockPicks {
     return { token, name: file.fileName, path: file.fileName };
   }
 
+  /** `stage_5etools_files`: homebrew `.json` files (and at most one `.zip`) become a `5etools-folder` token. Like the
+   *  backend, a Borealis content file or JSON without a `_meta` block or 5etools-format entries is refused. */
+  stageFiles(files: { fileName: string; contentBase64: string }[]): PickedPath {
+    if (files.length === 0) throw apiError("invalid_argument", "Choose at least one 5etools-format .json file.");
+    for (const f of files) {
+      const kind = ext(f.fileName);
+      if (kind !== "json" && kind !== "zip") throw apiError("invalid_argument", `${f.fileName} is not a .json or .zip file.`);
+      if (kind === "json") {
+        let value: unknown;
+        try { value = JSON.parse(atob(f.contentBase64)); } catch { throw apiError("invalid_argument", `${f.fileName} is not valid JSON.`); }
+        const o = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
+        if (Array.isArray(o.elements)) throw apiError("invalid_argument", `${f.fileName} is a Borealis content file. Import it under Additional Content > Custom content.`);
+        if (!o._meta || typeof o._meta !== "object") throw apiError("invalid_argument", `${f.fileName} is not a 5etools-format homebrew file: it has no _meta block and no 5etools-format entries.`);
+      }
+    }
+    const token = `pick_mock_${++this.seq}`;
+    const name = files.length === 1 ? files[0]!.fileName : `${files[0]!.fileName} and ${files.length - 1} more`;
+    this.picks.set(token, { path: `/home/me/.homebrew/${files[0]!.fileName}/data`, purpose: "5etools-folder" });
+    return { token, name, path: name };
+  }
+
   /** `take_picked_files`: all tokens are checked before any is consumed. */
   read(purpose: PickPurpose, tokens: string[]): OpenedFile[] {
     const allowed = READABLE[purpose];

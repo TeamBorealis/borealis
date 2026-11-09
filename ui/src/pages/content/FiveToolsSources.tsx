@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FiveToolsSource } from "../../api/contract";
 import { Check, Chip, SearchInput } from "../../components";
 import { CheckBox, ComboBox, Expander, triState } from "../../components/controls";
-import { editionLabel, type EditionFilter, setPicked, visibleGroups } from "./fiveTools";
+import { editionLabel, type EditionFilter, setPicked, sourceDescription, visibleGroups } from "./fiveTools";
 
 const EDITIONS: { value: EditionFilter; label: string }[] = [
   { value: "all", label: "All editions" },
@@ -37,7 +37,7 @@ export function FiveToolsSources({ sources, picked, onPicked }: Props) {
             <ul className="list" aria-label={`${g.title} sources`}>
               {g.sources.map((s) => (
                 <li key={s.abbr}><div className="inv-row" style={{ padding: "var(--sp-2) var(--sp-3)" }}>
-                  <Check label={`${s.name} (${s.abbr})`} description={Object.entries(s.counts).map(([k, n]) => `${n} ${k}`).join(", ")}
+                  <Check label={`${s.name} (${s.abbr})`} description={sourceDescription(s)}
                     checked={picked.includes(s.abbr)} onChange={(e) => onPicked(setPicked(picked, [s.abbr], e.target.checked))} />
                   <span className="spacer" /><Chip tone="accent">{editionLabel(s.ruleset)}</Chip>
                 </div></li>

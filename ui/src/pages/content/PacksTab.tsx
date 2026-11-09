@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import type { ContentPack } from "../../api/contract";
 import { Button, useConfirm, useImportNotice, useToast } from "../../components";
 import { filesToInputs } from "../../lib/files";
+import { isFiveToolsFile } from "../../lib/importRouting";
+import { routedMessage, sendToFiveTools } from "../../state/fiveToolsInbox";
 import { startImportPreview } from "../../state/importPreview";
 import { usePlatform } from "../../state/platform";
 import { useApi } from "../../state/ApiContext";
@@ -33,7 +35,12 @@ export function PacksTab() {
     if (fileRef.current) fileRef.current.value = "";
     const ok = acknowledged.current || (files.length > 0 && await notice.ensure());
     acknowledged.current = false;
-    if (ok && files.length) await preview({ files: await filesToInputs(files) });
+    if (!ok || !files.length) return;
+    // B-238: 5etools-format homebrew is read by the 5etools-format import below, not converted here
+    const fiveTools = (await Promise.all(files.map(isFiveToolsFile))).map((yes, i) => (yes ? files[i]! : null)).filter((f): f is File => f !== null);
+    const rest = files.filter((f) => !fiveTools.includes(f));
+    if (fiveTools.length) { sendToFiveTools(fiveTools); toast.push(routedMessage(fiveTools.map((f) => f.name))); }
+    if (rest.length) await preview({ files: await filesToInputs(rest) });
   };
   const pickFolder = async () => {
     if (!(await notice.ensure())) return;
