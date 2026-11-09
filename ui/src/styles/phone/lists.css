@@ -44,6 +44,10 @@ html.phone .pick-hint, html.phone .pick-empty { margin: 0 4px 8px; font: 400 var
 html.phone .pick-list { max-height: none; overflow: hidden; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
 html.phone .pick-row { position: relative; min-height: var(--ph-row); }
 html.phone .pick-row + .pick-row { box-shadow: inset 0 1px 0 var(--ph-line); }
+/* A2 / TV1: the tapped row's description opens inline, directly under it, on the raised tone. */
+html.phone .pick-inline { list-style: none; background: var(--ph-raised); box-shadow: inset 0 1px 0 var(--ph-line); animation: ph-fade var(--ph-d-small) var(--ph-ease-out); }
+html.phone .pick-inline + .pick-row { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .pick-inline .desc-scroll { padding: 12px var(--ph-gutter) 16px; }
 html.phone .pick-main, html.phone .pick-list.with-desc .pick-main {
   position: relative; flex: 1; width: 100%; height: auto; min-height: var(--ph-row); padding: 6px var(--ph-gutter);
   display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "name" "src"; align-content: center; column-gap: 12px; row-gap: 1px;

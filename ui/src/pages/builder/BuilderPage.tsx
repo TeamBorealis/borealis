@@ -41,8 +41,8 @@ const INTRO: Record<string, { title: string; text: string }> = {
   companion: { title: "Companion", text: "A companion creature that travels with your character." },
 };
 
-/** Phones (B-48 O2): the same intro, describing taps and the Choose button instead of a double click. */
-const PHONE_RACE_INTRO = { title: "Heritage", text: "Choose where your character comes from. Tap an entry in the list to read about it; choose it with the Choose button or a double tap." };
+/** Phones (B-48 O2, TV1 A1/A2): the same intro, describing taps, the row's circle and the Choose button instead of a double click. */
+const PHONE_RACE_INTRO = { title: "Heritage", text: "Choose where your character comes from. Tap an entry in the list to read about it under the entry; choose it with its circle, the Choose button or a double tap." };
 
 /** The old Levels & HP route: leveling and multiclassing live in the Level Up flyout, so open it and show Class. */
 function LevelsRedirect() {
@@ -57,7 +57,7 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   const { setLevelUpOpen } = useShell();
   const { tab = "race" } = useParams();
   const nav = useNavigate();
-  const [described, setDescribed] = useState<{ tab: string; id: string; isElement: boolean; choice?: PickChoice } | null>(null);
+  const [described, setDescribed] = useState<{ tab: string; id: string; isElement: boolean; choice?: PickChoice; slotId?: string } | null>(null);
   const [missingOpen, setMissingOpen] = useState(false);
   const phone = usePhone();
   const leftRef = useRef<HTMLDivElement>(null);
@@ -95,7 +95,13 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   const own = described?.tab === active ? described : null;
   const shownId = own ? own.id : defaultId;
   const paneId = own?.isElement ? own.id : defaultId;
-  const onDescribe: DescribeFn = (id, isElement = true, choice) => setDescribed({ tab: active, id, isElement, choice });
+  const onDescribe: DescribeFn = (id, isElement = true, choice, at) => {
+    // A2 / TV1 (phones): a second tap on the row whose description is open under it closes it.
+    const reTap = phone && at?.toggle && own?.isElement && own.id === id && own.slotId === at.slotId;
+    setDescribed(reTap ? null : { tab: active, id, isElement, choice, slotId: at?.slotId });
+  };
+  // A2 / TV1 (phones): a row's description opens inline under it; the pane below the lists then stays away (one card).
+  const inline = phone && own?.isElement && own.slotId ? { slotId: own.slotId, id: own.id } : null;
   // O2 (phones): the described row's "Choose <name>" button, while its slot does not already hold it.
   const choice = phone && own?.choice && snapshot.slots.some((s) => s.id === own.choice!.slotId && s.chosen?.id !== own.id) ? own.choice : null;
   const intro = phone && active === "race" ? PHONE_RACE_INTRO : INTRO[active] ?? INTRO.race!;
@@ -120,13 +126,13 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
         <Tabs inBand tabs={tabs} active={active} onChange={openTab} label="Build sections" idPrefix="build" />
         <TabPanel active={active} idPrefix="build">
           {active === "abilities" ? <AbilitiesTab describedId={shownId} onDescribe={onDescribe} />
-            : <SlotList slots={slots} describedId={shownId} onDescribe={onDescribe} />}
+            : <SlotList slots={slots} describedId={shownId} onDescribe={onDescribe} inline={inline} />}
           {/* B3 (GitHub #35): extras the DM grants, after the section's own picks */}
           {addedKind && <AddedPicks kind={addedKind} onDescribe={(id) => onDescribe(id)} />}
         </TabPanel>
         <div className="sr-only" aria-live="polite">{snapshot.progress.remaining} choices remaining</div>
       </div>
-      <div className="bp-right">{pane}</div>
+      {!inline && <div className="bp-right">{pane}</div>}
       {/* O2 (phones): under the list and its description; it stays in reach at the bottom while the page scrolls. */}
       {choice && <div className="bp-choose"><Button variant="primary" className="bp-choose-btn" onClick={choice.choose}>Choose {choice.name}</Button></div>}
     </div>

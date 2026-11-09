@@ -15,10 +15,12 @@ export interface SlotListProps {
   /** When the page owns a description pane, it passes the shared described id + setter; otherwise a pane renders inline. */
   describedId?: string | null;
   onDescribe?: DescribeFn;
+  /** A2 / TV1 (phones): the description that opens under its row, in the picker of that slot. */
+  inline?: { slotId: string; id: string } | null;
 }
 
 /** Renders every selection slot of a tab as stacked classic builder pickers. */
-export function SlotList({ slots, emptyText = EMPTY_TEXT, describedId, onDescribe }: SlotListProps) {
+export function SlotList({ slots, emptyText = EMPTY_TEXT, describedId, onDescribe, inline = null }: SlotListProps) {
   const { snapshot, mutate } = useCharacter();
   const [params, setParams] = useSearchParams();
   const wanted = params.get("slot");
@@ -84,7 +86,8 @@ export function SlotList({ slots, emptyText = EMPTY_TEXT, describedId, onDescrib
           {g.label && (i === 0 || groups[i - 1]!.label !== g.label) && <h3 className="pick-group-label">{g.label}</h3>}
           <PickerGroup characterId={snapshot.id} group={g} isNext={g.slots.some((s) => s.id === wanted)}
             open={isOpen(g)} onToggle={(o) => setOpenKeys((m) => ({ ...m, [g.key]: o }))}
-            describedId={described} onDescribe={describe} onChoose={(s, e) => void choose(s, e)} onClear={clear} />
+            describedId={described} onDescribe={describe} onChoose={(s, e) => void choose(s, e)} onClear={clear}
+            inlineId={inline && g.slots.some((s) => s.id === inline.slotId) ? inline.id : null} />
         </section>
       ))}
     </div>
