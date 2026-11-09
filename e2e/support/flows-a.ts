@@ -186,7 +186,8 @@ export async function dblClickByText(ctx: Ctx, css: string, text: string): Promi
 
 /**
  * Real-pointer click on a non-name cell: finds the first `rowCss` row containing `rowText`, takes its `cellCss` cell,
- * hit-tests the centre and taps it with the real mouse. A single press (mouse-down + up) is what full-row selection must accept.
+ * scrolls it into view as a user would, hit-tests the centre and taps it with the real mouse. A single press
+ * (mouse-down + up) is what full-row selection must accept.
  */
 export async function clickCellInRow(ctx: Ctx, rowCss: string, rowText: string, cellCss: string): Promise<void> {
   const pt = await ctx.browser.evaluate(({ rowCss, rowText, cellCss }): { err: string } | { x: number; y: number } => {
@@ -194,6 +195,7 @@ export async function clickCellInRow(ctx: Ctx, rowCss: string, rowText: string, 
     if (!row) return { err: `no ${rowCss} containing "${rowText}"` };
     const cell = row.querySelector(cellCss);
     if (!cell) return { err: `no ${cellCss} in that row` };
+    cell.scrollIntoView({ block: 'center', inline: 'nearest' });
     const r = cell.getBoundingClientRect();
     const x = r.x + r.width / 2;
     const y = r.y + r.height / 2;

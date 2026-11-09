@@ -27,6 +27,12 @@ const sourceOf = (ctx: Ctx) => textOf(ctx, `${DB_ROW} .pick-src-name`);
 describe('b55 version rows', { tags: ['b55'] }, () => {
   test('2024 species: Dragonborn once, pick the 2014 version, choose, switch back, Edition 2014 filter', async (ctx) => {
     await newCharacter(ctx);
+    // TV1 A4: the Edition filter starts on the character's edition (2024), which hides the 2014 version.
+    await waitFor(ctx, (css: string) => document.querySelector(css)?.getAttribute('aria-pressed') === 'true', `${SPECIES} .pick-seg-btn:nth-child(2)`, 'Edition 2024 on');
+    expectEqual('version count (2024 filter)', '2', await textOf(ctx, `${DB_ROW} .pick-ver-count`));
+    await clickCss(ctx, `${SPECIES} .pick-seg-btn:nth-child(1)`);
+    await waitFor(ctx, (css: string) => document.querySelector(css)?.getAttribute('aria-pressed') === 'true', `${SPECIES} .pick-seg-btn:nth-child(1)`, 'Edition All on');
+    await waitFor(ctx, (css: string) => !!document.querySelector(css), DB_VERSIONS, 'three versions');
     // One row per name: Dragonborn is listed once, with a version count of 3; names are unique.
     expectEqual('Dragonborn rows', '1', String(await count(ctx, DB_ROW)));
     const names = await rowsText(ctx, 'ul[aria-label="Species options"] .pick-name');

@@ -5,7 +5,14 @@ import type { Ctx } from '../support/flows-a.js';
 import { pressKey, textsOf, waitStatus } from '../support/flows-b.js';
 
 // Application Settings dialog: left vertical tabs, footer Restore defaults / Save / Cancel, Cancel discards, URL unchanged.
-const TAB_ORDER = 'GENERAL|APPEARANCE|CHARACTER BUILD|DATA FILES|EQUIPMENT|CHARACTER SHEET|LICENSE|ABOUT';
+// One settings window (GitHub #31): the classic tabs first, the Borealis tabs where the classic builder puts its
+// developer-mode tab, LICENSE and ABOUT last. The web mock is a direct desktop build with the AI integration and the
+// assistant off: AI ASSISTANT and UPDATES show, PHONES (assistant on only) does not.
+const TAB_ORDER = [
+  'GENERAL', 'APPEARANCE', 'CHARACTER BUILD', 'DATA FILES', 'EQUIPMENT', 'CHARACTER SHEET',
+  'RULES', 'SAVING', 'DISPLAY', 'CONTENT', 'SEARCH', 'AI ASSISTANT', 'DEVICES', 'UPDATES',
+  'LICENSE', 'ABOUT',
+].join('|');
 
 async function openSettings(ctx: Ctx) {
   await ctx.screen.getByRole('menuitem', 'View').tap();
