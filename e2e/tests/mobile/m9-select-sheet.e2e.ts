@@ -23,9 +23,11 @@ mobileSuite('m9', 'chooses Equipment Packs from the Gear category sheet', async 
   await expect(screen.getByText(/^Trade Goods \(\d+\)$/)).toBeVisible();
   await expect(screen.getByRole('button', /^Close$/).first()).toBeVisible();
   await packs.tap();
-  // The sheet closes, the select shows the choice and the catalogue lists the packs.
+  // The sheet closes and the catalogue shows the packs under the "Equipment Packs" band. (The select button's label is
+  // its name, "Category"; the chosen value is its description, which the Android tree does not list as text.)
   await expect(screen.getByRole('button', /^Close$/)).toBeHidden(SLOW);
-  await expect(screen.getByText(/^Equipment Packs \(\d+\)$/).first()).toBeVisible();
-  await expect(screen.getByText(/^Explorer.s Pack$/).first()).toBeVisible(SLOW);
   await expect(screen.getByText(/^Trade Goods \(\d+\)$/)).toBeHidden();
+  await expect(screen.getByText(/^Equipment Packs$/).first()).toBeVisible(SLOW);
+  await expect(screen.getByRole('button', /^Explorer.s Pack$/)).toBeVisible(SLOW);
+  await expect(screen.getByRole('button', /^Burglar.s Pack$/)).toBeVisible();
 });

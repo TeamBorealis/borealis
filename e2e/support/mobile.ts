@@ -1,18 +1,36 @@
 import { execFile } from 'node:child_process';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { describe, test } from '@e2e-dev/mobile';
 import { expect } from 'e2e';
 import type { TestFixtures } from 'e2e';
 import type { Device } from '@e2e-dev/mobile';
+import { ANDROID_BUNDLE_ID, findAndroidApk } from './mobile-env.js';
+
+const ADB = join(process.env.ANDROID_HOME ?? join(homedir(), 'Library/Android/sdk'), 'platform-tools/adb');
+/** A 1.6 GB debug APK takes minutes to stream onto the emulator. */
+const ADB_INSTALL_TIMEOUT_MS = 10 * 60_000;
 
 /**
  * Clean slate for a real-backend test: remove the app (and its whole data dir) and install the
  * build again. `app.clearState()` is avoided because agent-device cannot pick the simulator for
  * its reset when a second simulator is booted ("2 devices match this request equally").
+ *
+ * On Android the engine's reinstall fails when the app is missing ("adb uninstall failed",
+ * DELETE_FAILED_INTERNAL_ERROR), and a debug APK of over 1.5 GB does not fit the AVD's /data when it
+ * is copied to the device before installing (INSTALL_FAILED_INSUFFICIENT_STORAGE). Then adb removes
+ * the app itself and streams the same APK (`adb install`), which needs no second copy.
  */
 export async function freshInstall(device: Device): Promise<void> {
-  await device.installApp(undefined, { reinstall: true });
+  try {
+    await device.installApp(undefined, { reinstall: true });
+  } catch (e) {
+    const apk = findAndroidApk();
+    if (!apk || !/adb|INSTALL_FAILED_INSUFFICIENT_STORAGE/.test(String(e))) throw e;
+    await execFileAsync(ADB, ['uninstall', ANDROID_BUNDLE_ID]).catch(() => undefined);
+    await execFileAsync(ADB, ['install', '-r', '-t', apk], { timeout: ADB_INSTALL_TIMEOUT_MS });
+  }
 }
 
 /** Assertion budget for screens that follow a launch or a Rust-backed navigation (slow AX tree). */
@@ -47,9 +65,12 @@ export function characterEntry(screen: Screen, name: string) {
   return screen.getByRole('button', new RegExp(`^${name}, Level \\d+`));
 }
 
-/** Build page after Create: the status bar prompts for the pending species ('race') choice. */
+/**
+ * Build page after Create: the status bar prompts for the pending species ('race') choice, in Aurora's words on the wide
+ * shell and as "Next: choose Species (Build tab, Species)" on the phone shell (tester B7).
+ */
 export async function expectBuildPage(screen: Screen): Promise<void> {
-  await expect(screen.getByText(/choose one from the 'race' selection/i).first()).toBeVisible(SLOW);
+  await expect(screen.getByText(/choose one from the 'race' selection|^next: choose (race|species)\b/i).first()).toBeVisible(SLOW);
 }
 
 export type MobilePlatform = 'ios' | 'android';
