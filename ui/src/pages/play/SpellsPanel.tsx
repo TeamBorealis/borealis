@@ -97,7 +97,7 @@ export function CasterCard({ c, play, selectedId, onSelect }: { c: ClassSpellcas
 export function SpellsPanel({ s, selectedId, onSelect }: { s: CharacterSnapshot; selectedId: string | null; onSelect: (id: string) => void }) {
   return (<>
     <ConcentrationBanner concentration={s.play.concentration} />
-    {s.spellcasting.classes.map((c) => <CasterCard key={`${c.classSlotId}:${c.className}`} c={c} play={s.play} selectedId={selectedId} onSelect={onSelect} />)}
+    {s.spellcasting.classes.map((c) => <CasterCard key={c.classSlotId} c={c} play={s.play} selectedId={selectedId} onSelect={onSelect} />)}
   </>);
 }
 

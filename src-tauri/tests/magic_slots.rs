@@ -5,6 +5,7 @@
 use borealis_lib::dto::{
     AbilityMethodDto, CharacterSnapshot, NewCharacterRequest, OptionsPatch, Ruleset,
 };
+use borealis_lib::error::ErrorCode;
 use borealis_lib::state::{AppPaths, AppState};
 use std::path::PathBuf;
 
@@ -389,4 +390,116 @@ fn sage_ability_scores_is_a_list_slot_whose_options_are_not_elements() {
         .and_then(|s| s.chosen.clone())
         .expect("chosen");
     assert_eq!(chosen.ty, "list");
+}
+
+/// A Sage Wizard 1 with every Magic Initiate pick made (the ability and the three spells), so the
+/// feat's own spellcasting block exists next to the Wizard's.
+fn sage_wizard_with_magic_initiate(app: &AppState) -> CharacterSnapshot {
+    let mut snap = sage_wizard(app);
+    for title in [
+        "Spellcasting Ability",
+        "Magic Initiate Cantrips",
+        "Magic Initiate Cantrips",
+        "Magic Initiate Level 1 Spell",
+    ] {
+        let open = snap
+            .slots
+            .iter()
+            .find(|s| s.title == title && s.chosen.is_none())
+            .unwrap_or_else(|| panic!("open {title}"))
+            .id
+            .clone();
+        let held: Vec<String> = snap
+            .slots
+            .iter()
+            .filter_map(|s| s.chosen.as_ref().map(|c| c.id.clone()))
+            .collect();
+        let pick = app
+            .get_slot_options(&snap.id, &open, None, Some(500), None)
+            .expect("options")
+            .items
+            .iter()
+            .map(|o| o.base.summary.id.clone())
+            .find(|o| !held.contains(o))
+            .unwrap_or_else(|| panic!("an option for {title}"));
+        snap = app.apply_selection(&snap.id, &open, &pick).expect("pick");
+    }
+    snap
+}
+
+/// A feat's spellcasting block (Magic Initiate) has an id of its own: the Magic page keys its
+/// tabs by `classSlotId`, so a feat block sharing the Wizard's `main` showed the Wizard's spells
+/// on the feat's tab, and a prepare tick there addressed the Wizard.
+#[test]
+fn a_feat_spellcasting_block_has_its_own_id_next_to_the_class() {
+    let (_dir, app) = app();
+    let snap = sage_wizard_with_magic_initiate(&app);
+    let blocks: Vec<(&str, &str)> = snap
+        .spellcasting
+        .classes
+        .iter()
+        .map(|c| (c.class_name.as_str(), c.class_slot_id.as_str()))
+        .collect();
+    let wizard = snap
+        .spellcasting
+        .classes
+        .iter()
+        .find(|c| c.class_name == "Wizard")
+        .expect("wizard block");
+    let feat = snap
+        .spellcasting
+        .classes
+        .iter()
+        .find(|c| c.class_name.starts_with("Magic Initiate"))
+        .unwrap_or_else(|| panic!("feat block in {blocks:?}"));
+    assert_eq!(wizard.class_slot_id, "main", "class ids are unchanged");
+    let mut ids: Vec<&str> = blocks.iter().map(|b| b.1).collect();
+    ids.sort_unstable();
+    ids.dedup();
+    assert_eq!(
+        ids.len(),
+        blocks.len(),
+        "every block has its own id: {blocks:?}"
+    );
+    assert!(
+        feat.class_slot_id != "main" && !feat.class_slot_id.starts_with("multi-"),
+        "{blocks:?}"
+    );
+    assert!(
+        !feat.class_slot_id.contains(char::is_whitespace),
+        "the id is used in HTML ids: {}",
+        feat.class_slot_id
+    );
+
+    // The same feat block keeps its id across derives.
+    let again = app.get_snapshot(&snap.id).expect("snapshot");
+    assert!(again
+        .spellcasting
+        .classes
+        .iter()
+        .any(|c| c.class_name == feat.class_name && c.class_slot_id == feat.class_slot_id));
+
+    // Preparing addresses the block the id names: the feat's spells are not prepared spells, and
+    // the Wizard's list is untouched.
+    let spell = feat
+        .spells
+        .iter()
+        .find(|s| s.level > 0)
+        .expect("the feat's level 1 spell");
+    let err = app
+        .set_spell_prepared(&snap.id, &feat.class_slot_id, &spell.id, true)
+        .expect_err("a feat's spell is not prepared");
+    assert_eq!(err.code, ErrorCode::RequirementFailed, "{err:?}");
+    let after = app.get_snapshot(&snap.id).expect("snapshot");
+    let wizard_after = after
+        .spellcasting
+        .classes
+        .iter()
+        .find(|c| c.class_name == "Wizard")
+        .expect("wizard");
+    assert_eq!(wizard_after.prepared_count, wizard.prepared_count);
+    let err = app
+        .set_spell_prepared(&snap.id, "caster-no-such-block", &spell.id, true)
+        .expect_err("unknown block");
+    assert_eq!(err.code, ErrorCode::NotFound, "{err:?}");
 }

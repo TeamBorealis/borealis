@@ -143,7 +143,7 @@ fn gear_tools() -> Vec<Value> {
     let spell = ("spell_id", s("Spell id (get_character section=spells)."));
     let class_slot = (
         "class_slot_id",
-        s("Spellcasting class slot id (default `main`)."),
+        s("Spellcasting `classSlotId` from get_character section=spells: a class slot (default `main`) or a feat's or item's block (`caster-...`)."),
     );
     vec![
         tool("search_items", "Search equipment; with `id`, restricted to the character's ruleset and sources.", &props(&[("id", s("Character id (optional).")), ("query", s("Name filter.")), ("category", s("Item category.")), ("limit", int("Page size (default 25).")), ("offset", int("Page start."))]), &[], Kind::Read),

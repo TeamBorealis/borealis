@@ -1,6 +1,7 @@
 //! Spell services: preparing spells, swapping a learned spell, and statistic traces.
 
 use crate::builder::apply;
+use crate::caster_ids::{caster_name, BLOCK_ID_PREFIX};
 use crate::dto::CharacterSnapshot;
 use crate::dto_ext::StatTraceDto;
 use crate::error::{ApiError, ApiResult};
@@ -21,11 +22,13 @@ fn class_name(snap: &EngineSnapshot, slot: &ClassSlot) -> ApiResult<String> {
 }
 
 impl AppState {
-    /// Mark a spell prepared or not for a class (the engine enforces the limit).
+    /// Mark a spell prepared or not in a spellcasting block (the engine enforces the limit).
+    /// `class_slot_id` is the block's `ClassSpellcasting.classSlotId`: a class slot id, or the
+    /// `caster-...` id of a block that belongs to no class (a feat's, an item's).
     ///
     /// # Errors
-    /// `not_found` for an unknown class, `requirement_failed` for cantrips, always-prepared
-    /// spells or a full list.
+    /// `not_found` for an unknown class or block, `requirement_failed` for cantrips,
+    /// always-prepared spells, a block that does not prepare or a full list.
     pub fn set_spell_prepared(
         &self,
         id: &str,
@@ -33,11 +36,19 @@ impl AppState {
         spell_id: &str,
         prepared: bool,
     ) -> ApiResult<CharacterSnapshot> {
-        let slot = decode_class_slot(class_slot_id)?;
+        let slot = if class_slot_id.starts_with(BLOCK_ID_PREFIX) {
+            None
+        } else {
+            Some(decode_class_slot(class_slot_id)?)
+        };
         self.mutate(id, |ctx, d| {
             let engine = &ctx.hub.engine;
             let snap = engine.derive_with(&d.character.build, false);
-            let class = class_name(&snap, &slot)?;
+            let class = match &slot {
+                Some(slot) => class_name(&snap, slot)?,
+                None => caster_name(&snap, class_slot_id)
+                    .ok_or_else(|| ApiError::not_found("That spellcasting does not exist."))?,
+            };
             let out =
                 commands::set_prepared(engine, &d.character.build, &class, spell_id, prepared)?;
             apply(d, out);

@@ -8,7 +8,7 @@ use crate::dto::{
 };
 use crate::elements::plain_text;
 use crate::gear_info;
-use crate::ids::{ability_index, ability_key, encode_class_slot, encode_slot};
+use crate::ids::{ability_index, ability_key, encode_slot};
 use crate::snapshot_map::MapInput;
 use crate::state::ContentHub;
 use base64::engine::general_purpose::STANDARD;
@@ -18,7 +18,6 @@ use borealis_content::Ruleset;
 use borealis_engine::ids as engine_ids;
 use borealis_engine::snapshot::{CharacterSnapshot as Engine, SlotSnapshot, SpellcastingSnapshot};
 use borealis_engine::state::EquipSlot;
-use borealis_engine::ClassSlot;
 use serde::{Deserialize, Serialize};
 
 const UI_KEY: &str = "ui";
@@ -199,28 +198,13 @@ fn counts_toward_cantrips(store: &borealis_content::ContentStore, slot: &SlotSna
     }
 }
 
-/// Class progression of the spellcasting entry named `name` (`main` when no class carries it).
-fn caster_slot(snap: &Engine, name: &str) -> ClassSlot {
-    snap.classes
-        .iter()
-        .find(|k| k.class.as_ref().is_some_and(|e| e.name == name))
-        .map_or(ClassSlot::Main, |k| k.slot.clone())
-}
-
-/// `ClassSpellcasting.classSlotId` of the spellcasting entry a spell selection slot feeds, if
-/// that entry is listed on the Magic page.
-#[must_use]
-pub fn slot_caster_id(snap: &Engine, slot: &SlotSnapshot) -> Option<String> {
-    let name = slot.spellcasting.as_deref()?;
-    snap.spellcasting
-        .iter()
-        .any(|c| c.name == name)
-        .then(|| encode_class_slot(&caster_slot(snap, name)))
-}
-
-fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> ClassSpellcasting {
+fn caster(
+    input: &MapInput<'_>,
+    snap: &Engine,
+    c: &SpellcastingSnapshot,
+    id: String,
+) -> ClassSpellcasting {
     let store = &input.hub.store;
-    let slot = caster_slot(snap, &c.name);
     let restricted = borealis_content::SourceRestriction::excluding(
         input.character.build.restricted_sources.iter().cloned(),
     );
@@ -307,7 +291,7 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
         total,
     });
     ClassSpellcasting {
-        class_slot_id: encode_class_slot(&slot),
+        class_slot_id: id,
         class_name: c.name.clone(),
         ability: ability_key(&c.ability),
         save_dc: c.dc,
@@ -349,7 +333,8 @@ pub fn spellcasting(input: &MapInput<'_>, snap: &Engine) -> SpellcastingState {
         classes: snap
             .spellcasting
             .iter()
-            .map(|c| caster(input, snap, c))
+            .zip(crate::caster_ids::caster_ids(snap))
+            .map(|(c, id)| caster(input, snap, c, id))
             .collect(),
         slots: multi.clone().or(single).unwrap_or_default(),
         multiclass_slots: multi.filter(|_| snap.spellcasting.len() > 1),

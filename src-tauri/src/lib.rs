@@ -29,6 +29,7 @@ pub mod attack_rows;
 pub mod book_editions;
 pub mod builder;
 pub mod bundled_content;
+pub mod caster_ids;
 pub mod commands;
 #[cfg(debug_assertions)]
 pub mod commands_acceptance;

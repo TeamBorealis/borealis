@@ -525,7 +525,7 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
                 ranked.push((flow_tab_rank(tab), slot_priority(s), out.len()));
             }
         }
-        let class_slot_id = extras::slot_caster_id(snap, s);
+        let class_slot_id = crate::caster_ids::slot_caster_id(snap, s);
         let (group_id, group_label) = if s.owner.ty == "Multiclass" {
             (Some(s.owner.id.clone()), Some(s.owner.name.clone()))
         } else if tab == "spells" && class_slot_id.is_none() {

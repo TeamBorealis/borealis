@@ -14,7 +14,7 @@ const spell = (id: string, name: string, level: number, grantedFrom: string): Sp
 });
 
 const block: ClassSpellcasting = {
-  classSlotId: "main", className: "Other Spells", ability: "" as ClassSpellcasting["ability"], saveDc: 0, attackBonus: 0,
+  classSlotId: "caster-other-spells", className: "Other Spells", ability: "" as ClassSpellcasting["ability"], saveDc: 0, attackBonus: 0,
   attackRoll: 0, model: "known", cantripsMax: 0, cantripsKnown: 1, preparedMax: 0, preparedCount: 0, maxSpellLevel: 0,
   pact: null, other: true,
   spells: [spell("ID_T_LIGHTS", "Dancing Lights", 0, "Gloom Elf"), spell("ID_T_FIRE", "Faerie Fire", 1, "Gloom Elf")],

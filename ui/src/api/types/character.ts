@@ -278,6 +278,10 @@ export interface SpellEntry {
 }
 
 export interface ClassSpellcasting {
+  /**
+   * Id of this block: a class's slot id (`main`, `multi-N`), or `caster-<name>` for a block of no class (a feat's, an
+   * item's, Other Spells). Unique per block: the Magic page keys its tabs by it and `setSpellPrepared` takes it back.
+   */
   classSlotId: string;
   className: string;
   ability: AbilityKey;
