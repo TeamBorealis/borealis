@@ -7,6 +7,7 @@ import { useShellActions } from "./useShellActions";
 import { UpdateCommand } from "./UpdateFlyout";
 import { usePhone } from "../../lib/phone";
 import { Portrait } from "../Portrait";
+import { openPicksFor } from "./tabBadges";
 
 /**
  * Phone title bar: hamburger, character name (gold) or app name, the open character's portrait (opens the portraits
@@ -47,7 +48,7 @@ export function BottomBar() {
     <nav className="aur-bottombar" aria-label="Main">
       {primary.map((t) => {
         const off = t.needsCharacter && !snapshot && !phone;
-        const remaining = t.id === "build" && snapshot ? snapshot.progress.remaining : 0;
+        const remaining = openPicksFor(t.id, snapshot, phone);
         const body = (<>{icon(t.icon)}<span className="label">{t.short}</span>{remaining > 0 && <span className="badge-count" aria-label={`${remaining} choices remaining`}>{remaining}</span>}</>);
         return off
           ? <span key={t.id} className="bb-item disabled" aria-disabled="true">{body}</span>
