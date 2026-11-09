@@ -76,6 +76,10 @@ jobs:
           cache-dependency-path: ui/package-lock.json
       - run: npm ci
         working-directory: ui
+      - name: UI lint (platform independent, Linux only)
+        if: runner.os == 'Linux'
+        run: npm run lint
+        working-directory: ui
       - name: UI tests (platform independent, Linux only)
         if: runner.os == 'Linux'
         run: npm test
