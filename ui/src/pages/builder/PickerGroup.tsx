@@ -1,9 +1,10 @@
 import { useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router";
-import type { RowHeight, SelectionSlot } from "../../api/contract";
+import type { RowHeight, Ruleset, SelectionSlot } from "../../api/contract";
 import { Expander, FocusBar, Icon, PrereqUnmetMark } from "../../components";
 import { useSettings } from "../../state/SettingsContext";
 import { usePhone } from "../../lib/phone";
+import { slotTitle } from "../../lib/terminology";
 import { NO_FILTER, type ShownRow, type VersionLike } from "../../lib/versions";
 import { PickerFilterBar } from "./PickerFilterBar";
 import { ElementSource, type MasteryLine, PickerRow } from "./PickerRow";
@@ -23,10 +24,13 @@ export const PICKER_ROW_PX: Record<RowHeight, number> = { small: 17, medium: 21,
 
 export interface SlotGroup { key: string; label: string | null; title: string; slots: SelectionSlot[] }
 
-/** One expander per pick: a "2 of 3" rule is three separate pickers, each with its own footer line. */
-export function groupSlots(slots: SelectionSlot[]): SlotGroup[] {
+/**
+ * One expander per pick: a "2 of 3" rule is three separate pickers, each with its own footer line. The species picker takes
+ * the character's ruleset word (A15), as its tab does.
+ */
+export function groupSlots(slots: SelectionSlot[], ruleset?: Ruleset | null): SlotGroup[] {
   // E31 SO-3: a locked slot (sole defaulted option, held) cannot change or clear and Aurora does not show it.
-  return slots.filter((s) => !s.locked).map((s) => ({ key: s.id, label: s.groupLabel, title: s.title, slots: [s] }));
+  return slots.filter((s) => !s.locked).map((s) => ({ key: s.id, label: s.groupLabel, title: slotTitle(s, ruleset), slots: [s] }));
 }
 
 /**

@@ -22,7 +22,8 @@ export function SlotList({ slots, emptyText = EMPTY_TEXT, describedId, onDescrib
   const { snapshot, mutate } = useCharacter();
   const [params, setParams] = useSearchParams();
   const wanted = params.get("slot");
-  const groups = useMemo(() => groupSlots(slots), [slots]);
+  const ruleset = snapshot?.ruleset;
+  const groups = useMemo(() => groupSlots(slots, ruleset), [slots, ruleset]);
   const [openKeys, setOpenKeys] = useState<Record<string, boolean>>({});
   const [advance, setAdvance] = useState(false);
   const [local, setLocal] = useState<{ id: string; isElement: boolean } | null>(null);
