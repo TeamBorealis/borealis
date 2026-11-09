@@ -83,7 +83,7 @@ async function searchChecks(ctx: Context, platform: MobilePlatform): Promise<voi
   await ctx.app.open();
 
   await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
-  // iOS reports the settings switch as a switch and the tier combo's choice as its value.
+  // iOS reports the settings switch as a switch. The tier select is the phone select button (U22), which shows its choice as text.
   const semantic = screen.getByRole(platform === 'ios' ? 'switch' : 'checkbox', 'Semantic search (optional)');
   await moreRow(screen, platform, screen.getByRole('button', 'Search settings'), semantic);
   await expect(semantic).toBeEnabled();
@@ -91,7 +91,7 @@ async function searchChecks(ctx: Context, platform: MobilePlatform): Promise<voi
   await expect(screen.getByText(/^Downloads the EmbeddingGemma 2 model \((about 310|210) MB\) once\./)).toBeVisible();
   await expect(screen.getByText(/^device tier$/i).first()).toBeVisible();
   const tier = /^Automatic \(Tier [123]: /;
-  await expect(platform === 'ios' ? screen.getByDisplayValue(tier) : screen.getByLabel(tier)).toBeVisible();
+  await expect(screen.getByText(tier).first()).toBeVisible();
 }
 
 /** Push to Downloads, have the media store index it, and answer its content URI (as m6). */
