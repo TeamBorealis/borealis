@@ -74,6 +74,21 @@ fn class_managers(graph: &Graph<'_>, state: &CharacterState) -> Vec<ClassMgr> {
     out
 }
 
+/// The statistic a Companion element's proficiency rules refer to.
+const COMPANION_PROFICIENCY: &str = "companion:proficiency";
+
+/// A Companion element's proficiency bonus as Aurora reads it: the `proficiency` setter, else
+/// the bonus of its challenge rating (2 when it has none or it is not a number).
+fn companion_proficiency(el: &borealis_content::Element) -> i32 {
+    el.setter_value("proficiency")
+        .and_then(|p| p.trim().parse().ok())
+        .unwrap_or_else(|| {
+            el.setter_value("challenge")
+                .and_then(|c| borealis_content::Cr::parse(c.trim()))
+                .map_or(2, |cr| i32::from(cr.proficiency_bonus()))
+        })
+}
+
 fn build_inputs<'u>(
     graph: &Graph<'u>,
     state: &CharacterState,
@@ -130,6 +145,15 @@ fn build_inputs<'u>(
     );
     for (skill, _) in SKILLS {
         s(&format!("{skill}:passive"), "Initial", 10);
+    }
+    // Aurora seeds the chosen Companion element's proficiency bonus, which its
+    // `companion:<skill>:proficiency` rules point at (GitHub #40).
+    if let Some((_, n)) = graph.nodes_of_type("Companion").next() {
+        s(
+            COMPANION_PROFICIENCY,
+            &n.e.el.name,
+            companion_proficiency(&n.e.el),
+        );
     }
     let (rules, skipped) = if trace {
         graph.stat_rules_with_skipped(None)

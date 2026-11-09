@@ -188,3 +188,34 @@ fn foreign_edition_beasts_are_not_offered() {
         "{opts:?}"
     );
 }
+
+#[test]
+fn a_chosen_companions_proficiency_rules_resolve() {
+    // Aurora seeds `companion:proficiency` with the companion's proficiency bonus, so a
+    // Companion element's `companion:<skill>:proficiency` rules resolve instead of being
+    // reported as unknown groups (GitHub #40).
+    let mut wolf = companion("ID_T_COMP_WOLF", "Wolf", "Beast", "Medium", "1/4");
+    wolf["rules"] = json!([
+        {"kind": "stat", "name": "companion:perception:proficiency", "value": "companion:proficiency", "bonus": "base"},
+        {"kind": "stat", "name": "companion:dexterity:save:proficiency", "value": "companion:proficiency", "bonus": "base"}
+    ]);
+    let mut extra = content();
+    extra.retain(|v| v["id"] != "ID_T_COMP_WOLF");
+    extra.push(wolf);
+    let e = engine(&["core"], extra);
+    let state = with_class(&e, "ID_T_CASTER");
+    let key = slot_key(&e.derive(&state), "ID_T_CASTER", "Beast Friend", 1).expect("slot");
+    let chosen = commands::select(&e, &state, &key, Choice::Element("ID_T_COMP_WOLF".into()))
+        .expect("pick wolf")
+        .state;
+    let snap = e.derive(&chosen);
+    let unknown: Vec<_> = snap
+        .diagnostics
+        .iter()
+        .filter(|d| d.message.contains("companion:proficiency"))
+        .collect();
+    assert!(unknown.is_empty(), "{unknown:?}");
+    assert_eq!(snap.stat("companion:proficiency"), 2);
+    assert_eq!(snap.stat("companion:perception:proficiency"), 2);
+    assert_eq!(snap.stat("companion:dexterity:save:proficiency"), 2);
+}
