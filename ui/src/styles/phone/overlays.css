@@ -104,7 +104,7 @@ html.phone .menu-tree .aur-menu-icon { width: 32px; color: var(--ph-accent); }
 
 /* The select sheet (U22, B-138): every select on a phone opens this list instead of the WebView's select dialog. One grouped
    list of 48 dp rows (52 on Android, as the menu rows); the current option is accent and ticked; disabled options are dimmed. */
-.select-sheet-host { display: contents; }
+html.phone .select-sheet-host { display: contents; }
 html.phone .select-sheet .dialog-body { padding-top: 0; }
 html.phone .select-sheet-list { display: flex; flex-direction: column; border-radius: var(--ph-r-lg); overflow: hidden; background: var(--ph-surface); }
 html.phone .select-sheet-row {

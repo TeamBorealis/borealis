@@ -43,13 +43,20 @@ describe("phone lists and controls CSS (B-48 WP4, WP5)", () => {
     expect(bodyOf("html.phone .btn")).toMatch(/min-height: var\(--ph-hit\)/);
   });
 
-  it("fields and the native select are 44/48 tall on the fill colour with a 3:1 boundary; the select keeps a chevron", () => {
-    const field = bodyOf("html.phone .aur-combo select");
+  it("fields and the select button (U22, replacing O10's native select) are 44/48 tall on the fill colour with a 3:1 boundary; the select keeps a chevron", () => {
+    const field = bodyOf("html.phone .ph-select");
     expect(field).toMatch(/min-height: var\(--ph-hit\)/);
     expect(field).toMatch(/background: var\(--ph-fill\)/);
     expect(field).toMatch(/var\(--ph-field-line\)/);
     expect(bodyOf("html.phone .aur-textbox.light input")).toMatch(/background: var\(--ph-fill\)/);
-    expect(bodyOf("html.phone .aur-combo > .aur-combo-arrow")).toMatch(/fill: var\(--ph-text-2\)/);
+    expect(bodyOf("html.phone .ph-select-arrow")).toMatch(/fill: var\(--ph-text-2\)/);
+  });
+
+  it("the select sheet's rows are at least 48 dp; the current row is accent", () => {
+    const sheet = parseRules(readCss("styles/phone/overlays.css"));
+    const sheetBody = (sel: string) => sheet.filter((r) => r.selectors.includes(sel)).map((r) => r.body).join(";");
+    expect(sheetBody("html.phone .select-sheet-row")).toMatch(/min-height: max\(48px, var\(--ph-row\)\)/);
+    expect(sheetBody("html.phone .select-sheet-row.current")).toMatch(/color: var\(--ph-accent\)/);
   });
 
   it("checkboxes stay checkboxes: a 24 px rounded box (O6); switches are 51 x 31", () => {
