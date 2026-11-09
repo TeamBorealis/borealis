@@ -96,7 +96,7 @@ describe("Build > Background on a phone (B5)", () => {
     const api = new ListSlotApi();
     const id = await seededId(api, "Seraphine");
     renderApp("/builder/background", { api, openCharacterId: id });
-    await user.click(await screen.findByRole("button", { name: /Intelligence \+1, Charisma \+2/ }));
+    await user.click(await screen.findByRole("button", { name: /^Intelligence \+1, Charisma \+2/ }));
     const pane = screen.getByRole("complementary", { name: "Description" });
     expect(within(pane).getByRole("heading", { name: "Intelligence +1, Charisma +2" })).toBeTruthy();
     expect(within(pane).getByText("Intelligence")).toBeTruthy();
@@ -110,7 +110,7 @@ describe("Build > Background on a phone (B5)", () => {
     const api = new ListSlotApi();
     const id = await seededId(api, "Seraphine");
     renderApp("/builder/background", { api, openCharacterId: id });
-    await user.click(await screen.findByRole("button", { name: /Intelligence \+1, Charisma \+2/ }));
+    await user.click(await screen.findByRole("button", { name: /^Intelligence \+1, Charisma \+2/ }));
     const pane = screen.getByRole("complementary", { name: "Description" });
     expect(within(pane).queryByRole("heading", { name: "Intelligence +1, Charisma +2" })).toBeNull();
   });
