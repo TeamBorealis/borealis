@@ -4,14 +4,15 @@ import type { CharacterSnapshot, PlayFeature, SelectionSlot } from "../api/contr
 import { MockApi } from "../api/mock";
 import { setPhoneForTests } from "../lib/phone";
 import { grantedFeats } from "../pages/builder/GrantedFeats";
+import { parseRules, readCss } from "./cssRules";
 import { renderApp, seededId } from "./utils";
 
 // Tester B8 (B-132, TV2): the Feats tab said "no selections" although the background had granted Magic Initiate. On a phone
-// it lists granted feats read-only ("Magic Initiate (Cleric), from Acolyte"); desktop keeps the classic selections-only tab.
+// it lists granted feats read-only ("Magic Initiate (Cleric), from Acolyte"); since U24 desktop lists them too.
 const feat = (over: Partial<PlayFeature>): PlayFeature =>
   ({ id: "ID_T_FEAT_MI", name: "Magic Initiate", ty: "Feat", source: "SRD", level: 1, grantedBy: "Acolyte", description: "<p>Two cantrips and a spell.</p>", displayed: true, ...over });
-const miSlot = (over: Partial<SelectionSlot>): SelectionSlot =>
-  ({ id: "mi-ability", tab: "feats", title: "Spellcasting Ability", groupLabel: "Magic Initiate (Cleric)", elementType: "list", chosen: { id: "1", name: "Wisdom", type: "list" }, locked: false, required: true, ordinal: 1, of: 1 }) as unknown as SelectionSlot & typeof over;
+const miSlot = (_over: Partial<SelectionSlot>): SelectionSlot =>
+  ({ id: "mi-ability", tab: "feats", title: "Spellcasting Ability", groupLabel: "Magic Initiate (Cleric)", elementType: "list", chosen: { id: "1", name: "Wisdom", type: "list" }, locked: false, required: true, ordinal: 1, of: 1 }) as unknown as SelectionSlot & typeof _over;
 
 /** The character's feats: Magic Initiate from its background, and Tough chosen in a feat slot. */
 class GrantedApi extends MockApi {
@@ -58,11 +59,20 @@ describe("Feats tab lists the origin feat granted by the background (B8)", () =>
     expect(grantedFeats(s)).toHaveLength(1);
   });
 
-  it("desktop keeps the selections-only Feats tab", async () => {
+  it("desktop lists them too (U24), as locked chosen-pick lines like the Added feats section's", async () => {
     const api = new GrantedApi();
     const id = await seededId(api, "Seraphine");
     renderApp("/builder/feats", { api, openCharacterId: id });
-    expect(await screen.findByText(/doesn't have any selections available here/)).toBeTruthy();
-    expect(screen.queryByRole("list", { name: "Granted feats" })).toBeNull();
+    const list = await screen.findByRole("list", { name: "Granted feats" });
+    expect(document.documentElement.classList.contains("phone")).toBe(false);
+    const line = within(list).getByText("Magic Initiate").closest(".pick-chosen")!;
+    expect(line.querySelector("svg.icon")).toBeTruthy(); // the lock of a locked pick
+    expect(within(line as HTMLElement).getByText("from Acolyte").className).toContain("pick-chosen-src");
+    expect(within(list).queryByRole("button", { name: /Remove|Clear/ })).toBeNull();
+    expect(list.closest("section")?.className).toBe("added-picks granted-feats");
+    expect(screen.queryByText(/doesn't have any selections available here/)).toBeNull();
+    // Desktop spacing for the leading section; phones keep theirs (styles/phone/build.css).
+    const rule = parseRules(readCss("pages/builder/builder.css")).find((r) => r.selectors.includes("html:not(.phone) .added-picks.granted-feats"));
+    expect(rule?.body).toMatch(/margin: 0 0 14px 10px/);
   });
 });

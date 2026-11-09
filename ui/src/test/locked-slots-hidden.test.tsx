@@ -19,7 +19,8 @@ describe("Locked slots (E31 SO-3)", () => {
     const lockedSlot = snap.slots.find((s) => s.tab === "feats" && s.locked);
     expect(lockedSlot?.chosen).toBeTruthy();
     renderApp("/builder/feats", { api, openCharacterId: snap.id });
-    await waitFor(() => expect(screen.getByText(/doesn't have any selections available/i)).toBeTruthy());
+    // The origin feat it holds shows read-only under Granted feats (tester B8, U24), not as a picker.
+    await waitFor(() => expect(screen.getByRole("list", { name: "Granted feats" }).textContent).toContain("Skilled"));
     expect(screen.queryByText("Origin feat")).toBeNull();
     expect(document.querySelector(`[data-slot-id="${lockedSlot!.id}"]`)).toBeNull();
   });

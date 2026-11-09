@@ -1,5 +1,6 @@
 import { ABILITY_KEYS, type AbilityKey, type AbilityRecord, type AbilityState } from "../types";
-import { ABILITY_NAMES, getClass, getRace, SUBRACE_BONUS } from "./content";
+import { ABILITY_NAMES, getClass, getElement, getRace, SUBRACE_BONUS } from "./content";
+import { backgroundAbilityList, optionIncreases } from "./background-options";
 import {
   type MockCharacter, type RuleSettings, POINT_BUY_COSTS, STANDARD_ARRAY, d20Tests, mod, pointBuySpent,
 } from "./state";
@@ -23,6 +24,11 @@ export function abilityBonuses(c: MockCharacter): { bonus: AbilityRecord<number>
     if (sub) for (const k of ABILITY_KEYS) if (sub[k]) add(k, sub[k]!, "Subrace");
   }
   for (const [slot, el] of Object.entries(c.choices)) {
+    if (backgroundAbilityList() && slot.startsWith("bg:asi:")) continue; // that scenario offers the engine's list instead
+    if (el.startsWith("bgopt:")) {
+      for (const [k, n] of optionIncreases(getElement(el)?.name ?? "")) add(k, n, "Background");
+      continue;
+    }
     const m = /^asi:(\w+):(\d)$/.exec(el);
     if (!m) continue;
     const label = slot.startsWith("bg:") ? "Background" : "Improvement";

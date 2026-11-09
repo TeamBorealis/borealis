@@ -254,3 +254,22 @@ html.phone .bp-notices .bp-linkbtn { padding: 12px 4px; margin: -12px 0 -12px 2p
   .added-add { min-height: 44px; }
   .addpick-list button { min-height: 44px; }
 }
+
+/* U24 (tester B5, B8, B11 on desktop): additions beyond Aurora, drawn with the page's own Aurora pieces. Phones keep their
+   own look (styles/phone/build.css), so these rules stay off `html.phone`. */
+/* B8: the granted feats lead the Feats tab as locked chosen-pick lines (the Added feats section's look). */
+html:not(.phone) .added-picks.granted-feats { margin: 0 0 14px 10px; }
+/* B5: a background ability option's scores, read like the description pane's fact lines: "Intelligence. 8 → 9 (−1 → +0)". */
+html:not(.phone) .abil-opt { margin: 0 0 6px; }
+html:not(.phone) .abil-opt-row { display: flex; flex-wrap: wrap; gap: 0 5px; margin: 0 0 6px; }
+html:not(.phone) .abil-opt-row dt { font-style: italic; }
+html:not(.phone) .abil-opt-row dt::after { content: "."; }
+html:not(.phone) .abil-opt-row dd { margin: 0; font-variant-numeric: tabular-nums; }
+html:not(.phone) .abil-opt-mod { color: var(--gray-5); }
+html:not(.phone) .abil-opt-mod::before { content: "("; }
+html:not(.phone) .abil-opt-mod::after { content: ")"; }
+/* B11: "Suggested for <class>" sits under the method row, labelled like it (10 px caps), with the six values and an Aurora button. */
+html:not(.phone) .abil-suggest { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; min-width: 0; font-size: var(--fs-xs); text-transform: uppercase; }
+html:not(.phone) .abil-suggest-text { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
+html:not(.phone) .abil-suggest-title { margin: 0; font-size: 10px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+html:not(.phone) .abil-suggest-scores { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }

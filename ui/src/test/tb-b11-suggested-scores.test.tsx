@@ -5,6 +5,7 @@ import type { AbilityMethod, AbilityRecord } from "../api/contract";
 import { MockApi } from "../api/mock";
 import { setPhoneForTests } from "../lib/phone";
 import { applySuggested } from "../pages/builder/SuggestedScores";
+import { parseRules, readCss } from "./cssRules";
 import { renderApp, seededId } from "./utils";
 
 // Tester B11 (B-135, TV2): "it would be optimal if it recommended the stats". On a phone Ability Scores offers
@@ -56,11 +57,25 @@ describe("ability scores suggest the class's standard array and apply it (B11)",
     expect(after.abilities.base).toEqual(target);
   });
 
-  it("desktop shows no suggestion (Aurora has none)", async () => {
+  it("desktop shows it too (U24), under the method row, and Apply sets the scores; nothing applies by itself", async () => {
+    const user = userEvent.setup();
     const api = fast();
     const id = await wizardWith(api, "manual");
+    const before = await api.getSnapshot({ characterId: id });
+    const target = before.abilities.suggested!;
     renderApp("/builder/abilities", { api, openCharacterId: id });
-    await screen.findByRole("tab", { name: "Ability Scores" });
-    expect(screen.queryByRole("region", { name: /Suggested for/ })).toBeNull();
+    const card = await screen.findByRole("region", { name: "Suggested for Wizard" });
+    expect(document.documentElement.classList.contains("phone")).toBe(false);
+    expect(card.previousElementSibling?.className).toBe("abil-top"); // the row under "Abilities generation option"
+    expect(within(card).getByText(`STR ${target.scores.str}`)).toBeTruthy();
+    expect((await api.getSnapshot({ characterId: id })).abilities.base).toEqual(before.abilities.base);
+    const apply = within(card).getByRole("button", { name: "Apply" });
+    expect(apply.className).toBe("btn"); // the Aurora button
+    await user.click(apply);
+    await waitFor(async () => expect((await api.getSnapshot({ characterId: id })).abilities.base).toEqual(target.scores));
+    expect(await within(card).findByRole("button", { name: "Applied" })).toHaveProperty("disabled", true);
+    // Labelled like the method row's caption (10 px caps), on desktop only.
+    const rule = parseRules(readCss("pages/builder/builder.css")).find((r) => r.selectors.includes("html:not(.phone) .abil-suggest-title"));
+    expect(rule?.body).toMatch(/font-size: 10px/);
   });
 });

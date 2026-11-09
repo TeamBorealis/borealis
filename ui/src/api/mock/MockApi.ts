@@ -18,6 +18,7 @@ import * as rolled from "./rolled-charges";
 import * as added from "./added-picks";
 import { MockAppUpdate, recordOpenedLink } from "./app-update";
 import { classCounts, setClasslessEdition, startedOver } from "./edition-classes";
+import { setBackgroundAbilityList } from "./background-options";
 import { MockDataFiles } from "./data-files";
 import { MockPortraitLibrary } from "./portrait-library";
 import { MockVault } from "./vault";
@@ -78,6 +79,8 @@ export interface MockApiOptions {
   semantic?: Partial<MockSemanticOptions>;
   /** U14 scenario: this edition has no classes (as with every book of it switched off). */
   classlessEdition?: Ruleset | null;
+  /** Tester B5: 2024 backgrounds offer their ability increases as one list of options, as the engine does (`?mockAbilityOptions=1`). */
+  backgroundAbilityList?: boolean;
   /** C1 scenario (GitHub #11): the seeded characters carry content notices, as with a large homebrew set installed. */
   contentNotices?: boolean;
   /** B-191: Deity element names the content offers (Manage > Deity lists them; default none, as the SRD). */
@@ -137,6 +140,7 @@ export class MockApi implements Api {
     this.settings = { ...this.settings, mobile: this.mobile, storeBuild: this.storeBuild, aiAvailable: this.aiCli, ai: { ...this.settings.ai, enabled: this.aiCli && (opts.aiEnabled ?? false) } };
     this.rng = opts.rng ?? Math.random;
     setClasslessEdition(opts.classlessEdition ?? null);
+    setBackgroundAbilityList(opts.backgroundAbilityList ?? false);
     setMockDeities(opts.deities ?? []);
     this.content = new ContentService((p) => this.emit("content:progress", p), () => this.emit("content:reloaded", { reason: "content changed" }), (p) => this.emit("import5etools:progress", p));
     this.ai = new MockAi((e) => this.emit("ai:event", e), { chunkDelayMs: opts.aiChunkDelayMs ?? 25, available: opts.aiAvailable ?? true });

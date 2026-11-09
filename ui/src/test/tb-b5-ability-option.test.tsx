@@ -89,7 +89,7 @@ const withList = (s: CharacterSnapshot): CharacterSnapshot =>
 
 afterEach(() => setPhoneForTests(false));
 
-describe("Build > Background on a phone (B5)", () => {
+describe("Build > Background, phone and desktop (B5)", () => {
   it("describing a background ability option shows that option and the resulting scores", async () => {
     setPhoneForTests(true);
     const user = userEvent.setup();
@@ -105,13 +105,24 @@ describe("Build > Background on a phone (B5)", () => {
     expect(within(pane).getByText("−1 → +0")).toBeTruthy();
   });
 
-  it("desktop keeps the classic pane (the background), as Aurora shows no description for list entries", async () => {
+  it("desktop shows them too (U24), in the description pane on the right, read as the pane's fact lines", async () => {
     const user = userEvent.setup();
     const api = new ListSlotApi();
     const id = await seededId(api, "Seraphine");
     renderApp("/builder/background", { api, openCharacterId: id });
     await user.click(await screen.findByRole("button", { name: /^Intelligence \+1, Charisma \+2/ }));
     const pane = screen.getByRole("complementary", { name: "Description" });
-    expect(within(pane).queryByRole("heading", { name: "Intelligence +1, Charisma +2" })).toBeNull();
+    expect(document.documentElement.classList.contains("phone")).toBe(false);
+    expect(pane.closest(".bp-right")).toBeTruthy(); // the desktop pane, not a phone card under the row
+    expect(within(pane).getByRole("heading", { name: "Intelligence +1, Charisma +2" }).className).toBe("desc-title");
+    expect(within(pane).getByText("An option of Ability Scores (Acolyte). Your scores with it:").className).toBe("desc-intro");
+    expect(within(pane).getByText("8 → 10")).toBeTruthy();
+    expect(within(pane).getByText("−1 → +0")).toBeTruthy();
+    // Aurora's fact-line look ("Charisma. 8 → 10 (−1 → +0)") on desktop only; the phone rows keep their own rules.
+    const rules = parseRules(readCss("pages/builder/builder.css"));
+    const body = (sel: string) => rules.find((r) => r.selectors.includes(sel))?.body ?? "";
+    expect(body("html:not(.phone) .abil-opt-row dt")).toMatch(/font-style: italic/);
+    expect(body("html:not(.phone) .abil-opt-row dt::after")).toMatch(/content: "\."/);
+    expect(body("html:not(.phone) .abil-opt-mod::before")).toMatch(/content: "\("/);
   });
 });

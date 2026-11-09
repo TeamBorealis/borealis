@@ -1,4 +1,4 @@
-import type { ConversionPreview, PlayHitDice, PlayResource, PlayState, PlayToggle, PlayWildShape, SpellcastingState } from "../types";
+import type { ConversionPreview, PlayFeature, PlayHitDice, PlayResource, PlayState, PlayToggle, PlayWildShape, SpellcastingState } from "../types";
 import { getClass, getElement, getItem, titleCase } from "./content";
 import { apiError } from "./errors";
 import { chargeResources } from "./rolled-charges";
@@ -55,6 +55,16 @@ function itemToggles(c: MockCharacter): (Omit<PlayToggle, "on" | "active"> & { f
 }
 const togglesOf = (c: MockCharacter) => [...TOGGLES.map((t) => ({ ...t, factor: 1 })), ...itemToggles(c)];
 
+const MOCK_FEATURE: PlayFeature = { id: "mock-feature", name: "Mock Feature", ty: "class_feature", source: "Mock class", level: 1, description: "<p>A <strong>mock</strong> feature description.</p>", displayed: true };
+
+/** A 2024 background's origin feat, which the host lists among the features as a Feat granted by the background (tester B8). */
+function originFeatFeatures(c: MockCharacter): PlayFeature[] {
+  const feat = c.ruleset === "dnd2024" ? getElement(c.choices["bg:feat"] ?? "") : undefined;
+  const background = getElement(c.choices["bg:background"] ?? "");
+  if (!feat || !background) return [];
+  return [{ id: feat.id, name: feat.name, ty: "Feat", source: feat.sourceName, level: 1, grantedBy: background.name, description: feat.description, displayed: true }];
+}
+
 /** The mock's `CharacterSnapshot.play` (`sc` = the snapshot's spellcasting, for the spell tracker). */
 export function buildPlay(c: MockCharacter, sc: SpellcastingState, conMod = 0, hpMax = 0): PlayState {
   const p = playOf(c);
@@ -85,7 +95,7 @@ export function buildPlay(c: MockCharacter, sc: SpellcastingState, conMod = 0, h
       ],
     }],
     compatibility: { strict: c.ruleset === "dnd2014", entries: [] },
-    features: [{ id: "mock-feature", name: "Mock Feature", ty: "class_feature", source: "Mock class", level: 1, description: "<p>A <strong>mock</strong> feature description.</p>", displayed: true }],
+    features: [MOCK_FEATURE, ...originFeatFeatures(c)],
     freeCasts: [], saveDcs: [],
     ...trackerPlay(p.tracking, sc),
     hitDice: hitDiceOf(c, conMod),

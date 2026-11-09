@@ -32,7 +32,7 @@ interface GrantedFeatsProps {
   onDescribe: (id: string) => void;
 }
 
-/** Phones (B8): the granted feats as read-only chosen lines, ahead of the tab's own picks. */
+/** B8 (phones; desktop too since U24): the granted feats as read-only chosen lines, ahead of the tab's own picks. */
 export function GrantedFeats({ feats, onDescribe }: GrantedFeatsProps) {
   return (
     <section className="added-picks granted-feats" aria-label="Granted feats section">

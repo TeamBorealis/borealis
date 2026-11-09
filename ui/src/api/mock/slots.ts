@@ -1,12 +1,13 @@
 import type { BuilderTab, ElementType, SelectionSlot } from "../types";
 import {
   ABILITY_NAMES, ELEMENTS, FEATS, FIGHTING_STYLES, LISTS, MI_ABILITIES, SPELLS,
-  getBackground, getClass, getElement, getRace, titleCase,
+  backgroundAbilityOptions, getBackground, getClass, getElement, getRace, titleCase,
 } from "./content";
 import type { MockElement } from "./data-types";
 import { type MockCharacter, levelOf } from "./state";
 import { casterMaxSpellLevel, cantripsAt, spellbookSize } from "./spell-tables";
 import { isClassless } from "./edition-classes";
+import { backgroundAbilityList } from "./background-options";
 
 export interface SlotDef extends Omit<SelectionSlot, "chosen" | "gainedOnLevel" | "replaced" | "emptyReason" | "problem" | "prerequisitesUnmet"> {
   candidates: MockElement[];
@@ -161,9 +162,13 @@ function backgroundSlots(c: MockCharacter): SlotDef[] {
   const bg = getBackground(c.choices["bg:background"] ?? "");
   if (!bg) return out;
   if (c.ruleset === "dnd2024") {
-    const opts = (n: 1 | 2) => bg.asi.map((a) => getElement(`asi:${a}:${n}`)!);
-    out.push(make({ id: "bg:asi:2", tab: "background", title: "Background increase +2", elementType: "asi", dup: "bg-asi", candidates: opts(2), hint: `One of ${bg.asi.map((a) => ABILITY_NAMES[a]).join(", ")}` }));
-    out.push(make({ id: "bg:asi:1", tab: "background", title: "Background increase +1", elementType: "asi", dup: "bg-asi-1", candidates: opts(1).filter((e) => e.id.split(":")[1] !== (c.choices["bg:asi:2"] ?? "").split(":")[1]) }));
+    if (backgroundAbilityList()) {
+      out.push(make({ id: "bg:abil", tab: "background", title: `Ability Scores (${titleCase(bg.id)})`, elementType: "list", candidates: backgroundAbilityOptions(bg) }));
+    } else {
+      const opts = (n: 1 | 2) => bg.asi.map((a) => getElement(`asi:${a}:${n}`)!);
+      out.push(make({ id: "bg:asi:2", tab: "background", title: "Background increase +2", elementType: "asi", dup: "bg-asi", candidates: opts(2), hint: `One of ${bg.asi.map((a) => ABILITY_NAMES[a]).join(", ")}` }));
+      out.push(make({ id: "bg:asi:1", tab: "background", title: "Background increase +1", elementType: "asi", dup: "bg-asi-1", candidates: opts(1).filter((e) => e.id.split(":")[1] !== (c.choices["bg:asi:2"] ?? "").split(":")[1]) }));
+    }
     out.push(make({ id: "bg:feat", tab: "feats", title: "Origin feat", elementType: "feat", lockedTo: bg.originFeat, locked: true, candidates: [getElement(bg.originFeat)!] }));
     if (c.choices["bg:feat"] === MAGIC_INITIATE) out.push(...magicInitiateSlots());
   } else if (bg.languages > 0) {

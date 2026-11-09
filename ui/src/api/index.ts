@@ -34,5 +34,7 @@ export function createApi(): Api {
   const contentNotices = new URLSearchParams(window.location.search).get("mockNotices") === "1";
   // `?mockCompanions=1`: Brannoc has a granted companion and two added ones (GitHub #13 screenshots).
   const sampleCompanions = new URLSearchParams(window.location.search).get("mockCompanions") === "1";
-  return new MockApi({ aiChunkDelayMs: 30, mobile, macAppStore, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic, classlessEdition, contentNotices, sampleCompanions });
+  // `?mockAbilityOptions=1`: 2024 backgrounds offer their ability increases as one list of options, as the engine does (B5 web e2e).
+  const backgroundAbilityList = new URLSearchParams(window.location.search).get("mockAbilityOptions") === "1";
+  return new MockApi({ aiChunkDelayMs: 30, mobile, macAppStore, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic, classlessEdition, contentNotices, sampleCompanions, backgroundAbilityList });
 }

@@ -5,7 +5,8 @@ import { isListSlot, type PickChoice } from "./PickerGroup";
 
 /**
  * Tester B5 (B-130, TV2): a background's ability-score options are list entries ("Intelligence +1, Charisma +2"), not
- * elements, so they had no description. On a phone, describing one shows what it does to each ability it raises.
+ * elements, so they had no description. Describing one shows what it does to each ability it raises (phones; desktop too
+ * since U24, in the pane's own look).
  */
 export type AbilityIncrease = Partial<Record<AbilityKey, number>>;
 

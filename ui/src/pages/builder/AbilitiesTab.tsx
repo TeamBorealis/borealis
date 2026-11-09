@@ -9,7 +9,6 @@ import { AbilityMethodField } from "./AbilityMethodField";
 import { SlotList } from "./SlotList";
 import type { DescribeFn } from "./PickerGroup";
 import { SuggestedScoresCard } from "./SuggestedScores";
-import { usePhone } from "../../lib/phone";
 
 const HELP: { name: string; text: string }[] = [
   { name: "Strength", text: "Raw physical power. It drives melee attacks, carrying capacity and Athletics." },
@@ -65,7 +64,6 @@ function AbilitiesTop({ abilities: a, unrestricted, onMethod, onRoll, onReset }:
 export function AbilitiesTab({ describedId, onDescribe }: { describedId: string | null; onDescribe: DescribeFn }) {
   const { snapshot, mutate } = useCharacter();
   const { settings } = useSettings();
-  const phone = usePhone();
   if (!snapshot) return null;
   const a = snapshot.abilities;
   const slots = snapshot.slots.filter((s) => s.tab === "abilities");
@@ -75,8 +73,8 @@ export function AbilitiesTab({ describedId, onDescribe }: { describedId: string 
         onMethod={(method) => void mutate((api, id) => api.setAbilityMethod({ characterId: id, method }))}
         onRoll={() => void mutate((api, id) => api.rollAbilities({ characterId: id }))}
         onReset={() => void mutate((api, id) => api.resetAbilities({ characterId: id }))} />
-      {/* Tester B11 (TV2): phones suggest the class's standard array (Aurora has no such suggestion; desktop stays as Aurora). */}
-      {phone && a.suggested && <SuggestedScoresCard abilities={a} suggested={a.suggested} />}
+      {/* Tester B11 (TV2, U24): the class's standard array, offered with Apply on phones and desktop (an addition beyond Aurora). */}
+      {a.suggested && <SuggestedScoresCard abilities={a} suggested={a.suggested} />}
       {a.method === "standard_array" && a.standardArray && (
         <p className="small muted abil-note" role="status">Unassigned values: {a.standardArray.unassigned.length ? a.standardArray.unassigned.join(", ") : "none"}. Choosing a value that is already used swaps it.</p>
       )}

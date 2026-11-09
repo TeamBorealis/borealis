@@ -90,8 +90,8 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   if (!tabs.some((t) => t.id === tab)) return <Navigate to="/builder/race" replace />;
   const active = tab as TabId;
   const addedKind = ADDED_KIND[active];
-  // Tester B8 (TV2): on phones Feats also lists the feats the build grants outright, read-only (desktop: Aurora's tab).
-  const granted = phone && active === "feats" ? grantedFeats(snapshot) : [];
+  // Tester B8 (TV2, U24): Feats also lists the feats the build grants outright, read-only, on phones and desktop.
+  const granted = active === "feats" ? grantedFeats(snapshot) : [];
   const slots = snapshot.slots.filter((s) => s.tab === active && SLOT_TABS.includes(s.tab) && !s.locked); // locked slots are hidden (E31 SO-3)
   // List entries (e.g. a background's ability increase) are not elements: the pane keeps the last element instead.
   const elementChoices = slots.filter((s) => s.chosen && s.chosen.type !== "list");
@@ -116,8 +116,8 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
     if (id !== active) scrollToStart(leftRef.current);
     nav(`/builder/${id}`);
   };
-  // Tester B5 (TV2): on phones a described ability option (a list entry) shows its resulting scores instead.
-  const option = phone ? describedAbilityOption(own, slots) : null;
+  // Tester B5 (TV2, U24): a described ability option (a list entry) shows its resulting scores instead, on every platform.
+  const option = describedAbilityOption(own, slots);
   const pane = active === "abilities" ? <AbilitiesPane />
     : option ? <AbilityOptionPane abilities={snapshot.abilities} slot={option.slot} text={option.text} />
     : <DescriptionPane elementId={paneId} fallback={fallback} />;

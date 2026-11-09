@@ -177,6 +177,21 @@ export const LISTS: Record<string, MockElement[]> = {
   flaw: ["I judge others too quickly.", "I cannot resist a dare.", "I trust the wrong people."].map((t, i) => el(`flaw-${i}`, "list", t, t)),
 };
 
+const ABILITY_ORDER: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
+
+/**
+ * A 2024 background's ability increases as the engine offers them (`?mockAbilityOptions=1`): one list whose entries name
+ * every increase ("Intelligence +2, Charisma +1", ..., "Intelligence +1, Wisdom +1, Charisma +1"), abilities in sheet order.
+ * Element ids are `bgopt:<background>:<n>`; the mock reads the increases back from the name.
+ */
+export function backgroundAbilityOptions(bg: BackgroundDef): MockElement[] {
+  const text = (inc: Partial<Record<AbilityKey, number>>) =>
+    ABILITY_ORDER.filter((k) => inc[k]).map((k) => `${ABILITY_NAMES[k]} +${inc[k]}`).join(", ");
+  const pairs = bg.asi.flatMap((two) => bg.asi.filter((one) => one !== two).map((one) => text({ [two]: 2, [one]: 1 })));
+  const names = [...pairs, text(Object.fromEntries(bg.asi.map((k) => [k, 1])))];
+  return names.map((name, i) => el(`bgopt:${bg.id}:${i}`, "list", name, `Increase ${name}.`, { rulesets: ["dnd2024"], source: SOURCE_2024 }));
+}
+
 /** Magic Initiate's "Spellcasting Ability" entries (the engine's `param_select` list rule). */
 export const MI_ABILITIES: MockElement[] = ["Intelligence", "Wisdom", "Charisma"].map((t, i) => el(`mi-ability-${i}`, "list", t, t));
 
@@ -289,6 +304,7 @@ function mk(): MockElement[] {
       grants: b.skills.map((k) => ({ name: `Proficiency: ${k}`, level: 1, descriptionHtml: "" })),
     }));
   }
+  for (const b of BACKGROUNDS) out.push(...backgroundAbilityOptions(b));
   out.push(...FEATS, ...FIGHTING_STYLES);
   for (const group of Object.values(LISTS)) out.push(...group);
   out.push(...MI_ABILITIES);

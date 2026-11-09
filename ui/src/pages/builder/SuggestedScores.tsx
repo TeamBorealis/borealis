@@ -22,7 +22,7 @@ export async function applySuggested(api: Api, characterId: string, a: Pick<Abil
 
 /**
  * Tester B11 (B-135, TV2): "Suggested for <class>", the class's standard array from the ruleset's tables, with Apply. It
- * never applies by itself; once the base scores match it reads "Applied".
+ * never applies by itself; once the base scores match it reads "Applied". Phones and desktop (U24).
  */
 export function SuggestedScoresCard({ abilities, suggested }: { abilities: AbilityState; suggested: SuggestedScores }) {
   const { mutate, busy } = useCharacter();
