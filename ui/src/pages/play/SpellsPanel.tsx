@@ -42,9 +42,25 @@ function CastButton({ spell, play }: { spell: SpellEntry; play: PlayState }) {
   );
 }
 
+/**
+ * U20: the sheet's spell table legend on a Play row: a dot for a prepared spell, a diamond for an always-prepared one (it
+ * uses no learned or prepared slot). Cantrips and unprepared spells keep the column empty, as on the sheet.
+ */
+function PrepMark({ spell }: { spell: SpellEntry }) {
+  const kind = spell.level === 0 ? null : spell.alwaysPrepared ? "always" : spell.prepared ? "prepared" : null;
+  const label = kind === "always" ? "Always prepared" : "Prepared";
+  return (
+    <span className="pr-prep">
+      {kind && <span className={`pr-prep-mark ${kind}`} role="img" aria-label={label} title={label} />}
+    </span>
+  );
+}
+
 function SpellRow({ spell, play, selected, onSelect, castable }: { spell: SpellEntry; play: PlayState; selected: boolean; onSelect: (id: string) => void; castable: boolean }) {
   return (
     <li className={`v5-line pr-line ${selected ? "is-selected" : ""}`}>
+      {/* Other Spells are never prepared (Aurora lists them unprepared): no mark column */}
+      {castable && <PrepMark spell={spell} />}
       <button type="button" className="v5-row grow pr-name" aria-current={selected} aria-label={`${spell.name}, description`} onClick={() => onSelect(spell.id)}>
         <span className="grow">{spell.name}{spell.grantedFrom && <> <span className="meta">({spell.grantedFrom})</span></>}{spell.added && <> <AddedMark /></>}</span>
         {spell.concentration && <Tag title="Concentration">C</Tag>}

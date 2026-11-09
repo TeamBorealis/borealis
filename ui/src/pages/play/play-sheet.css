@@ -21,6 +21,11 @@
 .pr-prof .v5-pips { gap: 2px; }
 .pr-rolls .pr-prof { padding-left: 0; }
 .pr-level-slots { font-weight: 400; text-transform: none; }
+/* U20: the sheet's prepared legend on spell rows: a dot = prepared, a gold diamond = always prepared. */
+.pr-prep { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 14px; }
+.pr-prep-mark { display: block; width: 7px; height: 7px; border-radius: 50%; background: var(--text); }
+.pr-prep-mark.always { width: 6px; height: 6px; border-radius: 1px; background: var(--gold); transform: rotate(45deg); }
+.pr-prep + .v5-row { padding-left: 2px; }
 
 /* Recent rolls and the exhaustion note above the roll tabs' cards. */
 .pr-bar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 10px; }
@@ -62,6 +67,10 @@ html.phone .pr-line > .v5-ctrls.pr-rolls:last-child { padding-bottom: 4px; }
 html.phone .pr-prof { padding-left: var(--ph-gutter); }
 html.phone .pr-rolls .pr-prof { padding-left: 0; }
 html.phone .pr-prof + .v5-row { padding-left: 8px; }
+html.phone .pr-prep { width: calc(var(--ph-gutter) + 10px); padding-left: var(--ph-gutter); }
+html.phone .pr-prep-mark { width: 9px; height: 9px; background: var(--ph-text); }
+html.phone .pr-prep-mark.always { width: 8px; height: 8px; background: var(--ph-gold); }
+html.phone .pr-prep + .v5-row { padding-left: 8px; }
 html.phone .pr-static { font: 400 var(--ph-t-foot)/1.3 var(--ph-font-ui); color: var(--ph-text-2); }
 html.phone .pr-bar { margin: 0; flex-wrap: wrap; }
 html.phone .pr-bar .btn { min-height: var(--ph-hit); padding: 0 14px; }

@@ -77,7 +77,7 @@ export function ClassSpellGrid({ cls, picked, onPick }: { cls: ClassSpellcasting
             {cls.spells.map((s) => (
               <tr key={`${s.id}:${s.slotId ?? ""}`} data-spell-id={s.id} className={picked === s.id ? "sel" : ""} onMouseDown={() => onPick(s.id)}
                 onDoubleClick={() => void toggle(s)} onKeyDown={(e) => onKey(e, s)}>
-                <td className="sp-ck"><Mark on={isKnown(s)} label={s.prepared ? "Prepared" : "Always prepared"} /></td>
+                <td className="sp-ck"><Mark on={isKnown(s)} label={isLocked(s) ? "Always prepared" : "Prepared"} /></td>
                 <td className="sp-name"><button type="button" className="ap-name" onClick={() => onPick(s.id)}>{s.name}</button>{s.added && <AddedMark />}<RowDetail parts={[levelText(s), componentText(s.casting), sourceText(s)]} /></td>
                 <td className="sp-lvl">{levelText(s)}</td>
                 <ComponentCells casting={s.casting} />
