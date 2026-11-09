@@ -33,6 +33,12 @@ html.phone .abil-page .build-empty { font: 400 var(--ph-t-sub)/1.45 var(--ph-fon
 /* B3 (GitHub #35): added picks on phones. The lines are the picker footers of lists.css (grouped rows, 44 pt remove);
    the Add button is a full 44 pt control; the dialog is the bottom sheet, its list page-length with no nested scroller. */
 html.phone .added-picks { margin: 16px 0 0; }
+/* Tester B5 (B-130): a described ability option lists each raised ability, its score and its modifier, before and after. */
+html.phone .abil-opt { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 0; }
+html.phone .abil-opt-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: baseline; gap: 16px; min-height: var(--ph-row); padding: 0 var(--ph-gutter); border-radius: var(--ph-r-md); background: var(--ph-fill); }
+html.phone .abil-opt-row dt { font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); align-self: center; }
+html.phone .abil-opt-row dd { margin: 0; align-self: center; font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); font-variant-numeric: tabular-nums; color: var(--ph-text); }
+html.phone .abil-opt-row dd.abil-opt-mod { color: var(--ph-text-2); font-weight: 400; }
 /* Tester B8 (B-132): granted feats lead the Feats tab, read-only (a lock instead of the remove button). */
 html.phone .granted-feats { margin: 0 0 16px; }
 html.phone .granted-feats .pick-group-label { margin: 0 4px 8px; }

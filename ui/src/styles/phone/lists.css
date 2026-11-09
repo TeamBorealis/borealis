@@ -154,9 +154,13 @@ html.phone .pick-x { width: var(--ph-hit); min-height: var(--ph-hit); border-rad
 html.phone .pick-x:active { background: var(--ph-fill); }
 html.phone .pick-x .icon { width: 16px; height: 16px; }
 
-/* O2: "Choose <name>" under the list and its description, kept in reach at the bottom while the Build page scrolls. */
+/* O2: "Choose <name>" under the list and its description, kept in reach at the bottom while the Build page scrolls.
+   Tester B5 (B-130): the page always keeps the bar's room at its end and the bar takes no height of its own (its negative
+   bottom margin), so it showing or going never changes the page's height and the rows never move under the finger. */
+html.phone .bp { --bp-choose-h: 76px; padding-bottom: var(--bp-choose-h); }
 html.phone .bp-choose {
-  position: sticky; bottom: 0; z-index: 3; padding: 12px var(--ph-gutter) 12px;
+  position: sticky; bottom: 0; z-index: 3; box-sizing: border-box; height: var(--bp-choose-h); margin-bottom: calc(-1 * var(--bp-choose-h));
+  padding: 12px var(--ph-gutter) 12px;
   background: linear-gradient(to bottom, transparent, var(--ph-bg) 14px);
 }
 html.phone .bp-choose .bp-choose-btn { width: 100%; min-height: 52px; border-radius: var(--ph-r-lg); font-size: var(--ph-t-body); }

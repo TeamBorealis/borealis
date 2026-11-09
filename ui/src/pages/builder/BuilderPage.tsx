@@ -18,6 +18,7 @@ import { scrollToStart } from "../../lib/scrollReveal";
 import { SlotList } from "./SlotList";
 import { AddedPicks } from "./AddedPicks";
 import { GrantedFeats, grantedFeats } from "./GrantedFeats";
+import { AbilityOptionPane, describedAbilityOption } from "./abilityOption";
 import { NoticesBanner } from "./NoticesBanner";
 import { CharacterMissingContentDialog, ShowMissingContentButton } from "./MissingContentAction";
 import { PickerStateProvider } from "./pickerState";
@@ -115,7 +116,11 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
     if (id !== active) scrollToStart(leftRef.current);
     nav(`/builder/${id}`);
   };
-  const pane = active === "abilities" ? <AbilitiesPane /> : <DescriptionPane elementId={paneId} fallback={fallback} />;
+  // Tester B5 (TV2): on phones a described ability option (a list entry) shows its resulting scores instead.
+  const option = phone ? describedAbilityOption(own, slots) : null;
+  const pane = active === "abilities" ? <AbilitiesPane />
+    : option ? <AbilityOptionPane abilities={snapshot.abilities} slot={option.slot} text={option.text} />
+    : <DescriptionPane elementId={paneId} fallback={fallback} />;
   return (
     <div className="bp">
       <h1 className="sr-only">Build</h1>
