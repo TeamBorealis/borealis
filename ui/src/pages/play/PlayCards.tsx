@@ -6,18 +6,27 @@ import { useCharacter } from "../../state/CharacterContext";
 import { RolledChargesEditor, chargesLabel, rolledChargeOf } from "../equipment/RolledCharges";
 import { ResourceDieButton } from "./DiceCards";
 
-const RECHARGE_LABEL: Record<string, string> = { short_rest: "Short Rest", long_rest: "Long Rest", initiative: "Initiative", dawn: "Dawn" };
-export const rechargeText = (r: PlayResource): string => r.recharge.map((x) => RECHARGE_LABEL[x] ?? x.replace(/_/g, " ")).join(" / ");
+/** When a use comes back besides the rests ("Recharges when you roll Initiative"). */
+const TRIGGER_TEXT: Record<string, string> = { initiative: "when you roll Initiative", turn_start: "at the start of your turn", dawn: "at dawn" };
+const REST_RECHARGES = new Set(["short_rest", "long_rest", "none"]);
 
-/** Id prefix of the use pools the engine makes for spells cast without a slot (`free_cast:<granter>:<spell>`). */
-const FREE_CAST_PREFIX = "free_cast:";
+/**
+ * B-141: how a pool's uses come back, from the engine's rest rules ("1 back on a Short Rest, all on a Long Rest" for Rage),
+ * never just the rest names: a Short Rest gives back only what `shortRestRegain` says.
+ */
+export function rechargeText(r: PlayResource): string {
+  const short = r.shortRestRegain;
+  const rests = short !== null && short >= r.max ? (r.longRestRegainAll ? "All back on a Short or Long Rest" : "All back on a Short Rest")
+    : short !== null && short > 0 ? `${short} back on a Short Rest${r.longRestRegainAll ? ", all on a Long Rest" : ""}`
+      : r.longRestRegainAll ? "All back on a Long Rest" : "";
+  const others = r.recharge.filter((x) => !REST_RECHARGES.has(x)).map((x) => TRIGGER_TEXT[x] ?? x.replace(/_/g, " "));
+  if (others.length === 0) return rests || "No recharge";
+  return rests ? `${rests}, or ${others.join(" or ")}` : `Recharges ${others.join(" or ")}`;
+}
 
-/** The grey text on a resource row: its source, plus the recharge period for a free cast ("per long rest") or the rolled maximum. */
+/** The grey text on a resource row: how its uses come back, after its source when that is not just the name again (B-141). */
 export function resourceMeta(r: PlayResource, rolledMax: string | null): string {
-  if (rolledMax) return `${r.source} · max ${rolledMax}`;
-  if (!r.id.startsWith(FREE_CAST_PREFIX)) return r.source;
-  const period = r.recharge[0]?.replace(/_/g, " ");
-  return `${r.source} · ${period && period !== "none" ? `per ${period}` : "no recharge"}`;
+  return [r.source !== r.name ? r.source : null, rechargeText(r), rolledMax ? `max ${rolledMax}` : null].filter(Boolean).join(" · ");
 }
 
 function Pips({ r }: { r: PlayResource }) {
@@ -123,8 +132,9 @@ export function PlayDetail({ selected, resources, toggles }: { selected: PlaySel
   const rolled = r && snapshot ? rolledChargeOf(snapshot, r.id) : null;
   const t = selected?.kind === "toggle" ? toggles.find((x) => x.id === selected.id) : undefined;
   const state = r ? stateOfPool(toggles, r) : undefined;
-  if (r) return (<><h1 className="v5-desc-title">{r.name}</h1><p className="v5-lead">{r.source}</p>
-    <h2>Uses</h2><p>{r.current} of {r.max} left{r.recharge.length ? `. Resets on ${rechargeText(r)}.` : "."}</p>
+  if (r) return (<><h1 className="v5-desc-title">{r.name}</h1>{r.source !== r.name && <p className="v5-lead">{r.source}</p>}
+    <h2>Uses</h2><p>{r.current} of {r.max} left. {rechargeText(r)}.</p>
+    {(r.otherRegain?.length ?? 0) > 0 && <ul>{r.otherRegain?.map((x) => <li key={x}>{x}</li>)}</ul>}
     {rolled && <><h2>Maximum</h2><RolledChargesEditor item={rolled.item} charge={rolled.charge} /></>}
     {state && <><h2>State</h2><p>{[state.activation, state.duration].filter(Boolean).join(" · ")}{state.activation || state.duration ? ". " : ""}Switching it on spends one use.</p><StateEffects t={state} /></>}</>);
   if (t) return (<><h1 className="v5-desc-title">{t.name}</h1><p className="v5-lead">{[t.activation, t.duration].filter(Boolean).join(" · ") || "State"}</p>

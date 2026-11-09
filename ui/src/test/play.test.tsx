@@ -57,6 +57,19 @@ describe("Play panel", () => {
     expect(rage()).toBe(`0/${max}`);
   });
 
+  // B-141 (tester video C7): the detail said "Resets on Short Rest / Long Rest", but a Short Rest gives back one Rage use.
+  it("the resource row and its detail say how many uses each rest gives back", async () => {
+    const user = userEvent.setup();
+    const api = fast();
+    renderApp("/play", { api, openCharacterId: await seededId(api, "Seraphine") });
+    const list = await screen.findByRole("list", { name: "Resources" });
+    const row = within(list).getByRole("button", { name: /^Rage/ });
+    expect(row.textContent).toContain("1 back on a Short Rest, all on a Long Rest");
+    await user.click(row);
+    expect(await screen.findByText(/\d+ of \d+ left\. 1 back on a Short Rest, all on a Long Rest\./)).toBeTruthy();
+    expect(screen.queryByText(/Resets on/)).toBeNull();
+  });
+
   it("steps exhaustion and summarises the effects", async () => {
     const user = userEvent.setup();
     const api = fast();

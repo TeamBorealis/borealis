@@ -88,7 +88,7 @@ describe.each(LAYOUTS)("spell slots card (%s)", (_layout, phone) => {
     const firstTile = screen.getByRole("button", { name: /^Explain AC, \d+$/ });
     expect(rests.compareDocumentPosition(firstTile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const resources = screen.getByRole("list", { name: "Resources" }).closest("section")!;
-    expect(within(resources).queryByRole("button", { name: /Rest$/ })).toBeNull();
+    expect(within(resources).queryByRole("button", { name: /^(Short|Long) Rest$/ })).toBeNull();
   });
 
   it("concentration is picked, pinned at the top of Play, ended with one tap and cleared by a long rest", async () => {
