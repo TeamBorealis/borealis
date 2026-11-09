@@ -18,6 +18,8 @@ fn pip_state(c: &CasterData, row: Option<&SpellRow>) -> &'static str {
     match row {
         None => "",
         Some(r) if r.level == 0 => "na",
+        // Aurora's "Other Spells" are listed unprepared
+        Some(_) if c.other => "",
         Some(r) if r.always_prepared => "ex",
         Some(r) if r.prepared || !c.prepares => "on",
         Some(_) => "",

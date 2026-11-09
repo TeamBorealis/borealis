@@ -169,10 +169,12 @@ fn aurora_feat_spells_picked_without_a_spellcasting_name_form_a_block_named_afte
     assert!(block.spells.iter().all(|x| x.known));
 }
 
-/// Only picks get a block: a spell an element grants with no spellcasting name (Aurora's
-/// invocations, disciplines and totem rituals) keeps its place and adds no block per element.
+/// Only picks get a block of their own: a spell an element grants with no spellcasting name
+/// (Aurora's invocations, disciplines and totem rituals) adds no block per element. It joins the
+/// one "Other Spells" block, where Aurora's sheet lists every spell no class page lists
+/// (`tests/other_spells.rs`).
 #[test]
-fn aurora_spells_granted_without_a_spellcasting_name_add_no_block() {
+fn aurora_spells_granted_without_a_spellcasting_name_add_no_block_of_their_own() {
     let Some(e) = engine(true) else { return };
     let s = human_bard(
         &e,
@@ -183,5 +185,6 @@ fn aurora_spells_granted_without_a_spellcasting_name_add_no_block() {
     );
     let snap = e.derive(&s);
     let blocks: Vec<&str> = snap.spellcasting.iter().map(|b| b.name.as_str()).collect();
-    assert_eq!(blocks, vec!["Bard"]);
+    assert_eq!(blocks, vec!["Bard", "Other Spells"]);
+    assert_eq!(names(&snap, "Other Spells"), vec!["Light"]);
 }

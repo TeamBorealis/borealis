@@ -614,6 +614,19 @@ fn caster(
             None => rows.push(spell_row(sp, facts)),
         }
     }
+    if sc.other {
+        // Aurora names each "Other Spells" entry with where it came from: `Mage Armor (<source>)`
+        for r in &mut rows {
+            let label = sc
+                .spells
+                .iter()
+                .find(|sp| sp.id == r.id)
+                .and_then(borealis_engine::other_spells::source_label);
+            if let Some(label) = label {
+                r.name = format!("{} ({label})", r.name);
+            }
+        }
+    }
     rows.sort_by(|a, b| (a.level, &a.name).cmp(&(b.level, &b.name)));
     let (cantrips, spells): (Vec<_>, Vec<_>) = rows.into_iter().partition(|r| r.level == 0);
     CasterData {
@@ -629,6 +642,7 @@ fn caster(
         slots: sc.slots,
         slots_pooled: pooled && sc.pact.is_none(),
         pact: sc.pact.map(|(count, level)| PactSlots { count, level }),
+        other: sc.other,
         cantrips,
         spells,
     }
@@ -639,10 +653,14 @@ fn spellcasting(snap: &CharacterSnapshot, facts: &SpellFactsMap) -> Spellcasting
         caster_level: m.caster_level,
         slots: m.slots,
     });
+    // Aurora prints no spellcasting page without a spellcasting source: "Other Spells" alone (a
+    // non-caster's racial spells) stays off the sheet's spell pages (its spells keep their cards)
+    let any_caster = snap.spellcasting.iter().any(|sc| !sc.other);
     SpellcastingData {
         casters: snap
             .spellcasting
             .iter()
+            .filter(|sc| any_caster || !sc.other)
             .map(|sc| caster(sc, snap, facts, pooled.is_some()))
             .collect(),
         pooled,

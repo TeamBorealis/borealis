@@ -489,11 +489,13 @@ pub fn spellcasting_snapshots(
             prepared_change: rules.prepared_change.clone(),
             ritual_source: rules.ritual_source.clone(),
             extended_lists: rules.extend_lists.clone(),
+            other: false,
         });
         let _ = abbr;
     }
     crate::item_spells::add_item_blocks(graph, stats, &mut out);
     crate::granted_casting::add_granted_blocks(graph, stats, &mut out);
+    crate::other_spells::add_other_spells(graph, stats, &mut out);
     out
 }
 

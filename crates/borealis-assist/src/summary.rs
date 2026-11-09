@@ -48,7 +48,8 @@ pub fn stat_table(snap: &CharacterSnapshot) -> BTreeMap<String, i64> {
         t.insert(format!("{} modifier", a.name), i64::from(a.modifier));
         t.insert(format!("{} saving throw", a.name), i64::from(a.save));
     }
-    for c in &snap.spellcasting {
+    // "Other Spells" has no casting ability, so no DC, attack or slots to compare
+    for c in snap.spellcasting.iter().filter(|c| !c.other) {
         t.insert(format!("{} spell save DC", c.name), i64::from(c.dc));
         t.insert(
             format!("{} spell attack bonus", c.name),
@@ -181,6 +182,7 @@ pub fn level_summary(
         spell_save_dc: after
             .spellcasting
             .iter()
+            .filter(|c| !c.other)
             .map(|c| (c.name.clone(), c.dc))
             .collect(),
         gained,

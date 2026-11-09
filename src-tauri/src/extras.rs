@@ -269,6 +269,10 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
                     s,
                 ),
                 added: crate::added_picks::is_added_spell(snap, &c.name, &s.id),
+                granted_from: c
+                    .other
+                    .then(|| borealis_engine::other_spells::source_label(s))
+                    .flatten(),
             }
         })
         .collect();
@@ -322,6 +326,7 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
             .max(pact.map_or(0, |p| p.level)),
         pact,
         spells,
+        other: c.other,
     }
 }
 

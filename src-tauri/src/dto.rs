@@ -529,6 +529,10 @@ pub struct SpellEntry {
     /// B3: added to this class in the builder (an extra the DM grants).
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub added: bool,
+    /// "Other Spells" only: where the spell came from (the invocation, the race), as Aurora's
+    /// sheet appends it to the name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub granted_from: Option<String>,
 }
 
 /// Spellcasting of one class.
@@ -552,6 +556,10 @@ pub struct ClassSpellcasting {
     /// (never part of `SpellcastingState.slots`).
     pub pact: Option<PactSlotRow>,
     pub spells: Vec<SpellEntry>,
+    /// Aurora's "Other Spells": spells no other block lists (granted with no spellcasting name).
+    /// Play lists them without a Cast button; the Magic page leaves them out, as Aurora does.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub other: bool,
 }
 
 /// Pact Magic slots: all of one level, recovered on a short or long rest.

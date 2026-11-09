@@ -465,6 +465,8 @@ pub struct CasterData {
     pub slots_pooled: bool,
     /// Pact magic.
     pub pact: Option<PactSlots>,
+    /// Aurora's "Other Spells" section: spells no other block lists, none of them prepared.
+    pub other: bool,
     /// Cantrips (level 0), sorted by name.
     pub cantrips: Vec<SpellRow>,
     /// Leveled spells, sorted by level then name.

@@ -466,3 +466,119 @@ fn a_block_without_a_casting_ability_lists_its_spells_with_blank_dc_and_attack()
         "{cantrip} listed in both blocks"
     );
 }
+
+/// Aurora's "Other Spells" block (spells granted with no spellcasting name) made from the first
+/// cantrip and the first levelled spell of `snap`'s first block: the cantrip from a racial trait
+/// the subrace "Gloom Elf" granted, the spell from an invocation.
+fn other_spells_block(
+    snap: &borealis_engine::CharacterSnapshot,
+) -> borealis_engine::snapshot::SpellcastingSnapshot {
+    use borealis_engine::snapshot::SpellGrant;
+    let mut block = snap.spellcasting[0].clone();
+    block.name = borealis_engine::other_spells::OTHER_SPELLS.into();
+    block.other = true;
+    block.ability = String::new();
+    block.dc = 0;
+    block.attack = 0;
+    block.slots = [0; 9];
+    block.pact = None;
+    block.prepare = false;
+    block.prepare_limit = None;
+    block.spellbook = None;
+    let cantrip = block.spells.iter().find(|s| s.level == 0).cloned().unwrap();
+    let spell = block.spells.iter().find(|s| s.level > 0).cloned().unwrap();
+    let grant = |name: &str, ty: &str, outer: &str| SpellGrant {
+        name: name.into(),
+        ty: ty.into(),
+        granted_by: Some(outer.into()),
+        class_name: None,
+    };
+    block.spells = vec![cantrip, spell];
+    for (s, g) in block.spells.iter_mut().zip([
+        grant("Gloom Magic", "Racial Trait", "Gloom Elf"),
+        grant("Veil of Dusk", "Class Feature", "Eldritch Invocations"),
+    ]) {
+        s.known = true;
+        s.prepared = false;
+        s.always_prepared = false;
+        s.granted_by = Some(g);
+    }
+    block
+}
+
+/// The class of the pip span carrying `id`.
+fn pip_class(html: &str, id: &str) -> String {
+    let at = html
+        .find(&format!("data-field=\"{id}\""))
+        .unwrap_or_else(|| panic!("no {id}"));
+    let open = html[..at].rfind("<span class=\"").unwrap() + "<span class=\"".len();
+    html[open..at].trim_end_matches("\" ").to_string()
+}
+
+/// Aurora prints the spells no class page lists in a last "Other Spells" section: no ability,
+/// attack or save, every spell unprepared and named with where it came from (a racial trait's
+/// spell after the race that granted the trait).
+#[test]
+fn other_spells_print_last_unprepared_and_named_with_their_source() {
+    let (character, mut snap) = wizard_2024();
+    let block = other_spells_block(&snap);
+    let (cantrip, spell) = (block.spells[0].name.clone(), block.spells[1].name.clone());
+    snap.spellcasting.push(block);
+    let d = data(&(character, snap));
+    let n = d.spellcasting.casters.len();
+    let other = &d.spellcasting.casters[n - 1];
+    assert_eq!(other.class, "Other Spells");
+    assert!(other.other);
+    assert_eq!(other.cantrips[0].name, format!("{cantrip} (Gloom Elf)"));
+    assert_eq!(other.spells[0].name, format!("{spell} (Veil of Dusk)"));
+    let html = render_sheet(&d, &HtmlOptions::default());
+    assert!(html.contains(&format!("{spell} (Veil of Dusk)")));
+    for part in ["mod", "dc", "attack", "prepared"] {
+        assert!(
+            html.contains(&format!("data-field=\"spell.{n}.{part}\"></span>")),
+            "spell.{n}.{part} is blank"
+        );
+    }
+    // the levelled spell's prepared mark is empty, and the row is not a spellbook entry
+    let prep = crate::model_ids::spell_row(n, 2, "prep");
+    assert_eq!(pip_class(&html, &prep), "pip ");
+    assert!(!html.contains(&format!(
+        "<tr class=\"book\"><td class=\"c\"><span class=\"pip \" data-field=\"{prep}\""
+    )));
+    let legacy = render_sheet(
+        &d,
+        &HtmlOptions {
+            legacy_spellcasting: true,
+            ..HtmlOptions::default()
+        },
+    );
+    assert!(legacy.contains(&format!("{cantrip} (Gloom Elf)")));
+    let row = legacy
+        .find(&format!("{spell} (Veil of Dusk)"))
+        .expect("levelled spell on the basic page");
+    let pip = legacy[..row].rfind("<span class=\"pip").unwrap();
+    assert!(legacy[pip..row].starts_with("<span class=\"pip \""));
+}
+
+/// Aurora prints no spellcasting page for a character without a spellcasting class: "Other
+/// Spells" alone (a non-caster's racial spells) adds none, but its spells still get cards.
+#[test]
+fn other_spells_alone_add_no_spellcasting_page_but_keep_their_cards() {
+    let (character, mut snap) = wizard_2024();
+    let block = other_spells_block(&snap);
+    let spell = block.spells[1].name.clone();
+    snap.spellcasting = vec![block];
+    snap.multiclass_slots = None;
+    let d = data(&(character.clone(), snap.clone()));
+    assert!(d.spellcasting.casters.is_empty());
+    let html = render_sheet(&d, &HtmlOptions::default());
+    assert!(!html.contains("data-page=\"spellcasting\""));
+    let mut options = crate::SheetOptions::default();
+    options.cards.spell = true;
+    let cards =
+        crate::card_model::pages(&character, &snap, &options, &crate::SheetContent::default());
+    assert!(
+        cards.iter().flatten().any(|c| c.title == spell),
+        "{spell} has a card"
+    );
+}

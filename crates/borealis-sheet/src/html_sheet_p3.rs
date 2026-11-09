@@ -60,6 +60,9 @@ fn spell_row(c: &CasterData, n: usize, idx: usize, row: &SpellRow) -> String {
         .unwrap_or_default();
     let (state, book) = if row.level == 0 {
         ("na", false)
+    } else if c.other {
+        // Aurora's "Other Spells" are listed unprepared (an empty mark), never as spellbook rows
+        ("", false)
     } else if row.always_prepared {
         ("ex", false)
     } else if row.prepared || !c.prepares {

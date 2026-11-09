@@ -83,6 +83,7 @@ pub(crate) fn block(
         prepared_change: None,
         ritual_source: None,
         extended_lists: Vec::new(),
+        other: false,
     }
 }
 

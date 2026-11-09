@@ -34,6 +34,7 @@ pub mod levels;
 pub mod money;
 pub mod notes_d;
 pub mod options;
+pub mod other_spells;
 pub mod packages;
 pub mod pact_weapon;
 pub mod play_load;

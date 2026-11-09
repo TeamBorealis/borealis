@@ -14,6 +14,7 @@ import { catalogueClassOf, SlotsTable, sourceOf } from "./SlotsTable";
 import { SlotOptionsGrid } from "./SlotOptionsGrid";
 import { PickerStateProvider } from "../builder/pickerState";
 import { AddedPicks } from "../builder/AddedPicks";
+import { magicSpellcasting } from "./magicSpellcasting";
 import "./magic.css";
 
 const OVERVIEW = "overview";
@@ -103,7 +104,7 @@ function Overview({ picked, onPick, filter, onFilter, current, onCurrent }: Over
   const [slotScope, setSlotScope] = useState<{ slotId: string; scope: FilterScope } | null>(null);
   const onScope = useCallback((slotId: string, scope: FilterScope) => setSlotScope({ slotId, scope }), []);
   if (!snapshot) return null;
-  const sc = snapshot.spellcasting;
+  const sc = magicSpellcasting(snapshot.spellcasting);
   const rows = sc.multiclassSlots ?? sc.slots;
   const slots = snapshot.slots.filter((s) => s.tab === "spells");
   const hot: SelectionSlot | null = slots.find((s) => s.id === current) ?? null;
@@ -147,7 +148,7 @@ function MagicBody() {
     if (wanted && wanted !== seen.current) { seen.current = wanted; setCurrent(wanted); setActive(OVERVIEW); }
   }, [wanted]);
   if (!snapshot) return null;
-  const sc = snapshot.spellcasting;
+  const sc = magicSpellcasting(snapshot.spellcasting);
   const tabs = [{ id: OVERVIEW, label: "Spellcasting" }, ...sc.classes.map((c) => ({ id: c.classSlotId, label: phone ? c.className : c.className.toUpperCase() }))];
   const cur = sc.classes.find((c) => c.classSlotId === active);
   // B1: a feat's spell picks (Magic Initiate) are made here even without a spellcasting class.

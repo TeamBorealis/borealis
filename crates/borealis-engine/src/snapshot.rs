@@ -385,6 +385,9 @@ pub struct SpellcastingSnapshot {
     /// Extra class lists prepared spells may come from (`spell_list_extend`).
     #[serde(default)]
     pub extended_lists: Vec<String>,
+    /// Aurora's "Other Spells": the spells no other block lists (`other_spells`).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub other: bool,
 }
 
 /// A spellbook (spells copied into it, capacity from the class level).

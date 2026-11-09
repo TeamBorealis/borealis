@@ -42,16 +42,16 @@ function CastButton({ spell, play }: { spell: SpellEntry; play: PlayState }) {
   );
 }
 
-function SpellRow({ spell, play, selected, onSelect }: { spell: SpellEntry; play: PlayState; selected: boolean; onSelect: (id: string) => void }) {
+function SpellRow({ spell, play, selected, onSelect, castable }: { spell: SpellEntry; play: PlayState; selected: boolean; onSelect: (id: string) => void; castable: boolean }) {
   return (
     <li className={`v5-line pr-line ${selected ? "is-selected" : ""}`}>
       <button type="button" className="v5-row grow pr-name" aria-current={selected} aria-label={`${spell.name}, description`} onClick={() => onSelect(spell.id)}>
-        <span className="grow">{spell.name}{spell.added && <> <AddedMark /></>}</span>
+        <span className="grow">{spell.name}{spell.grantedFrom && <> <span className="meta">({spell.grantedFrom})</span></>}{spell.added && <> <AddedMark /></>}</span>
         {spell.concentration && <Tag title="Concentration">C</Tag>}
         {spell.ritual && <Tag title="Ritual">R</Tag>}
         <span className="meta">{spell.casting?.castingTime ?? ""}</span>
       </button>
-      {spell.level > 0 && <span className="v5-ctrls pr-rolls"><CastButton spell={spell} play={play} /></span>}
+      {castable && spell.level > 0 && <span className="v5-ctrls pr-rolls"><CastButton spell={spell} play={play} /></span>}
     </li>
   );
 }
@@ -62,11 +62,15 @@ function slotNote(level: number, play: PlayState): string {
   return [row ? `${row.max - row.used}/${row.max} slots` : null, pact ? `Pact Magic ${pact.max - pact.used}/${pact.max}` : null].filter(Boolean).join(" · ");
 }
 
+/**
+ * One block's ready spells. Aurora's "Other Spells" (`c.other`: spells granted with no spellcasting name) show where each
+ * came from and have no Cast button: they are cast at will, as rituals or with the feature's own uses, not a class slot.
+ */
 export function CasterCard({ c, play, selectedId, onSelect }: { c: ClassSpellcasting; play: PlayState; selectedId: string | null; onSelect: (id: string) => void }) {
   const ready = c.spells.filter((x) => x.ready);
   const levels = [...new Set(ready.map((x) => x.level))].sort((a, b) => a - b);
   return (
-    <Expander title={`${c.className} spells`} headerExtra={<span>{ready.length}</span>}>
+    <Expander title={c.other ? c.className : `${c.className} spells`} headerExtra={<span>{ready.length}</span>}>
       {/* #38: a block without a casting ability (a feat's spells in Aurora-format content) has no attack or DC to show */}
       {c.ability && (
         <ul className="v5-list" aria-label={`${c.className} spellcasting`}>
@@ -79,9 +83,9 @@ export function CasterCard({ c, play, selectedId, onSelect }: { c: ClassSpellcas
       {ready.length === 0 && <EmptyState title="No spells ready">Prepare spells on Magic.</EmptyState>}
       {levels.map((lvl) => (
         <div key={lvl}>
-          <div className="v5-group pr-level">{levelName(lvl)}{lvl > 0 && slotNote(lvl, play) ? <span className="pr-level-slots"> · {slotNote(lvl, play)}</span> : null}</div>
+          <div className="v5-group pr-level">{levelName(lvl)}{!c.other && lvl > 0 && slotNote(lvl, play) ? <span className="pr-level-slots"> · {slotNote(lvl, play)}</span> : null}</div>
           <ul className="v5-list" aria-label={`${c.className} ${levelName(lvl).toLowerCase()}`}>
-            {ready.filter((x) => x.level === lvl).map((x) => <SpellRow key={x.id} spell={x} play={play} selected={x.id === selectedId} onSelect={onSelect} />)}
+            {ready.filter((x) => x.level === lvl).map((x) => <SpellRow key={x.id} spell={x} play={play} selected={x.id === selectedId} onSelect={onSelect} castable={!c.other} />)}
           </ul>
         </div>
       ))}
@@ -93,7 +97,7 @@ export function CasterCard({ c, play, selectedId, onSelect }: { c: ClassSpellcas
 export function SpellsPanel({ s, selectedId, onSelect }: { s: CharacterSnapshot; selectedId: string | null; onSelect: (id: string) => void }) {
   return (<>
     <ConcentrationBanner concentration={s.play.concentration} />
-    {s.spellcasting.classes.map((c) => <CasterCard key={c.classSlotId} c={c} play={s.play} selectedId={selectedId} onSelect={onSelect} />)}
+    {s.spellcasting.classes.map((c) => <CasterCard key={`${c.classSlotId}:${c.className}`} c={c} play={s.play} selectedId={selectedId} onSelect={onSelect} />)}
   </>);
 }
 

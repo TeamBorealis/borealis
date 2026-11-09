@@ -273,6 +273,8 @@ export interface SpellEntry {
   ready: boolean;
   /** B3: added to this class in the builder (an extra the DM grants). */
   added?: boolean;
+  /** "Other Spells" only: where the spell came from (the invocation, the race), as Aurora's sheet appends it to the name. */
+  grantedFrom?: string;
 }
 
 export interface ClassSpellcasting {
@@ -293,6 +295,11 @@ export interface ClassSpellcasting {
   /** Pact Magic slots: a separate pool recovered on a short or long rest (never in `SpellcastingState.slots`). */
   pact: PactSlotRow | null;
   spells: SpellEntry[];
+  /**
+   * Aurora's "Other Spells": spells no other block lists (granted with no spellcasting name: an invocation's spell, a
+   * race's innate spells). Play lists them without a Cast button; the Magic page leaves them out, as Aurora does.
+   */
+  other?: boolean;
 }
 
 /** Pact Magic slots: all of one level. */

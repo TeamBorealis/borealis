@@ -4727,6 +4727,12 @@
       "k": "prim"
      }
     },
+    "other": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "pact": {
      "opt": false,
      "t": {
@@ -11113,6 +11119,12 @@
     },
     "concentration": {
      "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "grantedFrom": {
+     "opt": true,
      "t": {
       "k": "prim"
      }
