@@ -150,6 +150,29 @@ describe("filters", () => {
   });
 });
 
+describe("edition segments (A5, B-116)", () => {
+  // Nine 2024 rows and one edition-neutral row: more than eight rows, so the bar shows.
+  const ONE_EDITION = [
+    ...Array.from({ length: 9 }, (_, i) => row(ver(`c${i}`, `Class ${i}`, "Sample Reference 5.2", ["dnd2024"]))),
+    row(ver("any", "Neutral Entry", "Sample Reference 5.2", ["dnd2014", "dnd2024"])),
+  ];
+
+  it("edition segments only offer editions present in the list", async () => {
+    // A 2024 character's Class list never holds 2014 rows (R4): its 2014 segment could only ever answer "Nothing matches".
+    renderPicker(ONE_EDITION);
+    const b = await bar();
+    expect(within(b).queryByRole("group", { name: "Edition" })).toBeNull();
+    expect(await names()).toHaveLength(10);
+  });
+
+  it("a list with both editions keeps All, 2024 and 2014", async () => {
+    renderPicker(ROWS);
+    const b = await bar();
+    const seg = within(b).getByRole("group", { name: "Edition" });
+    expect(within(seg).getAllByRole("button").map((x) => x.textContent)).toEqual(["All", "2024", "2014"]);
+  });
+});
+
 describe("count on phones (B-125)", () => {
   afterEach(() => {
     setPhoneForTests(false);

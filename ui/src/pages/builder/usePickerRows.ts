@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef } from "react";
 import type { Api, Page, SelectionSlot, SlotOption, SlotOptionsArgs } from "../../api/contract";
 import { useToast } from "../../components/Toast";
 import {
-  buildRows, editionOf, inferCharEdition, isFiltering, showsFilterBar, sourcesOf, visibleRows, yearOf,
+  buildRows, editionOf, editionsOf, effectiveFilter, inferCharEdition, isFiltering, showsFilterBar, sourcesOf, visibleRows, yearOf,
   type PickerFilter, type ShownRow, type SourceEntry, type VersionLike, type VersionRow,
 } from "../../lib/versions";
 import type { Ruleset } from "../../api/contract";
@@ -42,6 +42,8 @@ export interface PickerRows {
   /** Sec. 1.2 rule 2: remember a menu pick as the row's shown version. */
   remember: (rowKey: string, versionId: string) => void;
   sources: SourceEntry[];
+  /** A5: the editions the list holds; the Edition filter is offered only when there are two. */
+  editions: Ruleset[];
   showBar: boolean;
   filtering: boolean;
   /** At least one visible row has two or more versions: the version column is drawn on every row. */
@@ -89,13 +91,15 @@ export function usePickerRows(characterId: string, slot: SelectionSlot, enabled:
   const rows = useMemo(() => buildRows(options.data?.items ?? [], slot.chosen), [options.data, slot.chosen]);
   const charEd = snapshot?.ruleset ?? inferCharEdition(rows.flatMap((r) => r.all));
   const chosenId = slot.chosen?.id ?? null;
-  const visible = useMemo(() => visibleRows(rows, ui.filter, charEd, chosenId, ui.menuPicks), [rows, ui.filter, charEd, chosenId, ui.menuPicks]);
+  const editions = useMemo(() => editionsOf(rows), [rows]);
+  const filter = useMemo(() => effectiveFilter(ui.filter, editions), [ui.filter, editions]);
+  const visible = useMemo(() => visibleRows(rows, filter, charEd, chosenId, ui.menuPicks), [rows, filter, charEd, chosenId, ui.menuPicks]);
   const setFilter = useCallback((filter: PickerFilter) => update((s) => ({ ...s, filter })), [update]);
   const remember = useCallback((rowKey: string, versionId: string) => update((s) => ({ ...s, menuPicks: { ...s.menuPicks, [rowKey]: versionId } })), [update]);
   const sources = useMemo(() => sourcesOf(rows), [rows]);
   return {
-    options, rows, visible, charEd, filter: ui.filter, setFilter, remember, sources,
-    showBar: showsFilterBar(rows), filtering: isFiltering(ui.filter), versionColumn: visible.some((r) => r.versions.length > 1),
+    options, rows, visible, charEd, filter: ui.filter, setFilter, remember, sources, editions,
+    showBar: showsFilterBar(rows), filtering: isFiltering(filter), versionColumn: visible.some((r) => r.versions.length > 1),
   };
 }
 

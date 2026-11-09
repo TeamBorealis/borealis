@@ -78,7 +78,7 @@ export function SlotOptionsGrid({ characterId, label, slot, picked, onPick, onCh
   return (
     <>
       {picker.showBar && (
-        <PickerFilterBar title="spells" filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} shown={visible.length} total={rows.length} />
+        <PickerFilterBar title="spells" filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} editions={picker.editions} shown={visible.length} total={rows.length} />
       )}
       <div className="ap-scroll sp-main">
         <table className="ap-grid eq-grid sp-grid" aria-label={`${label} spells`} data-slot-id={slot.id}>

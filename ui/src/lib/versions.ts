@@ -210,3 +210,16 @@ export function sourcesOf(rows: readonly VersionRow<VersionLike>[]): SourceEntry
 export const FILTER_BAR_MIN_ROWS = 8;
 
 export const showsFilterBar = (rows: readonly VersionRow[]): boolean => rows.length > FILTER_BAR_MIN_ROWS || sourcesOf(rows).length > 1;
+
+/** A5: the editions some version of the rows was written for (edition-neutral versions name none), 2024 first. */
+export function editionsOf(rows: readonly VersionRow<VersionLike>[]): Ruleset[] {
+  const found = new Set(rows.flatMap((r) => r.all.map(editionOf)));
+  return (["dnd2024", "dnd2014"] as const).filter((ed) => found.has(ed));
+}
+
+/**
+ * A5: the Edition filter only chooses between editions the list holds. With one edition (or none) it is not offered, and a
+ * value carried over from another list does not apply, so it can never empty the list.
+ */
+export const effectiveFilter = (f: PickerFilter, editions: readonly Ruleset[]): PickerFilter =>
+  editions.length > 1 || f.edition === "all" ? f : { ...f, edition: "all" };

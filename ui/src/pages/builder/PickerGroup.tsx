@@ -129,7 +129,7 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
             <EmptyListNote slot={slot} ruleset={ruleset} onManageSources={() => navigate(SOURCES_ROUTE)} onStartOver={(ed) => void startOver(ed)} onEditionOptions={openEditionFlyout} />
           )}
           {picker.showBar && (
-            <PickerFilterBar title={group.title} filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} shown={visible.length} total={rows.length} />
+            <PickerFilterBar title={group.title} filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} editions={picker.editions} shown={visible.length} total={rows.length} />
           )}
           {rows.length > 0 && visible.length === 0 && (
             <p className="pick-empty pick-fempty">Nothing matches these filters. <button type="button" className="pick-fclear" onClick={() => picker.setFilter(NO_FILTER)}>Clear</button></p>
