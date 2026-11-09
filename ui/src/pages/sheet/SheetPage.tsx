@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SheetPreview } from "../../api/contract";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { Alert, ShellSubTabs } from "../../components";
 import "./sheet.css";
 import { RequireCharacter } from "../../components/RequireCharacter";
@@ -61,6 +61,17 @@ function Body() {
     const ok = await generate();
     if (ok && narrow && !phone) pane.current?.scrollIntoView({ block: "start", behavior: "smooth" });
   };
+
+  // B-143: the status bar's View sheet (`?preview=1`) opens the sheet with its preview generated, as Generate Preview does.
+  const [params, setParams] = useSearchParams();
+  const wantsPreview = params.get("preview") === "1";
+  const runPreview = useRef(generateNow);
+  runPreview.current = generateNow;
+  useEffect(() => {
+    if (!wantsPreview || !id) return;
+    setParams((p) => { const next = new URLSearchParams(p); next.delete("preview"); return next; }, { replace: true });
+    void runPreview.current();
+  }, [wantsPreview, id, setParams]);
 
   const exportSheet = async () => {
     if (!id) return;

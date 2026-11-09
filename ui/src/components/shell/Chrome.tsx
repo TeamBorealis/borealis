@@ -18,6 +18,7 @@ import { useShellActions } from "./useShellActions";
 import { displayPath } from "../../lib/displayPath";
 import { usePhone } from "../../lib/phone";
 import { usePlatform } from "../../state/platform";
+import { VIEW_SHEET_PATH, offersCompleteMoment } from "./completeMoment";
 
 /** Quick search box (Alt+Q focuses it). Enter opens the compendium with the query. */
 export function SearchBox() {
@@ -210,7 +211,11 @@ export function StatusBar({ compact, busy }: { compact?: boolean; busy?: boolean
   const phoneLine = phone && !!compact;
   const working = useDelayedBusy(!!busy, BUSY_SHOW_DELAY_MS, phoneLine);
   const text = message || (snapshot ? `Loaded '${snapshot.name}'` : `Last checked for content updates at ${STARTED_AT}`);
-  const folded = useStatusFold(text, hasNext || working, phone);
+  // TV1 C10 (B-143): on a phone a finished character is offered its result where Next selection stood; the line stays open.
+  const nav = useNavigate();
+  const { pathname } = useLocation();
+  const complete = phoneLine && offersCompleteMoment(snapshot, pathname);
+  const folded = useStatusFold(text, hasNext || working || complete, phone);
   return (
     <footer className="aur-status" aria-label="Status" data-collapsed={phone ? String(folded) : undefined} data-pending={phone ? String(hasNext) : undefined}>
       <span className="status-msg" role="status">{text}</span>
@@ -223,6 +228,12 @@ export function StatusBar({ compact, busy }: { compact?: boolean; busy?: boolean
         </>
       )}
       {hasNext && <button type="button" className="next" onClick={goNext}><Icon name="next-selection" />Next selection</button>}
+      {complete && (
+        <span className="complete" role="group" aria-label="Character complete">
+          <button type="button" className="next" onClick={() => nav(VIEW_SHEET_PATH)}><Icon name="scroll" />View sheet</button>
+          <button type="button" className="next" onClick={() => nav("/play")}><Icon name="shield" />Play</button>
+        </span>
+      )}
       {hasNext && !compact && <i className="sep" />}
       {!compact && <button type="button" className={flow ? "flow-on" : "flow-off"} aria-pressed={flow} onClick={() => setFlow(!flow)}><Icon name="selection-flow" />Selection flow</button>}
       {!compact && <i className="sep" />}

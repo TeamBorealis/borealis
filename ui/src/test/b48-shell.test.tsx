@@ -29,6 +29,15 @@ if (typeof window.PointerEvent === "undefined") {
   (window as unknown as { PointerEvent: typeof FakePointerEvent }).PointerEvent = FakePointerEvent;
 }
 
+/** A seeded mock character with every required selection made. */
+async function completeSeeded(api: MockApi): Promise<string> {
+  for (const c of await api.listCharacters()) {
+    const s = await api.getSnapshot({ characterId: c.id });
+    if (s.progress.remaining === 0 && s.progress.nextSlotId === null) return c.id;
+  }
+  throw new Error("no complete seeded character");
+}
+
 let restore: () => void = () => undefined;
 afterEach(() => { restore(); setPhoneForTests(false); vi.useRealTimers(); document.documentElement.removeAttribute("data-theme"); });
 
@@ -94,9 +103,47 @@ describe("status line (O7)", () => {
     const next = await screen.findByRole("button", { name: /Next selection/ });
     const status = next.closest("footer")!;
     expect(status.getAttribute("data-pending")).toBe("true");
+    expect(within(status).queryByRole("group", { name: "Character complete" })).toBeNull();
     vi.useFakeTimers();
     act(() => { vi.advanceTimersByTime(10_000); });
     expect(status.getAttribute("data-collapsed")).toBe("false");
+  });
+
+  // B-143 (TV1 C10, option a): creation gets a "complete" moment that leads to the result.
+  it("on a phone the status bar offers the result when creation is complete, and View sheet opens the preview", async () => {
+    setPhoneForTests(true);
+    const api = fast();
+    const user = userEvent.setup();
+    const id = await completeSeeded(api);
+    renderApp("/builder", { api, openCharacterId: id });
+    const done = await screen.findByRole("group", { name: "Character complete" });
+    const status = done.closest("footer")!;
+    expect(within(status).queryByRole("button", { name: /Next selection/ })).toBeNull();
+    vi.useFakeTimers();
+    act(() => { vi.advanceTimersByTime(10_000); });
+    expect(status.getAttribute("data-collapsed")).toBe("false");
+    vi.useRealTimers();
+    await user.click(within(done).getByRole("button", { name: "View sheet" }));
+    expect(await screen.findByRole("dialog", { name: "Character sheet preview" })).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
+  });
+
+  it("Play in the complete moment opens Play, which does not offer it again", async () => {
+    setPhoneForTests(true);
+    const api = fast();
+    const user = userEvent.setup();
+    renderApp("/builder", { api, openCharacterId: await completeSeeded(api) });
+    await user.click(within(await screen.findByRole("group", { name: "Character complete" })).getByRole("button", { name: "Play" }));
+    expect(await screen.findByRole("group", { name: "Rests" })).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
+  });
+
+  it("a desktop window, at any width, never shows the complete moment (U7)", async () => {
+    const api = fast();
+    renderApp("/builder", { api, openCharacterId: await completeSeeded(api) });
+    const status = await screen.findByRole("contentinfo", { name: "Status" });
+    await waitFor(() => expect(within(status).getByRole("status").textContent).not.toMatch(/^Last checked/));
+    expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
   });
 
   // B-139 (tester video C4): a running command put a 150 px bar inline, so the pending prompt wrapped one word per line.
