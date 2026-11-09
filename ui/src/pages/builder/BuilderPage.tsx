@@ -13,6 +13,7 @@ import { AbilitiesPane, AbilitiesTab } from "./AbilitiesTab";
 import { DescriptionPane, PaneShell } from "./DescriptionPane";
 import type { DescribeFn, PickChoice } from "./PickerGroup";
 import { usePhone } from "../../lib/phone";
+import { speciesTerm } from "../../lib/terminology";
 import { scrollToStart } from "../../lib/scrollReveal";
 import { SlotList } from "./SlotList";
 import { AddedPicks } from "./AddedPicks";
@@ -69,10 +70,12 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
     return () => clearTimeout(t);
   }, [settings.selectionFlow, next, flowTab, nav]);
   if (!snapshot) return null;
+  // B14: the ruleset's word is known from the character, so the first paint never waits for the profile (no "Race" flash).
+  const speciesWord = profile?.terminology.species ?? speciesTerm(snapshot.ruleset);
   // Companions added by hand (GitHub #13) live on Manage > Companion only; the builder tab is for the granted one.
   const hasCompanion = snapshot.companions.some((c) => c.granted) || snapshot.slots.some((s) => s.tab === "companion");
   const tabs: TabDef[] = [
-    { id: "race", label: profile?.terminology.species ?? "Race" },
+    { id: "race", label: speciesWord },
     { id: "class", label: "Class" },
     { id: "background", label: "Background" },
     { id: "abilities", label: "Ability Scores" },
@@ -96,7 +99,6 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   // O2 (phones): the described row's "Choose <name>" button, while its slot does not already hold it.
   const choice = phone && own?.choice && snapshot.slots.some((s) => s.id === own.choice!.slotId && s.chosen?.id !== own.id) ? own.choice : null;
   const intro = phone && active === "race" ? PHONE_RACE_INTRO : INTRO[active] ?? INTRO.race!;
-  const speciesWord = profile?.terminology.species ?? "Race";
   const species = phone ? speciesWord : speciesWord.toUpperCase();
   const fallback: ReactNode = <PaneShell title={active === "race" ? species : intro.title} imageIcon={false} intro={intro.text} readText={intro.text} />;
   // A11: a plain sub-tab tap starts the new tab at its top (the page scroller keeps the old offset otherwise).

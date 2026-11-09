@@ -1,6 +1,7 @@
 import type { ClassSpellcasting, SpellEntry, SpellFacts } from "../../api/contract";
 import { RowDetail } from "../../components/RowDetail";
 import { AddedMark } from "../../components/AddedMark";
+import { speciesTerm } from "../../lib/terminology";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useAsync } from "../../state/useAsync";
@@ -17,7 +18,7 @@ export function useSourceText(): (s: SpellEntry) => string {
   const { snapshot } = useCharacter();
   const ruleset = snapshot?.ruleset;
   const profile = useAsync(() => (ruleset ? api.getRulesetProfile({ ruleset }) : Promise.resolve(null)), [api, ruleset]);
-  const race = profile.data?.terminology.species ?? "Race";
+  const race = profile.data?.terminology.species ?? speciesTerm(ruleset);
   return (s) => s.sourceName || (s.origin === "race" ? race : ORIGIN_SOURCE[s.origin]);
 }
 const isKnown = (s: SpellEntry) => s.level === 0 || s.alwaysPrepared || s.prepared;

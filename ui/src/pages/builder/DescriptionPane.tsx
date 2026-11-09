@@ -2,6 +2,7 @@ import { Fragment, type ReactNode, useCallback, useEffect, useRef, useState } fr
 import { mdiImage } from "@mdi/js";
 import { Alert, Icon, SafeHtml } from "../../components";
 import { useShell } from "../../components/shell/ShellContext";
+import type { Api, ElementDetail } from "../../api/contract";
 import { useApi } from "../../state/ApiContext";
 import { useAsync } from "../../state/useAsync";
 
@@ -51,14 +52,22 @@ export function PaneShell({ title, intro, children, readText, imageIcon = true }
   );
 }
 
+/**
+ * B14: the element the pane showed last, per host. Leaving Build unmounts the pane; coming back it shows this element at
+ * once (while it reloads) instead of a "Loading" card.
+ */
+const lastShown = new WeakMap<Api, ElementDetail>();
+
 /** Loads one element and renders it in the pane. */
 export function DescriptionPane({ elementId, fallback }: { elementId: string | null; fallback: ReactNode }) {
   const api = useApi();
   const { openCompendium } = useShell();
   const el = useAsync(() => (elementId ? api.getElement({ elementId }) : Promise.resolve(null)), [api, elementId]);
+  useEffect(() => { if (el.data) lastShown.set(api, el.data); }, [api, el.data]);
   if (!elementId) return <>{fallback}</>;
   if (el.error) return <PaneShell title="Description" imageIcon={false}><Alert tone="danger">{el.error}</Alert></PaneShell>;
-  const d = el.data;
+  const held = lastShown.get(api);
+  const d = el.data ?? (held?.id === elementId ? held : null);
   if (!d) return <PaneShell title="Loading" imageIcon={false}><p className="muted">Loading...</p></PaneShell>;
   const bodyText = d.descriptionHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   const dupIntro = !d.shortDescription || bodyText.includes(d.shortDescription.trim());
