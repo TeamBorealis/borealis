@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
-import type { CharacterSnapshot } from "../api/contract";
+import type { BuilderTab, CharacterSnapshot, SelectionSlot } from "../api/contract";
+import { isPhone } from "../lib/phone";
 
 /** Status-bar message store: the bar logs what just happened (the classic builder keeps the last action visible until the next one). */
 let message = "";
@@ -25,10 +26,30 @@ function inventoryTotals(s: CharacterSnapshot): Map<string, { name: string; qty:
   return totals;
 }
 
-/** Message prompting for the next pending selection ("Choose one from the 'Race' selection option."), or the completion line. */
+/** The Build section names (BuilderPage's tab labels); `race` follows the ruleset's word. */
+const SECTION: Record<Exclude<BuilderTab, "race" | "spells">, string> = {
+  class: "Class", background: "Background", abilities: "Ability Scores", feats: "Feats", languages: "Languages",
+  proficiencies: "Proficiencies", companion: "Companion",
+};
+
+/** Where a slot is picked, in the phone's words: the bottom tab, and the Build section. */
+function placeOf(slot: SelectionSlot, s: CharacterSnapshot): string {
+  if (slot.tab === "spells") return "Magic tab";
+  const section = slot.tab === "race" ? (s.ruleset === "dnd2024" ? "Species" : "Race") : SECTION[slot.tab];
+  return `Build tab, ${section}`;
+}
+
+/**
+ * Message prompting for the next pending selection ("Choose one from the 'Race' selection option."), or the completion line.
+ * Tester B7 (B-133, TV2): on a phone it reads as a to-do and names where the pick is made
+ * ("Next: choose Magic Initiate Cantrips, 1 of 2 (Magic tab)"); desktop keeps Aurora's text (U7).
+ */
 export function nextSelectionPrompt(s: CharacterSnapshot): string {
   const next = s.slots.find((x) => x.id === s.progress.nextSlotId);
-  return next ? `Choose one from the '${next.title}' selection option.` : "All required selections are made.";
+  if (!next) return "All required selections are made.";
+  if (!isPhone()) return `Choose one from the '${next.title}' selection option.`;
+  const count = next.of > 1 ? `, ${next.ordinal} of ${next.of}` : "";
+  return `Next: choose ${next.title}${count} (${placeOf(next, s)})`;
 }
 
 /** Status line for a freshly adopted snapshot (loaded from disk, or just created). */

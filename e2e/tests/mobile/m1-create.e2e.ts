@@ -11,7 +11,7 @@ mobileSuite('m1', 'creates a character and lands in Build', async ({ app, device
   await expect(screen.getByText(/\bAI\b|assistant|codex|claude|pair/i)).toBeHidden();
   await createCharacter(screen, device, CHARACTER_NAME);
   await expect(screen.getByText('NEW CHARACTER, web dialogue', { exact: false })).toBeHidden(SLOW);
-  // Build page: species step first, pending-choices prompt in the status bar.
+  // Build page: species step first, pending-choices prompt in the status bar (phones name the tab, tester B7).
   await expectBuildPage(screen);
-  await expect(screen.getByText(/choose one from the 'race' selection/i).first()).toBeVisible(SLOW);
+  await expect(screen.getByText(/^next: choose (race|species) \(build tab, (race|species)\)$/i).first()).toBeVisible(SLOW);
 });
