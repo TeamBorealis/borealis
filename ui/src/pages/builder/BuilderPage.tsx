@@ -17,6 +17,7 @@ import { speciesTerm } from "../../lib/terminology";
 import { scrollToStart } from "../../lib/scrollReveal";
 import { SlotList } from "./SlotList";
 import { AddedPicks } from "./AddedPicks";
+import { GrantedFeats, grantedFeats } from "./GrantedFeats";
 import { NoticesBanner } from "./NoticesBanner";
 import { CharacterMissingContentDialog, ShowMissingContentButton } from "./MissingContentAction";
 import { PickerStateProvider } from "./pickerState";
@@ -88,6 +89,8 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   if (!tabs.some((t) => t.id === tab)) return <Navigate to="/builder/race" replace />;
   const active = tab as TabId;
   const addedKind = ADDED_KIND[active];
+  // Tester B8 (TV2): on phones Feats also lists the feats the build grants outright, read-only (desktop: Aurora's tab).
+  const granted = phone && active === "feats" ? grantedFeats(snapshot) : [];
   const slots = snapshot.slots.filter((s) => s.tab === active && SLOT_TABS.includes(s.tab) && !s.locked); // locked slots are hidden (E31 SO-3)
   // List entries (e.g. a background's ability increase) are not elements: the pane keeps the last element instead.
   const elementChoices = slots.filter((s) => s.chosen && s.chosen.type !== "list");
@@ -125,8 +128,9 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
         {missingOpen && <CharacterMissingContentDialog onClose={() => setMissingOpen(false)} />}
         <Tabs inBand tabs={tabs} active={active} onChange={openTab} label="Build sections" idPrefix="build" />
         <TabPanel active={active} idPrefix="build">
+          {granted.length > 0 && <GrantedFeats feats={granted} onDescribe={(id) => onDescribe(id)} />}
           {active === "abilities" ? <AbilitiesTab describedId={shownId} onDescribe={onDescribe} />
-            : <SlotList slots={slots} describedId={shownId} onDescribe={onDescribe} inline={inline} />}
+            : !(granted.length > 0 && slots.length === 0) && <SlotList slots={slots} describedId={shownId} onDescribe={onDescribe} inline={inline} />}
           {/* B3 (GitHub #35): extras the DM grants, after the section's own picks */}
           {addedKind && <AddedPicks kind={addedKind} onDescribe={(id) => onDescribe(id)} />}
         </TabPanel>

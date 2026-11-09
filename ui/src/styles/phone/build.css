@@ -33,6 +33,10 @@ html.phone .abil-page .build-empty { font: 400 var(--ph-t-sub)/1.45 var(--ph-fon
 /* B3 (GitHub #35): added picks on phones. The lines are the picker footers of lists.css (grouped rows, 44 pt remove);
    the Add button is a full 44 pt control; the dialog is the bottom sheet, its list page-length with no nested scroller. */
 html.phone .added-picks { margin: 16px 0 0; }
+/* Tester B8 (B-132): granted feats lead the Feats tab, read-only (a lock instead of the remove button). */
+html.phone .granted-feats { margin: 0 0 16px; }
+html.phone .granted-feats .pick-group-label { margin: 0 4px 8px; }
+html.phone .granted-feats .added-line { padding-right: var(--ph-gutter); }
 html.phone .added-head { gap: 12px; margin: 0 0 8px; }
 html.phone .added-head .pick-group-label { margin: 0 4px; }
 html.phone .added-add { min-height: var(--ph-hit); border-radius: var(--ph-r-pill); font: 600 var(--ph-t-foot)/1.2 var(--ph-font-ui); }
