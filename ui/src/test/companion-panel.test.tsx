@@ -1,8 +1,9 @@
-import { screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { CompanionState } from "../api/contract";
 import { MockApi } from "../api/mock";
+import { CompanionQuickView } from "../components/shell/CompanionQuickView";
 import { renderApp, seededId } from "./utils";
 
 const base: CompanionState = {
@@ -100,5 +101,34 @@ describe("the information slider, companion context", () => {
     expect((screen.getByRole("button", { name: "SWITCH TO COMPANION" }) as HTMLButtonElement).disabled).toBe(true);
     await user.click(screen.getByRole("button", { name: "SWITCH TO CHARACTER" }));
     expect(screen.queryByLabelText("Companion")).toBeNull();
+  });
+
+  it("shows the saving throws, damage and condition lines, senses and languages as the sheet prints them (U21)", async () => {
+    const saves = [["Strength", "STR", 2], ["Dexterity", "DEX", 1], ["Constitution", "CON", 0], ["Intelligence", "INT", -4], ["Wisdom", "WIS", 0], ["Charisma", "CHA", -2]] as const;
+    const { panel } = await slider({
+      ...base, saves: saves.map(([name, ability, bonus]) => ({ name, ability, bonus })), senses: "Darkvision 60 ft.",
+      defenses: [{ name: "Damage Resistances", text: "Poison" }, { name: "Condition Immunities", text: "Poisoned" }],
+    });
+    const list = panel.getByRole("list", { name: "Saving Throws" });
+    expect([...list.querySelectorAll("li")].map((li) => li.textContent)).toEqual(["+2Strength", "+1Dexterity", "+0Constitution", "-4Intelligence", "+0Wisdom", "-2Charisma"]);
+    const titles = [...document.querySelectorAll(".qv-companion .aur-expander-title")].map((e) => e.textContent);
+    expect(titles.indexOf("Saving Throws")).toBe(titles.indexOf("Skills") - 1);
+    const lines = [...document.querySelectorAll(".qv-companion .qv-statline")].map((p) => p.textContent);
+    expect(lines).toEqual(["Damage Resistances Poison", "Condition Immunities Poisoned", "Senses Darkvision 60 ft.", "Languages \u2014"]);
+  });
+
+  it("prints no Senses line for a creature without senses, and the mock companions carry their own lines", async () => {
+    const { panel } = await slider(base);
+    expect(panel.queryByText("Senses")).toBeNull();
+    expect(panel.getByText("Languages")).toBeTruthy();
+    const api = new MockApi();
+    const id = await seededId(api, "Seraphine");
+    const added = await api.addCompanion({ characterId: id, creatureId: "ID_SRD51_MONSTER_OWL" });
+    const owl = added.companions.find((c) => c.creature?.name === "Owl")!;
+    render(<CompanionQuickView companion={owl} />);
+    const view = within(screen.getAllByLabelText("Companion").at(-1)!);
+    const owlSaves = [...view.getByRole("list", { name: "Saving Throws" }).querySelectorAll("li")].map((li) => li.textContent);
+    expect(owlSaves).toEqual(["-4Strength", "+1Dexterity", "-1Constitution", "-4Intelligence", "+1Wisdom", "-2Charisma"]);
+    expect(view.getByText("Senses").parentElement?.textContent).toBe("Senses Darkvision 120 ft.");
   });
 });

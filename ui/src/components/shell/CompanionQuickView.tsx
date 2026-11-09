@@ -22,6 +22,18 @@ function breakdownRows(c: CompanionState): [string, string][] {
   ];
 }
 
+/**
+ * U21: the lines the sheet's companion page ends its Statistics with (#40): damage and condition lines, Senses (only when
+ * the creature has some) and Languages, each "Label text" as printed there.
+ */
+function statLines(c: CompanionState): [string, string][] {
+  const lines: [string, string][] = c.defenses.map((d) => [d.name, d.text.trim()]);
+  for (const [label, text] of [["Senses", c.senses], ["Languages", c.languages]] as const) {
+    if (text.trim()) lines.push([label, text.trim()]);
+  }
+  return lines;
+}
+
 function Features({ title, items }: { title: string; items: CompanionState["traits"] }) {
   return (
     <Expander title={title} defaultOpen>
@@ -35,6 +47,8 @@ function Features({ title, items }: { title: string; items: CompanionState["trai
  * The information slider's companion context: the creature's name, build line, the headline strip
  * (Proficiency, Initiative, AC, Speed, HP), the six scores with modifiers and the Skills, Traits, Actions,
  * Reactions and Additional Statistics & Breakdown sections. AC and HP print as text when the stat block gives a formula.
+ * Beyond Aurora's panel (U21), as the sheet's companion page prints them since #40: a Saving Throws section before
+ * Skills, and the damage and condition lines, Senses and Languages at the end of the statistics section.
  */
 export function CompanionQuickView({ companion: c }: { companion: CompanionState }) {
   const strip: [string, string][] = [
@@ -48,6 +62,13 @@ export function CompanionQuickView({ companion: c }: { companion: CompanionState
       <div className="qv-abil">
         {ABILITY_KEYS.map((k) => <div key={k}><b>{k}</b><span>{scoreWithModifier(c.abilities[k])}</span></div>)}
       </div>
+      {c.saves.length > 0 && (
+        <Expander title="Saving Throws" defaultOpen>
+          <ul className="qv-list" aria-label="Saving Throws">
+            {c.saves.map((v) => <li key={v.name}><em>{signed(v.bonus)}</em><span>{v.name}</span></li>)}
+          </ul>
+        </Expander>
+      )}
       <Expander title="Skills" defaultOpen>
         <ul className="qv-list">
           {c.skills.map((s) => <li key={s.name}><em>{signed(s.bonus)}</em><span>{s.name} <small>({s.ability})</small></span></li>)}
@@ -61,6 +82,7 @@ export function CompanionQuickView({ companion: c }: { companion: CompanionState
         <ul className="qv-list qv-breakdown">
           {breakdownRows(c).map(([name, value]) => <li key={name}><b>{value}</b><span>{name}</span><i>{NO_BREAKDOWN}</i></li>)}
         </ul>
+        {statLines(c).map(([label, text]) => <p key={label} className="qv-feat qv-statline"><em>{label}</em> {text}</p>)}
       </Expander>
     </div>
   );
