@@ -6,6 +6,11 @@
 /* The window: no 1 px frame on a phone; the keyboard inset lifts the bottom chrome above an open keyboard (sec. 5.4). */
 /* The tab bar keeps its own home-indicator padding, so the shell lifts by what the keyboard covers beyond that inset. */
 html.phone .aur-window { border: 0; background: var(--ph-bg); padding-bottom: max(0px, var(--kb) - var(--safe-b)); }
+/* Tester B15 (B-131): while the keyboard is open (`kb-open`, lib/keyboardInset.ts) the status line, Next selection and the tab
+   bar hide, so the field and the list keep that room; the shell then lifts by the whole keyboard. They return when it closes. */
+html.phone.kb-open .aur-window { padding-bottom: var(--kb); }
+html.phone.kb-open .aur-window.narrow .aur-status { display: none; }
+html.phone.kb-open .aur-bottombar { display: none; }
 
 /* Title bar: hamburger, mark, title, settings. With a character, its name in a system serif, gold, over a 2 px aurora line. */
 html.phone .aur-title.mobile {

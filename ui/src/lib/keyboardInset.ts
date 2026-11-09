@@ -7,6 +7,13 @@
  */
 interface ViewportBox { height: number; offsetTop: number }
 
+/**
+ * Tester B15 (B-131): from this inset (CSS px) the keyboard counts as open, and the root gets `kb-open` so the phone layer
+ * hides the status line and the tab bar above it. A smaller inset is a browser toolbar or a rounding gap, not a keyboard
+ * (the smallest phone keyboards, a number pad in landscape, are well over 150 px).
+ */
+export const KB_OPEN_PX = 120;
+
 /** Pixels the keyboard covers at the bottom of the layout viewport (0 when it is closed). */
 export function keyboardInset(innerHeight: number, vv: ViewportBox): number {
   return Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop));
@@ -60,6 +67,7 @@ export function installKeyboardInset(win: Window, root: HTMLElement): () => void
     const opened = kb > last && kb > 0;
     last = kb;
     root.style.setProperty("--kb", `${kb}px`);
+    root.classList.toggle("kb-open", kb >= KB_OPEN_PX);
     const focused = root.ownerDocument.activeElement;
     if (opened && focused instanceof HTMLElement && focused.matches(TEXT_ENTRY)) revealInScroller(focused, win);
   };
@@ -73,5 +81,6 @@ export function installKeyboardInset(win: Window, root: HTMLElement): () => void
     vv.removeEventListener("resize", update);
     vv.removeEventListener("scroll", update);
     root.style.setProperty("--kb", "0px");
+    root.classList.remove("kb-open");
   };
 }
