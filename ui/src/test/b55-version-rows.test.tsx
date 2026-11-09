@@ -11,6 +11,13 @@ import { fetchAllSlotOptions } from "../pages/builder/usePickerRows";
 import { SlotOptionsGrid } from "../pages/spells/SlotOptionsGrid";
 import { renderApp } from "./utils";
 
+/** The phone's Choose button under the list (B-48 O2); each row's ring (A1) is also named "Choose <name>". */
+const chooseButton = (name: string) => waitFor(() => {
+  const found = screen.getAllByRole("button", { name: `Choose ${name}` }).find((b) => b.classList.contains("bp-choose-btn"));
+  expect(found).toBeTruthy();
+  return found!;
+});
+
 /** B-55 UI (specs/version-rows-and-filters.md sec. 1.2-1.4, 1.6, 2, 6): one row per name, version column and menu. */
 
 afterEach(() => { setPhoneForTests(false); });
@@ -289,7 +296,7 @@ describe("phones (sec. 2)", () => {
     await user.click(within(await screen.findByRole("group", { name: "Edition" })).getByRole("button", { name: "All" }));
     await user.click(await screen.findByRole("button", { name: "3 versions of Dragonborn" }));
     await user.click(within(await screen.findByRole("listbox")).getByRole("option", { name: "Sample Reference 5.1" }));
-    await user.click(await screen.findByRole("button", { name: "Choose Dragonborn" }));
+    await user.click(await chooseButton("Dragonborn"));
     await waitFor(() => expect(spy).toHaveBeenCalledWith(expect.objectContaining({ slotId: race.id, elementId: "dragonborn" })));
   });
 });

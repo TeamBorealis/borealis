@@ -6,6 +6,13 @@ import type { CharacterSnapshot, SelectionSlot } from "../api/contract";
 import { setPhoneForTests } from "../lib/phone";
 import { renderApp } from "./utils";
 
+/** The phone's Choose button under the list (B-48 O2); each row's ring (A1) is also named "Choose <name>". */
+const chooseButton = (name: string) => waitFor(() => {
+  const found = screen.getAllByRole("button", { name: `Choose ${name}` }).find((b) => b.classList.contains("bp-choose-btn"));
+  expect(found).toBeTruthy();
+  return found!;
+});
+
 /**
  * B2 (tester video 2026-11-02): Magic Initiate's "Spellcasting Ability" is the feat's own choice. It sits on Build > Feats
  * under the feat's name (not on Class), and Next selection asks it before the Magic Initiate spells that depend on it.
@@ -54,7 +61,7 @@ describe("Magic Initiate's Spellcasting Ability (B2)", () => {
     const wisdom = await within(options).findByRole("button", { name: /^Wisdom/ });
     if (phone) {
       await user.click(wisdom);
-      await user.click(await screen.findByRole("button", { name: "Choose Wisdom" }));
+      await user.click(await chooseButton("Wisdom"));
     } else {
       await user.dblClick(wisdom);
     }

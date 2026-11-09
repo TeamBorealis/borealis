@@ -10,6 +10,13 @@ import { setPhoneForTests, setPhoneOsForTests } from "../lib/phone";
 import { sentenceCase } from "../lib/phoneCase";
 import { renderApp, seededId } from "./utils";
 
+/** The phone's Choose button under the list (B-48 O2); each row's ring (A1) is also named "Choose <name>". */
+const chooseButton = (name: string) => waitFor(() => {
+  const found = screen.getAllByRole("button", { name: `Choose ${name}` }).find((b) => b.classList.contains("bp-choose-btn"));
+  expect(found).toBeTruthy();
+  return found!;
+});
+
 // B-48 WP4/WP5 behaviour (U9a): O2 Choose button in pickers, O3 Open on a selected tile, O13 light haptics on choose, level
 // up, rest and delete; double-tap keeps working; steppers repeat while held. Desktop (phone off) keeps today's behaviour.
 
@@ -50,11 +57,11 @@ describe("picker Choose button (O2)", () => {
     const snap = await fresh(api);
     renderApp("/builder/class", { api, openCharacterId: snap.id });
     const list = await screen.findByRole("list", { name: "Class options" });
-    await user.click(await within(list).findByRole("button", { name: /Wizard/ }));
-    const choose = await screen.findByRole("button", { name: "Choose Wizard" });
+    await user.click(await within(list).findByRole("button", { name: /^Wizard/ }));
+    const choose = await chooseButton("Wizard");
     await user.click(choose);
     await waitFor(async () => expect((await api.getSnapshot({ characterId: snap.id })).slots.some((s) => s.chosen?.id === "wizard")).toBe(true));
-    await waitFor(() => expect(screen.queryByRole("button", { name: "Choose Wizard" })).toBeNull());
+    await waitFor(() => expect(document.querySelector(".bp-choose-btn")).toBeNull());
   });
 
   it("double-tap still chooses on a phone", async () => {
@@ -64,7 +71,7 @@ describe("picker Choose button (O2)", () => {
     const snap = await fresh(api);
     renderApp("/builder/class", { api, openCharacterId: snap.id });
     const list = await screen.findByRole("list", { name: "Class options" });
-    await user.dblClick(await within(list).findByRole("button", { name: /Fighter/ }));
+    await user.dblClick(await within(list).findByRole("button", { name: /^Fighter/ }));
     await waitFor(async () => expect((await api.getSnapshot({ characterId: snap.id })).slots.some((s) => s.chosen?.id === "fighter")).toBe(true));
   });
 
@@ -77,10 +84,10 @@ describe("picker Choose button (O2)", () => {
     const clear = await screen.findAllByRole("button", { name: /^Clear / });
     await user.click(clear[0]!);
     const list = await screen.findByRole("list", { name: /options$/ });
-    const rows = await within(list).findAllByRole("button", { pressed: false });
+    const rows = (await within(list).findAllByRole("button", { pressed: false })).filter((b) => b.classList.contains("pick-main"));
     await user.click(rows[0]!);
     const name = rows[0]!.getAttribute("aria-label")!.split(",")[0]!;
-    expect(await screen.findByRole("button", { name: `Choose ${name}` })).toBeTruthy();
+    expect(await chooseButton(name)).toBeTruthy();
   });
 
   it("the picker header reads in sentence case on a phone (the desktop keeps Aurora's capitals)", async () => {
@@ -147,8 +154,8 @@ describe("haptics (O13)", () => {
     const snap = await fresh(api);
     renderApp("/builder/class", { api, openCharacterId: snap.id });
     const list = await screen.findByRole("list", { name: "Class options" });
-    await user.click(await within(list).findByRole("button", { name: /Wizard/ }));
-    await user.click(await screen.findByRole("button", { name: "Choose Wizard" }));
+    await user.click(await within(list).findByRole("button", { name: /^Wizard/ }));
+    await user.click(await chooseButton("Wizard"));
     await waitFor(() => expect(calls).toEqual(["selection"]));
   });
 
