@@ -180,8 +180,8 @@ describe("haptics (O13)", () => {
     const api = new MockApi({ aiChunkDelayMs: 2 });
     const id = await seededId(api, "Seraphine");
     renderApp("/play", { api, openCharacterId: id });
-    await user.click(await screen.findByRole("button", { name: /Short Rest/ }));
-    await user.click(screen.getByRole("button", { name: /Long Rest/ }));
+    await user.click(await screen.findByRole("button", { name: /^Short Rest$/ }));
+    await user.click(screen.getByRole("button", { name: /^Long Rest$/ }));
     await waitFor(() => expect(calls).toEqual(["impact:light", "impact:light"]));
   });
 
@@ -207,7 +207,7 @@ describe("haptics (O13)", () => {
     const api = new MockApi({ aiChunkDelayMs: 2 });
     const id = await seededId(api, "Seraphine");
     renderApp("/play", { api, openCharacterId: id });
-    await user.click(await screen.findByRole("button", { name: /Short Rest/ }));
+    await user.click(await screen.findByRole("button", { name: /^Short Rest$/ }));
     haptic("choose");
     await new Promise((r) => setTimeout(r, 20));
     expect(calls).toEqual([]);

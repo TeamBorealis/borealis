@@ -120,7 +120,7 @@ describe("rolled item charges: inventory and Play", () => {
     renderApp("/play", { api, openCharacterId: id });
     const list = await screen.findByRole("list", { name: "Resources" });
     const line = within(list).getByText(RESOURCE).closest("li")!;
-    expect(within(line).getByText("Necklace Of Beads · max 7 (1d6 + 3)")).toBeTruthy();
+    expect(within(line).getByText("Necklace Of Beads · Recharges at dawn · max 7 (1d6 + 3)")).toBeTruthy();
 
     // Act
     await user.click(within(line).getByRole("button", { name: new RegExp(`^${RESOURCE}`) }));
