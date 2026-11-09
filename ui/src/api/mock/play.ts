@@ -121,7 +121,11 @@ export const restore = (c: MockCharacter, id: string, uses: number): MockCharact
   withPlay(c, (p) => ({ ...p, used: { ...p.used, [id]: Math.max(0, (p.used[id] ?? 0) - uses) } }));
 
 export const shortRest = (c: MockCharacter): MockCharacter =>
-  withPlay(c, (p) => ({ ...p, toggles: [], used: Object.fromEntries(Object.entries(p.used).map(([k, v]) => [k, Math.max(0, v - 1)])), tracking: afterRest(p.tracking, "short") }));
+  withPlay(c, (p) => {
+    // As the host: a pool gets back its `shortRestRegain` uses; a long-rest-only pool gets nothing.
+    const back = (id: string): number => resourcesFor(c).find((r) => r.id === id)?.shortRestRegain ?? 0;
+    return { ...p, toggles: [], used: Object.fromEntries(Object.entries(p.used).map(([k, v]) => [k, Math.max(0, v - back(k))])), tracking: afterRest(p.tracking, "short") };
+  });
 
 export const longRest = (c: MockCharacter): MockCharacter =>
   withPlay(c, (p) => ({

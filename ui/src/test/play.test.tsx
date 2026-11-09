@@ -70,6 +70,26 @@ describe("Play panel", () => {
     expect(screen.queryByText(/Resets on/)).toBeNull();
   });
 
+  // B-142 (tester video C9): a rest gave no visible answer, so six taps on Short Rest looked like nothing happened.
+  it("Short Rest reports what came back, and says so when there is nothing to regain", async () => {
+    const user = userEvent.setup();
+    const api = fast();
+    const id = await seededId(api, "Seraphine");
+    await api.spendResource({ characterId: id, resourceId: "rage" });
+    await api.spendResource({ characterId: id, resourceId: "rage" });
+    renderApp("/play", { api, openCharacterId: id });
+    const count = await screen.findByRole("status", { name: /Rage: \d+ of \d+ uses left/ });
+    const max = Number(/of (\d+)/.exec(count.getAttribute("aria-label")!)![1]);
+    expect(count.textContent).toBe(`${max - 2}/${max}`);
+    await user.click(screen.getByRole("button", { name: "Short Rest" }));
+    expect(await screen.findByText("Short Rest: Rage +1.")).toBeTruthy();
+    expect(screen.getByRole("status", { name: /Rage:/ }).textContent).toBe(`${max - 1}/${max}`);
+    await user.click(screen.getByRole("button", { name: "Long Rest" }));
+    expect(await screen.findByText(/^Long Rest: Rage \+1/)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Short Rest" }));
+    expect(await screen.findByText("Short Rest: nothing to regain.")).toBeTruthy();
+  });
+
   it("steps exhaustion and summarises the effects", async () => {
     const user = userEvent.setup();
     const api = fast();

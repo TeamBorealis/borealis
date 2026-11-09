@@ -1,8 +1,10 @@
-import { useState } from "react";
-import type { PlayHitPoints } from "../../api/contract";
-import { Button, useConfirm } from "../../components";
+import { useRef, useState } from "react";
+import type { PlayHitPoints, PlayState } from "../../api/contract";
+import { Button, useConfirm, useToast } from "../../components";
 import { haptic } from "../../lib/haptics";
+import { useCharacter } from "../../state/CharacterContext";
 import { usePlayMutate } from "./playQueue";
+import { restSummary } from "./restSummary";
 import { ShortRestDialog, offersHitDice } from "./ShortRestDialog";
 import "./spell-tracker.css";
 
@@ -15,11 +17,17 @@ interface RestBarProps { hp: PlayHitPoints }
  * Short Rest and Long Rest for the whole Play page (GitHub #2 review L8): resources, spell slots, Pact Magic slots, custom
  * trackers, concentration, hit points and hit dice. A rest applies at once. A Short Rest then offers hit dice when the
  * character is hurt and has one left (B-194); a Long Rest restores hit points and returns hit dice by the edition's rule.
- * At 0 hit points a Long Rest asks first and goes ahead only on confirm (B-212).
+ * At 0 hit points a Long Rest asks first and goes ahead only on confirm (B-212). Each rest then says what came back in a
+ * toast, or that there was nothing to regain (B-142).
  */
 export function RestBar({ hp }: RestBarProps) {
   const run = usePlayMutate();
   const confirm = useConfirm();
+  const toast = useToast();
+  const { snapshot } = useCharacter();
+  // The state the rest starts from is read when the queued call runs, after any press queued before it.
+  const latest = useRef<PlayState | null>(null);
+  latest.current = snapshot?.play ?? null;
   const [offer, setOffer] = useState(false);
   const rest = async (long: boolean) => {
     if (long && hp.current <= 0) {
@@ -27,8 +35,14 @@ export function RestBar({ hp }: RestBarProps) {
       if (answer !== "confirm") return;
     }
     haptic("rest");
-    const next = await run((api, id) => (long ? api.longRest({ characterId: id }) : api.shortRest({ characterId: id })));
-    if (!long && next && offersHitDice(next.play)) setOffer(true);
+    let before: PlayState | null = null;
+    const next = await run((api, id) => {
+      before = latest.current;
+      return long ? api.longRest({ characterId: id }) : api.shortRest({ characterId: id });
+    });
+    if (!next) return;
+    if (before) toast.push(restSummary(long ? "Long Rest" : "Short Rest", before, next.play));
+    if (!long && offersHitDice(next.play)) setOffer(true);
   };
   return (
     <div className="st-rests" role="group" aria-label="Rests">
