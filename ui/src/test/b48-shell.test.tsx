@@ -30,10 +30,17 @@ if (typeof window.PointerEvent === "undefined") {
 }
 
 /** A seeded mock character with every required selection made. */
-async function completeSeeded(api: MockApi): Promise<string> {
+/** A seeded character with every pick made; `settle` also declines its starting equipment ("I'll buy my own", B-129). */
+async function completeSeeded(api: MockApi, settle = true): Promise<string> {
   for (const c of await api.listCharacters()) {
     const s = await api.getSnapshot({ characterId: c.id });
-    if (s.progress.remaining === 0 && s.progress.nextSlotId === null) return c.id;
+    if (s.progress.remaining !== 0 || s.progress.nextSlotId !== null) continue;
+    if (settle) {
+      for (const p of s.play.equipmentPackages) {
+        if (!p.chosen && !p.declined) await api.chooseEquipmentPackage({ characterId: c.id, packageId: p.package, option: "none" });
+      }
+    }
+    return c.id;
   }
   throw new Error("no complete seeded character");
 }
@@ -126,6 +133,20 @@ describe("status line (O7)", () => {
     await user.click(within(done).getByRole("button", { name: "View sheet" }));
     expect(await screen.findByRole("dialog", { name: "Character sheet preview" })).toBeTruthy();
     expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
+  });
+
+  it("an untaken starting-equipment package keeps Next selection (to Gear); I'll buy my own brings the complete moment (B-129)", async () => {
+    setPhoneForTests(true);
+    const api = fast();
+    const user = userEvent.setup();
+    renderApp("/builder", { api, openCharacterId: await completeSeeded(api, false) });
+    const next = await screen.findByRole("button", { name: /Next selection/ });
+    expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
+    await user.click(next);
+    const chooser = await screen.findByRole("region", { name: "Starting equipment" });
+    await user.click(within(chooser).getByRole("button", { name: /^I'll buy my own/ }));
+    expect(await screen.findByRole("group", { name: "Character complete" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Next selection/ })).toBeNull();
   });
 
   it("Play in the complete moment opens Play, which does not offer it again", async () => {
