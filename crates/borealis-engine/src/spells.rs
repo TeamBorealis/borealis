@@ -188,6 +188,15 @@ fn add_prepared_extensions(
     }
 }
 
+/// A levelled spell a feature grants to a class that does not prepare is always prepared (#39).
+/// Such a spell is never learned in a known-spell slot. Aurora-format content grants subclass
+/// spells of its known casters (2024 Bard, Paladin, Warlock and others) with a plain
+/// `<grant type="Spell" spellcasting=..>`, without `prepared="true"`. Picks stay learned spells,
+/// and a class that prepares still needs the grant's own `prepared` flag.
+fn feature_given(n: &crate::graph::Node<'_>, class_prepares: bool) -> bool {
+    !class_prepares && matches!(n.origin, Origin::Granted(_)) && spell_level(n.e) > 0
+}
+
 pub(crate) fn spell_level(e: &crate::universe::UElem) -> u32 {
     e.spell_level().unwrap_or(0)
 }
@@ -276,7 +285,7 @@ pub fn spellcasting_snapshots(
             .nodes_of_type("Spell")
             .filter(|(_, n)| n.spell_class.as_deref() == Some(info.name.as_str()))
         {
-            let always = n.always_prepared;
+            let always = n.always_prepared || feature_given(n, prepare);
             let entry = SpellEntry {
                 id: n.e.el.id.clone(),
                 name: n.e.el.name.clone(),
