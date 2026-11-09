@@ -6,7 +6,7 @@ import { describe, test } from '@e2e-dev/mobile';
 import { expect } from 'e2e';
 import type { TestFixtures } from 'e2e';
 import type { Device } from '@e2e-dev/mobile';
-import { ANDROID_BUNDLE_ID, findAndroidApk } from './mobile-env.js';
+import { ANDROID_AVD, ANDROID_BUNDLE_ID, findAndroidApk } from './mobile-env.js';
 
 const ADB = join(process.env.ANDROID_HOME ?? join(homedir(), 'Library/Android/sdk'), 'platform-tools/adb');
 /** A 1.6 GB debug APK takes minutes to stream onto the emulator. */
@@ -17,20 +17,38 @@ const ADB_INSTALL_TIMEOUT_MS = 10 * 60_000;
  * build again. `app.clearState()` is avoided because agent-device cannot pick the simulator for
  * its reset when a second simulator is booted ("2 devices match this request equally").
  *
- * On Android the engine's reinstall fails when the app is missing ("adb uninstall failed",
- * DELETE_FAILED_INTERNAL_ERROR), and a debug APK of over 1.5 GB does not fit the AVD's /data when it
- * is copied to the device before installing (INSTALL_FAILED_INSUFFICIENT_STORAGE). Then adb removes
- * the app itself and streams the same APK (`adb install`), which needs no second copy.
+ * iOS uses the engine's reinstall. Android always goes through adb (`installAndroidApk`): the
+ * engine's reinstall copies the APK to the device inside its 30 s step budget, which a debug APK of
+ * over 1.5 GB misses; it also fails when the app is missing (DELETE_FAILED_INTERNAL_ERROR) and when
+ * /data has no room for a second copy (INSTALL_FAILED_INSUFFICIENT_STORAGE).
  */
-export async function freshInstall(device: Device): Promise<void> {
-  try {
-    await device.installApp(undefined, { reinstall: true });
-  } catch (e) {
-    const apk = findAndroidApk();
-    if (!apk || !/adb|INSTALL_FAILED_INSUFFICIENT_STORAGE/.test(String(e))) throw e;
-    await execFileAsync(ADB, ['uninstall', ANDROID_BUNDLE_ID]).catch(() => undefined);
-    await execFileAsync(ADB, ['install', '-r', '-t', apk], { timeout: ADB_INSTALL_TIMEOUT_MS });
+export async function freshInstall(device: Device, platform: MobilePlatform): Promise<void> {
+  if (platform === 'android') await installAndroidApk();
+  else await device.installApp(undefined, { reinstall: true });
+}
+
+/** The adb serial of the e2e AVD (`ANDROID_SERIAL` wins), so a second running emulator is never the target. */
+async function androidSerial(): Promise<string> {
+  if (process.env.ANDROID_SERIAL) return process.env.ANDROID_SERIAL;
+  const { stdout } = await execFileAsync(ADB, ['devices']);
+  const serials = stdout.split('\n').slice(1).map((l) => l.split('\t')).filter((p) => p[1] === 'device').map((p) => p[0]!);
+  for (const serial of serials.filter((s) => s.startsWith('emulator-'))) {
+    const { stdout: name } = await execFileAsync(ADB, ['-s', serial, 'emu', 'avd', 'name']).catch(() => ({ stdout: '' }));
+    if (name.split(/\r?\n/)[0]?.trim() === ANDROID_AVD) return serial;
   }
+  throw new Error(`no running emulator for the AVD "${ANDROID_AVD}" (adb devices: ${serials.join(', ') || 'none'})`);
+}
+
+/**
+ * Removes the app with its data and streams the target's debug APK with `adb install`, which needs no
+ * second copy on /data and has its own budget for a large APK.
+ */
+export async function installAndroidApk(): Promise<void> {
+  const apk = findAndroidApk();
+  if (!apk) throw new Error('no Android debug APK: build it (docs/build.md, Android) or set E2E_ANDROID_APK');
+  const serial = await androidSerial();
+  await execFileAsync(ADB, ['-s', serial, 'uninstall', ANDROID_BUNDLE_ID]).catch(() => undefined); // absent is fine
+  await execFileAsync(ADB, ['-s', serial, 'install', '-r', '-t', apk], { timeout: ADB_INSTALL_TIMEOUT_MS });
 }
 
 /** Assertion budget for screens that follow a launch or a Rust-backed navigation (slow AX tree). */
@@ -63,6 +81,22 @@ export async function createCharacter(screen: Screen, device: Device, name: stri
 /** The saved character's tile in the Start list: a button named "<Name>, Level <n> ..." (one node; the group and text only repeat the name). */
 export function characterEntry(screen: Screen, name: string) {
   return screen.getByRole('button', new RegExp(`^${name}, Level \\d+`));
+}
+
+/**
+ * The Start page after a launch or relaunch ("Welcome to Borealis"). While a launching app builds its WebView's
+ * accessibility tree, under machine load the Android snapshot helper can fail a read with ENGINE_FAILURE
+ * ("insufficient foreground app content"), which ends a plain `expect` at once. Polling ignores such failed reads until
+ * the SLOW budget is spent, then one strict check reports the real state.
+ */
+export async function expectStartPage(screen: Screen): Promise<void> {
+  const welcome = screen.getByText(/^welcome to borealis$/i).first();
+  const end = Date.now() + SLOW.timeout;
+  while (Date.now() < end) {
+    if (await welcome.isVisible().catch(() => false)) return;
+    await new Promise<void>((r) => setTimeout(r, SHELL_POLL_MS));
+  }
+  await expect(welcome).toBeVisible();
 }
 
 /**

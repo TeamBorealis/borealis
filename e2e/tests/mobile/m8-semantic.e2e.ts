@@ -2,7 +2,7 @@ import { expect } from 'e2e';
 import { describe, test } from '@e2e-dev/mobile';
 import type { Device } from '@e2e-dev/mobile';
 import type { TestFixtures } from 'e2e';
-import { freshInstall, navLink, SLOW } from '../../support/mobile.js';
+import { expectStartPage, freshInstall, navLink, SLOW } from '../../support/mobile.js';
 import type { MobilePlatform } from '../../support/mobile.js';
 
 // m8 (S3.4, local-search-spec sections 7, 8; decision PH1) on the real phone builds: Settings > Search starts
@@ -37,9 +37,9 @@ async function tapUntilVisible(target: Locator, expected: Locator): Promise<void
 
 async function semanticFlow(ctx: Context, platform: MobilePlatform): Promise<void> {
   const { screen, app } = ctx;
-  await freshInstall(ctx.device);
+  await freshInstall(ctx.device, platform);
   await app.open();
-  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+  await expectStartPage(screen);
   const semantic = screen.getByRole(platform === 'ios' ? 'switch' : 'checkbox', 'Semantic search (optional)');
   const row = screen.getByRole('button', 'Search settings');
   await tapUntilVisible(navLink(screen, platform, /^More$/), row);

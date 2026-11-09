@@ -1,12 +1,12 @@
 import { expect } from 'e2e';
-import { CHARACTER_NAME, createCharacter, expectBuildPage, freshInstall, mobileSuite, SLOW } from '../../support/mobile.js';
+import { CHARACTER_NAME, createCharacter, expectBuildPage, expectStartPage, freshInstall, mobileSuite, SLOW } from '../../support/mobile.js';
 
 // m1: clean install -> Characters page -> New character -> Build.
 // Real Rust backend; app data persists on the simulator, so each test starts from a fresh install.
-mobileSuite('m1', 'creates a character and lands in Build', async ({ app, device, screen }) => {
-  await freshInstall(device);
+mobileSuite('m1', 'creates a character and lands in Build', async ({ app, device, screen }, platform) => {
+  await freshInstall(device, platform);
   await app.open();
-  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+  await expectStartPage(screen);
   // Phone builds have no AI at all: nothing about an assistant, setup or pairing on the first screen.
   await expect(screen.getByText(/\bAI\b|assistant|codex|claude|pair/i)).toBeHidden();
   await createCharacter(screen, device, CHARACTER_NAME);

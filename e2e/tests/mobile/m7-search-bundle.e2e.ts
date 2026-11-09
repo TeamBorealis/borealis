@@ -6,7 +6,7 @@ import { expect } from 'e2e';
 import { describe, test } from '@e2e-dev/mobile';
 import type { Device } from '@e2e-dev/mobile';
 import type { TestFixtures } from 'e2e';
-import { characterEntry, freshInstall, navLink, SLOW } from '../../support/mobile.js';
+import { characterEntry, expectStartPage, freshInstall, navLink, SLOW } from '../../support/mobile.js';
 import type { MobilePlatform } from '../../support/mobile.js';
 import { ANDROID_BUNDLE_ID } from '../../support/mobile-env.js';
 
@@ -57,9 +57,9 @@ async function moreRow(screen: Screen, platform: MobilePlatform, row: Locator, o
 
 async function searchChecks(ctx: Context, platform: MobilePlatform): Promise<void> {
   const { screen } = ctx;
-  await freshInstall(ctx.device);
+  await freshInstall(ctx.device, platform);
   await ctx.app.open();
-  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+  await expectStartPage(screen);
 
   // Roles differ per platform (iOS reports the dialog and the result lists as "other"), so these
   // checks go by accessible name.
@@ -82,7 +82,7 @@ async function searchChecks(ctx: Context, platform: MobilePlatform): Promise<voi
   await expect(screen.getByText(/System Reference Document 5\.[12]/).first()).toBeVisible();
   await ctx.app.open();
 
-  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+  await expectStartPage(screen);
   // iOS reports the settings switch as a switch. The tier select is the phone select button (U22), which shows its choice as text.
   const semantic = screen.getByRole(platform === 'ios' ? 'switch' : 'checkbox', 'Semantic search (optional)');
   await moreRow(screen, platform, screen.getByRole('button', 'Search settings'), semantic);
@@ -114,12 +114,12 @@ async function bundleOpened(ctx: Context, warm: boolean): Promise<void> {
   const file = join(mkdtempSync(join(tmpdir(), 'borealis-m7-')), name);
   copyFileSync(BUNDLE_FIXTURE, file);
   const uri = await mediaStoreUri(file);
-  await freshInstall(ctx.device);
+  await freshInstall(ctx.device, 'android');
   const offered = adb('shell', 'cmd', 'package', 'query-activities', '-a', 'android.intent.action.VIEW', '-d', uri, '-t', OCTET);
   expect(offered).toContain(`name=${ANDROID_BUNDLE_ID}.MainActivity`);
   if (warm) {
     await ctx.app.open();
-    await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+    await expectStartPage(screen);
   } else {
     adb('shell', 'am', 'force-stop', ANDROID_BUNDLE_ID);
   }

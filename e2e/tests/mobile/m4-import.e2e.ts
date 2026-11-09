@@ -4,7 +4,7 @@ import { expect } from 'e2e';
 import { describe, test } from '@e2e-dev/mobile';
 import type { Device } from '@e2e-dev/mobile';
 import type { TestFixtures } from 'e2e';
-import { freshInstall, SLOW } from '../../support/mobile.js';
+import { expectStartPage, freshInstall, SLOW } from '../../support/mobile.js';
 import type { MobilePlatform } from '../../support/mobile.js';
 import { checkThresholds, deliverInputs, peakMemoryKb, readDigest, requestDigest, writeResult } from '../../support/mobile-acceptance.js';
 import { chooseFile, openAdditionalContentMobile, scrollTo, statusText } from '../../support/mobile-content.js';
@@ -41,10 +41,10 @@ async function m4({ app, device, screen }: Context, platform: MobilePlatform): P
   const times: Record<string, number> = {};
   const peakKb: Record<string, number | undefined> = {};
 
-  await freshInstall(device);
+  await freshInstall(device, platform);
   deliverInputs(platform, [aUser, fFull]);
   await app.open();
-  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+  await expectStartPage(screen);
   await openAdditionalContentMobile(screen);
 
   // 1) A-core: Fetch the index URL (consent), which downloads it right away.

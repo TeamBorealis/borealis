@@ -1,13 +1,13 @@
 import { expect } from 'e2e';
-import { CHARACTER_NAME, createCharacter, expectBuildPage, freshInstall, mobileSuite, navLink, SLOW, waitForShell } from '../../support/mobile.js';
+import { CHARACTER_NAME, createCharacter, expectBuildPage, expectStartPage, freshInstall, mobileSuite, navLink, SLOW, waitForShell } from '../../support/mobile.js';
 
 // m9 (U22, B-138, tester C2): on a phone the Gear category select opens the app's bottom sheet, not the WebView's select
 // dialog (which scrolled under a drifting finger and picked Trade Goods for Equipment Packs). Choosing "Equipment Packs"
 // in the sheet shows the packs. Phones only: a tablet's wide shell keeps the native select.
 mobileSuite('m9', 'chooses Equipment Packs from the Gear category sheet', async ({ app, device, screen }, platform) => {
-  await freshInstall(device);
+  await freshInstall(device, platform);
   await app.open();
-  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+  await expectStartPage(screen);
   const shell = await waitForShell(screen);
   if (shell !== 'phone') return;
   await createCharacter(screen, device, CHARACTER_NAME);

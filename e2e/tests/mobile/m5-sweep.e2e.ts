@@ -2,7 +2,7 @@ import { expect } from 'e2e';
 import { describe, test } from '@e2e-dev/mobile';
 import type { Device } from '@e2e-dev/mobile';
 import type { TestFixtures } from 'e2e';
-import { freshInstall, SLOW, waitForShell } from '../../support/mobile.js';
+import { expectStartPage, freshInstall, SLOW, waitForShell } from '../../support/mobile.js';
 import type { MobilePlatform, Shell } from '../../support/mobile.js';
 import { openAdditionalContentMobile, scrollTo, statusText } from '../../support/mobile-content.js';
 import { writeUpdateFeed } from '../../support/mobile-acceptance.js';
@@ -89,9 +89,9 @@ async function scrollIntoSettings(screen: TestFixtures['screen'], target: Locato
 
 /** Settings > Data files > Share logs (the tab is a button on iOS; on Android it is found by its text). */
 async function tapShareLogs({ app, device, screen }: Context, platform: MobilePlatform): Promise<Shell> {
-  await freshInstall(device);
+  await freshInstall(device, platform);
   await app.open();
-  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+  await expectStartPage(screen);
   const shell = await waitForShell(screen);
   const tab = platform === 'ios' ? screen.getByRole('button', 'Data files') : screen.getByText('Data files').first();
   await tapUntilVisible(screen.getByRole('button', 'Settings'), tab);
@@ -117,7 +117,7 @@ async function waitForeignForeground(device: Device): Promise<string> {
 
 /** Android (the sideloaded APK; iOS is a store build, see noUpdateNoticeIos). */
 async function updateNotice({ app, device, screen }: Context): Promise<void> {
-  await freshInstall(device);
+  await freshInstall(device, 'android');
   await app.open();
   await expect(screen.getByText(/^Start$/).last()).toBeVisible(SLOW);
   writeUpdateFeed('android', UPDATE_FEED);
@@ -151,7 +151,7 @@ async function updateNotice({ app, device, screen }: Context): Promise<void> {
  * shows the update notice.
  */
 async function noUpdateNoticeIos({ app, device, screen }: Context): Promise<void> {
-  await freshInstall(device);
+  await freshInstall(device, 'ios');
   await app.open();
   // The phone bottom bar's Start tab; the wide shell (iPad) has the main tab strip's upper-case START link instead.
   const shell = await waitForShell(screen);
@@ -176,9 +176,9 @@ async function badCertIndex(ctx: Context, platform: MobilePlatform): Promise<voi
 }
 
 async function badCertIndexAt({ app, device, screen }: Context, platform: MobilePlatform, url: string): Promise<void> {
-  await freshInstall(device);
+  await freshInstall(device, platform);
   await app.open();
-  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+  await expectStartPage(screen);
   const shell = await waitForShell(screen);
   await openAdditionalContentMobile(screen);
   // The wide shell's title bar holds the Compendium search box, the first textbox on screen: name the URL field.

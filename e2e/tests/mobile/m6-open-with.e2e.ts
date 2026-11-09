@@ -6,7 +6,7 @@ import { expect } from 'e2e';
 import { describe, test } from '@e2e-dev/mobile';
 import type { Device } from '@e2e-dev/mobile';
 import type { TestFixtures } from 'e2e';
-import { characterEntry, freshInstall, SLOW } from '../../support/mobile.js';
+import { characterEntry, expectStartPage, freshInstall, SLOW } from '../../support/mobile.js';
 import { ANDROID_BUNDLE_ID } from '../../support/mobile-env.js';
 
 // m6 (B-24): a .dnd5e character and a .index content index opened with Borealis from outside the app,
@@ -74,11 +74,11 @@ function openWith(uri: string): void {
 
 /** Install fresh, check the manifest offers Borealis, then open. Warm: the app is up on its start page. Cold: the intent starts it. */
 async function start(ctx: Context, warm: boolean, uri: string): Promise<void> {
-  await freshInstall(ctx.device);
+  await freshInstall(ctx.device, 'android');
   expectOffered(uri);
   if (warm) {
     await ctx.app.open();
-    await expect(ctx.screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+    await expectStartPage(ctx.screen);
   } else {
     adb('shell', 'am', 'force-stop', ANDROID_BUNDLE_ID);
   }

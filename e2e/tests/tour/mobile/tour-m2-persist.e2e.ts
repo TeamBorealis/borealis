@@ -6,7 +6,7 @@ import { mobileTour, pace } from '../../../support/tour-mobile.js';
 // Tour m2: create, restart the app, the character is still listed; open it, Manage, Character Sheet.
 // Demo only (skipped unless E2E_TOUR=1); captions are burned into the MP4 afterwards by scripts/collect-videos.mjs.
 mobileTour('m2-persist', 'Create, restart the app, the character persists', async ({ app, device, screen }, platform, tour) => {
-  await freshInstall(device);
+  await freshInstall(device, platform);
   await app.open();
   await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
   await tour.caption('Fresh install: no characters yet');

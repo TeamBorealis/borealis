@@ -1,15 +1,16 @@
 import { expect } from 'e2e';
-import { CHARACTER_NAME, characterEntry, createCharacter, expectBuildPage, freshInstall, mobileSuite, nativeDoubleTap, navLink, SLOW, waitForShell } from '../../support/mobile.js';
+import { CHARACTER_NAME, characterEntry, createCharacter, expectBuildPage, expectStartPage, freshInstall, mobileSuite, nativeDoubleTap, navLink, SLOW, waitForShell } from '../../support/mobile.js';
 
 mobileSuite('m3', 'opens the character and shows engine-computed numbers', async ({ app, device, screen }, platform) => {
-  await freshInstall(device);
+  await freshInstall(device, platform);
   await app.open();
-  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+  await expectStartPage(screen);
   // An iPad draws the wide shell (upper-case main tab strip, no bottom bar); a phone the narrow one.
   const shell = await waitForShell(screen);
   await createCharacter(screen, device, CHARACTER_NAME);
   await expectBuildPage(screen);
   await app.restart();
+  await expectStartPage(screen);
   await expect(characterEntry(screen, CHARACTER_NAME)).toBeVisible(SLOW);
   const play = navLink(screen, platform, /^Play$/, shell);
   // A double tap occasionally lands as two single taps on iOS: retry until the character is open (Play enables).

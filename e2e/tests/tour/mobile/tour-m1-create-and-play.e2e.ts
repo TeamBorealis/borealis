@@ -6,7 +6,7 @@ import { mobileTour, pace } from '../../../support/tour-mobile.js';
 // Tour m1: fresh install -> create a character -> species, class, background -> Play -> Explain Proficiency.
 // Demo only (skipped unless E2E_TOUR=1); captions are burned into the MP4 afterwards by scripts/collect-videos.mjs.
 mobileTour('m1-create-and-play', 'Create a character, walk Build, open Play', async ({ app, device, screen }, platform, tour) => {
-  await freshInstall(device);
+  await freshInstall(device, platform);
   await app.open();
   await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
   await tour.caption('Fresh install: the Start screen');
