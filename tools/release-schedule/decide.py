@@ -177,7 +177,7 @@ def missing_updater_assets(version: str, names: Sequence[str], signing: bool) ->
 # B-215 (decision FU1): from this version a draft without the update feed or the Windows/AppImage signatures cannot
 # publish, since copies could not update to it from inside Borealis. The macOS archive (and its .sig) joins the draft
 # after the rest (release.yml attach-macos), so it stays a warning at every version, as does everything below this one.
-UPDATER_REQUIRED_FROM = "1.5.0"
+UPDATER_REQUIRED_FROM = "1.4.1"
 
 
 def required_updater_assets(version: str) -> tuple[str, ...]:

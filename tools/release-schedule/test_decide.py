@@ -233,14 +233,15 @@ def go_150(missing: Sequence[str], version: str = "1.5.0", updater: bool = True)
 
 
 class UpdaterRequiredFrom150(unittest.TestCase):
-    """B-215 (decision FU1): from 1.5.0 the feed and the Windows/AppImage .sig block; the macOS archive only warns."""
+    """B-215 (decisions FU1, RL11): from 1.4.1 the feed and the Windows/AppImage .sig block; the macOS archive only warns."""
 
     def test_only_the_feed_and_the_installer_signatures_are_required_and_only_from_1_5_0(self):
         self.assertEqual(decide.required_updater_assets("1.5.0"), (
             "latest.json", "Borealis_1.5.0_x64-setup.exe.sig", "Borealis_1.5.0_amd64.AppImage.sig"))
         self.assertEqual(len(decide.required_updater_assets("2.0.0")), 3)
         self.assertEqual(len(decide.required_updater_assets("1.5.1")), 3)
-        for older in ("1.4.0", "1.4.9", "1.3.0", "0.9.0"):
+        self.assertEqual(len(decide.required_updater_assets("1.4.1")), 3)
+        for older in ("1.4.0", "1.3.0", "0.9.0"):
             self.assertEqual(decide.required_updater_assets(older), ())
 
     def test_each_required_file_missing_blocks_1_5_0(self):
@@ -249,7 +250,7 @@ class UpdaterRequiredFrom150(unittest.TestCase):
             problems = decide.go_problems(facts)
             self.assertEqual(len(problems), 1, name)
             self.assertIn(name.format(v="1.5.0"), problems[0])
-            self.assertIn("required from 1.5.0", problems[0])
+            self.assertIn("required from 1.4.1", problems[0])
             self.assertEqual(decide.go_warnings(facts), [])
 
     def test_a_missing_mac_archive_still_only_warns_at_1_5_0(self):
@@ -270,10 +271,10 @@ class UpdaterRequiredFrom150(unittest.TestCase):
         self.assertIn("Borealis_1.5.0_aarch64.app.tar.gz", warnings[0])
         self.assertNotIn("latest.json", warnings[0])
 
-    def test_below_1_5_0_every_missing_updater_file_only_warns(self):
+    def test_below_1_4_1_every_missing_updater_file_only_warns(self):
         everything = ["latest.json", "Borealis_{v}_x64-setup.exe.sig", "Borealis_{v}_amd64.AppImage.sig",
                       "Borealis_{v}_aarch64.app.tar.gz", "Borealis_{v}_aarch64.app.tar.gz.sig"]
-        facts = go_150(everything, version="1.4.9")
+        facts = go_150(everything, version="1.4.0")
         self.assertEqual(decide.go_problems(facts), [])
         self.assertIn("latest.json", decide.go_warnings(facts)[0])
 

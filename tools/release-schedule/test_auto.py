@@ -230,7 +230,7 @@ def run_150(name: str, **overrides):
 
 
 class UpdaterFilesFrom150(unittest.TestCase):
-    """B-215 (decision FU1): from 1.5.0 a missing latest.json or Windows/AppImage .sig fails the release check."""
+    """B-215 (decisions FU1, RL11): from 1.4.1 a missing latest.json or Windows/AppImage .sig fails the release check."""
 
     def test_the_scenario_retold_as_1_5_0_is_a_normal_week(self):
         self.assertEqual(run_150("normal-3-gonogo")[:2], (0, ["go/2026-11-12"]))
@@ -239,7 +239,7 @@ class UpdaterFilesFrom150(unittest.TestCase):
     def test_go_no_go_is_no_go_without_the_feed_and_still_warns_about_the_mac_archive(self):
         status, keys, out = run_150("updater-missing-gonogo")
         self.assertEqual((status, keys), (0, ["nogo/2026-11-12"]))
-        self.assertIn("- in-app updates: the draft lacks latest.json (required from 1.5.0)", out)
+        self.assertIn("- in-app updates: the draft lacks latest.json (required from 1.4.1)", out)
         self.assertIn("**Warning (not blocking):** in-app updates: the draft lacks Borealis_1.5.0_aarch64.app.tar.gz, "
                       "Borealis_1.5.0_aarch64.app.tar.gz.sig.", out)
 
@@ -248,7 +248,7 @@ class UpdaterFilesFrom150(unittest.TestCase):
         rel = {**rel, "assets": [a for a in rel["assets"] if a["name"] != "Borealis_1.5.0_amd64.AppImage.sig"]}
         status, keys, out = run_150("normal-3-gonogo", release=rel)
         self.assertEqual(keys, ["nogo/2026-11-12"])
-        self.assertIn("the draft lacks Borealis_1.5.0_amd64.AppImage.sig (required from 1.5.0)", out)
+        self.assertIn("the draft lacks Borealis_1.5.0_amd64.AppImage.sig (required from 1.4.1)", out)
 
     def test_monday_calls_a_draft_without_the_feed_not_ready(self):
         done = {"id": 41, "status": "completed", "conclusion": "success", "run_attempt": 1, "created_at": "1"}

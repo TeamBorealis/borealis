@@ -6,8 +6,8 @@ workflow; a GitHub cron is the backup) a tick reads the planned releases (schedu
 and the live state (tags, CI runs, the draft release, App Store Connect, the website repo), and does what is due:
 
   prep    Sun 23:59 freeze: bump, commit "chore: release X.Y.Z", tag, push, start CI + acceptance + release.yml
-          Mon 20:00 signed builds: check the draft is complete (in-app update files: from 1.5.0 latest.json and the
-                   Windows/AppImage .sig are required; the macOS archive, and every file below 1.5.0, only warn)
+          Mon 20:00 signed builds: check the draft is complete (in-app update files: from 1.4.1 latest.json and the
+                   Windows/AppImage .sig are required; the macOS archive, and every file below 1.4.1, only warn)
           Tue 12:00 store submission: iOS version + build + What's New, submit for review; the signed Play bundle
                     to closed testing (alpha) for the testers (RL8, never production); notes to #mod-chat
   decide  Thu 18:00 go/no-go: approved + complete + not held, else no-go: a note and the release moves a week
@@ -222,7 +222,7 @@ class Tick:
     def signed(self, version: str, publish: date) -> None:
         tag, rel = self.tag(version), self.release(version)
         missing = decide.missing_assets(version, [a["name"] for a in (rel or {}).get("assets", [])])
-        if rel:  # from 1.5.0 the update feed and the Windows/AppImage signatures are part of a complete draft (B-215)
+        if rel:  # from 1.4.1 the update feed and the Windows/AppImage signatures are part of a complete draft (B-215)
             missing = missing + decide.blocking_updater_assets(version, self.missing_updater(version, rel))
         if tag and rel and not missing:
             self.sync_draft(version, rel)
