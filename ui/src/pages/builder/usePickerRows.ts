@@ -2,13 +2,14 @@ import { useCallback, useMemo, useRef } from "react";
 import type { Api, Page, SelectionSlot, SlotOption, SlotOptionsArgs } from "../../api/contract";
 import { useToast } from "../../components/Toast";
 import {
-  buildRows, editionOf, editionsOf, effectiveFilter, inferCharEdition, isFiltering, showsFilterBar, sourcesOf, visibleRows, yearOf,
+  buildRows, clearedFilter, editionOf, editionsOf, effectiveFilter, inferCharEdition, isFiltering, showsFilterBar, sourcesOf, visibleRows, yearOf,
   type PickerFilter, type ShownRow, type SourceEntry, type VersionLike, type VersionRow,
 } from "../../lib/versions";
 import type { Ruleset } from "../../api/contract";
 import { useApi } from "../../state/ApiContext";
 import { useAsync, type AsyncState } from "../../state/useAsync";
 import { useCharacter } from "../../state/CharacterContext";
+import { useEditionFilter } from "../../state/editionFilter";
 import { usePickerUiState } from "./pickerState";
 
 /** Upper bound on pages for one list (a host that never reports its end cannot loop forever). */
@@ -39,6 +40,8 @@ export interface PickerRows {
   charEd: Ruleset;
   filter: PickerFilter;
   setFilter: (f: PickerFilter) => void;
+  /** What Clear sets: no search, every source, the character's own edition (TV1 A4). */
+  cleared: PickerFilter;
   /** Sec. 1.2 rule 2: remember a menu pick as the row's shown version. */
   remember: (rowKey: string, versionId: string) => void;
   sources: SourceEntry[];
@@ -92,13 +95,21 @@ export function usePickerRows(characterId: string, slot: SelectionSlot, enabled:
   const charEd = snapshot?.ruleset ?? inferCharEdition(rows.flatMap((r) => r.all));
   const chosenId = slot.chosen?.id ?? null;
   const editions = useMemo(() => editionsOf(rows), [rows]);
-  const filter = useMemo(() => effectiveFilter(ui.filter, editions), [ui.filter, editions]);
+  // TV1 (A4): the Edition value is the character's, shared by every list; search and sources stay this picker's own.
+  const shared = useEditionFilter();
+  const { edition: sharedEdition, setEdition } = shared;
+  const own = useMemo(() => ({ ...ui.filter, edition: sharedEdition }), [ui.filter, sharedEdition]);
+  const filter = useMemo(() => effectiveFilter(own, editions), [own, editions]);
   const visible = useMemo(() => visibleRows(rows, filter, charEd, chosenId, ui.menuPicks), [rows, filter, charEd, chosenId, ui.menuPicks]);
-  const setFilter = useCallback((filter: PickerFilter) => update((s) => ({ ...s, filter })), [update]);
+  const setFilter = useCallback((next: PickerFilter) => {
+    if (next.edition !== sharedEdition) setEdition(next.edition);
+    update((s) => ({ ...s, filter: next }));
+  }, [update, sharedEdition, setEdition]);
   const remember = useCallback((rowKey: string, versionId: string) => update((s) => ({ ...s, menuPicks: { ...s.menuPicks, [rowKey]: versionId } })), [update]);
   const sources = useMemo(() => sourcesOf(rows), [rows]);
+  const cleared = useMemo(() => clearedFilter(shared.initial), [shared.initial]);
   return {
-    options, rows, visible, charEd, filter: ui.filter, setFilter, remember, sources, editions,
+    options, rows, visible, charEd, filter: own, setFilter, cleared, remember, sources, editions,
     showBar: showsFilterBar(rows), filtering: isFiltering(filter), versionColumn: visible.some((r) => r.versions.length > 1),
   };
 }

@@ -8,7 +8,8 @@ import { renderApp, seededId } from "./utils";
 /** A generic magic armor is added on a base picked in a second list (specs/ui-inventory.md 6.1, ui-workflows W4.3). */
 const summary = (id: string, name: string, category: string, weight: number): ItemSummary => ({
   id, name, type: "item", source: "sample", sourceName: "Sample", shortDescription: "", prerequisites: null,
-  rulesets: ["dnd2014"], category, costCp: 0, weight, requiresAttunement: false,
+  // Edition-neutral: the add list opens on the character's edition (TV1 A4), and these cases are about bases.
+  rulesets: ["dnd2014", "dnd2024"], category, costCp: 0, weight, requiresAttunement: false,
 });
 const PLUS_ONE = summary("plus-one-armor", "Armor, +1", "Magic Armor", 0);
 const CHAIN = summary("chain-mail", "Chain Mail", "Armor", 55);

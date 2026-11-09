@@ -199,6 +199,37 @@ describe("count on phones (B-125)", () => {
   });
 });
 
+describe("the character's edition (TV1 A4, B-115)", () => {
+  const editionOf = (b: HTMLElement) => within(within(b).getByRole("group", { name: "Edition" })).getAllByRole("button")
+    .find((x) => x.getAttribute("aria-pressed") === "true")?.textContent;
+
+  it("edition filter defaults to the character's edition", async () => {
+    const api = new MockApi({ aiChunkDelayMs: 1 });
+    const snap = await api.createCharacter({ request: { name: "Ed", ruleset: "dnd2024", startingLevel: 1, gender: "", abilityMethod: "point_buy", options: {} } });
+    renderApp("/builder/race", { api, openCharacterId: snap.id });
+    expect(editionOf(await screen.findByRole("search", { name: "Filter Species" }))).toBe("2024");
+  });
+
+  it("a choice carries to the next list, and Clear returns to the character's edition", async () => {
+    const api = new MockApi({ aiChunkDelayMs: 1 });
+    const snap = await api.createCharacter({ request: { name: "Ed", ruleset: "dnd2024", startingLevel: 1, gender: "", abilityMethod: "point_buy", options: {} } });
+    renderApp("/builder/race", { api, openCharacterId: snap.id });
+    const user = userEvent.setup();
+    const b = await screen.findByRole("search", { name: "Filter Species" });
+    await user.click(within(b).getByRole("button", { name: "All" }));
+    // The equipment add list shares the value (TV1: it applies there too).
+    await user.click(screen.getByTestId("nav-equipment"));
+    const edition = await screen.findByRole("group", { name: "Edition" });
+    expect(within(edition).getByRole("button", { name: "All" }).getAttribute("aria-pressed")).toBe("true");
+    await user.click(within(edition).getByRole("button", { name: "2014" }));
+    await user.click(screen.getByTestId("nav-build"));
+    const again = await screen.findByRole("search", { name: "Filter Species" });
+    expect(editionOf(again)).toBe("2014");
+    await user.click(within(again).getByRole("button", { name: "Clear" }));
+    expect(editionOf(again)).toBe("2024");
+  });
+});
+
 describe("filter state lives while the builder is open", () => {
   it("survives a switch to another builder tab and back", async () => {
     const api = new MockApi({ aiChunkDelayMs: 1 });

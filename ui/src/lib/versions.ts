@@ -107,7 +107,10 @@ export interface PickerFilter {
 
 export const NO_FILTER: PickerFilter = { text: "", edition: "all", sources: null };
 
-export const isFiltering = (f: PickerFilter): boolean => f.text.trim() !== "" || f.edition !== "all" || f.sources !== null;
+/** TV1 (A4): Clear empties the search and sources and returns the Edition to the character's own (`all` without one). */
+export const clearedFilter = (edition: EditionFilter): PickerFilter => ({ ...NO_FILTER, edition });
+
+export const isFiltering =(f: PickerFilter): boolean => f.text.trim() !== "" || f.edition !== "all" || f.sources !== null;
 
 /** A version passes the Edition filter when written for that edition or edition-neutral, and the Source filter by its source id. */
 export function versionPasses(v: VersionLike, f: PickerFilter): boolean {

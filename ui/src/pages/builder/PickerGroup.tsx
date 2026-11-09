@@ -5,7 +5,7 @@ import { Expander, FocusBar, Icon, PrereqUnmetMark } from "../../components";
 import { useSettings } from "../../state/SettingsContext";
 import { usePhone } from "../../lib/phone";
 import { slotTitle } from "../../lib/terminology";
-import { NO_FILTER, type ShownRow, type VersionLike } from "../../lib/versions";
+import type { ShownRow, VersionLike } from "../../lib/versions";
 import { PickerFilterBar } from "./PickerFilterBar";
 import { ElementSource, PickerRow } from "./PickerRow";
 import { usePickerRows, useSwitchVersion } from "./usePickerRows";
@@ -129,10 +129,10 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
             <EmptyListNote slot={slot} ruleset={ruleset} onManageSources={() => navigate(SOURCES_ROUTE)} onStartOver={(ed) => void startOver(ed)} onEditionOptions={openEditionFlyout} />
           )}
           {picker.showBar && (
-            <PickerFilterBar title={group.title} filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} editions={picker.editions} shown={visible.length} total={rows.length} />
+            <PickerFilterBar title={group.title} filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} editions={picker.editions} cleared={picker.cleared} shown={visible.length} total={rows.length} />
           )}
           {rows.length > 0 && visible.length === 0 && (
-            <p className="pick-empty pick-fempty">Nothing matches these filters. <button type="button" className="pick-fclear" onClick={() => picker.setFilter(NO_FILTER)}>Clear</button></p>
+            <p className="pick-empty pick-fempty">Nothing matches these filters. <button type="button" className="pick-fclear" onClick={() => picker.setFilter(picker.cleared)}>Clear</button></p>
           )}
           <ul className={`pick-list ${showDescription ? "with-desc" : ""}`} aria-label={`${group.title} options`}>
             {/* Phones: skeleton rows in the list's own shape while the options load (spec sec. 3.4 Loading). */}

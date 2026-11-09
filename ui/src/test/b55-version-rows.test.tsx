@@ -285,6 +285,8 @@ describe("phones (sec. 2)", () => {
     act(() => setPhoneForTests(true));
     renderApp("/builder/race", { api, openCharacterId: snap.id });
     const user = userEvent.setup();
+    // TV1 (A4): the picker opens on the character's edition; All shows the 2014 version too.
+    await user.click(within(await screen.findByRole("group", { name: "Edition" })).getByRole("button", { name: "All" }));
     await user.click(await screen.findByRole("button", { name: "3 versions of Dragonborn" }));
     await user.click(within(await screen.findByRole("listbox")).getByRole("option", { name: "Sample Reference 5.1" }));
     await user.click(await screen.findByRole("button", { name: "Choose Dragonborn" }));

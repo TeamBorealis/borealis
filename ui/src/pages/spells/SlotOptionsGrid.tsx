@@ -1,7 +1,7 @@
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import type { SelectionSlot } from "../../api/contract";
 import { Button, ConvertedTag, editionMarks, EditionNotes, EditionSuffix } from "../../components";
-import { NO_FILTER, type ShownRow, type VersionLike } from "../../lib/versions";
+import type { ShownRow, VersionLike } from "../../lib/versions";
 import { Glyph } from "../equipment/Glyph";
 import { PickerFilterBar } from "../builder/PickerFilterBar";
 import { usePickerRows, useSwitchVersion } from "../builder/usePickerRows";
@@ -48,7 +48,7 @@ export function SlotOptionsGrid({ characterId, label, slot, picked, onPick, onCh
   const pool = useMemo(() => rows.flatMap((r) => r.all.map(spellFacts)), [rows]);
   useEffect(() => onScope?.(slot.id, { pool, shown: visible.length, total: rows.length }), [onScope, slot.id, pool, visible.length, rows.length]);
   const clearFilters = () => {
-    picker.setFilter(NO_FILTER);
+    picker.setFilter(picker.cleared);
     onClearSpellFilter?.();
   };
   const [notesFor, setNotesFor] = useState<string | null>(null);
@@ -78,7 +78,7 @@ export function SlotOptionsGrid({ characterId, label, slot, picked, onPick, onCh
   return (
     <>
       {picker.showBar && (
-        <PickerFilterBar title="spells" filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} editions={picker.editions} shown={visible.length} total={rows.length} />
+        <PickerFilterBar title="spells" filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} editions={picker.editions} cleared={picker.cleared} shown={visible.length} total={rows.length} />
       )}
       <div className="ap-scroll sp-main">
         <table className="ap-grid eq-grid sp-grid" aria-label={`${label} spells`} data-slot-id={slot.id}>
