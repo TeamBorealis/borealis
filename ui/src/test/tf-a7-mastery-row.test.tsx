@@ -64,10 +64,12 @@ describe("Weapon Mastery rows (A7)", () => {
     expect(whip.querySelector(".pick-src")?.textContent).toBe("Slow · Sample Expansion");
   });
 
-  it("other weapon pickers and desktop rows keep the source line", async () => {
+  it("other weapon pickers show no mastery: the source line only (A12: when the rows' sources differ)", async () => {
     setPhoneForTests(true);
-    renderPicker(OTHER_WEAPON_SLOT, ROWS);
-    expect((await rowOf("Bonus Weapon", "Battleaxe")).querySelector(".pick-src")?.textContent).toBe("SRD 5.2.1");
+    renderPicker(OTHER_WEAPON_SLOT, [...ROWS, weapon("whip", "Whip", "Slow", "Sample Expansion")]);
+    const axe = await rowOf("Bonus Weapon", "Battleaxe");
+    expect(axe.querySelector(".pick-mastery")).toBeNull();
+    expect(axe.querySelector(".pick-src")?.textContent).toBe("SRD 5.2.1");
   });
 
   it("desktop rows keep the source line", async () => {

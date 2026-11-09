@@ -7,7 +7,7 @@ import { usePhone } from "../../lib/phone";
 import { slotTitle } from "../../lib/terminology";
 import { NO_FILTER, type ShownRow, type VersionLike } from "../../lib/versions";
 import { PickerFilterBar } from "./PickerFilterBar";
-import { ElementSource, type MasteryLine, PickerRow } from "./PickerRow";
+import { ElementSource, PickerRow } from "./PickerRow";
 import { usePickerRows, useSwitchVersion } from "./usePickerRows";
 import { VersionMenu } from "./VersionMenu";
 import { EmptyListNote } from "./EmptyListNote";
@@ -96,13 +96,11 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
   const [notesFor, setNotesFor] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ key: string; anchor: HTMLElement } | null>(null);
   const menuRow = menu ? visible.find((r) => r.key === menu.key) ?? null : null;
-  // A7 / TV2 (A12): on phones a Weapon Mastery row names its mastery on the source line (the source only when rows differ).
+  // TV2 (A12): on phones a list whose rows share one source drops the per-row source line (the row's name still says it).
+  const hideSource = phone && new Set(visible.map((r) => r.shown.sourceName)).size <= 1;
+  // A7 / TV2 (A12): on phones a Weapon Mastery row names its mastery on that line instead.
   const masteryRows = phone && isMasterySlot(slot);
-  const oneSource = new Set(visible.map((r) => r.shown.sourceName)).size <= 1;
-  const masteryOf = (row: ShownRow): MasteryLine | null => {
-    const name = masteryRows ? row.shown.weapon?.mastery : null;
-    return name ? { name, hideSource: oneSource } : null;
-  };
+  const masteryOf = (row: ShownRow): string | null => (masteryRows ? row.shown.weapon?.mastery ?? null : null);
 
   const choiceOf = (row: ShownRow, v: VersionLike): PickChoice | undefined =>
     row.chosen || v.disabledReason ? undefined : { slotId: slot.id, name: row.name, choose: () => onChoose(slot.id, v.id) };
@@ -145,7 +143,7 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
                 notesOpen={notesFor === row.key} notesId={`pick-notes-${slot.id}-${row.shown.id}`}
                 onToggleNotes={() => setNotesFor(notesFor === row.key ? null : row.key)}
                 onDescribe={() => describe(row)} onChoose={() => onChoose(slot.id, row.shown.id)}
-                onOpenMenu={(anchor) => setMenu(menu?.key === row.key ? null : { key: row.key, anchor })} onKeyNav={onKeyNav} mastery={masteryOf(row)} />
+                onOpenMenu={(anchor) => setMenu(menu?.key === row.key ? null : { key: row.key, anchor })} onKeyNav={onKeyNav} mastery={masteryOf(row)} hideSource={hideSource} />
             ))}
           </ul>
         </Expander>
