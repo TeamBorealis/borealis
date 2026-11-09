@@ -3,7 +3,7 @@
 use crate::dto::{
     AbilityRecord, AbilityState, CharacterSnapshot, CharacterStats, ClassLevelInfo, FeatureEntry,
     LevelState, PointBuyState, ProficiencyGroup, RollRecord, SaveEntry, SelectionProgress,
-    SelectionSlot, SkillEntry, StandardArrayState,
+    SelectionSlot, SkillEntry, StandardArrayState, SuggestedScores,
 };
 use crate::extras::{self, ui_extras};
 use crate::ids::{
@@ -340,7 +340,28 @@ fn abilities(input: &MapInput<'_>, snap: &Engine) -> AbilityState {
         point_buy,
         standard_array,
         rolls: input.rolls.to_vec(),
+        suggested: suggested_scores(input, snap),
     }
+}
+
+/// Tester B11 (B-135): the main class's standard array assignment, when the ruleset's tables have one.
+fn suggested_scores(input: &MapInput<'_>, snap: &Engine) -> Option<SuggestedScores> {
+    let class = snap
+        .classes
+        .iter()
+        .find(|c| c.slot == ClassSlot::Main)?
+        .class
+        .as_ref()?;
+    let array = input
+        .hub
+        .engine
+        .universe(input.character.build.ruleset)
+        .tables()
+        .standard_array_for(&class.name)?;
+    Some(SuggestedScores {
+        class_name: class.name.clone(),
+        scores: AbilityRecord::from_fn(|i| array[i]),
+    })
 }
 
 fn stats(snap: &Engine) -> CharacterStats {

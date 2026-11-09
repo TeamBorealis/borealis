@@ -460,6 +460,16 @@ pub struct AbilityState {
     pub point_buy: Option<PointBuyState>,
     pub standard_array: Option<StandardArrayState>,
     pub rolls: Vec<RollRecord>,
+    /// Tester B11 (TV2): the main class's standard array from the ruleset's tables; none without one.
+    pub suggested: Option<SuggestedScores>,
+}
+
+/// Base scores the ruleset suggests for a class (its standard array assignment).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SuggestedScores {
+    pub class_name: String,
+    pub scores: AbilityRecord<i32>,
 }
 
 /// One skill row.

@@ -65,7 +65,18 @@ export function deriveAbilities(c: MockCharacter, rules: RuleSettings): AbilityS
       ? { values: STANDARD_ARRAY, assigned, unassigned: STANDARD_ARRAY.filter((v) => !used.has(v)) }
       : null,
     rolls: c.rolls,
+    suggested: suggestedFor(c, mainClass),
   };
+}
+
+/** As the host's tables (2024 only): the class's saving-throw abilities get the top two values, the rest follow in order. */
+function suggestedFor(c: MockCharacter, cls: ReturnType<typeof getClass>): AbilityState["suggested"] {
+  if (!cls || c.ruleset !== "dnd2024") return null;
+  const order = [...cls.saves, ...ABILITY_KEYS.filter((k) => !cls.saves.includes(k))] as AbilityKey[];
+  const sorted = [...STANDARD_ARRAY].sort((a, b) => b - a);
+  const scores = zero();
+  order.forEach((k, i) => { scores[k] = sorted[i]!; });
+  return { className: cls.id.charAt(0).toUpperCase() + cls.id.slice(1), scores };
 }
 
 export const abilityLabel = (k: AbilityKey): string => ABILITY_NAMES[k];

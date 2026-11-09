@@ -218,6 +218,14 @@ export interface AbilityState {
   pointBuy: PointBuyState | null;
   standardArray: StandardArrayState | null;
   rolls: RollRecord[];
+  /** Tester B11 (TV2): the main class's standard array from the ruleset's tables ("Suggested for Barbarian"); null without one. */
+  suggested: SuggestedScores | null;
+}
+
+/** Base scores the ruleset suggests for a class (its standard array assignment). */
+export interface SuggestedScores {
+  className: string;
+  scores: AbilityRecord<number>;
 }
 
 /* ---------- Derived stats ---------- */

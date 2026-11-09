@@ -33,6 +33,12 @@ html.phone .abil-page .build-empty { font: 400 var(--ph-t-sub)/1.45 var(--ph-fon
 /* B3 (GitHub #35): added picks on phones. The lines are the picker footers of lists.css (grouped rows, 44 pt remove);
    the Add button is a full 44 pt control; the dialog is the bottom sheet, its list page-length with no nested scroller. */
 html.phone .added-picks { margin: 16px 0 0; }
+/* Tester B11 (B-135): "Suggested for <class>" with Apply, a card between the method and the six scores. */
+html.phone .abil-suggest { display: flex; align-items: center; gap: 12px; margin: 12px 0 0; padding: 12px var(--ph-gutter); border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .abil-suggest-text { flex: 1 1 auto; min-width: 0; }
+html.phone .abil-suggest-title { margin: 0 0 4px; font: 600 var(--ph-t-sub)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .abil-suggest-scores { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); font-variant-numeric: tabular-nums; color: var(--ph-text-2); }
+html.phone .abil-suggest .btn { flex: none; min-height: var(--ph-hit); }
 /* Tester B5 (B-130): a described ability option lists each raised ability, its score and its modifier, before and after. */
 html.phone .abil-opt { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 0; }
 html.phone .abil-opt-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: baseline; gap: 16px; min-height: var(--ph-row); padding: 0 var(--ph-gutter); border-radius: var(--ph-r-md); background: var(--ph-fill); }

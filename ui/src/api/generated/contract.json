@@ -2843,6 +2843,13 @@
       "k": "ref",
       "name": "StandardArrayState"
      }
+    },
+    "suggested": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "SuggestedScores"
+     }
     }
    }
   },
@@ -11456,6 +11463,61 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    }
+   }
+  },
+  "SuggestedScores": {
+   "k": "object",
+   "props": {
+    "className": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "scores": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "cha": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "con": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "dex": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "int": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "str": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "wis": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
      }
     }
    }
