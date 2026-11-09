@@ -73,6 +73,12 @@ export function repeatsBody(shortDescription: string, descriptionHtml: string): 
 }
 
 /**
+ * A3: facts that describe the host's catalogue, not the element: the type and category names are internal, and the source is
+ * the pane's footer already (the printed sheet skips the same three, `sheet_api::FACT_SKIP`).
+ */
+const HOST_FACTS: readonly string[] = ["Type", "Source", "Category"];
+
+/**
  * B14: the element the pane showed last, per host. Leaving Build unmounts the pane; coming back it shows this element at
  * once (while it reloads) instead of a "Loading" card.
  */
@@ -90,14 +96,15 @@ export function DescriptionPane({ elementId, fallback }: { elementId: string | n
   const d = el.data ?? (held?.id === elementId ? held : null);
   if (!d) return <PaneShell title="Loading" imageIcon={false}><p className="muted">Loading...</p></PaneShell>;
   const dupIntro = repeatsBody(d.shortDescription, d.descriptionHtml);
+  const facts = d.facts.filter((f) => !HOST_FACTS.includes(f.label));
   const plain = `${d.name}. ${d.shortDescription} ${d.descriptionHtml.replace(/<[^>]+>/g, " ")}`;
   return (
     <PaneShell title={d.name} intro={dupIntro ? undefined : d.shortDescription} readText={plain}>
       {d.prerequisites && <p className="desc-line"><i>Prerequisite.</i> {d.prerequisites}</p>}
       <SafeHtml html={d.descriptionHtml} />
-      {d.facts.length > 0 && (
+      {facts.length > 0 && (
         <div className="desc-facts">
-          {d.facts.map((f) => <Fragment key={f.label}><p className="desc-line"><i>{f.label}.</i> {f.value}</p></Fragment>)}
+          {facts.map((f) => <Fragment key={f.label}><p className="desc-line"><i>{f.label}.</i> {f.value}</p></Fragment>)}
         </div>
       )}
       <DescriptionGrants grants={d.grants} />

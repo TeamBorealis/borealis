@@ -160,6 +160,7 @@ html.phone .desc-cmds { top: 4px; right: 4px; }
 html.phone .desc-cmd { width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-pill); color: var(--ph-text-3); }
 html.phone .desc-cmd:active:not(:disabled) { background: var(--ph-fill); }
 html.phone .desc-grant-lvl { color: var(--ph-text-3); }
+html.phone .desc-grant-h { margin: 12px 0 2px; font: 600 var(--ph-t-sub)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
 html.phone .desc-later > summary { display: flex; align-items: center; min-height: var(--ph-hit); margin: 0; color: var(--ph-accent); }
 html.phone .desc-source { min-height: var(--ph-hit); color: var(--ph-accent); text-decoration-color: var(--ph-accent); font-style: normal; }
 html.phone .build-empty { margin: 32px auto; font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }

@@ -197,6 +197,9 @@ pub struct ElementGrant {
     pub name: String,
     /// The character level it comes at (1 when ungated).
     pub level: u32,
+    /// A3: a granted trait, feature or feat's sanitised text, so the card says what it does;
+    /// empty for one-line grants (proficiencies, languages, choices).
+    pub description_html: String,
 }
 
 /// A diagnostic touching a trace.

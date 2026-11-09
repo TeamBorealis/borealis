@@ -131,6 +131,8 @@ export interface ElementGrant {
   name: string;
   /** The character level it comes at (1 when ungated). */
   level: number;
+  /** A3: a granted trait, feature or feat's text (already sanitised); empty for one-line grants. */
+  descriptionHtml: string;
 }
 
 export interface Page<T> {

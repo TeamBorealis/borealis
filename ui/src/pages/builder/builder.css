@@ -45,6 +45,8 @@
 /* A6: a class's later-level grants fold under "Later levels"; each line leads with its level. */
 .desc-grant-lvl { color: var(--gray-5); }
 p.desc-grant-lvl { margin: 0 0 2px; font-style: italic; }
+/* A3: a granted trait's name heads its text, like the trait headings of the element's own description. */
+.desc-grant-h { margin: 10px 0 3px; }
 .desc-later > summary { margin: 4px 0 6px; cursor: pointer; font-weight: 600; color: var(--desc-head); }
 @media (max-width: 899px) {
   .bp-right { border-top: 2px solid var(--highlight); }

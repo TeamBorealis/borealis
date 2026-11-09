@@ -6,6 +6,44 @@ use std::path::PathBuf;
 
 const ACOLYTE: &str = "ID_2024_BACKGROUND_ACOLYTE";
 const BARBARIAN: &str = "ID_2024_CLASS_BARBARIAN";
+const DRAGONBORN: &str = "ID_2024_SPECIES_DRAGONBORN";
+
+#[test]
+fn dragonborn_description_grants_carry_trait_text() {
+    // A3: the species card listed its traits by name only (Breath Weapon, Darkvision, ...), so it
+    // did not say what the species does; the trait text lives on the granted elements.
+    let (_d, app) = app();
+    let dragonborn = app.get_element(DRAGONBORN).expect("Dragonborn");
+    let breath = dragonborn
+        .grants
+        .iter()
+        .find(|g| g.name == "Breath Weapon")
+        .unwrap_or_else(|| panic!("Breath Weapon in {:?}", dragonborn.grants));
+    assert!(
+        breath.description_html.contains("Dexterity saving throw"),
+        "{}",
+        breath.description_html
+    );
+}
+
+#[test]
+fn proficiency_grants_stay_one_line() {
+    // A3: a proficiency is a name, not a section: it carries no text.
+    let (_d, app) = app();
+    let barbarian = app.get_element(BARBARIAN).expect("Barbarian");
+    let shields = barbarian
+        .grants
+        .iter()
+        .find(|g| g.name.eq_ignore_ascii_case("Armor Proficiency (Shields)"))
+        .expect("Shields");
+    assert!(shields.description_html.is_empty(), "{shields:?}");
+    let rage = barbarian
+        .grants
+        .iter()
+        .find(|g| g.name == "Rage")
+        .expect("Rage");
+    assert!(!rage.description_html.is_empty());
+}
 
 fn app() -> (tempfile::TempDir, AppState) {
     borealis_engine::invariants::enable_for_thread();

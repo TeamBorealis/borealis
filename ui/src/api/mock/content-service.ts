@@ -77,7 +77,7 @@ export class ContentService {
   element(id: string): ElementDetail {
     const target = this.proxyTarget(id);
     const proxy = target && this.proxies().find((p) => p.id === id);
-    if (target && proxy) return { ...this.proxySummary(proxy), descriptionHtml: `<p>${PROXY_HINT}</p>${target.description}`, facts: [], grants: [{ name: target.name, level: 1 }] };
+    if (target && proxy) return { ...this.proxySummary(proxy), descriptionHtml: `<p>${PROXY_HINT}</p>${target.description}`, facts: [], grants: [{ name: target.name, level: 1, descriptionHtml: "" }] };
     const e = this.all().find((x) => x.id === id) ?? getElement(id);
     // Like the real backend: list-rule entries (personality traits, ...) are text choices, not elements.
     if (!e || e.type === "list") throw apiError("not_found", "That element does not exist.");

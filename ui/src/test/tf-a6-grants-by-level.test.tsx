@@ -11,7 +11,7 @@ import { DescriptionPane } from "../pages/builder/DescriptionPane";
  * A6 (tester video 2026-11-02, B-117): a class card listed every feature up to level 20 in one flat list. It now shows what
  * comes at level 1 and folds the rest, in level order, under "Later levels".
  */
-const g = (name: string, level = 1): ElementGrant => ({ name, level });
+const g = (name: string, level = 1): ElementGrant => ({ name, level, descriptionHtml: "" });
 
 const detail = (grants: ElementGrant[]): ElementDetail => ({
   id: "cls", name: "Sample Class", type: "class", source: "SRD 5.2.1", sourceName: "SRD 5.2.1", shortDescription: "",
@@ -35,7 +35,10 @@ describe("the Grants list by level (A6)", () => {
     expect(later.open).toBe(false);
     await userEvent.setup().click(screen.getByText("Later levels"));
     expect(later.open).toBe(true);
-    expect(within(later).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["Level 2 Keen Senses", "Level 20 Grand Finale"]);
+    // Level by level, in level order.
+    expect(within(later).getAllByRole("list").map((ul) => ul.getAttribute("aria-label"))).toEqual(["Level 2", "Level 20"]);
+    expect(within(within(later).getByRole("list", { name: "Level 2" })).getByRole("listitem").textContent).toBe("Keen Senses");
+    expect(within(within(later).getByRole("list", { name: "Level 20" })).getByRole("listitem").textContent).toBe("Grand Finale");
   });
 
   it("a list with only level 1 grants has no level labels", async () => {

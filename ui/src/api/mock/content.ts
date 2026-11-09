@@ -286,7 +286,7 @@ function mk(): MockElement[] {
   for (const b of BACKGROUNDS) {
     out.push(el(b.id, "background", title(b.id), `Skills: ${b.skills.join(", ")}.`, {
       description: `<p>A background of ${title(b.id).toLowerCase()} experience.</p>`,
-      grants: b.skills.map((k) => ({ name: `Proficiency: ${k}`, level: 1 })),
+      grants: b.skills.map((k) => ({ name: `Proficiency: ${k}`, level: 1, descriptionHtml: "" })),
     }));
   }
   out.push(...FEATS, ...FIGHTING_STYLES);
