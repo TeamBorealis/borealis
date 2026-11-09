@@ -144,11 +144,25 @@ fn html_contains_the_computed_values() {
     assert!(html.contains(&esc_cell(&snap.attacks[0].damage)));
     assert!(html.contains("Sleight of Hand"));
     assert!(html.contains("Raised in the temple of Moradin."));
-    // 2014 sheet: character, details, spellcasting, inventory.
-    assert_eq!(html.matches("<section class=\"page ").count(), 4);
-    for page in ["character", "details", "spellcasting", "inventory"] {
-        assert!(html.contains(&format!("data-page=\"{page}\"")), "{page}");
-    }
+    // 2014 sheet: character, details, spellcasting (two pages for the cleric's list, as the
+    // PDF splits it, B-146), inventory; the preview has as many pages as the PDF.
+    let kinds: Vec<&str> = html
+        .split("data-page=\"")
+        .skip(1)
+        .map(|s| &s[..s.find('"').unwrap()])
+        .collect();
+    assert_eq!(
+        kinds,
+        [
+            "character",
+            "details",
+            "spellcasting",
+            "spellcasting",
+            "inventory"
+        ]
+    );
+    let pdf = render_pdf(&c, &snap, &flat()).unwrap();
+    assert_eq!(kinds.len(), count_pages(&pdf), "the PDF's pages");
 }
 
 #[test]
