@@ -19,7 +19,9 @@ body.compact{font-size:6.6pt;line-height:1.25}
 .serif,.name,h2,.ab-name,.mod,.big,.mid,.lvhead td{font-family:"Noto Serif",Georgia,"Times New Roman",serif}
 .desk{padding:16px 0}
 .page{position:relative;display:flex;background:var(--paper);margin:0 auto 16px;box-shadow:0 2px 10px rgba(0,0,0,.35);overflow:hidden}
-.letter{width:612pt;min-height:792pt}.a4{width:595pt;min-height:842pt}
+.letter{width:612pt;min-height:792pt;height:792pt}.a4{width:595pt;min-height:842pt;height:842pt}
+.page.flow{height:auto}
+.page:not(.flow) .sec.grow>.lined{min-height:0}
 .frame,.corner,.sky{position:absolute;pointer-events:none;color:var(--ink);overflow:hidden}
 .frame{inset:0;width:100%;height:100%}
 .corner{width:62pt;height:62pt}
@@ -94,7 +96,6 @@ tr.empty td{height:12pt}
 .sq.on{background:var(--ink)}
 .companion-scores{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4.5pt;margin-bottom:6pt}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12pt;flex:1}
-.sub{display:grid;grid-template-columns:150pt minmax(0,1fr);gap:10pt}
 .feat{margin-bottom:4pt;break-inside:avoid}
 .feat .t{font-weight:700}.feat .tag{font-size:5.6pt;color:var(--gold);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-left:3pt}
 .feat .txt{white-space:pre-line}
@@ -110,6 +111,18 @@ tr.lvhead td{background:var(--field);font-weight:700;font-size:6.3pt;letter-spac
 .lg{display:grid;grid-template-columns:repeat(3,1fr);gap:10pt;margin-top:6pt}.lg h3{display:flex;justify-content:space-between;font:700 8.4pt var(--serif,serif);border-bottom:.6pt solid var(--ink-2);margin:6pt 0 0;padding-bottom:1pt}.lg h3 span{font:italic 400 6.2pt var(--sans,sans-serif);color:var(--ink-2)}.lgr{display:flex;align-items:center;gap:3pt;height:14pt;border-bottom:.5pt solid var(--rule)}.lgr .fv{flex:1;min-height:9pt}.lgn{text-align:right;font-style:italic;font-size:6.6pt}
 .lined{background:repeating-linear-gradient(to bottom,transparent 0 10.5pt,var(--rule) 10.5pt 11pt);line-height:11pt;white-space:pre-wrap;min-height:44pt;flex:1}
 .lined.sm{min-height:24pt}
+.note.more{text-align:right;font-style:italic;margin-top:1pt}
+.note.cont{margin-top:auto;text-align:right;font-style:italic}
+.feats{line-height:1.27}
+.band .lined{min-height:0;flex:none;white-space:pre;overflow:hidden;line-height:var(--pitch);background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--pitch) - .5pt),var(--rule) calc(var(--pitch) - .5pt) var(--pitch))}
+.band .coins{margin-bottom:2pt}
+.lbl.blk{display:flex;justify-content:space-between;align-items:baseline;gap:4pt;margin-top:2pt}
+.lbl.blk .note{font-weight:400;font-style:italic;text-transform:none;letter-spacing:0}
+.sum td{height:var(--pitch);padding:0 3pt;vertical-align:bottom}
+.spcont{font:700 7.6pt "Noto Serif",Georgia,serif;margin-bottom:2pt}.spcont i{font:italic 400 6.6pt "Noto Sans",sans-serif;color:var(--ink-2)}
+.spells{table-layout:fixed}.spells th:nth-child(1){width:14pt}.spells th:nth-child(2){width:131pt}.spells th:nth-child(3){width:52pt}.spells th:nth-child(4){width:46pt}.spells th:nth-child(5){width:30pt}.spells th:nth-child(7){width:50pt}
+.spells td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.spells tr.lvhead td{overflow:visible}
+.more-spells{min-height:0;overflow:hidden}.more-spells .lined{min-height:0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .tagline{font-size:5.6pt;color:var(--ink-3)}
 .edition{font-size:5.6pt;font-weight:700;color:var(--wash);letter-spacing:.1em;text-transform:uppercase}
@@ -129,5 +142,5 @@ tr.lvhead td{background:var(--field);font-weight:700;font-size:6.3pt;letter-spac
 .cfoot .r{text-align:right}
 @media(max-width:700px){.desk{zoom:.55}}
 @media print{body{background:none}.desk{padding:0;zoom:1}.page{margin:0;box-shadow:none;break-after:page}.page:last-child{break-after:auto}
-.letter{min-height:791pt}.a4{min-height:841pt}}
+.letter{min-height:791pt;height:791pt}.a4{min-height:841pt;height:841pt}}
 "#;

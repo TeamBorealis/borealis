@@ -3,7 +3,7 @@
 use super::parts::{area, card_top, esc, fld, h2};
 use super::HtmlOptions;
 use crate::companion::signed;
-use crate::layout::COMPANION_ABILITIES;
+use crate::layout::{Band, COMPANION_ABILITIES};
 use crate::model_ids as id;
 use crate::model_types::SheetData;
 use std::fmt::Write;
@@ -54,21 +54,39 @@ fn text_section(title: &str, i: &str, text: &str, grow: bool) -> String {
     )
 }
 
-/// Story sections in two columns (left, right). `personality` = with the traits, ideals, bonds
-/// and flaws (the 2014 sheet prints them on page 1).
-pub(super) fn columns(d: &SheetData, o: &HtmlOptions, personality: bool) -> (String, String) {
+/// The traits, ideals, bonds and flaws in full.
+fn personality(d: &SheetData) -> String {
     let s = &d.story;
-    let traits = if personality {
-        format!(
-            "{}{}{}{}",
-            text_section("Personality traits", "story.traits", &s.traits, false),
-            text_section("Ideals", "story.ideals", &s.ideals, false),
-            text_section("Bonds", "story.bonds", &s.bonds, false),
-            text_section("Flaws", "story.flaws", &s.flaws, false),
-        )
-    } else {
-        String::new()
-    };
+    format!(
+        "{}{}{}{}",
+        text_section("Personality traits", "story.traits", &s.traits, false),
+        text_section("Ideals", "story.ideals", &s.ideals, false),
+        text_section("Bonds", "story.bonds", &s.bonds, false),
+        text_section("Flaws", "story.flaws", &s.flaws, false),
+    )
+}
+
+/// The personality text page 1's band had no lines for (`story.<key>@2`, as the PDF's Details
+/// page), under "<block> (continued)".
+fn personality_rest(band: &Band) -> String {
+    band.traits
+        .iter()
+        .filter_map(|t| {
+            let rest = t.tail.as_deref()?;
+            Some(text_section(
+                &format!("{} (continued)", t.title),
+                &format!("{}@2", t.id),
+                rest,
+                false,
+            ))
+        })
+        .collect()
+}
+
+/// Story sections in two columns (left, right), with `traits` (the personality blocks or what
+/// is left of them) under the appearance.
+pub(super) fn columns(d: &SheetData, o: &HtmlOptions, traits: &str) -> (String, String) {
+    let s = &d.story;
     let left = format!(
         "{}{traits}{}",
         appearance(d, o),
@@ -91,17 +109,21 @@ pub(super) fn columns(d: &SheetData, o: &HtmlOptions, personality: bool) -> (Str
 
 /// Whole 2024 story page body.
 pub(super) fn page(d: &SheetData, o: &HtmlOptions) -> String {
-    let (l, r) = columns(d, o, true);
+    let (l, r) = columns(d, o, &personality(d));
     format!("<div class=\"two\"><div class=\"col\">{l}</div><div class=\"col\">{r}</div></div>")
 }
 
-/// 2014 details page: features left, story right (when it has content).
-pub(super) fn details_2014(d: &SheetData, o: &HtmlOptions) -> String {
+/// 2014 details page: features left, story right. With page 1's `band` the personality blocks
+/// are on page 1 and only their rest is here (the story column is left out when the story is
+/// empty); without it (no room on page 1, or no page 1) they are here in full, as the PDF
+/// prints them.
+pub(super) fn details_2014(d: &SheetData, o: &HtmlOptions, band: Option<&Band>) -> String {
     let features = super::p2::features_column(d, o, true);
-    if !d.story.has_content() {
+    if band.is_some() && !d.story.has_content() {
         return format!("<div class=\"col\">{features}</div>");
     }
-    let (l, r) = columns(d, o, false);
+    let traits = band.map_or_else(|| personality(d), personality_rest);
+    let (l, r) = columns(d, o, &traits);
     format!(
         "<div class=\"two\"><div class=\"col\">{features}</div><div class=\"col\">{l}{r}</div></div>"
     )

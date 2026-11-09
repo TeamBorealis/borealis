@@ -64,17 +64,22 @@ pub(crate) use grid::Grid;
 pub(crate) use legacy_plan::{
     dropped_note as legacy_dropped_note, level_title as legacy_level_title, plan as legacy_plan,
 };
+pub(crate) use lists::{ATTACK_CAPACITY, USE_CAPACITY};
 pub(crate) use p1_band::{Band, BandRefs};
 pub(crate) use page_cards::build as build_cards;
 pub(crate) use page_companion::build as build_companion;
 pub(crate) use page_companion::has_page as has_companion_page;
 pub(crate) use page_companion::ABILITIES as COMPANION_ABILITIES;
-pub(crate) use page_core::{band as page_one_band, build as build_page_one, PageRefs};
+pub(crate) use page_core::{
+    band as page_one_band, build as build_page_one, summary_feature_count, PageRefs,
+};
 pub(crate) use page_features::features_tables::prose_segments;
 pub(crate) use page_features::{build as build_features, details_portrait_rect};
 pub(crate) use page_legacy_spells::{build as build_legacy_spells, columns_avail as legacy_avail};
 pub(crate) use page_overflow::{build as build_overflow, needed as overflow_needed};
-pub(crate) use page_spells::build as build_spells;
+pub(crate) use page_spells::{
+    build as build_spells, plan as spell_plan, SpellBlockPlan, SpellPagePlan,
+};
 pub(crate) use page_story::{
     build as build_story, has_story_page, portrait_rect as story_portrait_rect,
 };

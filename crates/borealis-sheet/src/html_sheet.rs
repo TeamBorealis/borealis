@@ -6,15 +6,20 @@
 
 use crate::art::{self, ArtId, ArtSet};
 use crate::card_model::Card;
+use crate::layout::{self, Band, Grid, LayoutOptions, SpellPagePlan};
 use crate::model_types::{Edition, SheetData};
 use crate::{PageSelection, Paper};
 
+#[path = "html_sheet_band.rs"]
+mod band;
 #[path = "html_sheet_cards.rs"]
 mod cards;
 #[path = "html_sheet_css.rs"]
 mod css;
 #[path = "html_sheet_legacy.rs"]
 mod legacy;
+#[path = "html_sheet_overflow.rs"]
+mod overflow;
 #[path = "html_sheet_p1.rs"]
 mod p1;
 #[path = "html_sheet_p2.rs"]
@@ -25,6 +30,9 @@ mod p3;
 mod p4;
 #[path = "html_sheet_parts.rs"]
 mod parts;
+#[cfg(test)]
+#[path = "html_sheet_split_tests.rs"]
+mod split_tests;
 #[cfg(test)]
 #[path = "html_sheet_tests.rs"]
 mod tests;
@@ -166,6 +174,87 @@ struct PageSpec {
     body: String,
     /// Page 1 only: identity line and meta carry the field ids.
     identity: Option<(String, Vec<(String, String)>)>,
+    /// The page holds what one PDF page holds, so it keeps the paper height exactly (B-146).
+    /// Pages the preview does not split yet grow with their content instead of cutting it.
+    fixed: bool,
+}
+
+/// The PDF's page split that the preview follows (B-146): page 1's 2014 band and features
+/// summary, and the rows of each spellcasting page.
+pub(super) struct Split {
+    /// The 2014 page-1 band (personality and equipment), `None` when page 1 keeps its Notes.
+    pub band: Option<Band>,
+    /// Feature names the 2014 page-1 summary lists.
+    pub features_shown: usize,
+    /// What each spellcasting page prints.
+    pub spells: Vec<SpellPagePlan>,
+    /// The PDF prints on one page what the preview prints on its one page of that kind:
+    /// 2024 Features / 2014 Details, 2014 Inventory, Story, Companion.
+    pub one_page: OnePage,
+}
+
+/// Which pages the preview prints whole but the PDF also holds on one page. Those keep the
+/// paper height; one the PDF continues on further pages grows with its content instead (the
+/// preview does not split it yet), so nothing is cut off.
+#[derive(Debug, Clone, Copy, Default)]
+pub(super) struct OnePage {
+    pub main: bool,
+    pub inventory: bool,
+    pub story: bool,
+    pub companion: bool,
+}
+
+/// Printed page numbers the notes point at.
+#[derive(Debug, Clone, Copy, Default)]
+pub(super) struct Refs {
+    /// The overflow page after page 1 (attacks and limited uses that did not fit).
+    pub overflow: u32,
+    /// The 2014 Details page (full feature text, personality continued).
+    pub details: u32,
+    /// The 2014 Inventory page, when printed.
+    pub inventory: Option<u32>,
+}
+
+fn layout_options(o: &HtmlOptions) -> LayoutOptions {
+    LayoutOptions {
+        paper: o.paper,
+        ink: o.ink,
+        fillable: false,
+        compact: o.compact,
+        swap_ability_positions: o.swap_ability_positions,
+        lang: o.lang.clone(),
+    }
+}
+
+/// Measure the split with the PDF's own layout.
+fn split(d: &SheetData, o: &HtmlOptions) -> Split {
+    let lo = layout_options(o);
+    let g = Grid::new(o.paper);
+    let is14 = d.edition == Edition::Dnd2014;
+    let spells = if o.pages.spellcasting && has_casting(d) && !o.legacy_spellcasting {
+        layout::spell_plan(d, &lo, o.include_non_prepared_spells, &g)
+    } else {
+        Vec::new()
+    };
+    let band = if is14 && o.pages.core {
+        layout::page_one_band(d, &lo, &g)
+    } else {
+        None
+    };
+    let features = layout::build_features(d, &lo, &g, 1, band.as_ref());
+    let one_page = OnePage {
+        main: features.main.len() <= 1,
+        inventory: features.inventory.len() <= 1,
+        story: layout::build_story(d, &lo, &g, 1).len() <= 1,
+        companion: !layout::has_companion_page(d)
+            || layout::build_companion(d, &lo, &g).pages.len() <= 1,
+    };
+    Split {
+        band,
+        features_shown: layout::summary_feature_count(d, &lo, &g),
+        spells,
+        one_page,
+    }
 }
 
 fn plain_meta(d: &SheetData) -> Vec<(String, String)> {
@@ -232,8 +321,9 @@ fn page_html(d: &SheetData, o: &HtmlOptions, spec: &PageSpec, n: usize, total: u
         .map(|c| art_use("corner", &format!("corner c-{c}")))
         .collect();
     let note = d.footer_note();
+    let flow = if spec.fixed { "" } else { " flow" };
     format!(
-        "<section class=\"page {paper}\" data-page=\"{}\" aria-label=\"Page {n}: {}\">{}{corners}<div class=\"content\">{}{}{srd}</div>\
+        "<section class=\"page {paper}{flow}\" data-page=\"{}\" aria-label=\"Page {n}: {}\">{}{corners}<div class=\"content\">{}{}{srd}</div>\
          <div class=\"foot\"><span>Borealis character sheet \u{b7} {edition} rules{a4}{note}</span><span>{n} / {total}</span></div></section>",
         spec.kind,
         spec.label,
@@ -247,21 +337,65 @@ fn has_casting(d: &SheetData) -> bool {
     !d.spellcasting.casters.is_empty()
 }
 
+/// Page numbers of the pages page 1 points at, in the order [`page_specs`] adds the pages.
+fn refs(d: &SheetData, o: &HtmlOptions, sp: &Split) -> Refs {
+    let sel = &o.pages;
+    let is24 = d.edition == Edition::Dnd2024;
+    let lead = u32::from(sel.core) * (1 + u32::from(layout::overflow_needed(d)));
+    let details = lead + 1;
+    let main = u32::from(if is24 {
+        sel.core || sel.inventory
+    } else {
+        sel.core || sel.story
+    });
+    let spells = if !(sel.spellcasting && has_casting(d)) {
+        0
+    } else if o.legacy_spellcasting {
+        d.spellcasting.casters.len()
+    } else {
+        sp.spells.len()
+    };
+    let inventory = (!is24 && sel.inventory).then(|| lead + main + spells as u32 + 1);
+    Refs {
+        overflow: 2,
+        details,
+        inventory,
+    }
+}
+
 fn page_specs(d: &SheetData, o: &HtmlOptions) -> Vec<PageSpec> {
     let sel = &o.pages;
     let is24 = d.edition == Edition::Dnd2024;
+    let sp = split(d, o);
+    let refs = refs(d, o, &sp);
     let mut v = Vec::new();
-    let spec = |kind, label, subtitle: &str, body| PageSpec {
+    let spec = |kind, label, subtitle: &str, body, fixed| PageSpec {
         kind,
         label,
         subtitle: subtitle.into(),
         body,
         identity: None,
+        fixed,
     };
     if sel.core {
-        let mut p = spec("character", "Character", "", p1::body(d, o));
+        let mut p = spec(
+            "character",
+            "Character",
+            "",
+            p1::body(d, o, &sp, refs),
+            true,
+        );
         p.identity = Some(p1::identity(d));
         v.push(p);
+        if layout::overflow_needed(d) {
+            v.push(spec(
+                "overflow",
+                "Attacks and limited uses",
+                "Attacks & limited uses (continued)",
+                overflow::body(d),
+                true,
+            ));
+        }
     }
     if is24 {
         if sel.core || sel.inventory {
@@ -270,6 +404,7 @@ fn page_specs(d: &SheetData, o: &HtmlOptions) -> Vec<PageSpec> {
                 "Features and equipment",
                 "Features, traits and equipment",
                 p2::features_and_gear(d, o),
+                sp.one_page.main,
             ));
         }
     } else if sel.core || sel.story {
@@ -277,7 +412,8 @@ fn page_specs(d: &SheetData, o: &HtmlOptions) -> Vec<PageSpec> {
             "details",
             "Details",
             "Details and features",
-            p4::details_2014(d, o),
+            p4::details_2014(d, o, sp.band.as_ref()),
+            sp.one_page.main,
         ));
     }
     if sel.spellcasting && has_casting(d) && o.legacy_spellcasting {
@@ -287,15 +423,19 @@ fn page_specs(d: &SheetData, o: &HtmlOptions) -> Vec<PageSpec> {
                 "Spellcasting (basic)",
                 "Spellcasting (basic)",
                 legacy::body(o, i + 1, c),
+                false,
             ));
         }
     } else if sel.spellcasting && has_casting(d) {
-        v.push(spec(
-            "spellcasting",
-            "Spellcasting",
-            "Spellcasting",
-            p3::body(d, o),
-        ));
+        let first = v.len() as u32 + 1;
+        for (i, body) in p3::pages(d, &sp.spells, first).into_iter().enumerate() {
+            let subtitle = if i == 0 {
+                "Spellcasting"
+            } else {
+                "Spellcasting (continued)"
+            };
+            v.push(spec("spellcasting", "Spellcasting", subtitle, body, true));
+        }
     }
     if !is24 && sel.inventory {
         v.push(spec(
@@ -303,10 +443,17 @@ fn page_specs(d: &SheetData, o: &HtmlOptions) -> Vec<PageSpec> {
             "Inventory",
             "Inventory",
             p2::inventory(d),
+            sp.one_page.inventory,
         ));
     }
     if sel.story && crate::layout::has_story_page(d) {
-        v.push(spec("story", "Story", "Story", p4::page(d, o)));
+        v.push(spec(
+            "story",
+            "Story",
+            "Story",
+            p4::page(d, o),
+            sp.one_page.story,
+        ));
     }
     if let (true, Some(body)) = (sel.story, p4::companion_page(d, o)) {
         let title = d
@@ -314,10 +461,16 @@ fn page_specs(d: &SheetData, o: &HtmlOptions) -> Vec<PageSpec> {
             .companion
             .as_ref()
             .map_or_else(|| "Companion".to_string(), |c| c.title());
-        v.push(spec("companion", "Companion", &title, body));
+        v.push(spec(
+            "companion",
+            "Companion",
+            &title,
+            body,
+            sp.one_page.companion,
+        ));
     }
     for (i, page) in o.cards.iter().enumerate() {
-        v.push(spec("cards", "Cards", "Cards", cards::body(page, i)));
+        v.push(spec("cards", "Cards", "Cards", cards::body(page, i), true));
     }
     v
 }

@@ -459,38 +459,45 @@ pub(crate) fn features_summary(
         "Features & traits",
         Some("full text on the next pages"),
     );
-    let shown: Vec<String> = d.features.iter().map(FeatureData::shown_name).collect();
-    let names: Vec<&str> = shown.iter().map(String::as_str).collect();
     let t = Txt::new(c.s(7.2), Style::Sans, c.pal.ink);
+    let (lines, used) = summary_lines(d, t.size, w);
+    let total = d.features.len();
+    for l in &lines {
+        c.put(x, y + 6.0, &t.within(w), l);
+        y += c.s(9.4);
+    }
+    if used < total {
+        y += more(c, x + w, y + 5.0, total - used, page);
+    }
+    y + SECTION_GAP - 2.0
+}
+
+/// The 2014 features summary as printed on page 1: feature names joined with " · " on at most
+/// [`FEATURE_LINES`] lines of width `w` at type `size`, and how many names they hold. The HTML
+/// preview prints the same names (B-146).
+pub(crate) fn summary_lines(d: &SheetData, size: f32, w: f32) -> (Vec<String>, usize) {
     let mut lines: Vec<String> = Vec::new();
     let mut cur = String::new();
     let mut used = 0;
-    for name in &names {
+    for name in d.features.iter().map(FeatureData::shown_name) {
         let trial = if cur.is_empty() {
-            (*name).to_string()
+            name.clone()
         } else {
             format!("{cur} \u{b7} {name}")
         };
-        if text_width(t.style, &trial, t.size) > w {
+        if text_width(Style::Sans, &trial, size) > w {
             if lines.len() + 1 >= FEATURE_LINES {
                 break;
             }
             lines.push(std::mem::take(&mut cur));
-            cur = (*name).to_string();
+            cur = name;
         } else {
             cur = trial;
         }
         used += 1;
     }
     lines.push(cur);
-    for l in &lines {
-        c.put(x, y + 6.0, &t.within(w), l);
-        y += c.s(9.4);
-    }
-    if used < names.len() {
-        y += more(c, x + w, y + 5.0, names.len() - used, page);
-    }
-    y + SECTION_GAP - 2.0
+    (lines, used)
 }
 
 /// Notes: a ruled filler down to the page body bottom.

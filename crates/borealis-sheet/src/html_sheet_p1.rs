@@ -1,9 +1,8 @@
 //! Page 1 (Character) of the HTML sheet, both editions.
 
-use super::parts::{
-    ability_card, area, blank, dot, esc, fld, h2, pounds, skill_mark, sq, thousands,
-};
-use super::HtmlOptions;
+use super::parts::{ability_card, blank, dot, esc, fld, h2, skill_mark, sq, thousands};
+use super::{band, HtmlOptions, Refs, Split};
+use crate::layout::{ATTACK_CAPACITY, USE_CAPACITY};
 use crate::model_common::signed_text as signed;
 use crate::model_ids as id;
 use crate::model_types::{Edition, EditionFields, SheetData};
@@ -263,13 +262,23 @@ fn strip(d: &SheetData, paper: crate::Paper) -> String {
     )
 }
 
-fn attacks(d: &SheetData) -> String {
+/// "+N more on page X" under a list page 1 cuts short, as the PDF prints it.
+fn more_note(n: usize, page: u32) -> String {
+    if n == 0 {
+        return String::new();
+    }
+    format!("<div class=\"note more\">+{n} more on page {page}</div>")
+}
+
+/// Weapons and damage cantrips: the first [`ATTACK_CAPACITY`], as the PDF (the rest are on the
+/// overflow page).
+fn attacks(d: &SheetData, refs: Refs) -> String {
     let mut out = format!(
         "<div class=\"sec\">{}<table><tr><th>Name</th><th class=\"n\">Hit / DC</th><th>Damage &amp; type</th><th>Range, properties{}</th></tr>",
         h2("Weapons & damage cantrips", ""),
         if is24(d) { ", mastery" } else { "" }
     );
-    for (i, a) in d.combat.attacks.iter().enumerate() {
+    for (i, a) in d.combat.attacks.iter().enumerate().take(ATTACK_CAPACITY) {
         let n = i + 1;
         let mut cells = String::new();
         let mut lead = false;
@@ -301,6 +310,10 @@ fn attacks(d: &SheetData) -> String {
         );
     }
     out.push_str("<tr class=\"empty\"><td></td><td></td><td></td><td></td></tr></table>");
+    out.push_str(&more_note(
+        d.combat.attacks.len().saturating_sub(ATTACK_CAPACITY),
+        refs.overflow,
+    ));
     if let EditionFields::Y2024(f) = &d.edition_fields {
         if !f.weapon_masteries.is_empty() {
             out.push_str("<div class=\"note\">Weapon mastery: ");
@@ -408,7 +421,8 @@ fn conditions(d: &SheetData) -> String {
     out
 }
 
-fn limited_uses(d: &SheetData) -> String {
+/// Limited uses: the first [`USE_CAPACITY`], as the PDF (the rest are on the overflow page).
+fn limited_uses(d: &SheetData, refs: Refs) -> String {
     if d.limited_uses.is_empty() {
         return String::new();
     }
@@ -416,7 +430,7 @@ fn limited_uses(d: &SheetData) -> String {
         "<div class=\"sec\">{}<table><tr><th>Feature</th><th>Uses</th><th>Recharge</th></tr>",
         h2("Limited uses", "tick when expended")
     );
-    for (i, u) in d.limited_uses.iter().enumerate() {
+    for (i, u) in d.limited_uses.iter().enumerate().take(USE_CAPACITY) {
         let n = i + 1;
         let _ = write!(
             out,
@@ -432,95 +446,33 @@ fn limited_uses(d: &SheetData) -> String {
             esc(&u.note())
         );
     }
-    out.push_str("</table></div>");
-    out
-}
-
-fn features_summary(d: &SheetData) -> String {
-    let mut out = format!(
-        "<div class=\"sec\">{}",
-        h2("Features", "summary; full text on the details page")
-    );
-    for f in &d.features {
-        let _ = write!(
-            out,
-            "<div class=\"feat\"><span class=\"t\" dir=\"auto\">{}</span> <span dir=\"auto\">{}</span></div>",
-            esc(&f.shown_name()),
-            esc(&f.summary)
-        );
-    }
+    out.push_str("</table>");
+    out.push_str(&more_note(
+        d.limited_uses.len().saturating_sub(USE_CAPACITY),
+        refs.overflow,
+    ));
     out.push_str("</div>");
     out
 }
 
-/// 2014 page-1 equipment summary: carried weight, coins and the first inventory lines, as
-/// fields of their own (`summary.*`; the Inventory page has the `coin.*` and `equip.*` ones).
-fn equipment_2014(d: &SheetData) -> String {
-    let g = &d.gear;
-    let mut out = format!(
-        "<div class=\"sec\">{}<div class=\"coins\">",
-        h2("Equipment", &format!("{} lb carried", pounds(g.weight)))
-    );
-    for ((label, v), i) in ["CP", "SP", "EP", "GP", "PP"]
+/// 2014 features summary: the feature names the PDF's page 1 lists, joined with " · ", and
+/// how many more the Details page carries (B-146: the full summaries made page 1 run long).
+fn features_summary_2014(d: &SheetData, shown: usize, refs: Refs) -> String {
+    if d.features.is_empty() {
+        return String::new();
+    }
+    let names: Vec<String> = d
+        .features
         .iter()
-        .zip(g.coins)
-        .zip(id::SUMMARY_COINS)
-    {
-        let _ = write!(
-            out,
-            "<div><div class=\"lbl\">{label}</div>{}</div>",
-            fld(i, "f", &thousands(v))
-        );
-    }
-    out.push_str("</div><table>");
-    // All 15 lines, as the PDF: lines past the last item are blank write-ins.
-    for n in 1..=id::SUMMARY_ROWS {
-        let item = g.items.get(n - 1);
-        let (qty, name) = item.map_or((String::new(), ""), |it| {
-            (it.quantity.to_string(), it.name.as_str())
-        });
-        // A blank line keeps the height of a filled one (`tr.empty`).
-        let _ = write!(
-            out,
-            "<tr{}><td class=\"c\">{}</td><td>{}</td></tr>",
-            if item.is_none() {
-                " class=\"empty\""
-            } else {
-                ""
-            },
-            fld(&id::summary_equip(n, "qty"), "", &qty),
-            fld(&id::summary_equip(n, "name"), "", name)
-        );
-    }
-    let more = g.items.len().saturating_sub(id::SUMMARY_ROWS);
-    if more > 0 {
-        let _ = write!(
-            out,
-            "<tr><td></td><td class=\"note\">+{more} more on the inventory page</td></tr>"
-        );
-    }
-    out.push_str("</table></div>");
-    out
-}
-
-/// 2014 page-1 personality blocks (design §4).
-fn personality_2014(d: &SheetData) -> String {
-    let s = &d.story;
-    let mut out = format!("<div class=\"sec\">{}", h2("Personality", ""));
-    for (title, i, text) in [
-        ("Personality traits", "story.traits", &s.traits),
-        ("Ideals", "story.ideals", &s.ideals),
-        ("Bonds", "story.bonds", &s.bonds),
-        ("Flaws", "story.flaws", &s.flaws),
-    ] {
-        let _ = write!(
-            out,
-            "<div class=\"lbl\">{title}</div>{}",
-            area(i, text, true)
-        );
-    }
-    out.push_str("</div>");
-    out
+        .take(shown)
+        .map(|f| format!("<span dir=\"auto\">{}</span>", esc(&f.shown_name())))
+        .collect();
+    format!(
+        "<div class=\"sec\">{}<div class=\"feats\">{}</div>{}</div>",
+        h2("Features & traits", "full text on the next pages"),
+        names.join(" \u{b7} "),
+        more_note(d.features.len().saturating_sub(shown), refs.details)
+    )
 }
 
 fn skill_list_2014(d: &SheetData) -> String {
@@ -541,7 +493,7 @@ fn skill_list_2014(d: &SheetData) -> String {
     out
 }
 
-fn body_2024(d: &SheetData, o: &HtmlOptions) -> String {
+fn body_2024(d: &SheetData, o: &HtmlOptions, refs: Refs) -> String {
     let mut out = String::from("<div class=\"body\"><div class=\"abil\">");
     for a in &d.abilities {
         let skills: Vec<_> = d.skills.iter().filter(|s| s.ability == a.key).collect();
@@ -555,17 +507,17 @@ fn body_2024(d: &SheetData, o: &HtmlOptions) -> String {
         "<div class=\"main\">{}{}{}{}{}{}{}<div class=\"sec grow\">{}<div class=\"lined\"></div></div></div></div>",
         vitals(d),
         strip(d, o.paper),
-        attacks(d),
+        attacks(d, refs),
         senses(d),
         proficiencies(d),
         conditions(d),
-        limited_uses(d),
+        limited_uses(d, refs),
         h2("Notes", ""),
     );
     out
 }
 
-fn body_2014(d: &SheetData, o: &HtmlOptions) -> String {
+fn body_2014(d: &SheetData, o: &HtmlOptions, sp: &Split, refs: Refs) -> String {
     let mut out = String::from("<div class=\"body d14\"><div class=\"abil\">");
     for a in &d.abilities {
         out.push_str(&ability_card(o, a, &[], &signed));
@@ -575,36 +527,46 @@ fn body_2014(d: &SheetData, o: &HtmlOptions) -> String {
         out,
         "<div class=\"box\" style=\"display:flex;align-items:center;gap:6pt\"><span class=\"insp\" style=\"margin:2pt 4pt\" data-field=\"{}\"></span><div><div class=\"lbl\">Inspiration</div><div class=\"note\">advantage on one roll</div></div></div>\
          <div class=\"box\"><div class=\"lbl\">Proficiency bonus</div><span class=\"mid\" data-field=\"{}\">{}</span></div>\
-         <div class=\"box\"><div class=\"lbl\">Passive Wisdom (Perception)</div><span class=\"mid\" data-field=\"{}\">{}</span></div></div>",
+         <div class=\"box\"><div class=\"lbl\">Passive Wisdom (Perception)</div><span class=\"mid\" data-field=\"{}\">{}</span></div>",
         id::INSPIRATION,
         id::PROF_BONUS,
         signed(d.proficiency_bonus),
         id::passive("perception"),
         perc.map_or(String::new(), |p| p.value.to_string())
     );
+    // The skill list sits under the abilities, as the PDF's start column has it, so the main
+    // column holds what the PDF's end column holds (B-146).
+    out.push_str(&skill_list_2014(d));
+    out.push_str("</div>");
+    // The band of personality and equipment closes the column where the PDF has room for it;
+    // otherwise page 1 keeps its Notes and the Details page the personality blocks.
+    let end = match &sp.band {
+        Some(b) => band::band(d, b, refs),
+        None => format!(
+            "<div class=\"sec grow\">{}<div class=\"lined\"></div></div>",
+            h2("Notes", "")
+        ),
+    };
     let _ = write!(
         out,
-        "<div class=\"main\">{}{}<div class=\"sub\">{}<div class=\"col\">{}{}{}{}</div></div>{}{}<div class=\"two\"><div class=\"col\">{}</div><div class=\"col\">{}</div></div></div></div>",
+        "<div class=\"main\">{}{}{}{}{}{}{}{}{end}</div></div>",
         vitals(d),
         strip(d, o.paper),
-        skill_list_2014(d),
-        attacks(d),
+        attacks(d, refs),
         senses(d),
         proficiencies(d),
         conditions(d),
-        limited_uses(d),
-        features_summary(d),
-        equipment_2014(d),
-        personality_2014(d),
+        limited_uses(d, refs),
+        features_summary_2014(d, sp.features_shown, refs),
     );
     out
 }
 
 /// Body of page 1 for the sheet's edition.
-pub(super) fn body(d: &SheetData, o: &HtmlOptions) -> String {
+pub(super) fn body(d: &SheetData, o: &HtmlOptions, sp: &Split, refs: Refs) -> String {
     if is24(d) {
-        body_2024(d, o)
+        body_2024(d, o, refs)
     } else {
-        body_2014(d, o)
+        body_2014(d, o, sp, refs)
     }
 }

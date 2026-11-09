@@ -42,7 +42,7 @@ pub(crate) fn build(
     chrome::header(&mut c, g, d);
     abilities::column(&mut c, g, d, o);
     let (x, w) = g.column(Col::End);
-    let y = end_column(&mut c, d, g, refs.continuation);
+    let y = end_column(&mut c, d, g, refs);
     match band {
         Some(b) => p1_band::draw(&mut c, d, b, (x, w), refs.band),
         None => lists::notes(&mut c, (x, y, w), g),
@@ -63,16 +63,32 @@ pub(crate) fn band(d: &SheetData, o: &LayoutOptions, g: &Grid) -> Option<Band> {
         return None;
     }
     let mut c = canvas(o, g);
-    let top = end_column(&mut c, d, g, 1);
+    let refs = PageRefs {
+        continuation: 1,
+        band: BandRefs {
+            details: 1,
+            inventory: None,
+        },
+    };
+    let top = end_column(&mut c, d, g, refs);
     p1_band::plan(d, c.k, g.column(Col::End), top, g.body_bottom)
+}
+
+/// How many feature names the 2014 page 1 lists in its features summary (the rest are counted
+/// in "+N more on page X").
+pub(crate) fn summary_feature_count(d: &SheetData, o: &LayoutOptions, g: &Grid) -> usize {
+    let c = canvas(o, g);
+    lists::summary_lines(d, c.s(7.2), g.column(Col::End).1).1
 }
 
 fn canvas(o: &LayoutOptions, g: &Grid) -> Canvas {
     Canvas::new(Palette::new(o.ink), o.compact, g.w - MARGIN_X)
 }
 
-/// The end column down to the Notes or the band; returns the y below.
-fn end_column(c: &mut Canvas, d: &SheetData, g: &Grid, continuation: u32) -> f32 {
+/// The end column down to the Notes or the band; returns the y below. Attacks and limited uses
+/// point at the overflow page, the features summary at the Details page (their full text).
+fn end_column(c: &mut Canvas, d: &SheetData, g: &Grid, refs: PageRefs) -> f32 {
+    let continuation = refs.continuation;
     let (x, w) = g.column(Col::End);
     let mut y = g.body_top;
     y += vitals::vitals(c, (x, y, w), d) + ROW_GAP;
@@ -84,7 +100,7 @@ fn end_column(c: &mut Canvas, d: &SheetData, g: &Grid, continuation: u32) -> f32
     let (ny, _) = lists::limited_uses(c, (x, y, w), d, continuation);
     y = ny;
     if d.edition == Edition::Dnd2014 {
-        y = lists::features_summary(c, (x, y, w), d, continuation);
+        y = lists::features_summary(c, (x, y, w), d, refs.band.details);
     }
     y
 }

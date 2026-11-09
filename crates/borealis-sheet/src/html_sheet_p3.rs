@@ -1,7 +1,8 @@
-//! Spellcasting page: cast strip, slot trackers and the spell table per casting class.
+//! Spellcasting pages: cast strip, slot trackers and the spell table per casting class, split
+//! over pages as the PDF splits them ([`SpellPagePlan`], B-146).
 
 use super::parts::{esc, fld, h2, level_name, pip};
-use super::HtmlOptions;
+use crate::layout::{SpellBlockPlan, SpellPagePlan};
 use crate::model_common::signed_text as signed;
 use crate::model_ids as id;
 use crate::model_types::{CasterData, SheetData, SpellRow};
@@ -86,7 +87,8 @@ fn spell_row(c: &CasterData, n: usize, idx: usize, row: &SpellRow) -> String {
     )
 }
 
-fn caster_block(d: &SheetData, o: &HtmlOptions, n: usize, c: &CasterData) -> String {
+/// The head of a caster's block: heading, cast strip, pact slots and the slot tracker.
+fn caster_head(n: usize, c: &CasterData) -> String {
     let prepared = match c.prepare_limit {
         Some(l) if c.prepares => format!("{} / {l}", c.prepared_count),
         _ if c.prepares => c.prepared_count.to_string(),
@@ -154,86 +156,127 @@ fn caster_block(d: &SheetData, o: &HtmlOptions, n: usize, c: &CasterData) -> Str
             )
         );
     }
-    out.push_str(&spell_table(d, o, n, c));
     out
 }
 
-fn spell_table(d: &SheetData, o: &HtmlOptions, n: usize, c: &CasterData) -> String {
-    let _ = d;
-    let legend = "<span class=\"pip on\"></span> prepared &nbsp; <span class=\"pip ex\"></span> always prepared &nbsp; <span class=\"pip\"></span> in spellbook &nbsp; C concentration \u{b7} R ritual \u{b7} M material";
-    let mut out = format!(
-        "<div class=\"sec\">{}<table><tr><th class=\"c\" style=\"width:12pt\"></th><th>Spell</th><th>Time</th><th>Range</th><th class=\"c\">C R M</th><th>Effect</th><th>Source</th></tr>",
-        h2("Cantrips & spells", legend)
-    );
-    let mut rows: Vec<(usize, &SpellRow)> = c
-        .cantrips
-        .iter()
-        .enumerate()
-        .map(|(i, r)| (i + 1, r))
-        .collect();
-    let base = c.cantrips.len();
-    rows.extend(
-        c.spells
-            .iter()
-            .enumerate()
-            .filter(|(_, s)| {
-                !c.prepares || o.include_non_prepared_spells || s.prepared || s.always_prepared
-            })
-            .map(|(i, r)| (base + i + 1, r)),
-    );
-    let mut last = None;
-    for (idx, row) in rows {
-        if last != Some(row.level) {
-            last = Some(row.level);
-            let label = if row.level == 0 {
-                "Cantrips".to_string()
-            } else {
-                let slots = if !c.has_slot_tracker() {
-                    String::new()
-                } else {
-                    format!(
-                        " <span class=\"note\" style=\"font-weight:400\">\u{b7} {} slots</span>",
-                        c.slots[row.level as usize - 1]
-                    )
-                };
-                format!("{}{slots}", level_name(row.level))
-            };
-            let _ = write!(
-                out,
-                "<tr class=\"lvhead\"><td colspan=\"7\">{label}</td></tr>"
-            );
+const LEGEND: &str = "<span class=\"pip on\"></span> prepared &nbsp; <span class=\"pip ex\"></span> always prepared &nbsp; <span class=\"pip\"></span> in spellbook &nbsp; C concentration \u{b7} R ritual \u{b7} M material";
+
+const COLUMNS: &str = "<tr><th class=\"c\" style=\"width:12pt\"></th><th>Spell</th><th>Time</th><th>Range</th><th class=\"c\">C R M</th><th>Effect</th><th>Source</th></tr>";
+
+/// Row `idx` (1-based in `cantrips + spells`, the field id index) of a caster.
+fn row_at(c: &CasterData, idx: usize) -> Option<&SpellRow> {
+    let i = idx.checked_sub(1)?;
+    c.cantrips
+        .get(i)
+        .or_else(|| c.spells.get(i.checked_sub(c.cantrips.len())?))
+}
+
+/// Level band of the table; `cont` on a page that goes on with the level of the page before.
+fn level_head(c: &CasterData, level: u32, cont: bool) -> String {
+    let label = if level == 0 {
+        "Cantrips".to_string()
+    } else {
+        let slots = if cont || !c.has_slot_tracker() {
+            String::new()
+        } else {
+            format!(
+                " <span class=\"note\" style=\"font-weight:400\">\u{b7} {} slots</span>",
+                c.slots[level as usize - 1]
+            )
+        };
+        format!("{}{slots}", level_name(level))
+    };
+    let cont = if cont { " (cont.)" } else { "" };
+    format!("<tr class=\"lvhead\"><td colspan=\"7\">{label}{cont}</td></tr>")
+}
+
+/// The part of a caster's spell table on one page. `last` is the level of the row printed last
+/// before this page (it goes on as "(cont.)").
+fn spell_table(n: usize, c: &CasterData, b: &SpellBlockPlan, last: &mut Option<u32>) -> String {
+    let mut out = if b.head {
+        format!(
+            "<div class=\"sec\">{}<table class=\"spells\">{COLUMNS}",
+            h2("Cantrips & spells", LEGEND)
+        )
+    } else {
+        format!(
+            "<div class=\"sec\"><div class=\"spcont\"><b dir=\"auto\">{}</b> <i>spells, continued</i></div><table class=\"spells\">{COLUMNS}",
+            esc(&c.class)
+        )
+    };
+    let mut fresh = true;
+    for &idx in &b.rows {
+        let Some(row) = row_at(c, idx) else {
+            continue;
+        };
+        let same = *last == Some(row.level);
+        if !same || fresh {
+            out.push_str(&level_head(c, row.level, same));
         }
+        fresh = false;
+        *last = Some(row.level);
         out.push_str(&spell_row(c, n, idx, row));
     }
     out.push_str("</table></div>");
     out
 }
 
-/// Whole spellcasting page body.
-pub(super) fn body(d: &SheetData, o: &HtmlOptions) -> String {
-    let mut out = String::new();
-    if let Some(p) = &d.spellcasting.pooled {
-        let _ = write!(
-            out,
-            "<div class=\"sec\">{}{}</div>",
-            h2(
-                "Multiclass spell slots",
-                &format!(
-                    "caster level <span class=\"fv\" data-field=\"{}\">{}</span>",
-                    id::POOL_LEVEL,
-                    p.caster_level
-                )
-            ),
-            slot_row(&id::pool_slot_total, &id::pool_slot_used, &p.slots)
-        );
+/// The multiclass slot table.
+fn pooled(d: &SheetData) -> String {
+    let Some(p) = &d.spellcasting.pooled else {
+        return String::new();
+    };
+    format!(
+        "<div class=\"sec\">{}{}</div>",
+        h2(
+            "Multiclass spell slots",
+            &format!(
+                "caster level <span class=\"fv\" data-field=\"{}\">{}</span>",
+                id::POOL_LEVEL,
+                p.caster_level
+            )
+        ),
+        slot_row(&id::pool_slot_total, &id::pool_slot_used, &p.slots)
+    )
+}
+
+/// Bodies of the spellcasting pages, one per page of `plan`; `first` is the printed number of
+/// the first (for "Continued on page N").
+pub(super) fn pages(d: &SheetData, plan: &[SpellPagePlan], first: u32) -> Vec<String> {
+    let casters = &d.spellcasting.casters;
+    let mut last: Vec<Option<u32>> = vec![None; casters.len()];
+    let mut out = Vec::with_capacity(plan.len());
+    for (i, page) in plan.iter().enumerate() {
+        let mut body = if page.pooled {
+            pooled(d)
+        } else {
+            String::new()
+        };
+        for b in &page.blocks {
+            let Some(c) = b.caster.checked_sub(1).and_then(|i| casters.get(i)) else {
+                continue;
+            };
+            if b.head {
+                body.push_str(&caster_head(b.caster, c));
+            }
+            if b.head || !b.rows.is_empty() {
+                body.push_str(&spell_table(b.caster, c, b, &mut last[b.caster - 1]));
+            }
+        }
+        if i + 1 < plan.len() {
+            let _ = write!(
+                body,
+                "<div class=\"note cont\">Continued on page {}</div>",
+                first + i as u32 + 1
+            );
+        } else {
+            let _ = write!(
+                body,
+                "<div class=\"sec grow more-spells\">{}<div class=\"lined\"></div></div>",
+                h2("More spells", "")
+            );
+        }
+        out.push(body);
     }
-    for (i, c) in d.spellcasting.casters.iter().enumerate() {
-        out.push_str(&caster_block(d, o, i + 1, c));
-    }
-    let _ = write!(
-        out,
-        "<div class=\"sec grow\">{}<div class=\"lined\"></div></div>",
-        h2("More spells", "")
-    );
     out
 }

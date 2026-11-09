@@ -29,6 +29,25 @@ const BLOCK_GAP: f32 = 7.0;
 /// A built page and the width limit of every text op (for tests).
 pub(super) type Built = (PdfPage, Vec<(usize, f32)>);
 
+/// What one spellcasting page prints, in order. The HTML preview prints the same split (B-146).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct SpellPagePlan {
+    /// The multiclass slot table is on this page.
+    pub pooled: bool,
+    pub blocks: Vec<SpellBlockPlan>,
+}
+
+/// The part of one caster's block on a page.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct SpellBlockPlan {
+    /// 1-based caster number (the `spell.N.*` ids).
+    pub caster: usize,
+    /// The block starts here: cast strip, slot tracker, pact slots and the table intro.
+    pub head: bool,
+    /// Listed rows, by their 1-based index in `cantrips + spells` (the field id index).
+    pub rows: Vec<usize>,
+}
+
 /// Page-by-page builder: owns the current canvas and the vertical cursor.
 struct Pager<'a> {
     d: &'a SheetData,
@@ -36,6 +55,7 @@ struct Pager<'a> {
     g: &'a Grid,
     first_no: u32,
     done: Vec<Built>,
+    plan: Vec<SpellPagePlan>,
     c: Canvas,
     y: f32,
     idx: usize,
@@ -49,6 +69,7 @@ impl<'a> Pager<'a> {
             g,
             first_no,
             done: Vec::new(),
+            plan: Vec::new(),
             c: Canvas::new(Palette::new(o.ink), o.compact, g.w - MARGIN_X),
             y: 0.0,
             idx: 0,
@@ -66,6 +87,7 @@ impl<'a> Pager<'a> {
         );
         chrome::furniture(&mut self.c, self.g, self.o);
         chrome::header(&mut self.c, self.g, self.d);
+        self.plan.push(SpellPagePlan::default());
         let title = if self.idx == 0 {
             "Spellcasting"
         } else {
@@ -83,6 +105,36 @@ impl<'a> Pager<'a> {
             String::new()
         } else {
             format!("@{}", self.idx + 1)
+        }
+    }
+
+    fn page_plan(&mut self) -> &mut SpellPagePlan {
+        if self.plan.is_empty() {
+            self.plan.push(SpellPagePlan::default());
+        }
+        let last = self.plan.len() - 1;
+        &mut self.plan[last]
+    }
+
+    /// Record that caster `caster` starts its block on the current page.
+    fn note_head(&mut self, caster: usize) {
+        self.page_plan().blocks.push(SpellBlockPlan {
+            caster,
+            head: true,
+            rows: Vec::new(),
+        });
+    }
+
+    /// Record row `index` of caster `caster` on the current page.
+    fn note_row(&mut self, caster: usize, index: usize) {
+        let page = self.page_plan();
+        match page.blocks.last_mut() {
+            Some(b) if b.caster == caster => b.rows.push(index),
+            _ => page.blocks.push(SpellBlockPlan {
+                caster,
+                head: false,
+                rows: vec![index],
+            }),
         }
     }
 
@@ -154,6 +206,7 @@ fn listed_rows(c: &CasterData, include_unprepared: bool) -> Vec<(usize, &SpellRo
 fn caster_block(p: &mut Pager<'_>, n: usize, c: &CasterData, include_unprepared: bool) {
     let k = p.c.k;
     p.ensure(head_height(c, k));
+    p.note_head(n);
     let sfx = p.sfx();
     let r = p.rect();
     p.y += spells_slots::strip(&mut p.c, r, n, c, &sfx) + BLOCK_GAP;
@@ -205,6 +258,7 @@ fn caster_block(p: &mut Pager<'_>, n: usize, c: &CasterData, include_unprepared:
         }
         fresh = false;
         current = Some(row.level);
+        p.note_row(n, index);
         let sfx = p.sfx();
         let r = p.rect();
         p.y += p.c.group("TR", |cv| {
@@ -237,14 +291,36 @@ pub(super) fn build_with_limits(
     grid: &Grid,
     first_page_no: u32,
 ) -> Vec<Built> {
+    run(data, opts, include_unprepared, grid, first_page_no).map_or_else(Vec::new, Pager::finish)
+}
+
+/// What each spellcasting page prints (none for a non-caster): the split [`build`] makes.
+pub(crate) fn plan(
+    data: &SheetData,
+    opts: &LayoutOptions,
+    include_unprepared: bool,
+    grid: &Grid,
+) -> Vec<SpellPagePlan> {
+    run(data, opts, include_unprepared, grid, 1).map_or_else(Vec::new, |p| p.plan)
+}
+
+/// Lay out every spellcasting page; `None` for a non-caster.
+fn run<'a>(
+    data: &'a SheetData,
+    opts: &'a LayoutOptions,
+    include_unprepared: bool,
+    grid: &'a Grid,
+    first_page_no: u32,
+) -> Option<Pager<'a>> {
     let sc = &data.spellcasting;
     if sc.casters.is_empty() {
-        return Vec::new();
+        return None;
     }
     let mut p = Pager::new(data, opts, grid, first_page_no);
     if let Some(pool) = sc.pooled {
         let k = p.c.k;
         p.ensure(spells_slots::slots_height(k));
+        p.page_plan().pooled = true;
         let sfx = p.sfx();
         let r = p.rect();
         p.y += spells_slots::pooled(&mut p.c, r, pool, &sfx) + BLOCK_GAP;
@@ -252,5 +328,5 @@ pub(super) fn build_with_limits(
     for (i, c) in sc.casters.iter().enumerate() {
         caster_block(&mut p, i + 1, c, include_unprepared);
     }
-    p.finish()
+    Some(p)
 }

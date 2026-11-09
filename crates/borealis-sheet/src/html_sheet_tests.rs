@@ -32,8 +32,23 @@ fn both_editions_render_complete_documents_with_every_field_once() {
         cleric_wizard_2014(),
     ] {
         let d = with_story(data(&pair));
-        let html = render_sheet(&d, &HtmlOptions::default());
+        let o = HtmlOptions::default();
+        let html = render_sheet(&d, &o);
         assert!(html.starts_with("<!doctype html>") && html.ends_with("</html>"));
+        // B-146: page 1's equipment summary has the PDF's lines, not always all 15.
+        let lines = crate::layout::page_one_band(
+            &d,
+            &super::layout_options(&o),
+            &crate::layout::Grid::new(o.paper),
+        )
+        .map_or(0, |b| {
+            let (shown, hidden) = b.equipment_cut(d.gear.items.len());
+            if hidden == 0 {
+                b.rows
+            } else {
+                shown
+            }
+        });
         assert!(!html.contains("<script"), "no scripts");
         let pooled: Vec<usize> = d
             .spellcasting
@@ -50,9 +65,13 @@ fn both_editions_render_complete_documents_with_every_field_once() {
             {
                 continue;
             }
+            let past = (lines + 1..=crate::model_ids::SUMMARY_ROWS).any(|n| {
+                f.id == crate::model_ids::summary_equip(n, "qty")
+                    || f.id == crate::model_ids::summary_equip(n, "name")
+            });
             assert_eq!(
                 count(&html, &f.id),
-                1,
+                usize::from(!past),
                 "{:?}: field {} (play: {})",
                 d.edition,
                 f.id,
@@ -306,8 +325,17 @@ fn html_sheet_sample() {
             let file = format!("{dir}/{name}-{}.html", if ink { "ink" } else { "colour" });
             std::fs::write(file, html).unwrap();
         }
-        // B-145: both papers, with the page 1 vitals at their widest.
+        // B-145: both papers, with the page 1 vitals at their widest; B-146: both papers as is
+        // (the 2014 cleric's page 1 has its band, and its spells run over two pages).
         for (paper, tag) in [(Paper::Letter, "letter"), (Paper::A4, "a4")] {
+            let html = render_sheet(
+                &d,
+                &HtmlOptions {
+                    paper,
+                    ..HtmlOptions::default()
+                },
+            );
+            std::fs::write(format!("{dir}/{name}-{tag}.html"), html).unwrap();
             let html = render_sheet(
                 &crate::model_fixtures::long_vitals(d.clone()),
                 &HtmlOptions {

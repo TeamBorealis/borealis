@@ -11,7 +11,7 @@
 
 use super::grid::{Align, Canvas, Txt, FIELD_PAD};
 use super::page_features::features_flow::{body_size, group_digits, trim_num, PITCH};
-use super::page_features::features_text::{line_count, split_text};
+use super::page_features::features_text::{line_count, split_text, wrap_field};
 use crate::fonts::Style;
 use crate::model_ids as id;
 use crate::model_types::{Edition, SheetData};
@@ -50,16 +50,37 @@ pub(crate) struct Trait {
     pub lines: usize,
     /// Text printed on page 1.
     pub head: String,
+    /// `head` as page 1 wraps it into its ruled lines (the HTML preview prints these lines, so
+    /// its block has as many lines as the PDF's).
+    pub head_lines: Vec<String>,
     /// Text that goes on on the Details page.
     pub tail: Option<String>,
 }
 
-/// The measured band: `top..bottom` of the page-1 end column.
+/// The measured band: `top..bottom` of the page-1 end column. The HTML preview prints the
+/// same split (B-146), so both outputs read their lines from here.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Band {
     pub top: f32,
     pub bottom: f32,
+    /// Distance between ruled lines (personality and equipment), in points.
+    pub pitch: f32,
+    /// Ruled equipment lines under the coins (at most Aurora's 15).
+    pub rows: usize,
     pub traits: Vec<Trait>,
+}
+
+impl Band {
+    /// `(shown, hidden)`: equipment items printed on the summary lines, and items left for the
+    /// Inventory page. When some are left, the last line says so instead of naming an item.
+    pub(crate) fn equipment_cut(&self, items: usize) -> (usize, usize) {
+        let shown = if items > self.rows {
+            self.rows.saturating_sub(1)
+        } else {
+            items
+        };
+        (shown, items - shown)
+    }
 }
 
 /// Page numbers the band points at.
@@ -132,6 +153,7 @@ pub(crate) fn plan(d: &SheetData, k: f32, col: (f32, f32), top: f32, bottom: f32
         }
     });
     let lines = share_lines(&need, total as usize);
+    let rows = (rows as usize).min(MAX_ROWS);
     let traits = PERSONALITY
         .iter()
         .zip(lines)
@@ -141,11 +163,17 @@ pub(crate) fn plan(d: &SheetData, k: f32, col: (f32, f32), top: f32, bottom: f32
                 Some((h, t)) => (h, Some(t)),
                 None => (text.to_string(), None),
             };
+            let head_lines = if head.trim().is_empty() {
+                Vec::new()
+            } else {
+                wrap_field(Style::Sans, size, width, &head)
+            };
             Trait {
                 id,
                 title,
                 lines: n,
                 head,
+                head_lines,
                 tail,
             }
         })
@@ -153,6 +181,8 @@ pub(crate) fn plan(d: &SheetData, k: f32, col: (f32, f32), top: f32, bottom: f32
     Some(Band {
         top,
         bottom,
+        pitch,
+        rows,
         traits,
     })
 }
@@ -160,7 +190,7 @@ pub(crate) fn plan(d: &SheetData, k: f32, col: (f32, f32), top: f32, bottom: f32
 /// Draw the band into the page-1 end column `(x, w)`.
 pub(crate) fn draw(c: &mut Canvas, d: &SheetData, band: &Band, col: (f32, f32), refs: BandRefs) {
     let ((ex, ew), (px, pw)) = halves(col);
-    equipment(c, d, (ex, band.top, ew), band.bottom, refs.inventory);
+    equipment(c, d, band, (ex, ew), refs.inventory);
     personality(c, band, (px, pw), refs.details);
 }
 
@@ -187,26 +217,20 @@ fn personality(c: &mut Canvas, band: &Band, (x, w): (f32, f32), details: u32) {
 fn equipment(
     c: &mut Canvas,
     d: &SheetData,
-    (x, y, w): (f32, f32, f32),
-    bottom: f32,
+    band: &Band,
+    (x, w): (f32, f32),
     inventory: Option<u32>,
 ) {
     let k = c.k;
     let g = &d.gear;
     let hint = format!("{} lb carried", trim_num(g.weight));
-    let top = c.heading(x, y, w, "Equipment", Some(&hint));
+    let top = c.heading(x, band.top, w, "Equipment", Some(&hint));
     coins(c, d, (x, top, w));
-    let pitch = PITCH * k;
+    let pitch = band.pitch;
     let head = top + COIN_H * k;
     let mut row_top = head + COLHEAD_H * k;
-    let rows = (((bottom - row_top) / pitch).floor().max(0.0) as usize).min(MAX_ROWS);
-    let over = g.items.len().saturating_sub(rows);
-    let shown = if over > 0 {
-        rows.saturating_sub(1)
-    } else {
-        g.items.len()
-    };
-    let hidden = g.items.len() - shown;
+    let rows = band.rows;
+    let (shown, hidden) = band.equipment_cut(g.items.len());
     // The summary is a table (design §8: Table > TR > TH/TD) of the lines it prints.
     c.open_table();
     c.header_row(|c| {
