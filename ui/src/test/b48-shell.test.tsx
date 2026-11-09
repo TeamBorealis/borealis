@@ -1,4 +1,4 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MockApi } from "../api/mock";
@@ -116,14 +116,32 @@ describe("status line (O7)", () => {
     expect(status.getAttribute("data-collapsed")).toBe("false");
   });
 
-  // B-143 (TV1 C10, option a): creation gets a "complete" moment that leads to the result.
-  it("on a phone the status bar offers the result when creation is complete, and View sheet opens the preview", async () => {
+  // B-143 (TV1 C10, option a; U23): creation gets a "complete" moment that leads to the result. It comes when the session's
+  // last open pick is made, here the seeded character's untaken starting-equipment package (B-129), declined on Gear.
+  /** Opens a character whose only open pick is its starting equipment, and declines it on Gear: the last pick. */
+  async function makeLastPick(api: MockApi, user: ReturnType<typeof userEvent.setup>): Promise<HTMLElement> {
+    renderApp("/builder", { api, openCharacterId: await completeSeeded(api, false) });
+    await user.click(await screen.findByRole("button", { name: /Next selection/ }));
+    const chooser = await screen.findByRole("region", { name: "Starting equipment" });
+    await user.click(within(chooser).getByRole("button", { name: /^I'll buy my own/ }));
+    return screen.findByRole("group", { name: "Character complete" });
+  }
+
+  it("a character opened already complete gets no complete moment (the bottom tabs reach Sheet and Play)", async () => {
+    setPhoneForTests(true);
+    const api = fast();
+    renderApp("/builder", { api, openCharacterId: await completeSeeded(api) });
+    const status = await screen.findByRole("contentinfo", { name: "Status" });
+    await waitFor(() => expect(within(status).getByRole("status").textContent).toMatch(/^Loaded/));
+    expect(within(status).queryByRole("group", { name: "Character complete" })).toBeNull();
+    expect(within(status).queryByRole("button", { name: /Next selection/ })).toBeNull();
+  });
+
+  it("the last pick brings the moment, which stays open; View sheet opens the preview and the moment goes", async () => {
     setPhoneForTests(true);
     const api = fast();
     const user = userEvent.setup();
-    const id = await completeSeeded(api);
-    renderApp("/builder", { api, openCharacterId: id });
-    const done = await screen.findByRole("group", { name: "Character complete" });
+    const done = await makeLastPick(api, user);
     const status = done.closest("footer")!;
     expect(within(status).queryByRole("button", { name: /Next selection/ })).toBeNull();
     vi.useFakeTimers();
@@ -135,11 +153,18 @@ describe("status line (O7)", () => {
     expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
   });
 
-  it("an untaken starting-equipment package keeps Next selection (to Gear); I'll buy my own brings the complete moment (B-129)", async () => {
+  it("an untaken starting-equipment package holds the moment back: Next selection leads to Gear (B-129)", async () => {
     setPhoneForTests(true);
     const api = fast();
     const user = userEvent.setup();
-    renderApp("/builder", { api, openCharacterId: await completeSeeded(api, false) });
+    const id = await completeSeeded(api, false);
+    // One open selection besides the package: making it leaves the package open, so no moment yet.
+    const before = await api.getSnapshot({ characterId: id });
+    const slot = before.slots.find((s) => s.tab === "background" && !s.locked && s.chosen && s.chosen.type !== "list")!;
+    await api.clearSelection({ characterId: id, slotId: slot.id });
+    renderApp("/builder/background", { api, openCharacterId: id });
+    await user.click(await screen.findByRole("button", { name: `Choose ${slot.chosen!.name}` }));
+    await waitFor(async () => expect((await api.getSnapshot({ characterId: id })).progress.remaining).toBe(0));
     const next = await screen.findByRole("button", { name: /Next selection/ });
     expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
     await user.click(next);
@@ -149,13 +174,45 @@ describe("status line (O7)", () => {
     expect(screen.queryByRole("button", { name: /Next selection/ })).toBeNull();
   });
 
-  it("Play in the complete moment opens Play, which does not offer it again", async () => {
+  it("Play in the moment opens Play; back on Build the moment does not come back", async () => {
     setPhoneForTests(true);
     const api = fast();
     const user = userEvent.setup();
-    renderApp("/builder", { api, openCharacterId: await completeSeeded(api) });
-    await user.click(within(await screen.findByRole("group", { name: "Character complete" })).getByRole("button", { name: "Play" }));
+    await user.click(within(await makeLastPick(api, user)).getByRole("button", { name: "Play" }));
     expect(await screen.findByRole("group", { name: "Rests" })).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
+    await user.click(screen.getByTestId("nav-build"));
+    await screen.findByRole("heading", { name: "Build" });
+    expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
+  });
+
+  it("dismissed, the moment goes and stays away on the other creation tabs; the line folds as usual", async () => {
+    setPhoneForTests(true);
+    const api = fast();
+    const user = userEvent.setup();
+    const done = await makeLastPick(api, user);
+    const status = done.closest("footer")!;
+    vi.useFakeTimers();
+    fireEvent.click(within(done).getByRole("button", { name: "Dismiss" }));
+    expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
+    expect(status.getAttribute("data-collapsed")).toBe("false");
+    act(() => { vi.advanceTimersByTime(4_100); });
+    expect(status.getAttribute("data-collapsed")).toBe("true");
+    vi.useRealTimers();
+    await user.click(screen.getByTestId("nav-build"));
+    await screen.findByRole("heading", { name: "Build" });
+    expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
+  });
+
+  it("leaving the creation tabs takes the moment away, and coming back does not bring it back", async () => {
+    setPhoneForTests(true);
+    const api = fast();
+    const user = userEvent.setup();
+    await makeLastPick(api, user);
+    await user.click(screen.getByTestId("nav-start"));
+    await waitFor(() => expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull());
+    await user.click(screen.getByTestId("nav-build"));
+    await screen.findByRole("heading", { name: "Build" });
     expect(screen.queryByRole("group", { name: "Character complete" })).toBeNull();
   });
 

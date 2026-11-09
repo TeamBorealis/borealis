@@ -18,7 +18,7 @@ import { useShellActions } from "./useShellActions";
 import { displayPath } from "../../lib/displayPath";
 import { usePhone } from "../../lib/phone";
 import { usePlatform } from "../../state/platform";
-import { VIEW_SHEET_PATH, offersCompleteMoment } from "./completeMoment";
+import { NO_MOMENT, VIEW_SHEET_PATH, dismissMoment, sameMoment, stepCompleteMoment } from "./completeMoment";
 
 /** Quick search box (Alt+Q focuses it). Enter opens the compendium with the query. */
 export function SearchBox() {
@@ -200,6 +200,18 @@ function useDelayedBusy(busy: boolean, delayMs: number, enabled: boolean): boole
   return enabled ? busy && shown : busy;
 }
 
+/**
+ * U23 (B-143): whether creation's complete moment is on offer, and how to dismiss it. The step runs during render (React's
+ * adjust-state-while-rendering pattern), so the offer shows on the same paint as the last pick's snapshot.
+ */
+function useCompleteMoment(pathname: string): { shown: boolean; dismiss: () => void } {
+  const { snapshot } = useCharacter();
+  const [moment, setMoment] = useState(NO_MOMENT);
+  const next = stepCompleteMoment(moment, snapshot, pathname);
+  if (!sameMoment(next, moment)) setMoment(next);
+  return { shown: next.shown, dismiss: () => setMoment(dismissMoment) };
+}
+
 /** Bottom status bar (26px). `compact` (phones) drops the file label and version. */
 export function StatusBar({ compact, busy }: { compact?: boolean; busy?: boolean }) {
   const { snapshot, flow, setFlow, hasNext, goNext } = useShellActions();
@@ -211,10 +223,13 @@ export function StatusBar({ compact, busy }: { compact?: boolean; busy?: boolean
   const phoneLine = phone && !!compact;
   const working = useDelayedBusy(!!busy, BUSY_SHOW_DELAY_MS, phoneLine);
   const text = message || (snapshot ? `Loaded '${snapshot.name}'` : `Last checked for content updates at ${STARTED_AT}`);
-  // TV1 C10 (B-143): on a phone a finished character is offered its result where Next selection stood; the line stays open.
+  // TV1 C10 / U23 (B-143): on a phone, the session's last pick offers the result where Next selection stood. The line stays
+  // open until View sheet or Play is tapped, it is dismissed, or the user leaves Build, Magic and Gear.
   const nav = useNavigate();
   const { pathname } = useLocation();
-  const complete = phoneLine && offersCompleteMoment(snapshot, pathname);
+  const moment = useCompleteMoment(pathname);
+  const complete = phoneLine && moment.shown;
+  const offer = (to: string) => { moment.dismiss(); nav(to); };
   const folded = useStatusFold(text, hasNext || working || complete, phone);
   return (
     <footer className="aur-status" aria-label="Status" data-collapsed={phone ? String(folded) : undefined} data-pending={phone ? String(hasNext) : undefined}>
@@ -230,8 +245,9 @@ export function StatusBar({ compact, busy }: { compact?: boolean; busy?: boolean
       {hasNext && <button type="button" className="next" onClick={goNext}><Icon name="next-selection" />Next selection</button>}
       {complete && (
         <span className="complete" role="group" aria-label="Character complete">
-          <button type="button" className="next" onClick={() => nav(VIEW_SHEET_PATH)}><Icon name="scroll" />View sheet</button>
-          <button type="button" className="next" onClick={() => nav("/play")}><Icon name="shield" />Play</button>
+          <button type="button" className="next" onClick={() => offer(VIEW_SHEET_PATH)}><Icon name="scroll" />View sheet</button>
+          <button type="button" className="next" onClick={() => offer("/play")}><Icon name="shield" />Play</button>
+          <button type="button" className="next dismiss" aria-label="Dismiss" title="Dismiss" onClick={moment.dismiss}><Icon name="x" /></button>
         </span>
       )}
       {hasNext && !compact && <i className="sep" />}

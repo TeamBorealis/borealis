@@ -86,9 +86,12 @@ html.phone .aur-window.narrow .aur-status .next::before { content: ""; position:
 html.phone.android .aur-window.narrow .aur-status .next::before { top: -8px; bottom: -8px; }
 html.phone .aur-window.narrow .aur-status .next:active { transform: scale(0.97); }
 html.phone .aur-window.narrow .aur-status .next .icon { width: 16px; height: 16px; }
-/* TV1 C10 (B-143): View sheet and Play take Next selection's place once no selection is open; accent, not the pending gold. */
+/* TV1 C10 / U23 (B-143): View sheet and Play take Next selection's place when the last open pick is made; accent, not the pending gold. */
 html.phone .aur-window.narrow .aur-status .complete { display: inline-flex; flex: none; gap: 8px; }
 html.phone .aur-window.narrow .aur-status .complete .next { background: var(--ph-accent-soft); color: var(--ph-accent); }
+/* U23: the moment's dismiss control, an icon-only pill of the same height and colours (32 pt, its hit area as the pills'). */
+html.phone .aur-window.narrow .aur-status .complete .next.dismiss { width: 32px; padding: 0; justify-content: center; }
+html.phone .aur-window.narrow .aur-status .complete .next.dismiss .icon { width: 12px; height: 12px; }
 
 /* Bottom tab bar (O1): six items, 26 px icons, 11 px sentence-case labels, never disabled. The current tab gets the accent plus a
    shape cue: a bar over the icon on iOS, a pill behind it on Android. The Build badge is gold. */
