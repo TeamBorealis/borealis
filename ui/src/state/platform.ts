@@ -3,8 +3,9 @@ import { useSettings } from "./SettingsContext";
 export interface Platform {
   /** This is an iOS/Android build. Comes from the backend, never from the viewport width. */
   mobile: boolean;
-  /** This build has the AI CLI integration (desktop except the Mac App Store build). Comes from the backend. Without it no AI
-   * setting or entry is shown at all. */
+  /** This build has the AI CLI integration (desktop except the Mac App Store build). Comes from the backend; false until
+   * settings are read, so a Mac App Store build never shows AI text (a file dropped at launch gets the neutral message).
+   * Without it no AI setting or entry is shown at all. */
   aiAvailable: boolean;
   /** The optional AI assistant is on (only where `aiAvailable`, off by default). The single gate for every AI entry. */
   aiEnabled: boolean;
@@ -19,6 +20,6 @@ export interface Platform {
 export function usePlatform(): Platform {
   const { settings, loaded } = useSettings();
   const mobile = settings.mobile;
-  const aiAvailable = !mobile && settings.aiAvailable;
+  const aiAvailable = loaded && !mobile && settings.aiAvailable;
   return { mobile, aiAvailable, aiEnabled: aiAvailable && settings.ai.enabled, storeBuild: settings.storeBuild || !loaded, ready: loaded };
 }

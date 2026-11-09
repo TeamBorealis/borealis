@@ -82,11 +82,29 @@ describe("Mac App Store build", () => {
     expect(within(screen.getByRole("group", { name: "Tablet" })).queryByText(/did not move/)).toBeNull();
   });
 
+  const dropPdf = () =>
+    fireEvent.drop(window, { dataTransfer: { types: ["Files"], files: [new File(["%PDF"], "sheet.pdf", { type: "application/pdf" })] } });
+
   it("gives the neutral import message with no AI text for a PDF", async () => {
     renderApp("/characters", { api: mas() });
     await screen.findByRole("heading", { name: "Characters" });
-    fireEvent.drop(window, { dataTransfer: { types: ["Files"], files: [new File(["%PDF"], "sheet.pdf", { type: "application/pdf" })] } });
+    dropPdf();
     const msg = await screen.findByText(/sheet\.pdf cannot be imported here/);
     expect(msg.textContent).not.toMatch(AI_TEXT);
+  });
+
+  it("gives the neutral message for a PDF dropped before the settings are read", async () => {
+    // The settings answer is held back until the drop was handled: the defaults (which allow AI) must not leak AI text.
+    let release = () => {};
+    const held = new Promise<void>((r) => { release = r; });
+    class SlowSettings extends MockApi {
+      override async getSettings() { await held; return super.getSettings(); }
+    }
+    renderApp("/characters", { api: new SlowSettings({ rng: () => 0.5, macAppStore: true }) });
+    await screen.findByRole("heading", { name: "Characters" });
+    dropPdf();
+    const msg = await screen.findByText(/sheet\.pdf cannot be imported here/);
+    expect(msg.textContent).not.toMatch(AI_TEXT);
+    release();
   });
 });
