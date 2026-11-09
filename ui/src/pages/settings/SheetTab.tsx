@@ -43,13 +43,13 @@ export function SheetTab({ sheet, onChange }: { sheet: SheetSettings; onChange: 
       <SectionDesc>Manage some aspects of the output of your character sheet.</SectionDesc>
       <DescCheck title="Form Fillable" description="Fields on the sheet can be edited in a PDF viewer. Off by default: the PDF is flattened so values are printed and not editable." tooltip={FILLABLE_TOOLTIP} checked={sheet.formFillable} onChange={(v) => set({ formFillable: v })} />
       <FieldLabel htmlFor={themeId}>THEME</FieldLabel>
-      <ComboBox id={themeId} value={sheet.theme} options={THEMES} onChange={(e) => set({ theme: e.target.value as SheetTheme })} />
+      <ComboBox id={themeId} value={sheet.theme} options={THEMES} onChange={(v) => set({ theme: v as SheetTheme })} />
       <Help>Ink is monochrome and printer-friendly.</Help>
       <FieldLabel htmlFor={editionId}>RULES EDITION</FieldLabel>
-      <ComboBox id={editionId} value={sheet.edition} options={EDITIONS} onChange={(e) => set({ edition: e.target.value as SheetEditionOption })} />
+      <ComboBox id={editionId} value={sheet.edition} options={EDITIONS} onChange={(v) => set({ edition: v as SheetEditionOption })} />
       <Help>Automatic uses the ruleset of the character.</Help>
       <FieldLabel htmlFor={paperId}>PAPER</FieldLabel>
-      <ComboBox id={paperId} value={sheetPaper(sheet.paper)} options={PAPERS} onChange={(e) => set({ paper: e.target.value as SheetPaper })} />
+      <ComboBox id={paperId} value={sheetPaper(sheet.paper)} options={PAPERS} onChange={(v) => set({ paper: v as SheetPaper })} />
       <Help>Letter is the US paper size; most other countries print on A4. Until you choose, it follows your device's region.</Help>
       <DescCheck title="Style Formatting (Recommended)" description="Apply some styling for certain fields such as Features & Traits to improve readability. This option can be used in combination with form-fillable." checked={sheet.styleFormatting} onChange={(v) => set({ styleFormatting: v })} />
       <DescCheck title="Invert Ability Score" description="This will switch the location of the ability score and modifier. This includes the companion page if you have it." checked={sheet.swapAbilityPositions} onChange={(v) => set({ swapAbilityPositions: v })} />

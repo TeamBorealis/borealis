@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MockApi } from "../api/mock";
 import { setPhoneForTests, setPhoneOsForTests } from "../lib/phone";
 import { SlotRows } from "../pages/play/SpellSlotsCard";
-import { renderApp, seededId } from "./utils";
+import { chooseOption, renderApp, seededId, shownOption } from "./utils";
 
 // GitHub #2 (decision U13): the Play tab spell tracker. Spell slot pips per level (Seraphine, a 2024 Wizard 2: three 1st level
 // slots), concentration pinned at the top of Play, the user's own trackers, and the page's rest bar. Presses are relative and
@@ -78,7 +78,7 @@ describe.each(LAYOUTS)("spell slots card (%s)", (_layout, phone) => {
     await openPlay("Brannoc", phone);
     await screen.findByRole("list", { name: "Resources" });
     expect(screen.queryByRole("list", { name: "Spell slots" })).toBeNull();
-    expect(screen.queryByRole("combobox", { name: "Concentrate on" })).toBeNull();
+    expect(screen.queryByRole(phone ? "button" : "combobox", { name: "Concentrate on" })).toBeNull();
   });
 
   it("the rests sit in a bar at the top of Play, not in the Resources header", async () => {
@@ -93,10 +93,13 @@ describe.each(LAYOUTS)("spell slots card (%s)", (_layout, phone) => {
 
   it("concentration is picked, pinned at the top of Play, ended with one tap and cleared by a long rest", async () => {
     const { user } = await openPlay("Seraphine", phone);
-    const pick = await screen.findByRole("combobox", { name: "Concentrate on" });
-    expect(within(pick).getAllByRole("option").map((o) => o.textContent)).toEqual(["Not concentrating", "Detect Magic (level 1)"]);
+    const pick = await screen.findByRole(phone ? "button" : "combobox", { name: "Concentrate on" });
+    if (phone) await user.click(pick);
+    const listed = phone ? within(await screen.findByRole("dialog", { name: "Concentrate on" })).getAllByRole("option") : within(pick).getAllByRole("option");
+    expect(listed.map((o) => o.textContent)).toEqual(["Not concentrating", "Detect Magic (level 1)"]);
+    if (phone) await user.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("region", { name: "Concentration" })).toBeNull();
-    await user.selectOptions(pick, "Detect Magic (level 1)");
+    await chooseOption(user, "Concentrate on", "Detect Magic (level 1)");
     const pinned = await screen.findByRole("region", { name: "Concentration" });
     expect(pinned.textContent).toContain("Detect Magic");
     // pinned before the stat tiles of the Play list, after the rest bar
@@ -105,11 +108,11 @@ describe.each(LAYOUTS)("spell slots card (%s)", (_layout, phone) => {
     expect(screen.getByRole("group", { name: "Rests" }).compareDocumentPosition(pinned) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await user.click(within(pinned).getByRole("button", { name: "End concentration on Detect Magic" }));
     await waitFor(() => expect(screen.queryByRole("region", { name: "Concentration" })).toBeNull());
-    await user.selectOptions(screen.getByRole("combobox", { name: "Concentrate on" }), "Detect Magic (level 1)");
+    await chooseOption(user, "Concentrate on", "Detect Magic (level 1)");
     await screen.findByRole("region", { name: "Concentration" });
     await user.click(screen.getByRole("button", { name: "Long Rest" }));
     await waitFor(() => expect(screen.queryByRole("region", { name: "Concentration" })).toBeNull());
-    expect((screen.getByRole("combobox", { name: "Concentrate on" }) as HTMLSelectElement).value).toBe("");
+    expect(shownOption("Concentrate on")).toBe("Not concentrating");
   });
 
   it("a custom tracker is added, tracked, reset by its rule, edited to a large maximum and deleted in two presses", async () => {
@@ -127,7 +130,7 @@ describe.each(LAYOUTS)("spell slots card (%s)", (_layout, phone) => {
     const max = within(dialog).getByLabelText("Maximum");
     await user.clear(max);
     await user.type(max, "5");
-    await user.selectOptions(within(dialog).getByLabelText("Resets on"), "Long Rest");
+    await chooseOption(user, "Resets on", "Long Rest", dialog);
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 
@@ -173,7 +176,7 @@ describe.each(LAYOUTS)("spell slots card (%s)", (_layout, phone) => {
     const max = within(dialog).getByLabelText("Maximum");
     await user.clear(max);
     await user.type(max, "6");
-    await user.selectOptions(within(dialog).getByLabelText("Resets on"), "Never");
+    await chooseOption(user, "Resets on", "Never", dialog);
     await user.click(within(dialog).getByLabelText(/Counts up/));
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
     const status = () => screen.getByRole("status", { name: /^Infection: \d+ of 6$/ });

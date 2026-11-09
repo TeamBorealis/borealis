@@ -99,13 +99,13 @@ export function SpellFilterBar({ scope, filter, onChange }: { scope: FilterScope
         <input type="text" aria-label="Filter spells" placeholder="filter name and keywords..." value={filter.text} onChange={(e) => set({ text: e.target.value })} />
         <button type="button" aria-label="Clear filter text" onClick={() => set({ text: "" })}><Glyph name="x" /></button>
       </span>
-      {schools.length > 1 && <span className="sp-combo"><ComboBox aria-label="School filter" value={filter.school} onChange={(e) => set({ school: e.target.value })} options={[{ value: "", label: "--" }, ...schools.map((s) => ({ value: s, label: s }))]} /></span>}
+      {schools.length > 1 && <span className="sp-combo"><ComboBox aria-label="School filter" value={filter.school} onChange={(v) => set({ school: v })} options={[{ value: "", label: "--" }, ...schools.map((s) => ({ value: s, label: s }))]} /></span>}
       <span className="sp-levels" role="group" aria-label="Spell levels">
         {LEVELS.map((n) => <button key={n} type="button" className="sp-tog" aria-pressed={filter.levels.includes(n)} title={n === 0 ? "Cantrips" : `Level ${n}`} onClick={() => toggleLevel(n)}>{n}</button>)}
       </span>
       <button type="button" className="sp-tog sp-wide" aria-pressed={filter.ritual} onClick={() => set({ ritual: !filter.ritual })}>Ritual</button>
       <button type="button" className="sp-tog sp-wide" aria-pressed={filter.concentration} onClick={() => set({ concentration: !filter.concentration })}>Concentration</button>
-      {sources.length > 0 && <span className="sp-combo"><ComboBox aria-label="Source filter" value={filter.source} onChange={(e) => set({ source: e.target.value })} options={[{ value: "", label: "--" }, ...sources.map((s) => ({ value: s, label: s }))]} /></span>}
+      {sources.length > 0 && <span className="sp-combo"><ComboBox aria-label="Source filter" value={filter.source} onChange={(v) => set({ source: v })} options={[{ value: "", label: "--" }, ...sources.map((s) => ({ value: s, label: s }))]} /></span>}
       <span className="sp-badge" aria-label="Filtered spells">{shown} / {total}</span>
     </div>
   );

@@ -1,5 +1,5 @@
 /*
- * B-48 WP5 phone controls (mobile-facelift-spec sec. 3.4): buttons with press states, fields, the native select (O10),
+ * B-48 WP5 phone controls (mobile-facelift-spec sec. 3.4): buttons with press states, fields, the select button (U22),
  * checkboxes (O6), switches, steppers, chips, empty and loading states. Phones only. Every control is at least 44 pt (iOS)
  * or 48 dp (Android), answers a press within 100 ms (90 ms :active), reads in sentence case and never under 11 px.
  */
@@ -29,18 +29,18 @@ html.phone .btn-icon.has-caption { width: auto; padding: 0 10px; gap: 2px; font-
 html.phone .btn-caption { font: 600 var(--ph-t-sub)/1 var(--ph-font-ui); }
 html.phone .bp-linkbtn { min-height: var(--ph-hit); color: var(--ph-accent); font-weight: 600; text-decoration: none; }
 
-/* ---------- Text fields and the native select: label above, 44/48 tall, fill with a 3:1 boundary ---------- */
+/* ---------- Text fields and the select button: label above, 44/48 tall, fill with a 3:1 boundary ---------- */
 html.phone .field { gap: 6px; }
 html.phone .field > label, html.phone .field-label {
   margin-top: 16px; font: 500 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; letter-spacing: 0;
 }
-html.phone .input, html.phone .select, html.phone .textarea, html.phone .aur-textbox input, html.phone .aur-combo select, html.phone .aur-numeric input,
-html.phone .aur-textbox.light input, html.phone .aur-combo.light select, html.phone .aur-combo-edit input {
+html.phone .input, html.phone .select, html.phone .textarea, html.phone .aur-textbox input, html.phone .ph-select, html.phone .aur-numeric input,
+html.phone .aur-textbox.light input, html.phone .aur-combo-edit input {
   height: auto; min-height: var(--ph-hit); padding: 0 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md);
   background: var(--ph-fill); color: var(--ph-text); font: 400 var(--ph-t-body)/1.25 var(--ph-font-ui);
 }
 html.phone .textarea { min-height: 96px; padding: 10px 12px; }
-html.phone .input:focus, html.phone .select:focus, html.phone .textarea:focus, html.phone .aur-textbox input:focus, html.phone .aur-combo select:focus, html.phone .aur-numeric input:focus, html.phone .aur-combo-edit input:focus {
+html.phone .input:focus, html.phone .select:focus, html.phone .textarea:focus, html.phone .aur-textbox input:focus, html.phone .ph-select:focus-visible, html.phone .aur-numeric input:focus, html.phone .aur-combo-edit input:focus {
   border-color: var(--ph-accent); outline: 2px solid var(--ph-accent); outline-offset: -1px;
 }
 html.phone .input::placeholder, html.phone .aur-textbox input::placeholder, html.phone .textarea::placeholder { color: var(--ph-text-3); }
@@ -50,9 +50,12 @@ html.phone .error-text { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color
 html.phone .aur-textbox-clear { right: 0; width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-pill); color: var(--ph-text-2); }
 html.phone .aur-textbox-clear .icon { width: 16px; height: 16px; }
 html.phone .aur-textbox:has(.aur-textbox-clear) input { padding-right: var(--ph-hit); }
-/* The native select (O10): the system wheel or dialog opens; the field shows a chevron. */
-html.phone .aur-combo select, html.phone .aur-combo.light select { padding-right: 36px; }
-html.phone .aur-combo > .aur-combo-arrow, html.phone .aur-combo.light > .aur-combo-arrow { right: 14px; width: 12px; height: 7px; fill: var(--ph-text-2); }
+/* The select button (U22, B-138; replaces the native select of O10): the chosen label and a chevron; a tap opens the select sheet. */
+html.phone .ph-select { position: relative; display: flex; align-items: center; width: 100%; min-width: 0; padding-right: 36px; text-align: left; cursor: pointer; }
+html.phone .ph-select-value { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.phone .ph-select-arrow { position: absolute; right: 14px; top: 50%; width: 12px; height: 7px; margin-top: -3.5px; fill: var(--ph-text-2); pointer-events: none; }
+html.phone .ph-select:disabled { opacity: 0.45; cursor: default; }
+html.phone .ph-select[aria-invalid="true"] { border-color: var(--ph-danger); }
 /* The editable combo (issue #30): a text field with a full-height chevron button and a list of 44/48 pt rows below it. */
 html.phone .aur-combo-edit input { padding-right: var(--ph-hit); }
 html.phone .aur-combo-toggle { top: 0; right: 0; bottom: 0; width: var(--ph-hit); }
@@ -61,8 +64,6 @@ html.phone .aur-combo-list { top: calc(100% + 4px); max-height: 50vh; border: 1p
 html.phone .aur-combo-list > li { display: flex; align-items: center; min-height: var(--ph-hit); padding: 0 12px; color: var(--ph-text); font: 400 var(--ph-t-body)/1.25 var(--ph-font-ui); }
 html.phone .aur-combo-list > li[aria-selected="true"] { color: var(--ph-accent); font-weight: 600; }
 html.phone .aur-combo-list > li.active { background: var(--ph-accent-soft); }
-html.phone select.select { appearance: none; -webkit-appearance: none; padding-right: 36px;
-  background: var(--ph-fill) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 7'%3E%3Cpath d='M0 0h12L6 7z' fill='%23aab6bb'/%3E%3C/svg%3E") right 14px center / 12px 7px no-repeat; }
 /* Search fields: the glyph inside, a 44/48 pt field. */
 html.phone .search .icon { left: 12px; width: 18px; height: 18px; color: var(--ph-text-3); }
 html.phone .search .input { padding-left: 38px; }

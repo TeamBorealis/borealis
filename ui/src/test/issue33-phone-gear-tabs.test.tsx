@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { MockApi } from "../api/mock";
 import { setPhoneForTests } from "../lib/phone";
 import { equipmentTabs } from "../pages/equipment/EquipmentPage";
-import { renderApp, seededId } from "./utils";
+import { chooseOption, renderApp, seededId, shownOption } from "./utils";
 
 // GitHub #33 / B-195 (suggested by Egorobi on Discord): on a phone the inventory sat below the whole item catalogue, so
 // every visit meant scrolling past it. Phones get an Inventory sub-tab beside Equipment (the catalogue) and Additional
@@ -119,16 +119,19 @@ describe("Phone Gear sub-tabs (GitHub #33)", () => {
     asPhone();
     const { strip, user } = await openGear();
     await user.click(within(strip).getByRole("tab", { name: "Equipment" }));
-    const category = (await screen.findByRole("combobox", { name: "Category" })) as HTMLSelectElement;
-    const other = [...category.options].map((o) => o.value).find((v) => v !== category.value)!;
-    fireEvent.change(category, { target: { value: other } });
+    const shown = (await screen.findByRole("button", { name: "Category" })).textContent;
+    await user.click(screen.getByRole("button", { name: "Category" }));
+    const other = within(await screen.findByRole("dialog", { name: "Category" })).getAllByRole("option").map((o) => o.textContent!).find((l) => l !== shown)!;
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await chooseOption(user, "Category", other);
 
     // Act
     await user.click(within(strip).getByRole("tab", { name: "Inventory" }));
     await user.click(within(strip).getByRole("tab", { name: "Equipment" }));
 
     // Assert
-    expect(((await screen.findByRole("combobox", { name: "Category" })) as HTMLSelectElement).value).toBe(other);
+    await screen.findByRole("button", { name: "Category" });
+    expect(shownOption("Category")).toBe(other);
   });
 
   it("the inventory context menu still adds a weapon to the attacks on the Inventory sub-tab", async () => {

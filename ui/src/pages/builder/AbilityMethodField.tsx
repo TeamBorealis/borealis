@@ -28,7 +28,7 @@ export function AbilityMethodField({ method, base, onChange }: AbilityMethodFiel
     <span className="abil-method">
       <label className="abil-method-label" htmlFor={id}>Abilities generation option</label>
       <ComboBox id={id} className="abil-method-combo" options={[...abilityMethodOptions]} value={method}
-        onChange={(e) => void pick(e.target.value as AbilityMethod)} />
+        onChange={(v) => void pick(v as AbilityMethod)} />
     </span>
   );
 }

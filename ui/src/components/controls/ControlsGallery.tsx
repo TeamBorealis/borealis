@@ -6,6 +6,7 @@ export function ControlsGallery() {
   const [on, setOn] = useState(true);
   const [qty, setQty] = useState(3);
   const [text, setText] = useState("Gnome");
+  const [combo, setCombo] = useState("a");
   const [tab, setTab] = useState("a");
   const [sel, setSel] = useState<string[]>(["b"]);
   const [picked, setPicked] = useState("Rock Gnome");
@@ -29,7 +30,7 @@ export function ControlsGallery() {
         <ToggleSwitch checked={on} onChange={setOn} label="Demo switch" />
         <TextBox value={text} onChange={(e) => setText(e.target.value)} onClear={() => setText("")} placeholder="Compendium search" aria-label="Demo text" />
         <TextBox light value="Light field" readOnly aria-label="Light text" />
-        <ComboBox aria-label="Demo combo" options={[{ value: "a", label: "Core Rules" }, { value: "b", label: "Supplemental Rules" }]} />
+        <ComboBox aria-label="Demo combo" value={combo} onChange={setCombo} options={[{ value: "a", label: "Core Rules" }, { value: "b", label: "Supplemental Rules" }]} />
         <NumericUpDown value={qty} onChange={setQty} label="Quantity" compact />
         <MetroProgressBar value={0.6} label="Demo progress" />
         <TabControl tabs={[{ id: "a", label: "Race" }, { id: "b", label: "Class" }, { id: "c", label: "Feats", badge: 2 }]} active={tab} onChange={setTab} label="Demo tabs" idPrefix="demo" />

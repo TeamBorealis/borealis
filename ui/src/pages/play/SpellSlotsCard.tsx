@@ -42,7 +42,7 @@ function ConcentrationRow({ spells, current }: { spells: PlayConcentrationSpell[
       <label className="v5-row static grow" htmlFor={id}><span className="grow">Concentration</span></label>
       <span className="v5-ctrls">
         <ComboBox id={id} aria-label="Concentrate on" className="st-conc-pick" value={current?.id ?? ""} options={options}
-          onChange={(e) => { const spellId = e.target.value || null; void run((api, cid) => api.setConcentration({ characterId: cid, spellId })); }} />
+          onChange={(v) => { const spellId = v || null; void run((api, cid) => api.setConcentration({ characterId: cid, spellId })); }} />
       </span>
     </li>
   );

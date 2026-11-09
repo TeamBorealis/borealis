@@ -38,6 +38,6 @@ html.phone .st-conc-text strong { color: var(--ph-text); }
 html.phone .st-conc .btn { min-height: var(--ph-hit); padding: 0 14px; }
 /* The concentration picker takes the second line at full width (the label keeps the first). */
 html.phone .st-conc-line > .v5-ctrls:last-child:not(.st-steps) { grid-area: 2 / 1 / 3 / 4; justify-self: stretch; margin: 0 0 8px var(--ph-gutter); }
-html.phone .st-conc-line .st-conc-pick, html.phone .st-conc-line .st-conc-pick select { width: 100%; max-width: none; }
-html.phone .st-conc-pick select { min-height: var(--ph-hit); }
+html.phone .st-conc-line .st-conc-pick, html.phone .st-conc-line .st-conc-pick .ph-select { width: 100%; max-width: none; }
+html.phone .st-conc-pick .ph-select { min-height: var(--ph-hit); }
 html.phone .st-line > .v5-row .meta { flex-basis: 100%; }

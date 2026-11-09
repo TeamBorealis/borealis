@@ -144,7 +144,7 @@ export function EquipmentTab({ view = "all" }: { view?: GearView }) {
       <div className="eq-items">
         <Band title={category === "Equipment Packs" ? "Equipment Packs" : category} stats={COIN_LABELS.map(([n, k]) => [n, inv.coins[k]] as [string, number])} />
         <div className="eq-cats-narrow" style={{ padding: "6px 0" }}>
-          <ComboBox aria-label="Category" value={category} onChange={(e) => setCategory(e.target.value)} options={listed.map((c) => ({ value: c.name, label: label(c) }))} />
+          <ComboBox aria-label="Category" value={category} onChange={(v) => setCategory(v)} options={listed.map((c) => ({ value: c.name, label: label(c) }))} />
         </div>
         {cats.error && <Alert tone="danger">{cats.error}</Alert>}
         {items.error && <Alert tone="danger">{items.error}</Alert>}

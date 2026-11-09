@@ -36,7 +36,7 @@ export function RulesTab({ form, set, hasCharacter, openHouseRules }: FormProps 
     <>
       <TabTitle title="RULES" desc="The edition new characters start with and the limits of ability score generation." />
       <FieldLabel htmlFor={ruleset}>DEFAULT RULESET FOR NEW CHARACTERS</FieldLabel>
-      <ComboBox id={ruleset} value={form.defaultRuleset} onChange={(e) => set({ defaultRuleset: e.target.value as AppSettings["defaultRuleset"] })}
+      <ComboBox id={ruleset} value={form.defaultRuleset} onChange={(v) => set({ defaultRuleset: v as AppSettings["defaultRuleset"] })}
         options={[{ value: "dnd2024", label: "2024 (SRD 5.2)" }, { value: "dnd2014", label: "2014 (SRD 5.1)" }]} />
       <SectionTitle>ABILITY SCORES</SectionTitle>
       <NumberField label="POINT-BUY BUDGET" value={form.pointBuyBudget} min={1} max={60} onChange={(n) => set({ pointBuyBudget: n })} />
@@ -76,7 +76,7 @@ export function DisplayTab({ form, set }: FormProps) {
       <TabTitle title="DISPLAY" desc="Contrast and spacing of the application." />
       <DescCheck title="High contrast" description="Stronger borders, text and focus rings." checked={form.highContrast} onChange={(v) => set({ highContrast: v })} />
       <FieldLabel htmlFor={density}>DENSITY</FieldLabel>
-      <ComboBox id={density} value={form.density} onChange={(e) => set({ density: e.target.value as Density })}
+      <ComboBox id={density} value={form.density} onChange={(v) => set({ density: v as Density })}
         options={[{ value: "comfortable", label: "Comfortable" }, { value: "compact", label: "Compact" }]} />
     </>
   );
@@ -137,7 +137,7 @@ export function AiTab({ form, set, setup }: FormProps & { setup: () => void }) {
       {form.ai.enabled && (
         <>
           <FieldLabel htmlFor={provider}>AI PROVIDER</FieldLabel>
-          <ComboBox id={provider} value={form.ai.provider} onChange={(e) => setAi({ provider: e.target.value as AiProviderId })}
+          <ComboBox id={provider} value={form.ai.provider} onChange={(v) => setAi({ provider: v as AiProviderId })}
             options={[{ value: "claude", label: "Claude CLI" }, { value: "codex", label: "Codex CLI" }, { value: "none", label: "Whichever is installed" }]} />
           <FieldLabel>AI PROGRAM</FieldLabel>
           <Help>{stored.ai.overridePath ?? "Found automatically. Browse to use a different claude or codex program."}</Help>

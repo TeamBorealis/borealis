@@ -21,7 +21,7 @@ function AbilityMethodField({ form, set }: Props) {
   return (
     <>
       <FieldLabel htmlFor={id}>ABILITY SCORE GENERATION OPTION</FieldLabel>
-      <ComboBox id={id} value={form.abilityMethod} options={options} onChange={(e) => set({ abilityMethod: e.target.value as AbilityMethod })} />
+      <ComboBox id={id} value={form.abilityMethod} options={options} onChange={(v) => set({ abilityMethod: v as AbilityMethod })} />
     </>
   );
 }
@@ -38,7 +38,7 @@ export function GeneralTab({ form, set }: Props) {
       <AbilityMethodField form={form} set={set} />
       <SectionTitle>SELECTION PICKERS</SectionTitle>
       <FieldLabel htmlFor={rows}>ROW HEIGHT</FieldLabel>
-      <ComboBox id={rows} value={form.rowHeight} options={ROW_HEIGHTS} onChange={(e) => set({ rowHeight: e.target.value as RowHeight })} />
+      <ComboBox id={rows} value={form.rowHeight} options={ROW_HEIGHTS} onChange={(v) => set({ rowHeight: v as RowHeight })} />
       <Help>Reduce the height of the rows to fit more content on your screen.</Help>
       <DescCheck spaced title="Selection Flow" description="Automatically navigate to the next available selection. Alternatively, toggle this behaviour from the status bar." checked={form.selectionFlow} onChange={(v) => set({ selectionFlow: v })} />
       <SectionTitle>CHARACTER INFORMATION PANEL</SectionTitle>

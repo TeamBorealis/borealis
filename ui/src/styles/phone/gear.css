@@ -44,7 +44,7 @@ html.phone .eq-qtybox {
 html.phone .eq-filter-tile { margin: 0; }
 html.phone .eq-tools .eq-filter { flex: 1 1 0; margin: 0; }
 html.phone .eq-source { flex: 1 1 100%; width: auto; margin: 0; }
-html.phone .eq-tools .eq-source select, html.phone .eq-tools .eq-source .aur-combo select { height: auto; min-height: var(--ph-hit); color: var(--ph-text); }
+html.phone .eq-tools .eq-source select, html.phone .eq-tools .eq-source .ph-select { height: auto; min-height: var(--ph-hit); color: var(--ph-text); }
 html.phone .eq-coins, html.phone .eq-tools .eq-coins {
   flex: 1 1 100%; width: auto; height: auto; min-height: var(--ph-hit); margin: 0; border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text);
   font: 600 var(--ph-t-sub)/1.2 var(--ph-font-ui); text-transform: none;

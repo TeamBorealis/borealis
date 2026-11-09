@@ -111,12 +111,12 @@ export function NewCharacterDialog({ onCreate, onClose }: { onCreate: (f: NewCha
           </div>
           <div className="v4-row">
             <div><label className="v4-fl" htmlFor="v4-level">Starting level</label>
-              <ComboBox light id="v4-level" options={LEVELS} value={String(f.startingLevel)} onChange={(e) => set("startingLevel", Number(e.target.value))} /></div>
+              <ComboBox light id="v4-level" options={LEVELS} value={String(f.startingLevel)} onChange={(v) => set("startingLevel", Number(v))} /></div>
             <div><label className="v4-fl" htmlFor="v4-gender">Gender</label>
-              <ComboBox light id="v4-gender" options={GENDERS} value={f.gender} onChange={(e) => set("gender", e.target.value)} /></div>
+              <ComboBox light id="v4-gender" options={GENDERS} value={f.gender} onChange={(v) => set("gender", v)} /></div>
           </div>
           <label className="v4-fl" htmlFor="v4-method">Abilities generation option</label>
-          <ComboBox light id="v4-method" options={methodOptions} value={f.abilityMethod} onChange={(e) => { setGrab(null); set("abilityMethod", e.target.value as AbilityMethod); }} />
+          <ComboBox light id="v4-method" options={methodOptions} value={f.abilityMethod} onChange={(v) => { setGrab(null); set("abilityMethod", v as AbilityMethod); }} />
           <p className="sub hint">{arrangeable ? "Set your ability scores by dragging the values between tiles." : "Ability scores are set on the Abilities tab."}</p>
           <div className="v4-abil" role="group" aria-label="Ability score preview">
             {ABILITIES.map((a, i) => (
@@ -154,7 +154,7 @@ export function NewCharacterDialog({ onCreate, onClose }: { onCreate: (f: NewCha
             ))}
             <div className="v4-opt">
               <label className="plain" htmlFor="v4-edition">Rules edition</label>
-              <ComboBox light id="v4-edition" options={editionOptions} value={f.ruleset} onChange={(e) => set("ruleset", e.target.value as Ruleset)} />
+              <ComboBox light id="v4-edition" options={editionOptions} value={f.ruleset} onChange={(v) => set("ruleset", v as Ruleset)} />
               {classWarning && <p className="v4-warn" role="alert">{classWarning}</p>}
             </div>
           </div>

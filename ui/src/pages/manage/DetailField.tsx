@@ -19,7 +19,7 @@ export function DetailField({ k, label, area, list, choices, className, tall, hi
         if (area) return <><textarea id={id} className={`textarea ${tall ? "tall" : ""}`} value={v} onChange={(e) => setV(e.target.value)} onBlur={() => commitValue(v)} />{hint && <span className="mg-hint">{hint}</span>}</>;
         if (choices) {
           const opts = ["", ...choices, ...(v && !choices.includes(v) ? [v] : [])];
-          return <ComboBox id={id} value={v} onChange={(e) => { setV(e.target.value); commitValue(e.target.value); }} options={opts.map((o) => ({ value: o, label: o }))} />;
+          return <ComboBox id={id} value={v} onChange={(next) => { setV(next); commitValue(next); }} options={opts.map((o) => ({ value: o, label: o }))} />;
         }
         return (
           <>

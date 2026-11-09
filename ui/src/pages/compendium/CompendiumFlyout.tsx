@@ -139,13 +139,13 @@ export function CompendiumBrowser({ initialQuery = "", initialSource = "", initi
           <SearchInput value={query} onChange={reset(setQuery)} label="Search the compendium" placeholder="Search spells, items, classes..." autoFocus />
           {!rules && (
             <>
-              <ComboBox aria-label="Filter by type" value={type} onChange={(e) => reset(setType)(e.target.value)}
+              <ComboBox aria-label="Filter by type" value={type} onChange={(v) => reset(setType)(v)}
                 options={[{ value: "", label: "All types" }, ...(facets.data?.types ?? []).map((t) => ({ value: t.id, label: `${t.label} (${t.count})` }))]} />
-              <ComboBox aria-label="Filter by source" value={source} onChange={(e) => reset(setSource)(e.target.value)}
+              <ComboBox aria-label="Filter by source" value={source} onChange={(v) => reset(setSource)(v)}
                 options={[{ value: "", label: "All sources" }, ...(facets.data?.sources ?? []).map((s) => ({ value: s.id, label: s.label }))]} />
             </>
           )}
-          <ComboBox aria-label="Filter by ruleset" value={ruleset} onChange={(e) => reset(setRuleset)(e.target.value as Ruleset | "any")}
+          <ComboBox aria-label="Filter by ruleset" value={ruleset} onChange={(v) => reset(setRuleset)(v as Ruleset | "any")}
             options={[{ value: "any", label: "Both rulesets" }, { value: "dnd2024", label: "2024" }, { value: "dnd2014", label: "2014" }]} />
           <span className="v4-comp-count" role="status">{results.data ? `${results.data.total} results` : ""}</span>
         </div>

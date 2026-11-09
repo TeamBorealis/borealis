@@ -139,9 +139,7 @@ function TrackerDialog({ tracker, onClose }: { tracker: PlayTracker | null; onCl
       <form className="st-form" onSubmit={(e) => void save(e)} noValidate>
         <TextField label="Name" value={name} maxLength={MAX_TRACKER_NAME} autoComplete="off" error={errorOf("name")} onChange={(e) => setName(e.target.value)} />
         <TextField label="Maximum" type="number" inputMode="numeric" min={1} max={MAX_TRACKER_MAX} value={max} error={errorOf("max")} onChange={(e) => setMax(e.target.value)} />
-        <SelectField label="Resets on" value={reset} onChange={(e) => setReset(e.target.value as PlayTrackerReset)}>
-          {RESET_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </SelectField>
+        <SelectField label="Resets on" value={reset} onChange={(v) => setReset(v as PlayTrackerReset)} options={RESET_OPTIONS} />
         <Check label="Counts up" description="Show how many are marked (such as doom marks gained) instead of how many are left."
           checked={countsUp} onChange={(e) => setCountsUp(e.target.checked)} />
         <button type="submit" hidden aria-hidden="true" tabIndex={-1} />

@@ -68,7 +68,7 @@ function AbilitySpinner({ ability, state, range = DEFAULT_RANGE, onSet, onRoll, 
       {method === "standard_array" && standardArray && (
         <div className="abil-extra">
           <ComboBox aria-label={`${label} array value`} value={String(standardArray.assigned[ability] ?? "")}
-            onChange={(e) => onAssign(e.target.value === "" ? null : Number(e.target.value))}
+            onChange={(v) => onAssign(v === "" ? null : Number(v))}
             options={[{ value: "", label: "Unassigned" }, ...standardArray.values.map((v) => ({ value: String(v), label: `${v}${standardArray.assigned[ability] !== v && !standardArray.unassigned.includes(v) ? " (swap)" : ""}` }))]} />
         </div>
       )}

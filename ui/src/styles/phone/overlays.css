@@ -102,6 +102,25 @@ html.phone .menu-tree-item:active:not(:disabled) { background: var(--ph-fill); }
 html.phone .menu-tree-item:disabled { color: var(--ph-text-3); }
 html.phone .menu-tree .aur-menu-icon { width: 32px; color: var(--ph-accent); }
 
+/* The select sheet (U22, B-138): every select on a phone opens this list instead of the WebView's select dialog. One grouped
+   list of 48 dp rows (52 on Android, as the menu rows); the current option is accent and ticked; disabled options are dimmed. */
+.select-sheet-host { display: contents; }
+html.phone .select-sheet .dialog-body { padding-top: 0; }
+html.phone .select-sheet-list { display: flex; flex-direction: column; border-radius: var(--ph-r-lg); overflow: hidden; background: var(--ph-surface); }
+html.phone .select-sheet-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: max(48px, var(--ph-row)); margin: 0; padding: 0 12px 0 var(--ph-gutter);
+  border: 0; border-radius: 0; background: none; color: var(--ph-text); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); text-align: left;
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .select-sheet-row + .select-sheet-row { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .select-sheet-row:active:not(:disabled) { background: var(--ph-fill); }
+html.phone .select-sheet-row:focus-visible { outline: 2px solid var(--ph-accent); outline-offset: -2px; }
+html.phone .select-sheet-row.current { color: var(--ph-accent); font-weight: 600; }
+html.phone .select-sheet-row:disabled { color: var(--ph-text-3); }
+html.phone .select-sheet-label { flex: 1 1 auto; min-width: 0; padding: 12px 0; overflow-wrap: anywhere; }
+html.phone .select-sheet-mark { flex: none; display: inline-flex; width: 24px; height: 24px; color: var(--ph-accent); }
+html.phone .select-sheet-mark .icon { width: 24px; height: 24px; }
+
 /* Toasts: an inverted pill above the status line and tab bar, inside the safe area, never over the status bar (finding 4b). The
    offset uses tokens set on the root, because the toast host renders outside the shell window. */
 html.phone .toasts {

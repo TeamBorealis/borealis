@@ -1,6 +1,8 @@
-import { type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, useEffect, useId, useRef } from "react";
+import { type InputHTMLAttributes, type ReactNode, useEffect, useId, useRef } from "react";
+import { usePhone } from "../../lib/phone";
 import { Icon } from "../Icon";
 import { useHoldRepeat } from "../useHoldRepeat";
+import { type ComboOption, SelectSheet } from "./SelectSheet";
 
 /** MahApps Win10-style switch. `onLabel`/`offLabel` render beside the track. */
 export function ToggleSwitch({ checked, onChange, label, onLabel = "On", offLabel = "Off", disabled }: {
@@ -14,16 +16,35 @@ export function ToggleSwitch({ checked, onChange, label, onLabel = "On", offLabe
   );
 }
 
-export interface ComboOption { value: string; label: string; disabled?: boolean }
+export type { ComboOption } from "./SelectSheet";
 
-/** Native select (best on touch) in a Metro frame. `light` = white field used inside flyouts. */
-export function ComboBox({ options, light, className = "", ...rest }: { options: ComboOption[]; light?: boolean } & SelectHTMLAttributes<HTMLSelectElement>) {
+export interface ComboBoxProps {
+  options: readonly ComboOption[];
+  value: string;
+  /** The chosen option's value. */
+  onChange: (value: string) => void;
+  /** White field used inside flyouts. */
+  light?: boolean;
+  className?: string;
+  id?: string;
+  disabled?: boolean;
+  "aria-label"?: string;
+  "aria-describedby"?: string;
+}
+
+/** Native select in a Metro frame on desktop (U7); on phones the select sheet (U22, B-138). `light` = white field used inside flyouts. */
+export function ComboBox({ options, light, className = "", value, onChange, ...rest }: ComboBoxProps) {
+  const phone = usePhone();
   return (
     <span className={`aur-combo ${light ? "light" : ""} ${className}`}>
-      <select {...rest}>
-        {options.map((o) => <option key={o.value} value={o.value} disabled={o.disabled}>{o.label}</option>)}
-      </select>
-      <svg className="aur-combo-arrow" width="7" height="4" viewBox="0 0 7 4" aria-hidden="true"><path d="M0 0h7L3.5 4z" /></svg>
+      {phone ? <SelectSheet value={value} options={options} onChange={onChange} {...rest} /> : (
+        <>
+          <select value={value} onChange={(e) => onChange(e.target.value)} {...rest}>
+            {options.map((o) => <option key={o.value} value={o.value} disabled={o.disabled}>{o.label}</option>)}
+          </select>
+          <svg className="aur-combo-arrow" width="7" height="4" viewBox="0 0 7 4" aria-hidden="true"><path d="M0 0h7L3.5 4z" /></svg>
+        </>
+      )}
     </span>
   );
 }

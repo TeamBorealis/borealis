@@ -160,7 +160,7 @@ export function SearchTab() {
             </>
           )}
           <FieldLabel htmlFor={tierId}>DEVICE TIER</FieldLabel>
-          <ComboBox id={tierId} value={tierOptions.some((o) => o.value === search.tierOverride) ? search.tierOverride : "auto"} onChange={(e) => setSearch({ tierOverride: e.target.value as SearchSettings["tierOverride"] })} options={tierOptions} />
+          <ComboBox id={tierId} value={tierOptions.some((o) => o.value === search.tierOverride) ? search.tierOverride : "auto"} onChange={(v) => setSearch({ tierOverride: v as SearchSettings["tierOverride"] })} options={tierOptions} />
           <Help>Chosen from this device's memory. A lower tier uses a smaller model and fewer threads; it can be lowered, never raised.</Help>
           {st.mobile && (
             <DescCheck spaced title="Index on battery" description="Build the semantic indexes on battery too, while the battery is at least 50%. Otherwise only while charging."

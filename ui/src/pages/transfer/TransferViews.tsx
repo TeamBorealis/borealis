@@ -48,7 +48,7 @@ export function PickView({ characters, chosen, onChosen, packs, onPacks, unsaved
       )}
       {unsavedName && chosen.size > 0 && <Help>'{unsavedName}' has unsaved changes: save first to send them.</Help>}
       <FieldLabel htmlFor={packsId}>CONTENT PACKS</FieldLabel>
-      <ComboBox id={packsId} value={packs} onChange={(e) => onPacks(e.target.value as LinkPackChoice)} options={PACK_OPTIONS} />
+      <ComboBox id={packsId} value={packs} onChange={(v) => onPacks(v as LinkPackChoice)} options={PACK_OPTIONS} />
       <Help>Homebrew and imported packs travel only between your own devices.</Help>
     </>
   );

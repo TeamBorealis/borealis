@@ -34,7 +34,7 @@ function BookEditions({ books, chosen, onChange }: { books: PreviewBook[]; chose
       {books.map((b, i) => (
         <div key={b.name} className="v4-imp-book">
           <label htmlFor={`v4-imp-book-${i}`}>{b.name}</label>
-          <ComboBox id={`v4-imp-book-${i}`} options={EDITION_OPTIONS} value={chosen[b.name] ?? b.edition} onChange={(e) => onChange(b.name, e.target.value as BookRuleset)} />
+          <ComboBox id={`v4-imp-book-${i}`} options={EDITION_OPTIONS} value={chosen[b.name] ?? b.edition} onChange={(v) => onChange(b.name, v as BookRuleset)} />
           {b.setByUser && <span className="muted small">your earlier choice</span>}
         </div>
       ))}

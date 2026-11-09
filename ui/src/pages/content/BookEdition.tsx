@@ -40,7 +40,7 @@ export function BookEdition({ source, onChanged }: { source: ContentSource; onCh
     <div className="v4-src-edition">
       <label htmlFor="v4-src-edition">Rules edition of this book</label>
       <ComboBox id="v4-src-edition" options={EDITION_OPTIONS} value={source.edition ?? "dnd2014"} disabled={busy}
-        onChange={(e) => void change(e.target.value as BookRuleset)} />
+        onChange={(v) => void change(v as BookRuleset)} />
       <p className="sub">
         {source.editionSetByUser ? "Set by you." : "Found in the book: its \u201cD&D 5.5e\u201d mark, or its name or description."}
         {" "}{BOTH_HELP} Characters that already use this book keep its content; new characters follow this edition.

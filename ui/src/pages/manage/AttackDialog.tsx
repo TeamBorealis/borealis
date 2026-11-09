@@ -54,9 +54,8 @@ export function AttackDialog({ draft, basis, onSave, onClose }: { draft: AttackD
         <TextArea label="Short description" hint="Limited to a single line under the attack details in the combat section" value={a.description} onChange={(e) => set("description", e.target.value)} />
         {!draft.auto && <Check label="Calculate automatically" checked={!!a.calculated} onChange={(e) => setA((c) => ({ ...c, calculated: e.target.checked, ability: e.target.checked ? c.ability ?? "str" : c.ability }))} />}
         {(linked || custom) && (
-          <SelectField label="Ability (automatic calculation)" value={a.ability ?? "str"} onChange={(e) => pickAbility(e.target.value as AbilityKey)}>
-            {ABILITY_KEYS.map((k) => <option key={k} value={k}>{ABILITY_LABEL[k]}</option>)}
-          </SelectField>
+          <SelectField label="Ability (automatic calculation)" value={a.ability ?? "str"} onChange={(v) => pickAbility(v as AbilityKey)}
+            options={ABILITY_KEYS.map((k) => ({ value: k, label: ABILITY_LABEL[k] }))} />
         )}
         <Check label="Display in combat section" checked={a.showInCombat} onChange={(e) => set("showInCombat", e.target.checked)} />
         <Check label="Print as a card" checked={a.card} onChange={(e) => set("card", e.target.checked)} />

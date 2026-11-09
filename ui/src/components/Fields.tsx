@@ -1,4 +1,6 @@
-import { type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes, useId } from "react";
+import { type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes, useId } from "react";
+import { usePhone } from "../lib/phone";
+import { type ComboOption, SelectSheet } from "./controls/SelectSheet";
 import { Icon } from "./Icon";
 
 interface FieldShell { label: string; hint?: string; error?: string | null; children: (id: string, describedBy: string | undefined) => ReactNode }
@@ -26,8 +28,22 @@ export function TextArea({ label, hint, error, ...rest }: Common & TextareaHTMLA
   return <Shell label={label} hint={hint} error={error}>{(id, by) => <textarea id={id} className="textarea" aria-describedby={by} {...rest} />}</Shell>;
 }
 
-export function SelectField({ label, hint, error, children, ...rest }: Common & SelectHTMLAttributes<HTMLSelectElement>) {
-  return <Shell label={label} hint={hint} error={error}>{(id, by) => <select id={id} className="select" aria-describedby={by} {...rest}>{children}</select>}</Shell>;
+/** A labelled select: native on desktop (U7), the select sheet on phones (U22, B-138). */
+export function SelectField({ label, hint, error, options, value, onChange, disabled }: Common & {
+  options: readonly ComboOption[]; value: string; onChange: (value: string) => void; disabled?: boolean;
+}) {
+  const phone = usePhone();
+  return (
+    <Shell label={label} hint={hint} error={error}>
+      {(id, by) => phone
+        ? <SelectSheet id={id} className="select" value={value} options={options} onChange={onChange} disabled={disabled} aria-describedby={by} aria-invalid={!!error} />
+        : (
+          <select id={id} className="select" aria-describedby={by} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}>
+            {options.map((o) => <option key={o.value} value={o.value} disabled={o.disabled}>{o.label}</option>)}
+          </select>
+        )}
+    </Shell>
+  );
 }
 
 export function Check({ label, description, ...rest }: { label: string; description?: string } & Omit<InputHTMLAttributes<HTMLInputElement>, "type">) {

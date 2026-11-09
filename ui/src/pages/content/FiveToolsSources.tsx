@@ -25,7 +25,7 @@ export function FiveToolsSources({ sources, picked, onPicked }: Props) {
     <div className="stack">
       <div className="v4-5et-filters">
         <SearchInput label="Filter sources" placeholder="Filter by name" value={query} onChange={setQuery} />
-        <ComboBox aria-label="Edition" options={EDITIONS} value={edition} onChange={(e) => setEdition(e.target.value as EditionFilter)} />
+        <ComboBox aria-label="Edition" options={EDITIONS} value={edition} onChange={(v) => setEdition(v as EditionFilter)} />
       </div>
       {groups.length === 0 && <p className="muted">No source matches the filter.</p>}
       {groups.map((g) => {
