@@ -21,9 +21,10 @@ describe("phone lists and controls CSS (B-48 WP4, WP5)", () => {
   });
 
   it("the chosen row carries an icon (a check in a ring), not colour alone; the highlighted row a leading bar", () => {
-    const chosen = rules().find((r) => r.selectors.includes('html.phone .pick-main[aria-pressed="true"]::after'));
+    // A1 / TV1: the ring is drawn by the row's own Choose button (.pick-mark), no longer by the row's main button.
+    const chosen = rules().find((r) => r.selectors.includes('html.phone .pick-mark[aria-pressed="true"]::after'));
     expect(chosen?.body).toMatch(/mask/);
-    expect(rules().some((r) => r.selectors.includes("html.phone .pick-main::after") && /border/.test(r.body))).toBe(true);
+    expect(rules().some((r) => r.selectors.includes("html.phone .pick-mark::after") && /border/.test(r.body))).toBe(true);
     expect(rules().some((r) => r.selectors.some((s) => /\.pick-row\.hl .*::before/.test(s)) && /width: 3px/.test(r.body))).toBe(true);
   });
 

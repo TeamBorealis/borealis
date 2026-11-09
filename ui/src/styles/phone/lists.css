@@ -46,7 +46,7 @@ html.phone .pick-row { position: relative; min-height: var(--ph-row); }
 html.phone .pick-row + .pick-row { box-shadow: inset 0 1px 0 var(--ph-line); }
 html.phone .pick-main, html.phone .pick-list.with-desc .pick-main {
   position: relative; flex: 1; width: 100%; height: auto; min-height: var(--ph-row); padding: 6px var(--ph-gutter);
-  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name mark" "src mark"; align-content: center; column-gap: 12px; row-gap: 1px;
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "name" "src"; align-content: center; column-gap: 12px; row-gap: 1px;
   background: none; color: var(--ph-text); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); text-align: left; cursor: pointer;
   transition: background var(--ph-d-press) var(--ph-ease-out);
 }
@@ -58,17 +58,27 @@ html.phone .pick-src:empty { display: none; }
 /* A7 / TV2 (A12): a Weapon Mastery row names its mastery here; the separator before a differing source keeps its spaces. */
 html.phone .pick-mastery { white-space: pre; }
 html.phone .pick-list.with-desc .pick-desc { display: none; }
-/* Chosen state as an icon, not colour alone: an empty ring on every row, a filled check in a ring on the chosen one. */
-html.phone .pick-main::after {
-  content: ""; grid-area: mark; align-self: center; width: 24px; height: 24px; box-sizing: border-box;
+/*
+ * Chosen state as an icon, not colour alone: an empty ring on every row, a filled check in a ring on the chosen one.
+ * A1 / TV1: the ring is its own 44 pt button on the trailing edge that chooses the row (a tap on the name describes it).
+ */
+html.phone .pick-mark {
+  position: relative; flex: none; align-self: center; width: var(--ph-hit); height: var(--ph-hit); margin: 0 4px 0 -4px; padding: 0;
+  border: 0; border-radius: var(--ph-r-pill); background: none; cursor: pointer; transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .pick-mark:active:not([aria-disabled="true"]) { background: var(--ph-fill); }
+html.phone .pick-row.hl > .pick-mark { background: var(--ph-accent-soft); border-radius: 0; }
+html.phone .pick-mark::after {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 24px; height: 24px; box-sizing: border-box;
   border: 2px solid var(--ph-field-line); border-radius: 50%;
 }
-html.phone .pick-main[aria-pressed="true"]::after {
+html.phone .pick-mark[aria-pressed="true"]::after {
   border: 0; background: var(--ph-accent);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1a11 11 0 1 0 0 22a11 11 0 1 0 0-22zm-1.6 15.6l-4.7-4.7 1.6-1.6 3.1 3.1 6.7-6.7 1.6 1.6z'/%3E%3C/svg%3E") center / 24px 24px no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1a11 11 0 1 0 0 22a11 11 0 1 0 0-22zm-1.6 15.6l-4.7-4.7 1.6-1.6 3.1 3.1 6.7-6.7 1.6 1.6z'/%3E%3C/svg%3E") center / 24px 24px no-repeat;
 }
-html.phone .pick-main[aria-disabled="true"]::after { opacity: 0.4; }
+html.phone .pick-mark[aria-disabled="true"] { cursor: default; }
+html.phone .pick-mark[aria-disabled="true"]::after { opacity: 0.4; }
 html.phone .pick-row.selected .pick-main { background: none; }
 html.phone .pick-row.selected .pick-name { font-weight: 600; }
 /* The row being read (described): accent tint and a 3 px leading bar. */

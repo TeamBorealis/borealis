@@ -1,5 +1,6 @@
 import { type KeyboardEvent, type MouseEvent, useRef } from "react";
 import { ConvertedTag, editionMarks, EditionNotes, EditionSuffix, PREREQ_UNMET_TEXT, PrereqUnmetMark } from "../../components";
+import { usePhone } from "../../lib/phone";
 import type { ShownRow, VersionLike } from "../../lib/versions";
 import { useApi } from "../../state/ApiContext";
 import { useAsync } from "../../state/useAsync";
@@ -63,6 +64,7 @@ export function PickerRow({ row, listSlot, showDescription, versionColumn, highl
   const multi = row.versions.length > 1;
   const onSource = (e: MouseEvent) => multi && (e.target as Element).closest(".pick-src-name") !== null;
   const level = levelText(v);
+  const phone = usePhone();
   return (
     <li className={`pick-row ${sel ? "selected" : ""} ${highlighted ? "hl" : ""} ${marks.converted ? "is-converted" : ""}`} data-row={row.name}>
       <button type="button" className="pick-main" aria-pressed={sel} aria-disabled={disabled || undefined} title={v.disabledReason}
@@ -90,6 +92,11 @@ export function PickerRow({ row, listSlot, showDescription, versionColumn, highl
           )}
         </span>
       </button>
+      {/* A1 / TV1 (phones): the ring on the trailing edge is a real button that chooses the row; the name only describes it. */}
+      {phone && (
+        <button type="button" className="pick-mark" aria-label={`Choose ${row.name}`} aria-pressed={sel} aria-disabled={disabled || undefined}
+          title={v.disabledReason} onClick={() => { if (!sel && !disabled) onChoose(); }} />
+      )}
       {versionColumn && (
         <span className="pick-ver">
           {multi && <VersionButton count={row.versions.length} rowName={row.name} open={menuOpen} onOpen={onOpenMenu} ref={verRef} />}
