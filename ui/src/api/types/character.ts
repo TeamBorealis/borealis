@@ -493,6 +493,14 @@ export interface CompanionState {
   burrowSpeed: number;
   skills: CompanionSkill[];
   passivePerception: number;
+  /** The six saving throws, STR to CHA (`name` is the ability, `ability` its abbreviation). */
+  saves: CompanionSkill[];
+  /** Special senses as printed ("Darkvision 60 ft."); empty when the creature has none. */
+  senses: string;
+  /** Languages as printed ("—" when the creature has none). */
+  languages: string;
+  /** Damage and condition lines ("Damage Resistances": "Poison"), in stat block order. */
+  defenses: CompanionFeature[];
   /** The creature's traits, then the user's own (`customTraits`). */
   traits: CompanionFeature[];
   actions: CompanionFeature[];
@@ -519,6 +527,7 @@ export interface CompanionPatch {
   creatureId?: string | null;
 }
 
+/** One companion skill or saving throw line. */
 export interface CompanionSkill {
   name: string;
   /** Key ability abbreviation (DEX). */

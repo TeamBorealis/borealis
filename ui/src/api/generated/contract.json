@@ -4978,6 +4978,16 @@
       }
      }
     },
+    "defenses": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "CompanionFeature"
+      }
+     }
+    },
     "flySpeed": {
      "opt": false,
      "t": {
@@ -5015,6 +5025,12 @@
      }
     },
     "initiative": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "languages": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -5058,6 +5074,22 @@
        "k": "ref",
        "name": "CompanionFeature"
       }
+     }
+    },
+    "saves": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "CompanionSkill"
+      }
+     }
+    },
+    "senses": {
+     "opt": false,
+     "t": {
+      "k": "prim"
      }
     },
     "skills": {

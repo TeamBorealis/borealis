@@ -12,12 +12,13 @@ use crate::layout::page_features::features_pages::{columns, new_canvas, Env, Seq
 use crate::layout::LayoutOptions;
 use crate::model_types::{AbilityData, SheetData};
 use crate::pdf::PdfPage;
+use crate::CompanionSheet;
 use std::collections::VecDeque;
 
 /// Smallest ruled area of a section, in lines.
 const MIN_LINES: usize = 2;
 
-/// The statistics and skills go in the left column, the creature's traits, actions and
+/// The statistics, saving throws and skills go in the left column, the creature's traits, actions and
 /// reactions in the right one.
 fn queues(data: &SheetData) -> (VecDeque<Piece>, VecDeque<Piece>) {
     let mut left = VecDeque::new();
@@ -34,7 +35,7 @@ fn queues(data: &SheetData) -> (VecDeque<Piece>, VecDeque<Piece>) {
             min_lines: MIN_LINES,
             fill: false,
         });
-        if matches!(id, "companion.stats" | "companion.skills") {
+        if CompanionSheet::in_left_column(id) {
             left.push_back(piece);
         } else {
             right.push_back(piece);

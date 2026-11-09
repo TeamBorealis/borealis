@@ -24,28 +24,34 @@ export const NO_COMPANIONS: MockCompanions = { grantedCreature: null, granted: N
 
 interface Creature {
   id: string; name: string; build: string; ac: number; hp: number; speed: number; fly: number; prof: number;
-  abilities: AbilityRecord<number>; skills: [name: string, ability: string, bonus: number][]; traits: CompanionFeature[]; actions: CompanionFeature[];
+  abilities: AbilityRecord<number>; skills: [name: string, ability: string, bonus: number][]; senses: string; traits: CompanionFeature[]; actions: CompanionFeature[];
 }
+
+/** Ability name and abbreviation of the six saving throws, STR to CHA. */
+const SAVES: [key: keyof AbilityRecord<number>, name: string, abbr: string][] = [
+  ["str", "Strength", "STR"], ["dex", "Dexterity", "DEX"], ["con", "Constitution", "CON"],
+  ["int", "Intelligence", "INT"], ["wis", "Wisdom", "WIS"], ["cha", "Charisma", "CHA"],
+];
 
 /** Three SRD 5.1 beasts (CC-BY-4.0) the mock offers as companion creatures. */
 const CREATURES: Creature[] = [
   {
     id: "ID_SRD51_MONSTER_WOLF", name: "Wolf", build: "Medium beast, unaligned", ac: 13, hp: 11, speed: 40, fly: 0, prof: 2,
-    abilities: { str: 12, dex: 15, con: 12, int: 3, wis: 12, cha: 6 }, skills: [["Perception", "WIS", 3], ["Stealth", "DEX", 4]],
+    abilities: { str: 12, dex: 15, con: 12, int: 3, wis: 12, cha: 6 }, skills: [["Perception", "WIS", 3], ["Stealth", "DEX", 4]], senses: "",
     traits: [{ name: "Keen Hearing and Smell", text: "The wolf has advantage on Wisdom (Perception) checks that rely on hearing or smell." },
       { name: "Pack Tactics", text: "The wolf has advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally isn't incapacitated." }],
     actions: [{ name: "Bite", text: "Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 7 (2d4 + 2) piercing damage. If the target is a creature, it must succeed on a DC 11 Strength saving throw or be knocked prone." }],
   },
   {
     id: "ID_SRD51_MONSTER_OWL", name: "Owl", build: "Tiny beast, unaligned", ac: 11, hp: 1, speed: 5, fly: 60, prof: 2,
-    abilities: { str: 3, dex: 13, con: 8, int: 2, wis: 12, cha: 7 }, skills: [["Perception", "WIS", 3], ["Stealth", "DEX", 3]],
+    abilities: { str: 3, dex: 13, con: 8, int: 2, wis: 12, cha: 7 }, skills: [["Perception", "WIS", 3], ["Stealth", "DEX", 3]], senses: "Darkvision 120 ft.",
     traits: [{ name: "Flyby", text: "The owl doesn't provoke opportunity attacks when it flies out of an enemy's reach." },
       { name: "Keen Hearing and Sight", text: "The owl has advantage on Wisdom (Perception) checks that rely on hearing or sight." }],
     actions: [{ name: "Talons", text: "Melee Weapon Attack: +3 to hit, reach 5 ft., one target. Hit: 1 slashing damage." }],
   },
   {
     id: "ID_SRD51_MONSTER_MASTIFF", name: "Mastiff", build: "Medium beast, unaligned", ac: 12, hp: 5, speed: 40, fly: 0, prof: 2,
-    abilities: { str: 13, dex: 14, con: 12, int: 3, wis: 12, cha: 7 }, skills: [["Perception", "WIS", 3]],
+    abilities: { str: 13, dex: 14, con: 12, int: 3, wis: 12, cha: 7 }, skills: [["Perception", "WIS", 3]], senses: "",
     traits: [{ name: "Keen Hearing and Smell", text: "The mastiff has advantage on Wisdom (Perception) checks that rely on hearing or smell." }],
     actions: [{ name: "Bite", text: "Melee Weapon Attack: +3 to hit, reach 5 ft., one target. Hit: 4 (1d6 + 1) piercing damage. If the target is a creature, it must succeed on a DC 11 Strength saving throw or be knocked prone." }],
   },
@@ -73,6 +79,8 @@ function stateOf(id: string, granted: boolean, creatureId: string | null, name: 
     armorClass: withBonus(c?.ac ?? 0, e.armorClassBonus), hp: withBonus(c?.hp ?? 0, e.hitPointsBonus), armorClassNote: null, hpNote: null,
     challenge: "—", speed: withBonus(c?.speed ?? 0, e.speedBonus), abilities, proficiency: c?.prof ?? 0, initiative: mod(abilities.dex), build: c?.build ?? "",
     flySpeed: c?.fly ?? 0, climbSpeed: 0, swimSpeed: 0, burrowSpeed: 0, skills, passivePerception: 10 + perception,
+    saves: SAVES.map(([k, n, ability]) => ({ name: n, ability, bonus: mod(abilities[k]) })),
+    senses: c?.senses ?? "", languages: "—", defenses: [],
     traits: [...(c?.traits ?? []), ...e.traits], actions: c?.actions ?? [], reactions: [],
     notes: e.notes, customTraits: e.traits, armorClassBonus: e.armorClassBonus, hitPointsBonus: e.hitPointsBonus, speedBonus: e.speedBonus,
   };

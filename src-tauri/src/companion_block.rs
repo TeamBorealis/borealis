@@ -1,7 +1,8 @@
 //! The companion statistics block of the information slider's companion context: proficiency,
-//! initiative, the build line, the speed variants, the skills and the traits, actions and
-//! reactions. Read from a bundled `Monster` stat block or from an Aurora `Companion` element.
+//! initiative, the build line, the speed variants, the skills, the saves, senses, languages and
+//! damage and condition lines, and the traits, actions and reactions. Read from a bundled `Monster` stat block or from an Aurora `Companion` element.
 
+use crate::companion_stat_lines::{element_lines, monster_lines, StatLines};
 use crate::content_dto::{CompanionFeature, CompanionSkill};
 use crate::elements::plain_text;
 use borealis_content::monster_types::Feature;
@@ -42,6 +43,8 @@ pub struct CompanionBlock {
     pub speeds: [i32; 4],
     /// Skill name (lower case) to printed bonus.
     pub skill_bonuses: Vec<(String, i32)>,
+    /// Saving throws, senses, languages and damage and condition lines.
+    pub lines: StatLines,
     pub traits: Vec<CompanionFeature>,
     pub actions: Vec<CompanionFeature>,
     pub reactions: Vec<CompanionFeature>,
@@ -123,6 +126,7 @@ pub fn monster_block(m: &MonsterData) -> CompanionBlock {
             speed(m.speed.burrow),
         ],
         skill_bonuses: m.skills.iter().map(|(k, v)| (k.to_string(), *v)).collect(),
+        lines: monster_lines(m),
         traits: m.traits.iter().map(feature).collect(),
         actions: m.actions.iter().map(feature).collect(),
         reactions: m.reactions.iter().map(feature).collect(),
@@ -185,15 +189,17 @@ pub fn element_block(el: &Element, lookup: &dyn Fn(&str) -> Option<Element>) -> 
     let text = |name: &str| el.setter_value(name).unwrap_or_default();
     let dex = text("dexterity").trim().parse().unwrap_or(DEFAULT_SCORE);
     let speed = text("speed");
+    let proficiency = text("proficiency")
+        .trim()
+        .parse()
+        .unwrap_or_else(|_| proficiency_for_challenge(text("challenge")));
     CompanionBlock {
-        proficiency: text("proficiency")
-            .trim()
-            .parse()
-            .unwrap_or_else(|_| proficiency_for_challenge(text("challenge"))),
+        proficiency,
         initiative: modifier(dex),
         build: build_line(text("size"), text("type"), text("alignment")),
         speeds: ["fly", "climb", "swim", "burrow"].map(|k| printed_speed(speed, k)),
         skill_bonuses: printed_skills(text("skills")),
+        lines: element_lines(el, proficiency),
         traits: linked(el, "traits", lookup),
         actions: linked(el, "actions", lookup),
         reactions: linked(el, "reactions", lookup),

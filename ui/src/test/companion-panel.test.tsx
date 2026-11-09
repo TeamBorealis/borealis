@@ -12,6 +12,7 @@ const base: CompanionState = {
   abilities: { str: 14, dex: 12, con: 10, int: 2, wis: 10, cha: 6 },
   proficiency: 2, initiative: 1, build: "Medium beast, unaligned", flySpeed: 0, climbSpeed: 30, swimSpeed: 0, burrowSpeed: 0,
   skills: [{ name: "Perception", ability: "WIS", bonus: 2 }], passivePerception: 12,
+  saves: [{ name: "Strength", ability: "STR", bonus: 2 }], senses: "", languages: "—", defenses: [],
   traits: [{ name: "Keen Hearing", text: "Advantage on hearing checks." }], actions: [{ name: "Bite", text: "Melee attack." }], reactions: [],
 };
 

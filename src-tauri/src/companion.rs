@@ -125,6 +125,15 @@ pub fn companion(input: &MapInput<'_>, snap: &Engine) -> Option<CompanionState> 
 pub fn sheet_block(c: &CompanionState) -> Option<borealis_sheet::CompanionSheet> {
     use borealis_sheet::{CompanionEntry, CompanionSheet, CompanionSkillLine};
     let creature = c.creature.as_ref()?;
+    let lines = |v: &[crate::content_dto::CompanionSkill]| -> Vec<CompanionSkillLine> {
+        v.iter()
+            .map(|s| CompanionSkillLine {
+                name: s.name.clone(),
+                ability: s.ability.clone(),
+                bonus: s.bonus,
+            })
+            .collect()
+    };
     let entries = |v: &[crate::content_dto::CompanionFeature]| -> Vec<CompanionEntry> {
         v.iter()
             .map(|f| CompanionEntry {
@@ -149,16 +158,12 @@ pub fn sheet_block(c: &CompanionState) -> Option<borealis_sheet::CompanionSheet>
         speed: c.speed,
         other_speeds: [c.fly_speed, c.climb_speed, c.swim_speed, c.burrow_speed],
         abilities: [a.str, a.dex, a.con, a.int, a.wis, a.cha],
-        skills: c
-            .skills
-            .iter()
-            .map(|s| CompanionSkillLine {
-                name: s.name.clone(),
-                ability: s.ability.clone(),
-                bonus: s.bonus,
-            })
-            .collect(),
+        skills: lines(&c.skills),
         passive_perception: c.passive_perception,
+        saves: lines(&c.saves),
+        defenses: entries(&c.defenses),
+        senses: c.senses.clone(),
+        languages: c.languages.clone(),
         traits: entries(&c.traits),
         actions: entries(&c.actions),
         reactions: entries(&c.reactions),
@@ -221,6 +226,10 @@ mod tests {
             burrow_speed: 0,
             skills: Vec::new(),
             passive_perception: 10,
+            saves: Vec::new(),
+            senses: String::new(),
+            languages: String::new(),
+            defenses: Vec::new(),
             traits: Vec::new(),
             actions: Vec::new(),
             reactions: Vec::new(),

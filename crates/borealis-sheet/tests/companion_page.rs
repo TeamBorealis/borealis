@@ -35,6 +35,21 @@ fn hound(entries: usize) -> CompanionSheet {
             bonus: 3,
         }],
         passive_perception: 13,
+        saves: ["Strength", "Dexterity", "Constitution"]
+            .iter()
+            .zip([1, 4, 1])
+            .map(|(name, bonus)| CompanionSkillLine {
+                name: (*name).into(),
+                ability: name[..3].to_uppercase(),
+                bonus,
+            })
+            .collect(),
+        defenses: vec![CompanionEntry {
+            name: "Damage Resistances".into(),
+            text: "Zqresist".into(),
+        }],
+        senses: "Darkvision 60 ft.".into(),
+        languages: "Zqspeech".into(),
         traits: (0..entries).map(|i| entry("trait", i)).collect(),
         actions: (0..entries).map(|i| entry("act", i)).collect(),
         reactions: Vec::new(),
@@ -79,6 +94,11 @@ fn companion_page_prints_the_stat_block_in_both_editions() {
         for want in [
             "Synthetic Hound",
             "Statistics",
+            "Saving Throws",
+            "+4 Dexterity",
+            "Damage Resistances Zqresist",
+            "Senses Darkvision 60 ft.",
+            "Languages Zqspeech",
             "Skills",
             "Traits",
             "Actions",
@@ -120,6 +140,8 @@ fn html_preview_has_a_companion_page() {
         render_html_with(&c, &s, &SheetOptions::default(), &content(Some(hound(1)))).expect("html");
     assert!(html.contains("Synthetic Hound"));
     assert!(html.contains("companion.stats"));
+    assert!(html.contains("companion.saves"));
+    assert!(html.contains("Senses Darkvision 60 ft."));
     // The scores are ability cards (sigil, modifier, score), not text lines.
     assert!(html.contains("data-field=\"companion.dex.score\""));
     assert!(html.contains("data-field=\"companion.cha.mod\""));

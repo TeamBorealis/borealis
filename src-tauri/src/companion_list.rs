@@ -6,6 +6,7 @@
 
 use crate::companion::{creature_block, creature_stats};
 use crate::companion_block;
+use crate::companion_stat_lines;
 use crate::content_dto::{CompanionFeature, CompanionState};
 use crate::dto::{AbilityRecord, ElementRef};
 use crate::extras::ui_extras;
@@ -55,6 +56,7 @@ fn state_of(input: &MapInput<'_>, p: Parts<'_>) -> CompanionState {
         .map(|e| creature_block(e, input))
         .unwrap_or_default();
     let skills = companion_block::skills(&block, &stats.abilities);
+    let saves = companion_stat_lines::saves(&block.lines, &stats.abilities);
     let custom_traits = features(p.edits);
     let edits = p.edits;
     let (armor_class, armor_class_note) = with_bonus(
@@ -93,6 +95,10 @@ fn state_of(input: &MapInput<'_>, p: Parts<'_>) -> CompanionState {
         burrow_speed: block.speeds[3],
         passive_perception: companion_block::passive_perception(&skills),
         skills,
+        saves,
+        senses: block.lines.senses,
+        languages: block.lines.languages,
+        defenses: block.lines.defenses,
         traits: block
             .traits
             .into_iter()

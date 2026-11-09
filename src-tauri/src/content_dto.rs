@@ -310,6 +310,14 @@ pub struct CompanionState {
     pub burrow_speed: i32,
     pub skills: Vec<CompanionSkill>,
     pub passive_perception: i32,
+    /// The six saving throws, STR to CHA (`name` is the ability, `ability` its abbreviation).
+    pub saves: Vec<CompanionSkill>,
+    /// Special senses as printed (`Darkvision 60 ft.`); empty when the creature has none.
+    pub senses: String,
+    /// Languages as printed (an em dash when the creature has none).
+    pub languages: String,
+    /// Damage and condition lines (`Damage Resistances`: `Poison`), in stat block order.
+    pub defenses: Vec<CompanionFeature>,
     /// The creature's traits, then the user's own (`custom_traits`).
     pub traits: Vec<CompanionFeature>,
     pub actions: Vec<CompanionFeature>,
@@ -324,7 +332,7 @@ pub struct CompanionState {
     pub speed_bonus: i32,
 }
 
-/// One companion skill line: name, key ability abbreviation and signed bonus.
+/// One companion skill or saving throw line: name, key ability abbreviation and signed bonus.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompanionSkill {

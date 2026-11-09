@@ -119,7 +119,7 @@ fn companion_portrait(o: &HtmlOptions) -> String {
     }
 }
 
-/// Companion page: the stat block regions in two columns (statistics and skills left, the
+/// Companion page: the stat block regions in two columns (statistics, saving throws and skills left, the
 /// creature's traits, actions and reactions right), the portrait box on top of the left column.
 /// `None` without a stat block, even when a portrait is set.
 pub(super) fn companion_page(d: &SheetData, o: &HtmlOptions) -> Option<String> {
@@ -131,7 +131,7 @@ pub(super) fn companion_page(d: &SheetData, o: &HtmlOptions) -> Option<String> {
     };
     let (mut left, mut right) = (portrait, String::new());
     for (i, title, text) in c.regions_for(false) {
-        let col = if matches!(i, "companion.stats" | "companion.skills") {
+        let col = if crate::CompanionSheet::in_left_column(i) {
             &mut left
         } else {
             &mut right

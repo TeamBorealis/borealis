@@ -13,10 +13,10 @@ pub struct CompanionEntry {
     pub text: String,
 }
 
-/// One skill line.
+/// One skill or saving throw line.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct CompanionSkillLine {
-    /// Skill name.
+    /// Skill or ability name ("Perception", "Dexterity").
     pub name: String,
     /// Key ability abbreviation ("DEX").
     pub ability: String,
@@ -49,10 +49,18 @@ pub struct CompanionSheet {
     pub other_speeds: [i32; 4],
     /// STR, DEX, CON, INT, WIS, CHA scores.
     pub abilities: [i32; 6],
+    /// The six saving throws, STR to CHA (empty: no section).
+    pub saves: Vec<CompanionSkillLine>,
     /// Skills the stat block lists.
     pub skills: Vec<CompanionSkillLine>,
     /// Passive Perception.
     pub passive_perception: i32,
+    /// Damage and condition lines (`Damage Resistances`: `Poison`), in stat block order.
+    pub defenses: Vec<CompanionEntry>,
+    /// Special senses as printed (`Darkvision 60 ft.`); empty when the creature has none.
+    pub senses: String,
+    /// Languages as printed (empty: no line).
+    pub languages: String,
     /// Traits.
     pub traits: Vec<CompanionEntry>,
     /// Actions.
@@ -60,6 +68,10 @@ pub struct CompanionSheet {
     /// Reactions.
     pub reactions: Vec<CompanionEntry>,
 }
+
+/// Regions printed in the left column (statistics, saving throws, skills); the creature's
+/// traits, actions and reactions go in the right one.
+const LEFT_REGIONS: [&str; 3] = ["companion.stats", "companion.saves", "companion.skills"];
 
 /// `+2` / `−1` / `+0`.
 #[must_use]
@@ -141,7 +153,33 @@ impl CompanionSheet {
             lines.push((0..3).map(score).collect::<Vec<_>>().join("   "));
             lines.push((3..6).map(score).collect::<Vec<_>>().join("   "));
         }
+        // The lines Aurora's companion page prints after the saves and skills: damage and
+        // condition lines, Senses (only when the creature has some) and Languages.
+        for d in &self.defenses {
+            lines.push(format!("{} {}", d.name, d.text.trim()));
+        }
+        for (label, text) in [("Senses", &self.senses), ("Languages", &self.languages)] {
+            if !text.trim().is_empty() {
+                lines.push(format!("{label} {}", text.trim()));
+            }
+        }
         lines.join("\n")
+    }
+
+    /// The saving throws text, one per line (`+4 Dexterity`); empty without saves.
+    #[must_use]
+    pub fn saves_text(&self) -> String {
+        self.saves
+            .iter()
+            .map(|s| format!("{} {}", signed(s.bonus), s.name))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    /// Whether the region `id` goes in the page's left column.
+    #[must_use]
+    pub fn in_left_column(id: &str) -> bool {
+        LEFT_REGIONS.contains(&id)
     }
 
     /// The skills text, ending with Passive Perception.
@@ -183,6 +221,7 @@ impl CompanionSheet {
                 "Statistics",
                 self.stats_lines(scores_in_text),
             ),
+            ("companion.saves", "Saving Throws", self.saves_text()),
             ("companion.skills", "Skills", self.skills_text()),
             (
                 "companion.traits",
@@ -261,6 +300,81 @@ mod tests {
         assert_eq!(
             ids,
             ["companion.stats", "companion.skills", "companion.traits"]
+        );
+    }
+
+    fn cat() -> CompanionSheet {
+        let save = |name: &str, ability: &str, bonus: i32| CompanionSkillLine {
+            name: name.into(),
+            ability: ability.into(),
+            bonus,
+        };
+        CompanionSheet {
+            saves: vec![
+                save("Strength", "STR", -4),
+                save("Dexterity", "DEX", 4),
+                save("Constitution", "CON", 0),
+                save("Intelligence", "INT", -4),
+                save("Wisdom", "WIS", 1),
+                save("Charisma", "CHA", -2),
+            ],
+            senses: "Darkvision 60 ft.".into(),
+            languages: "\u{2014}".into(),
+            defenses: vec![CompanionEntry {
+                name: "Damage Resistances".into(),
+                text: "Poison".into(),
+            }],
+            actions: vec![CompanionEntry {
+                name: "Scratch".into(),
+                text: "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Slashing damage.".into(),
+            }],
+            ..hound()
+        }
+    }
+
+    #[test]
+    fn saving_throws_get_their_own_section_after_the_statistics() {
+        let c = cat();
+        assert_eq!(
+            c.saves_text(),
+            "\u{2212}4 Strength\n+4 Dexterity\n+0 Constitution\n\u{2212}4 Intelligence\n+1 Wisdom\n\u{2212}2 Charisma"
+        );
+        let ids: Vec<_> = c.regions().iter().map(|r| r.0).collect();
+        assert_eq!(
+            ids,
+            [
+                "companion.stats",
+                "companion.saves",
+                "companion.skills",
+                "companion.traits",
+                "companion.actions"
+            ]
+        );
+        assert!(CompanionSheet::in_left_column("companion.saves"));
+        assert!(!CompanionSheet::in_left_column("companion.actions"));
+    }
+
+    #[test]
+    fn statistics_end_with_defenses_senses_and_languages() {
+        let t = cat().stats_text();
+        assert!(
+            t.ends_with("Damage Resistances Poison\nSenses Darkvision 60 ft.\nLanguages \u{2014}"),
+            "{t}"
+        );
+        // No senses: no Senses line (the stat block prints none either).
+        let t = hound().stats_text();
+        assert!(!t.contains("Senses"), "{t}");
+    }
+
+    #[test]
+    fn a_familiars_actions_are_still_listed() {
+        // Find Familiar says the familiar can't attack, but Aurora's companion page lists the
+        // creature's actions all the same (U7), so the sheet keeps them.
+        let regions = cat().regions();
+        let actions = regions.iter().find(|r| r.0 == "companion.actions");
+        assert_eq!(
+            actions.map(|r| r.2.as_str()),
+            Some("Scratch. Melee Attack Roll: +4, reach 5 ft. Hit: 1 Slashing damage.")
         );
     }
 }
