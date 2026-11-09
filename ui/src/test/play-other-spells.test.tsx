@@ -34,4 +34,15 @@ describe("Play: Other Spells", () => {
     expect(screen.queryByText(/Save DC/)).toBeNull();
     expect(screen.queryByRole("button", { name: /^Cast Faerie Fire/ })).toBeNull();
   });
+
+  it("lists a feat's spells picked with no casting ability (U19), named after the option that picked them", () => {
+    const feat: ClassSpellcasting = {
+      ...block, spells: [spell("ID_T_STRIKE", "True Strike", 0, "Wizard"), spell("ID_T_FAMILIAR", "Find Familiar", 1, "Wizard")],
+    };
+    render(<CasterCard c={feat} play={play} selectedId={null} onSelect={() => undefined} />);
+    expect(screen.getByRole("button", { name: "True Strike, description" })).toBeTruthy();
+    expect(screen.getAllByText("(Wizard)")).toHaveLength(2);
+    expect(screen.queryByText("Spell attack")).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Cast Find Familiar/ })).toBeNull();
+  });
 });

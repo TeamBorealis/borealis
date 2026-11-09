@@ -433,13 +433,14 @@ fn size_word_shrinks_to_fit_its_cell() {
     );
 }
 
-/// #38: the block of spells a feat picks with no casting ability (Aurora-format content) prints
-/// its spells, with blank modifier, DC and attack boxes to fill in, never a made-up 0.
+/// A block with no casting ability (an item's spells when the content names none; since U19 a
+/// feat's picks without an ability go to Other Spells instead) prints its spells, with blank
+/// modifier, DC and attack boxes to fill in, never a made-up 0.
 #[test]
 fn a_block_without_a_casting_ability_lists_its_spells_with_blank_dc_and_attack() {
     let (character, mut snap) = wizard_2024();
     let mut block = snap.spellcasting[0].clone();
-    block.name = "Spark Initiate".into();
+    block.name = "Staff of Sparks".into();
     block.ability = String::new();
     block.dc = 0;
     block.attack = 0;
@@ -453,7 +454,7 @@ fn a_block_without_a_casting_ability_lists_its_spells_with_blank_dc_and_attack()
     snap.spellcasting.push(block);
     let d = data(&(character, snap));
     let html = render_sheet(&d, &HtmlOptions::default());
-    assert!(html.contains("Spark Initiate"));
+    assert!(html.contains("Staff of Sparks"));
     for part in ["mod", "dc", "attack"] {
         assert!(
             html.contains(&format!("data-field=\"spell.2.{part}\"></span>")),
@@ -504,6 +505,31 @@ fn other_spells_block(
         s.granted_by = Some(g);
     }
     block
+}
+
+/// U19: a feat's spells picked with no casting ability print in Other Spells, named after the
+/// element holding the select as Aurora names them (a feat's spell list option, `Wizard`).
+#[test]
+fn feat_picks_without_an_ability_print_in_other_spells_named_after_their_option() {
+    let (character, mut snap) = wizard_2024();
+    let mut block = other_spells_block(&snap);
+    for s in &mut block.spells {
+        s.granted_by = Some(borealis_engine::snapshot::SpellGrant {
+            name: "Wizard".into(),
+            ty: "Feat Feature".into(),
+            granted_by: Some("Spark Initiate".into()),
+            class_name: None,
+        });
+    }
+    let cantrip = block.spells[0].name.clone();
+    snap.spellcasting.push(block);
+    let d = data(&(character, snap));
+    let other = d.spellcasting.casters.last().unwrap();
+    assert!(other.other);
+    assert_eq!(other.cantrips[0].name, format!("{cantrip} (Wizard)"));
+    let html = render_sheet(&d, &HtmlOptions::default());
+    assert!(html.contains(&format!("{cantrip} (Wizard)")));
+    assert!(!html.contains("Spark Initiate"));
 }
 
 /// The class of the pip span carrying `id`.

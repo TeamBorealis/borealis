@@ -71,7 +71,7 @@ export function CasterCard({ c, play, selectedId, onSelect }: { c: ClassSpellcas
   const levels = [...new Set(ready.map((x) => x.level))].sort((a, b) => a - b);
   return (
     <Expander title={c.other ? c.className : `${c.className} spells`} headerExtra={<span>{ready.length}</span>}>
-      {/* #38: a block without a casting ability (a feat's spells in Aurora-format content) has no attack or DC to show */}
+      {/* a block without a casting ability (an item's spells when the content names none) has no attack or DC to show */}
       {c.ability && (
         <ul className="v5-list" aria-label={`${c.className} spellcasting`}>
           <li className="v5-line pr-line">

@@ -11,7 +11,9 @@
 //!
 //! Borealis builds the same section as one last block, [`OTHER_SPELLS`], marked
 //! [`SpellcastingSnapshot::other`]: every live spell no earlier block lists (a class, an item, a
-//! feat or species block). Its spells are known (Play lists them), not prepared, and have no
+//! feat or species block). A feat's or species' spells picked with no spellcasting name and no
+//! ability to be found have no block (U19), so they land here too, named after the element
+//! holding the select, as Aurora names them. Its spells are known (Play lists them), not prepared, and have no
 //! slots. The sheet prints it only beside another block (Aurora prints no spellcasting page for a
 //! character without a spellcasting class), and the spell cards list its spells.
 

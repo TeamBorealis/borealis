@@ -21,11 +21,13 @@
 //!   option takes the owner's last word (`Infernal` of Fiendish Legacy -> `Infernal Legacy`,
 //!   the SRD's "Infernal legacy"). A spell another trait grants with the same parameter
 //!   (Tiefling Otherworldly Presence: Thaumaturgy) joins that block.
-//! - spells picked with no spellcasting name and no ability at all (Aurora-format feats pick
+//! - spells picked with no spellcasting name and no ability field (Aurora-format feats pick
 //!   theirs in `Cantrip (Magic Initiate)` selects, #38): one block named in the select's
-//!   parentheses (`Magic Initiate`), else after the owner, so the sheet, the spell cards and Play
-//!   list them; its ability is the owner's when it has one, else none (no DC). Spells *granted*
-//!   that way (Aurora's invocations, disciplines, totem rituals) get no block, as before.
+//!   parentheses (`Magic Initiate`), else after the owner, **only when the owner names an
+//!   ability** (U19), so the block has a real save DC and attack bonus. Without one the spells
+//!   join Aurora's "Other Spells" (`other_spells`), named with their source, as Aurora prints
+//!   them; no block with blank DC boxes is made. Spells *granted* that way (Aurora's
+//!   invocations, disciplines, totem rituals) get no block either.
 
 use crate::custom_rules::{param_key, X_SPELL_ABILITY};
 use crate::graph::{Graph, Node, NodeId, Origin};
@@ -165,13 +167,14 @@ pub(crate) fn block_name(graph: &Graph<'_>, owner: NodeId, class: &str) -> Strin
 /// (Aurora-format feats: `<select type="Spell" name="Cantrip (Magic Initiate)">`): the name in
 /// the select's closing parentheses (`Magic Initiate`), else the owner's name; a name a block
 /// already carries falls back to the owner's name. The ability is the owner's (or its parent's)
-/// element ability when it has one (see [`element_ability`]), else none (a block without a DC).
+/// element ability (see [`element_ability`]); without one there is no block (U19): the spell
+/// is left to Aurora's "Other Spells" (`other_spells::add_other_spells`).
 fn unlabelled_block(
     graph: &Graph<'_>,
     parent: NodeId,
     spell: &Node<'_>,
     taken: &[SpellcastingSnapshot],
-) -> Option<(String, Option<String>)> {
+) -> Option<(String, String)> {
     let owner = &graph.nodes[parent];
     let owner_name = owner.e.el.name.trim().to_string();
     let from_select = match spell.origin {
@@ -193,7 +196,7 @@ fn unlabelled_block(
         return None;
     }
     let ability = element_ability(graph, parent)
-        .or_else(|| owner.parent.and_then(|p| element_ability(graph, p)));
+        .or_else(|| owner.parent.and_then(|p| element_ability(graph, p)))?;
     Some((name, ability))
 }
 
@@ -243,7 +246,7 @@ pub fn add_granted_blocks(graph: &Graph<'_>, stats: &StatSet, out: &mut Vec<Spel
             None => {
                 let Some(field) = grant_ability_field(graph, n) else {
                     if let Some((name, ability)) = unlabelled_block(graph, parent, n, out) {
-                        add_to(&mut pending, name, ability, id);
+                        add_to(&mut pending, name, Some(ability), id);
                     }
                     continue;
                 };
