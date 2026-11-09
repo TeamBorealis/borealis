@@ -53,6 +53,8 @@ fn next_item_uid(state: &CharacterState) -> u32 {
 }
 
 /// Take a starting-equipment option: its items join the inventory and its coins the purse.
+/// [`BUY_OWN`](crate::packages::BUY_OWN) declines the package instead ("I'll buy my own"): nothing
+/// is added, and an option can still be taken later.
 ///
 /// # Errors
 /// [`CommandError::UnknownElement`] for a package the character is not offered,
@@ -75,6 +77,13 @@ pub fn choose_equipment_package(
             "{} was already taken as option {done}",
             pkg.name
         )));
+    }
+    if option == crate::packages::BUY_OWN {
+        let mut next = state.clone();
+        next.play
+            .equipment_choices
+            .insert(package.to_string(), option.to_string());
+        return Ok(CommandOutcome::new(next));
     }
     let opt = pkg
         .options

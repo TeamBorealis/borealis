@@ -296,6 +296,39 @@ fn d_fighter_starting_package_a_populates_inventory() {
     assert!(commands::choose_equipment_package(engine(), &h.s, pkg, "B").is_err());
 }
 
+/// Tester B3 (TV2): "I'll buy my own" closes a starting-equipment package without items or coins;
+/// the package stays offered, so an option can still be taken later, and then it is no longer
+/// declined. A taken package cannot be declined.
+#[test]
+fn d_buying_your_own_declines_a_package_and_leaves_it_takeable() {
+    use borealis_engine::packages::BUY_OWN;
+    let mut h = Hero::new(DWARF, "ID_2024_CLASS_FIGHTER", "Fighter");
+    let pkg = "ID_2024_EQUIPMENT_PACKAGE_CLASS_FIGHTER";
+    let find = |snap: &CharacterSnapshot| {
+        snap.equipment_packages
+            .iter()
+            .find(|p| p.package == pkg)
+            .cloned()
+            .expect("fighter package")
+    };
+    assert!(!find(&h.snap()).declined);
+    let before = h.s.inventory.clone();
+    h.s = commands::choose_equipment_package(engine(), &h.s, pkg, BUY_OWN)
+        .expect("decline")
+        .state;
+    assert_eq!(h.s.inventory, before, "declining adds nothing");
+    let declined = find(&h.snap());
+    assert!(declined.declined);
+    assert_eq!(declined.chosen, None);
+    h.s = commands::choose_equipment_package(engine(), &h.s, pkg, "A")
+        .expect("take A after declining")
+        .state;
+    let taken = find(&h.snap());
+    assert_eq!(taken.chosen.as_deref(), Some("A"));
+    assert!(!taken.declined);
+    assert!(commands::choose_equipment_package(engine(), &h.s, pkg, BUY_OWN).is_err());
+}
+
 /// Second Wind heals 1d10 + Fighter level; the note carries the computed number.
 #[test]
 fn d_second_wind_note_uses_fighter_level() {

@@ -147,3 +147,4 @@
 .eq-invgrid td .ap-name { line-height: 18px; display: inline-block; vertical-align: top; }
 .eq-invgrid tbody tr:first-child td { height: 19.5px; }
 .eq-invgrid th { padding-bottom: 3px; }
+.pkg-actions { display: inline-flex; flex-wrap: wrap; gap: 6px; }

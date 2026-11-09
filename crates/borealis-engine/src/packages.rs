@@ -9,6 +9,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 
+/// The option label that declines a package ("I'll buy my own", tester B3): it is stored like a
+/// taken option but gives nothing, and leaves the package open to an option later.
+pub const BUY_OWN: &str = "none";
+
 /// One item of a package option.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PackageItem {
@@ -46,6 +50,9 @@ pub struct EquipmentPackageSnapshot {
     pub options: Vec<PackageOption>,
     /// The option already taken.
     pub chosen: Option<String>,
+    /// Declined with "I'll buy my own" ([`BUY_OWN`]) and no option taken since.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub declined: bool,
 }
 
 fn coins_of(v: Option<&Value>) -> Coins {
@@ -128,12 +135,15 @@ pub fn packages(
             continue;
         }
         let Some(pkg) = uni.get(pid) else { continue };
+        let stored = chosen.get(pid);
+        let declined = stored.is_some_and(|o| o == BUY_OWN);
         out.push(EquipmentPackageSnapshot {
             package: pid.to_string(),
             name: l.str("name").unwrap_or(&pkg.el.name).to_string(),
             owner: l.el.name.clone(),
             options: options_of(uni, &pkg.el.data),
-            chosen: chosen.get(pid).cloned(),
+            chosen: stored.filter(|_| !declined).cloned(),
+            declined,
         });
     }
     out

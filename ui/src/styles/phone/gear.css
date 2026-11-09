@@ -112,3 +112,8 @@ html.phone .eq-load .resource-row { min-height: var(--ph-row); padding: 8px 0; f
 /* U12: the override toggle is a full touch target on phones. */
 html.phone .eq-override { display: flex; }
 html.phone .eq-override-toggle { min-height: var(--ph-hit); }
+
+/* Tester B3 (B-129): the starting-equipment chooser on top of Gear > Equipment while a package is open. */
+html.phone .eq-start-wrap { padding: 12px var(--ph-gutter) 0; }
+html.phone .pkg-actions { display: flex; gap: 8px; }
+html.phone .pkg-actions .btn { flex: 1 1 0; min-height: var(--ph-hit); }

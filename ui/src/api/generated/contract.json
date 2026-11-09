@@ -8502,6 +8502,12 @@
       "k": "prim"
      }
     },
+    "declined": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "name": {
      "opt": false,
      "t": {

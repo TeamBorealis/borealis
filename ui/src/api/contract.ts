@@ -287,6 +287,7 @@ export interface ApiMethods {
   chooseWeaponMasteries(args: Cid & { weaponIds: string[] }): Promise<CharacterSnapshot>;
   setWildShapeForms(args: Cid & { formIds: string[] }): Promise<CharacterSnapshot>;
   /** Takes starting-equipment option `option` ("A", "B", ...) of a package from `play.equipmentPackages`. */
+  /** `option` "none" declines the package ("I'll buy my own"): nothing is added, and an option can still be taken later. */
   chooseEquipmentPackage(args: Cid & { packageId: string; option: string }): Promise<CharacterSnapshot>;
 
   /* Equipment */

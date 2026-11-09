@@ -106,6 +106,8 @@ export interface PlayEquipmentPackage {
   owner: string;
   /** Option id already taken (A/B/C); null until chosen. */
   chosen: string | null;
+  /** Declined with "I'll buy my own" (option `"none"`) and no option taken since; absent when false. */
+  declined?: boolean;
   options: PackageOption[];
 }
 

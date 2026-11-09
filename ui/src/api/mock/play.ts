@@ -77,7 +77,8 @@ export function buildPlay(c: MockCharacter, sc: SpellcastingState, conMod = 0, h
     initiativeAdvantage: false, notes: [{ kind: "note", text: "Mock note.", source: "Mock class" }], carry: null,
     wildShape: buildWildShape(c),
     equipmentPackages: [{
-      package: "Mock starting equipment", name: "Mock starting equipment", owner: "Mock class", chosen: p.packages["Mock starting equipment"] ?? null,
+      package: "Mock starting equipment", name: "Mock starting equipment", owner: "Mock class",
+      ...packageChoice(p.packages["Mock starting equipment"]),
       options: [
         { id: "A", items: [{ id: null, name: "Longsword", qty: 1, note: null }, { id: null, name: "Shield", qty: 1, note: null }], coins: zeroCoins },
         { id: "B", items: [{ id: null, name: "Greataxe", qty: 1, note: null }], coins: { ...zeroCoins, gp: 10 } },
@@ -205,8 +206,13 @@ export function setForms(c: MockCharacter, forms: string[]): MockCharacter {
   return withPlay(c, (p) => ({ ...p, forms }));
 }
 
+/** As the host: "none" ("I'll buy my own") declines a package and leaves it open to an option. */
+const packageChoice = (stored: string | undefined): { chosen: string | null; declined?: boolean } =>
+  stored === "none" ? { chosen: null, declined: true } : { chosen: stored ?? null };
+
 export function choosePackage(c: MockCharacter, pkg: string, option: string): MockCharacter {
-  if (playOf(c).packages[pkg]) throw apiError("requirement_failed", `${pkg} was already taken.`);
+  const stored = playOf(c).packages[pkg];
+  if (stored && stored !== "none") throw apiError("requirement_failed", `${pkg} was already taken.`);
   return withPlay(c, (p) => ({ ...p, packages: { ...p.packages, [pkg]: option } }));
 }
 
