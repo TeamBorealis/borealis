@@ -67,7 +67,7 @@ html.phone .pick-list.with-desc .pick-desc { display: none; }
  * A1 / TV1: the ring is its own 44 pt button on the trailing edge that chooses the row (a tap on the name describes it).
  */
 html.phone .pick-mark {
-  position: relative; flex: none; align-self: center; width: var(--ph-hit); height: var(--ph-hit); margin: 0 4px 0 -4px; padding: 0;
+  position: relative; flex: none; align-self: stretch; width: var(--ph-hit); min-height: var(--ph-hit); height: auto; margin: 0; padding: 0;
   border: 0; border-radius: var(--ph-r-pill); background: none; cursor: pointer; transition: background var(--ph-d-press) var(--ph-ease-out);
 }
 html.phone .pick-mark:active:not([aria-disabled="true"]) { background: var(--ph-fill); }
