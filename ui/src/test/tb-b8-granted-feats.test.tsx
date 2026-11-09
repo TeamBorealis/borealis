@@ -11,8 +11,8 @@ import { renderApp, seededId } from "./utils";
 // it lists granted feats read-only ("Magic Initiate (Cleric), from Acolyte"); since U24 desktop lists them too.
 const feat = (over: Partial<PlayFeature>): PlayFeature =>
   ({ id: "ID_T_FEAT_MI", name: "Magic Initiate", ty: "Feat", source: "SRD", level: 1, grantedBy: "Acolyte", description: "<p>Two cantrips and a spell.</p>", displayed: true, ...over });
-const miSlot = (_over: Partial<SelectionSlot>): SelectionSlot =>
-  ({ id: "mi-ability", tab: "feats", title: "Spellcasting Ability", groupLabel: "Magic Initiate (Cleric)", elementType: "list", chosen: { id: "1", name: "Wisdom", type: "list" }, locked: false, required: true, ordinal: 1, of: 1 }) as unknown as SelectionSlot & typeof _over;
+const miSlot = (over: Partial<SelectionSlot>): SelectionSlot =>
+  ({ id: "mi-ability", tab: "feats", title: "Spellcasting Ability", groupLabel: "Magic Initiate (Cleric)", elementType: "list", chosen: { id: "1", name: "Wisdom", type: "list" }, locked: false, required: true, ordinal: 1, of: 1, ...over }) as unknown as SelectionSlot;
 
 /** The character's feats: Magic Initiate from its background, and Tough chosen in a feat slot. */
 class GrantedApi extends MockApi {

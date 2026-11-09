@@ -126,7 +126,7 @@ export function CompendiumBrowser({ initialQuery = "", initialSource = "", initi
     if (rules) return { total: 0, rows: [] };
     const page = await api.searchCompendium({ query: { query: "", types, sources, ruleset, limit, offset: 0 } });
     return { total: page.total, rows: page.items.map(rowOfElement) };
-  }, [api, q, scope, type, source, ruleset, limit, builds]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [api, q, scope, type, source, ruleset, limit, builds]);
   const rows = results.data?.rows ?? [];
   const preferred: Ruleset = snapshot?.ruleset ?? settings.defaultRuleset;
   const typeLabel = (t: string) => (t === "rules" ? RULES_GROUP : facets.data?.types.find((x) => x.id === t)?.label ?? t);

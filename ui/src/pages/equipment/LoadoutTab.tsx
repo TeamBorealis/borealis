@@ -150,7 +150,7 @@ export function LoadoutTab() {
   const slotKey = snapshot ? JSON.stringify([slots.map((s) => [s.id, s.chosen?.id ?? ""]), snapshot.ruleset, snapshot.sourceRestrictions]) : "";
   const weapons = useAsync(
     () => (capacity > 0 && id ? masteryOptions(api, id, slots) : Promise.resolve([] as ElementSummary[])),
-    [api, capacity, id, slotKey], // eslint-disable-line react-hooks/exhaustive-deps
+    [api, capacity, id, slotKey],
   );
   if (!snapshot) return null;
   const { play } = snapshot;
