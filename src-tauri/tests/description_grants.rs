@@ -5,6 +5,7 @@ use borealis_lib::state::{AppPaths, AppState};
 use std::path::PathBuf;
 
 const ACOLYTE: &str = "ID_2024_BACKGROUND_ACOLYTE";
+const BARBARIAN: &str = "ID_2024_CLASS_BARBARIAN";
 
 fn app() -> (tempfile::TempDir, AppState) {
     borealis_engine::invariants::enable_for_thread();
@@ -66,9 +67,53 @@ fn grants_name_custom_feat_and_package_rules() {
         "Religion",
     ] {
         assert!(
-            acolyte.grants.iter().any(|g| g == wanted),
+            acolyte.grants.iter().any(|g| g.name == wanted),
             "{wanted} in {:?}",
             acolyte.grants
         );
     }
+}
+
+#[test]
+fn class_grants_do_not_repeat_multiclass_rules() {
+    // A6: the Barbarian's card listed its multiclass node's grants after its own: a bare
+    // "Multiclass" line and the Martial Weapons and Shields proficiencies a second time.
+    let (_d, app) = app();
+    let barbarian = app.get_element(BARBARIAN).expect("Barbarian");
+    let names: Vec<&str> = barbarian.grants.iter().map(|g| g.name.as_str()).collect();
+    assert!(!names.iter().any(|n| n.contains("Multiclass")), "{names:?}");
+    for once in [
+        "Armor Proficiency (Shields)",
+        "Weapon Proficiency (Martial Weapons)",
+    ] {
+        let found = names
+            .iter()
+            .filter(|n| n.eq_ignore_ascii_case(once))
+            .count();
+        assert_eq!(found, 1, "{once} in {names:?}");
+    }
+}
+
+#[test]
+fn class_grants_carry_the_level_they_come_at() {
+    // A6: the card shows level 1 and folds the rest under "Later levels", so each grant says
+    // its level; an ungated grant (proficiencies, level 1 features) is level 1.
+    let (_d, app) = app();
+    let barbarian = app.get_element(BARBARIAN).expect("Barbarian");
+    let level = |name: &str| {
+        barbarian
+            .grants
+            .iter()
+            .find(|g| g.name == name)
+            .unwrap_or_else(|| panic!("{name} in {:?}", barbarian.grants))
+            .level
+    };
+    assert_eq!(level("Rage"), 1);
+    assert_eq!(level("Reckless Attack"), 2);
+    assert_eq!(level("Primal Champion"), 20);
+    let levels: Vec<u32> = barbarian.grants.iter().map(|g| g.level).collect();
+    assert!(
+        levels.windows(2).all(|w| w[0] <= w[1]),
+        "in level order: {levels:?}"
+    );
 }

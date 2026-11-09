@@ -9,8 +9,7 @@ use crate::gear_info::{category, cost_cp, weapon_properties};
 use crate::ids::{title_case, ui_type};
 use crate::sanitize::sanitize_html;
 use crate::state::AppState;
-use borealis_content::{ContentStore, CustomRule, Element, Rule, Ruleset};
-use serde_json::Value;
+use borealis_content::{ContentStore, Element, Ruleset};
 use std::collections::{BTreeMap, HashSet};
 
 const DEFAULT_PAGE: usize = 50;
@@ -191,7 +190,7 @@ impl AppState {
             summary: summary(&hub.store, el),
             description_html: html,
             facts: facts(el),
-            grants: grants(&hub.store, el),
+            grants: crate::element_grants::grants(&hub.store, el),
         })
     }
 
@@ -362,73 +361,6 @@ pub(crate) fn facts(el: &Element) -> Vec<ElementFact> {
         }
     }
     out
-}
-
-fn name_of(store: &ContentStore, id: &str) -> String {
-    store
-        .element(id)
-        .map_or_else(|| id.to_string(), |e| e.name.clone())
-}
-
-fn grants(store: &ContentStore, el: &Element) -> Vec<String> {
-    let mut out = Vec::new();
-    for rule in el.all_rules() {
-        match rule {
-            Rule::Grant(g) => {
-                let name = name_of(store, &g.id);
-                out.push(
-                    g.level
-                        .filter(|l| *l > 1)
-                        .map_or(name.clone(), |l| format!("{name} (level {l})")),
-                );
-            }
-            Rule::Select(s) => {
-                let n = s.number.unwrap_or(1);
-                let what = if s.name.is_empty() {
-                    s.ty.clone()
-                } else {
-                    s.name.clone()
-                };
-                out.push(format!("Choose {n}: {what}"));
-            }
-            Rule::Custom(c) => out.extend(custom_grant(store, c)),
-            Rule::Stat(_) | Rule::Unknown(_) => {}
-        }
-    }
-    out.dedup();
-    out
-}
-
-/// B9: the custom rules that give the character something to have or to choose, named the way
-/// the builder asks for them ("Magic Initiate (Cleric)", "Choose: Ability Scores (Acolyte)").
-fn custom_grant(store: &ContentStore, c: &CustomRule) -> Option<String> {
-    let text = |key: &str| {
-        c.fields
-            .get(key)
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-    };
-    match c.kind.as_str() {
-        "grant_feat" => {
-            let name = name_of(store, text("feat")?);
-            let params: Vec<&str> = c
-                .fields
-                .get("params")
-                .and_then(Value::as_object)
-                .map(|p| p.values().filter_map(Value::as_str).collect())
-                .unwrap_or_default();
-            Some(if params.is_empty() {
-                name
-            } else {
-                format!("{name} ({})", params.join(", "))
-            })
-        }
-        "ability_distribution" | "equipment_package" => {
-            text("name").map(|n| format!("Choose: {n}"))
-        }
-        _ => None,
-    }
 }
 
 #[cfg(test)]

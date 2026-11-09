@@ -5,6 +5,7 @@ import { useShell } from "../../components/shell/ShellContext";
 import type { Api, ElementDetail } from "../../api/contract";
 import { useApi } from "../../state/ApiContext";
 import { useAsync } from "../../state/useAsync";
+import { DescriptionGrants } from "./DescriptionGrants";
 
 /** Read-aloud via the platform speech engine; absent engines simply disable the button. */
 function useReadAloud() {
@@ -99,7 +100,7 @@ export function DescriptionPane({ elementId, fallback }: { elementId: string | n
           {d.facts.map((f) => <Fragment key={f.label}><p className="desc-line"><i>{f.label}.</i> {f.value}</p></Fragment>)}
         </div>
       )}
-      {d.grants.length > 0 && <><h3 className="desc-h">Grants</h3><ul>{d.grants.map((g) => <li key={g}>{g}</li>)}</ul></>}
+      <DescriptionGrants grants={d.grants} />
       <h3 className="desc-h desc-src-h">Source</h3>
       <p className="desc-line"><button type="button" className="desc-source" onClick={() => openCompendium({ query: d.name, source: d.source })}>{d.sourceName}{d.rulesets.length === 1 ? ` (${d.rulesets[0] === "dnd2024" ? "2024" : "2014"})` : ""}</button></p>
     </PaneShell>

@@ -5845,7 +5845,8 @@
      "t": {
       "k": "array",
       "t": {
-       "k": "prim"
+       "k": "ref",
+       "name": "ElementGrant"
       }
      }
     },
@@ -5947,6 +5948,23 @@
      }
     },
     "value": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ElementGrant": {
+   "k": "object",
+   "props": {
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
      "opt": false,
      "t": {
       "k": "prim"

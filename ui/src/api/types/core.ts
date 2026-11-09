@@ -121,8 +121,16 @@ export interface ElementDetail extends ElementSummary {
   /** Already sanitised by the backend (allow-list); the UI sanitises again defensively. */
   descriptionHtml: string;
   facts: ElementFact[];
-  /** Human-readable list of what choosing this element grants. */
-  grants: string[];
+  /** What choosing this element grants, in level order (A6). */
+  grants: ElementGrant[];
+}
+
+/** One line of a description's Grants list. */
+export interface ElementGrant {
+  /** What is granted or chosen ("Rage", "Choose 2: Skill Proficiency (Barbarian)"). */
+  name: string;
+  /** The character level it comes at (1 when ungated). */
+  level: number;
 }
 
 export interface Page<T> {

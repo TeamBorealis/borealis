@@ -42,6 +42,10 @@
 .desc-source { padding: 0; background: none; border: 0; font: inherit; color: #1e50e6; font-style: italic; text-decoration: underline; text-decoration-color: #1e50e6; text-underline-offset: 2px; cursor: pointer; text-align: left; }
 :root[data-theme="light"] .desc-source { color: #0044aa; text-decoration-color: #0044aa; }
 .desc-pane ul { margin: 0 0 6px; padding-left: 18px; }
+/* A6: a class's later-level grants fold under "Later levels"; each line leads with its level. */
+.desc-grant-lvl { color: var(--gray-5); }
+p.desc-grant-lvl { margin: 0 0 2px; font-style: italic; }
+.desc-later > summary { margin: 4px 0 6px; cursor: pointer; font-weight: 600; color: var(--desc-head); }
 @media (max-width: 899px) {
   .bp-right { border-top: 2px solid var(--highlight); }
   .desc-scroll { overflow: visible; padding: 16px 15px 24px 15px; margin-left: 0; }

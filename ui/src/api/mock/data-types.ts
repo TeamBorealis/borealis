@@ -1,9 +1,9 @@
-import type { AbilityKey, ElementSummary, Ruleset } from "../types";
+import type { AbilityKey, ElementGrant, ElementSummary, Ruleset } from "../types";
 
 export interface MockElement extends ElementSummary {
   description: string;
   facts: { label: string; value: string }[];
-  grants: string[];
+  grants: ElementGrant[];
 }
 
 export interface RaceDef {

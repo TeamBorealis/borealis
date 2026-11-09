@@ -185,8 +185,18 @@ pub struct ElementDetail {
     pub description_html: String,
     /// Fact lines.
     pub facts: Vec<ElementFact>,
-    /// What choosing the element grants.
-    pub grants: Vec<String>,
+    /// What choosing the element grants, in level order.
+    pub grants: Vec<ElementGrant>,
+}
+
+/// One line of a description's Grants list.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ElementGrant {
+    /// What is granted or chosen ("Rage", "Choose 2: Skill Proficiency (Barbarian)").
+    pub name: String,
+    /// The character level it comes at (1 when ungated).
+    pub level: u32,
 }
 
 /// A diagnostic touching a trace.
