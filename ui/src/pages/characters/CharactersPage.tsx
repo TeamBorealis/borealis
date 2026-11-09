@@ -1,7 +1,7 @@
 import { CheckBox } from "../../components/controls";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
-import type { CharacterSummary, OptionDef, RecheckReport } from "../../api/contract";
+import type { CharacterSummary, OptionDef, RecheckEntry, RecheckReport } from "../../api/contract";
 import { Alert, Button, Modal, SearchInput, TextField, useConfirm, useToast } from "../../components";
 import { fileToBase64 } from "../../lib/files";
 import { haptic } from "../../lib/haptics";
@@ -11,6 +11,7 @@ import { usePlatform } from "../../state/platform";
 import { useSettings } from "../../state/SettingsContext";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { type CharacterImportEntry, CharacterImportReportDialog } from "./CharacterImportReportDialog";
+import { MissingContentDialog } from "./MissingContentList";
 import { onBundleApplied } from "../transfer/openBundle";
 import { applyDefaultSources } from "../content/applySources";
 import { CharacterTile } from "./CharacterTile";
@@ -57,6 +58,8 @@ export function CharactersPage() {
   const { mobile, ready } = usePlatform();
   const [entries, setEntries] = useState<CharacterImportEntry[] | null>(null);
   const [rechecking, setRechecking] = useState(false);
+  /** GitHub #37: what a Re-check from the page left missing, per character (null = closed). */
+  const [outstanding, setOutstanding] = useState<RecheckEntry[] | null>(null);
   const [editing, setEditing] = useState<CharacterSummary | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   // Shell actions arrive as /characters?new=1 (New Character), ?load=1 (File > Load Character) and ?find=1 (File > Search Characters).
@@ -149,6 +152,8 @@ export function CharactersPage() {
     try {
       const rr = await api.recheckMissingContent();
       setEntries((cur) => (cur ? applyRecheck(cur, rr) : cur));
+      // Without an import report open, list what is still missing instead of only counting it (GitHub #37).
+      if (!entries) setOutstanding((cur) => (cur || rr.outstanding.length > 0 ? rr.outstanding : null));
       list.reload();
       const n = rr.updated.reduce((t, e) => t + e.resolved, 0);
       toast.push(rr.checked === 0 ? "No character is waiting for content."
@@ -196,6 +201,9 @@ export function CharactersPage() {
       {creating && <NewCharacterDialog onCreate={(f, opts) => void create(f, opts)} onClose={() => setCreating(false)} />}
       {entries && <CharacterImportReportDialog entries={entries} rechecking={rechecking} onClose={() => setEntries(null)}
         onOpenContent={() => { setEntries(null); nav("/content"); }} onRecheck={() => void recheck()} />}
+      {outstanding && <MissingContentDialog entries={outstanding.map((e) => ({ name: e.name, missing: e.stillMissing, unmapped: e.stillUnmapped }))}
+        rechecking={rechecking} onClose={() => setOutstanding(null)}
+        onOpenContent={() => { setOutstanding(null); nav("/content"); }} onRecheck={() => void recheck()} />}
       {editing && <EditDialog c={editing} groups={groupBy(list.data ?? []).map(([g]) => g)} onClose={() => setEditing(null)}
         onSave={(patch) => { void api.updateCharacterMeta({ characterId: editing.id, ...patch }).then(() => { setEditing(null); list.reload(); }); }}
         onDuplicate={() => { void api.duplicateCharacter({ characterId: editing.id }).then(() => { setEditing(null); list.reload(); }); }} />}

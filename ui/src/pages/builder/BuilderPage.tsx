@@ -17,6 +17,7 @@ import { scrollToStart } from "../../lib/scrollReveal";
 import { SlotList } from "./SlotList";
 import { AddedPicks } from "./AddedPicks";
 import { NoticesBanner } from "./NoticesBanner";
+import { CharacterMissingContentDialog, ShowMissingContentButton } from "./MissingContentAction";
 import { PickerStateProvider } from "./pickerState";
 
 type TabId = BuilderTab;
@@ -56,6 +57,7 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   const { tab = "race" } = useParams();
   const nav = useNavigate();
   const [described, setDescribed] = useState<{ tab: string; id: string; isElement: boolean; choice?: PickChoice } | null>(null);
+  const [missingOpen, setMissingOpen] = useState(false);
   const phone = usePhone();
   const leftRef = useRef<HTMLDivElement>(null);
   const next = snapshot?.progress.nextSlotId ?? null;
@@ -110,7 +112,9 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
         {snapshot.level.levelUpAvailable && (
           <Alert tone="success"><strong>Level up available.</strong> <button type="button" className="bp-linkbtn" onClick={() => setLevelUpOpen(true)}>Open Level Up</button> to advance.</Alert>
         )}
-        <NoticesBanner notices={snapshot.notices} />
+        <NoticesBanner notices={snapshot.notices}
+          action={snapshot.missingContent.length > 0 && <ShowMissingContentButton onClick={() => setMissingOpen(true)} />} />
+        {missingOpen && <CharacterMissingContentDialog onClose={() => setMissingOpen(false)} />}
         <Tabs inBand tabs={tabs} active={active} onChange={openTab} label="Build sections" idPrefix="build" />
         <TabPanel active={active} idPrefix="build">
           {active === "abilities" ? <AbilitiesTab describedId={shownId} onDescribe={onDescribe} />

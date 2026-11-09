@@ -125,3 +125,52 @@ fn manual_recheck_reports_what_is_still_missing() {
         .iter()
         .any(|m| m.id == OPTION));
 }
+
+/// GitHub #37: the open character lists WHICH content was not found, not only how much: the
+/// ids, names and types the file recorded, with the source its ids name.
+#[test]
+fn open_character_lists_the_missing_content_its_notice_counts() {
+    let (_d, app) = app();
+    let r = app
+        .import_character("hero.dnd5e", &b64(SAMPLE))
+        .expect("import");
+    let id = r.summary.id.clone();
+    let snap = app.load_character(&id).expect("open");
+    let ids: Vec<&str> = snap.missing_content.iter().map(|m| m.id.as_str()).collect();
+    assert!(ids.contains(&OPTION), "{ids:?}");
+    assert!(ids.contains(&SPELL), "{ids:?}");
+    assert_eq!(
+        snap.missing_content, r.missing_content,
+        "the same list as the import report"
+    );
+    let opt = snap
+        .missing_content
+        .iter()
+        .find(|m| m.id == OPTION)
+        .expect("option");
+    assert_eq!(opt.source, "HOMEBREW");
+    assert_eq!(opt.context, "option");
+    let notice = snap
+        .notices
+        .iter()
+        .find(|n| n.contains("were not found"))
+        .expect("missing content notice");
+    assert!(
+        notice.contains(&format!(
+            ": {} content element(s)",
+            snap.missing_content.len()
+        )),
+        "the notice counts the list: {notice}"
+    );
+
+    install_missing_content(&app);
+
+    let snap = app.get_snapshot(&id).expect("snapshot");
+    assert!(
+        snap.missing_content
+            .iter()
+            .all(|m| m.id != OPTION && m.id != SPELL),
+        "installed content leaves the list: {:?}",
+        snap.missing_content
+    );
+}

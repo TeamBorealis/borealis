@@ -183,7 +183,10 @@ export class MockApi implements Api {
   private snap(c: MockCharacter): CharacterSnapshot {
     const { character, snapshot } = buildSnapshot(c, this.rules);
     this.chars.set(character.id, character);
-    return snapshot;
+    // As the backend: the import notice counts what is missing, and the snapshot lists it (GitHub #37).
+    const missing = this.missingByChar.get(character.id) ?? [];
+    if (missing.length === 0) return snapshot;
+    return { ...snapshot, missingContent: missing, notices: [...snapshot.notices, `Imported from mock-import 1.0: ${missing.length} content element(s) were not found.`] };
   }
 
   /** Runs a pure update, marks the character dirty, clears transient warnings, returns the snapshot. */

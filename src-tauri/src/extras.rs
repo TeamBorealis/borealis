@@ -708,10 +708,17 @@ pub fn notices(input: &MapInput<'_>, snap: &Engine) -> Vec<String> {
         .map(|d| d.message.clone())
         .collect();
     if let Some(i) = &input.character.import {
-        if i.missing_content > 0 {
+        // the listed references when the file kept them (GitHub #37: the notice counts the list
+        // the UI shows), else the count alone
+        let count = if i.missing.is_empty() {
+            i.missing_content as usize
+        } else {
+            i.missing.len()
+        };
+        if count > 0 {
             out.push(format!(
-                "Imported from {} {}: {} content element(s) were not found.",
-                i.source, i.source_version, i.missing_content
+                "Imported from {} {}: {count} content element(s) were not found.",
+                i.source, i.source_version
             ));
         }
     }
@@ -719,6 +726,19 @@ pub fn notices(input: &MapInput<'_>, snap: &Engine) -> Vec<String> {
     out.extend(input.hub.load_warnings.iter().cloned());
     out.dedup();
     out
+}
+
+/// GitHub #37: the content references the character's import could not resolve, as the import
+/// report lists them (ids, names and types the file recorded, the source its ids name). A
+/// re-check after content is installed takes the ones it finds off the list.
+#[must_use]
+pub fn missing_content(input: &MapInput<'_>) -> Vec<crate::dto::MissingContentDto> {
+    input
+        .character
+        .import
+        .as_ref()
+        .map(|i| i.missing.iter().map(crate::library::missing_dto).collect())
+        .unwrap_or_default()
 }
 
 /// HR3: a pick a prerequisite house rule allowed, kept but not applied now the rule is off.

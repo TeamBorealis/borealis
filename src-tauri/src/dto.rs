@@ -809,6 +809,9 @@ pub struct CharacterSnapshot {
     pub available_options: Vec<OptionDef>,
     pub source_restrictions: Option<Vec<String>>,
     pub notices: Vec<String>,
+    /// Content the character's file names that was not found when it was imported (still
+    /// missing after the last re-check): what the import notice counts (GitHub #37).
+    pub missing_content: Vec<MissingContentDto>,
     /// Resources, toggles, defences, senses, notes, Wild Shape, packages, compatibility, features.
     pub play: crate::play_dto::PlayStateDto,
     /// B3 (GitHub #35): the feats, spells, languages and proficiencies added in the builder for

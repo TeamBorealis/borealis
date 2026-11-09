@@ -128,7 +128,7 @@ export function buildSnapshot(input: MockCharacter, rules: RuleSettings): { char
     spellcasting, inventory: inv, details: c.details, detailChoices: detailChoices(),
     attacks: resolveAttacks(c, mods, profBonus(totalLevel(c))),
     companion: companions[0] ?? null, companions, options: c.options,
-    availableOptions: OPTION_DEFS, sourceRestrictions: c.sourceRestrictions, notices: c.notices,
+    availableOptions: OPTION_DEFS, sourceRestrictions: c.sourceRestrictions, notices: c.notices, missingContent: [],
     play: buildPlay(c, spellcasting, mods.con, stats.hpMax),
     addedPicks,
   };

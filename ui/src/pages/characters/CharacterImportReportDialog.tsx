@@ -1,24 +1,14 @@
-import type { ImportReport, MissingContentItem } from "../../api/contract";
+import type { ImportReport } from "../../api/contract";
 import { Alert, Button, Expander, Modal } from "../../components";
+import { MISSING_CONTENT_HINT, MissingContentList, UnmappedList } from "./MissingContentList";
+
+export { groupMissing } from "./MissingContentList";
 
 /** One file of an import batch: its report, or why it failed. */
 export interface CharacterImportEntry {
   fileName: string;
   report?: ImportReport;
   error?: string;
-}
-
-/** Missing items grouped by source book, then by element type. */
-export function groupMissing(items: MissingContentItem[]): [string, [string, MissingContentItem[]][]][] {
-  const bySource = new Map<string, Map<string, MissingContentItem[]>>();
-  for (const m of items) {
-    const source = m.source || "Unknown source";
-    const type = m.type || "Other";
-    const types = bySource.get(source) ?? new Map<string, MissingContentItem[]>();
-    types.set(type, [...(types.get(type) ?? []), m]);
-    bySource.set(source, types);
-  }
-  return [...bySource.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([s, t]) => [s, [...t.entries()].sort(([a], [b]) => a.localeCompare(b))]);
 }
 
 function EntrySection({ entry }: { entry: CharacterImportEntry }) {
@@ -30,7 +20,6 @@ function EntrySection({ entry }: { entry: CharacterImportEntry }) {
       </Expander>
     );
   }
-  const groups = groupMissing(r.missingContent);
   const clean = r.missingContent.length === 0 && r.unmappedSlots.length === 0;
   return (
     <Expander title={r.summary.name} headerExtra={<span className="v4-rep-state">{clean ? "Imported" : "Needs content"}</span>}>
@@ -41,24 +30,14 @@ function EntrySection({ entry }: { entry: CharacterImportEntry }) {
         {r.missingContent.length > 0 && (
           <section aria-label={`Missing content for ${r.summary.name}`}>
             <h3>Missing content</h3>
-            <p className="v4-rep-hint">This character uses content that is not installed. Install it and the character picks it up, with no re-import.</p>
-            {groups.map(([source, types]) => (
-              <div key={source} className="v4-rep-group">
-                <h4>{source}</h4>
-                {types.map(([type, list]) => (
-                  <div key={type}>
-                    <span className="v4-rep-type">{type}</span>
-                    <ul>{list.map((m) => <li key={m.id}>{m.name || m.id} <span className="v4-rep-id">{m.id}</span></li>)}</ul>
-                  </div>
-                ))}
-              </div>
-            ))}
+            <p className="v4-rep-hint">{MISSING_CONTENT_HINT}</p>
+            <MissingContentList items={r.missingContent} />
           </section>
         )}
         {r.unmappedSlots.length > 0 && (
           <section aria-label={`Unmapped selections for ${r.summary.name}`}>
             <h3>Choices that could not be placed</h3>
-            <ul>{r.unmappedSlots.map((u, i) => <li key={`${u.owner}-${u.name}-${i}`}>{u.type ? `${u.type}: ` : ""}{u.name || u.chosen} <span className="v4-rep-id">({u.reason})</span></li>)}</ul>
+            <UnmappedList items={r.unmappedSlots} />
           </section>
         )}
         {r.invalidSelections.length > 0 && (

@@ -4197,6 +4197,16 @@
       "name": "LevelState"
      }
     },
+    "missingContent": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "MissingContentItem"
+      }
+     }
+    },
     "name": {
      "opt": false,
      "t": {

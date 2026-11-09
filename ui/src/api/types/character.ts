@@ -567,6 +567,8 @@ export interface CharacterSnapshot {
   sourceRestrictions: string[] | null;
   /** Informational diagnostics (e.g. legacy divergences on import). */
   notices: string[];
+  /** Content the file names that was not found on import (still missing after the last re-check): what the import notice counts (GitHub #37). */
+  missingContent: MissingContentItem[];
   /** Resources, toggles, defences, senses, notes, Wild Shape, packages, compatibility, features. */
   play: PlayState;
   /** B3 (GitHub #35): feats, spells, languages and proficiencies added in the builder; their lines are not in `inventory`. */

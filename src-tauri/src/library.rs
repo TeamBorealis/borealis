@@ -94,7 +94,9 @@ fn summary(
     }
 }
 
-fn missing_dto(m: &MissingContent) -> MissingContentDto {
+/// The contract shape of a content reference an import could not resolve (name and source
+/// hinted from the id when the file recorded none).
+pub(crate) fn missing_dto(m: &MissingContent) -> MissingContentDto {
     MissingContentDto {
         id: m.id.clone(),
         ty: m.ty.clone(),
