@@ -52,6 +52,25 @@ export function PaneShell({ title, intro, children, readText, imageIcon = true }
   );
 }
 
+/** Text of an HTML fragment: tags become spaces, entities are decoded and runs of space collapse. */
+function plainText(html: string): string {
+  const spaced = html.replace(/<[^>]+>/g, " ");
+  const decoded = new DOMParser().parseFromString(spaced, "text/html").documentElement.textContent ?? spaced;
+  return decoded.replace(/\s+/g, " ").trim();
+}
+
+/** A trailing "..." or "…" the host adds when it cuts a short description (`elements::truncate`). */
+const TRAILING_ELLIPSIS = /\s*(\.\.\.|…)$/;
+
+/**
+ * B9: the short description only repeats the body (the host cuts the body's first 160 characters and adds "..."), so the
+ * pane leaves it out. An empty one counts as a repeat: there is nothing to show.
+ */
+export function repeatsBody(shortDescription: string, descriptionHtml: string): boolean {
+  const short = shortDescription.replace(/\s+/g, " ").trim().replace(TRAILING_ELLIPSIS, "");
+  return short === "" || plainText(descriptionHtml).includes(short);
+}
+
 /**
  * B14: the element the pane showed last, per host. Leaving Build unmounts the pane; coming back it shows this element at
  * once (while it reloads) instead of a "Loading" card.
@@ -69,8 +88,7 @@ export function DescriptionPane({ elementId, fallback }: { elementId: string | n
   const held = lastShown.get(api);
   const d = el.data ?? (held?.id === elementId ? held : null);
   if (!d) return <PaneShell title="Loading" imageIcon={false}><p className="muted">Loading...</p></PaneShell>;
-  const bodyText = d.descriptionHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  const dupIntro = !d.shortDescription || bodyText.includes(d.shortDescription.trim());
+  const dupIntro = repeatsBody(d.shortDescription, d.descriptionHtml);
   const plain = `${d.name}. ${d.shortDescription} ${d.descriptionHtml.replace(/<[^>]+>/g, " ")}`;
   return (
     <PaneShell title={d.name} intro={dupIntro ? undefined : d.shortDescription} readText={plain}>
