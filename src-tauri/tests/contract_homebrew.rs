@@ -76,6 +76,7 @@ fn form() -> HomebrewForm {
     fields.insert("name".to_string(), json!("Ember"));
     fields.insert("level".to_string(), json!(1));
     HomebrewForm {
+        key: "e".into(),
         kind: "spell".into(),
         fields: fields.clone(),
         blocks: vec![HomebrewBlock {
@@ -83,8 +84,13 @@ fn form() -> HomebrewForm {
             kind: "grant".into(),
             sentence: "Gives proficiency: Stealth".into(),
             fields: BTreeMap::new(),
+            preserved: vec![HomebrewPreservedPart {
+                key: "setters".into(),
+                label: "Values set under this rule".into(),
+            }],
         }],
         children: vec![HomebrewForm {
+            key: "e/0".into(),
             kind: "classFeature".into(),
             fields,
             blocks: vec![],
@@ -395,4 +401,39 @@ fn block_and_stat_catalogs_match_the_ts_contract_and_the_mock() {
         on_disk == text,
         "ui/src/api/mock/homebrew-catalog.ts is stale: run this test with BOREALIS_UPDATE_SNAPSHOTS=1"
     );
+}
+
+/// The real form (WB-04 form model, blocks read by the WB-05 catalog) as the UI receives it matches the TS contract,
+/// and reads as the stub DTO `HomebrewForm` the commands declare.
+#[test]
+fn the_creator_form_with_catalog_blocks_matches_the_ts_contract() {
+    use borealis_authoring::expr_build::condition::ConditionContext;
+    use borealis_authoring::form::{
+        element_to_form, to_ui, CatalogBlockCodec, FormContext, NoLookup,
+    };
+    let element: borealis_content::Element = serde_json::from_value(json!({
+        "id": "ID_GL_FEAT_HOWL", "name": "Howl", "type": "Feat", "source": "Gloom",
+        "requirements": "[level:4]",
+        "rules": [
+            {"kind": "grant", "id": "ID_GL_TRAIT_PACK_TACTICS", "type": "Racial Trait", "level": 3},
+            {"kind": "stat", "name": "speed", "value": "10", "equipped": "[armor:none]", "merge": true},
+            {"kind": "resource", "id": "howl", "max": {"type": "formula", "expr": "wisdom:modifier"}},
+            {"kind": "toggle", "id": "frenzy", "effects": [{"kind": "stat", "name": "speed", "value": "5"}]},
+            {"kind": "unknown", "tag": "howl"}
+        ]
+    }))
+    .expect("element");
+    let codec = CatalogBlockCodec;
+    let cx = FormContext {
+        conditions: ConditionContext::new(Vec::<String>::new()),
+        lookup: &NoLookup,
+        blocks: &codec,
+    };
+    let form = serde_json::to_value(to_ui(&element_to_form(&element, &cx))).expect("json");
+    let c = Contract::load();
+    let errs = c.def("HomebrewForm", &form);
+    assert!(errs.is_empty(), "HomebrewForm:\n{}", errs.join("\n"));
+    let stub: HomebrewForm = serde_json::from_value(form.clone()).expect("reads as the stub DTO");
+    assert_eq!(stub.blocks.len(), 5);
+    assert_eq!(serde_json::to_value(&stub).expect("json"), form);
 }

@@ -466,6 +466,16 @@ forms) and answers the same error for bulk edit, reference options, spell lists,
   parts kept from the original as `{key, label}`: the UI may only remove entries; the backend keeps the bytes and the
   element id. `HomebrewFieldSpec.readOnly` marks a shown-only field (Source); the `blocks` control marks where the
   block list goes.
+- **Blocks in a form (WB-04/WB-05 join).** Each rule is read by the block catalog (`form::CatalogBlockCodec`):
+  `HomebrewBlock.kind` is the `HomebrewBlockSpec.kind` of its dialog (`list` for a select of type `List`), `fields` holds
+  one value per offered field plus the gate fields `level` and `requirements`, in the shape of the field's control
+  (`HomebrewBlockValue<C>` in `types/homebrew.ts`: builder controls a `HomebrewExprValue`, `formulas` a list of them,
+  `reference` a `HomebrewRef`, `references` a list, `blocks` nested `HomebrewBlock`s with no `preserved`, the rest the
+  stored JSON). Fields the dialog doesn't offer, and stored values its controls can't hold, are the block's `preserved`
+  parts; a rule the catalog has no block for is kept whole (no fields, one part). An unchanged block field writes its
+  stored JSON back; an edited one is written canonically. The backend rewrites each block's `sentence` from its values
+  after every update. A new block, or a block whose kind changes, needs a new `key` (a changed kind drops the old kept
+  parts).
 - **Problems** are plain sentences with a form `path` (`fields.level`, `blocks.2.fields.number`, `children.0.fields.name`)
   and a `code` (an `IssueCode`, a rule problem, `sweep`, `engine`, `lint.*`, `balance.*`); errors block Save.
 - **Events:** saves end with the existing `borealis://content-reloaded`.

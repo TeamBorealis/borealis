@@ -102,6 +102,11 @@ impl ConditionContext {
         }
     }
 
+    /// The class names it knows, lower case.
+    pub fn classes(&self) -> impl Iterator<Item = &str> + '_ {
+        self.classes.iter().map(String::as_str)
+    }
+
     fn is_class(&self, key: &str) -> bool {
         self.classes.contains(key)
     }

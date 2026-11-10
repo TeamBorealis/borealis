@@ -7,7 +7,7 @@
 use super::block::Block;
 use super::kinds::kind;
 use super::preserved::PreservedPart;
-use super::{FormState, Memo};
+use super::{FormContext, FormState, Memo};
 use crate::ids::IdGenerator;
 use serde_json::Value;
 
@@ -32,6 +32,7 @@ pub fn to_ui(form: &FormState) -> FormState {
             .iter()
             .map(|b| Block {
                 preserved: strip_parts(&b.preserved),
+                memo: None,
                 ..b.clone()
             })
             .collect(),
@@ -49,16 +50,20 @@ fn merge_parts(stored: &[PreservedPart], ui: &[PreservedPart]) -> Vec<PreservedP
 }
 
 /// The UI's edit of `stored`: its fields, blocks and children, with the memo and the preserved bytes of `stored`
-/// (children and blocks matched by key; a new child or block has none).
+/// (children matched by key, blocks by key and kind; a new child or block, or a block whose kind changed, has none).
 #[must_use]
 pub fn merge_ui(stored: &FormState, ui: &FormState) -> FormState {
     let blocks = ui
         .blocks
         .iter()
         .map(|b| {
-            let old = stored.blocks.iter().find(|s| s.key == b.key);
+            let old = stored
+                .blocks
+                .iter()
+                .find(|s| s.key == b.key && s.kind == b.kind);
             Block {
                 preserved: old.map_or_else(Vec::new, |o| merge_parts(&o.preserved, &b.preserved)),
+                memo: old.and_then(|o| o.memo.clone()),
                 ..b.clone()
             }
         })
@@ -79,6 +84,25 @@ pub fn merge_ui(stored: &FormState, ui: &FormState) -> FormState {
         children,
         preserved: merge_parts(&stored.preserved, &ui.preserved),
         memo: stored.memo.clone(),
+    }
+}
+
+/// The form with every block's sentence (and its nested blocks') written from its current values: call it after
+/// [`merge_ui`], before the form goes back to the UI.
+#[must_use]
+pub fn refresh_blocks(form: &FormState, cx: &FormContext<'_>) -> FormState {
+    FormState {
+        blocks: form
+            .blocks
+            .iter()
+            .map(|b| cx.blocks.refresh(b, cx))
+            .collect(),
+        children: form
+            .children
+            .iter()
+            .map(|c| refresh_blocks(c, cx))
+            .collect(),
+        ..form.clone()
     }
 }
 

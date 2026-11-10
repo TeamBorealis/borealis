@@ -118,9 +118,9 @@ fn find<'f>(form: &'f FormState, id: &str, prefix: String) -> Option<(String, &'
         .find_map(|(i, c)| find(c, id, format!("{prefix}children.{i}.")))
 }
 
-/// The problems of a form's own values: builder values the text cannot hold (WB-02 `check`), values of the wrong
-/// shape and blocks that cannot make a rule, each at its form path. A missing id is not a problem here (ids come on
-/// the first save).
+/// The problems of a form's own values: builder values the text cannot hold (WB-02 `check`, in fields and in
+/// blocks), values of the wrong shape and blocks that cannot make a rule, each at its form path. A missing id is not
+/// a problem here (ids come on the first save).
 #[must_use]
 pub fn check_fields(form: &FormState, cx: &FormContext<'_>) -> Vec<FormProblem> {
     let mut out = Vec::new();
@@ -160,6 +160,14 @@ fn builder_problems(
                 ));
             }
         }
+    }
+    for (i, b) in form.blocks.iter().enumerate() {
+        out.extend(
+            cx.blocks
+                .check(b, cx)
+                .into_iter()
+                .map(|p| FormProblem::new(format!("{prefix}blocks.{i}.{}", p.path), p.message)),
+        );
     }
     for (i, c) in form.children.iter().enumerate() {
         builder_problems(c, &format!("{prefix}children.{i}."), cx, out);

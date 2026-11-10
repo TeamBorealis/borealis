@@ -3,8 +3,9 @@
 //!
 //! * **Fields** ([`kinds`]): each form field is bound to every model location that holds it (spec 3.3), for
 //!   example the setter `script` of a Language, or the setters, tags and `data.rarity` of its rarity.
-//! * **Blocks** ([`block`]): one block per rule, in order. The block catalog (WB-05) gives them their dialog fields
-//!   through [`BlockCodec`]; until then [`RawBlockCodec`] keeps each rule's fields as they are stored.
+//! * **Blocks** ([`block`]): one block per rule, in order, each with its plain sentence. The block catalog (WB-05,
+//!   [`crate::blocks`]) gives them their dialog fields through [`BlockCodec`] ([`CatalogBlockCodec`]); fields a block
+//!   doesn't edit go to the block's own preserved bucket.
 //! * **Preserved bucket** ([`preserved`]): every part of the element no field edits (`extra`, unbound `data` keys,
 //!   `profile_overrides`...), written back byte for byte (spec 3.4). The UI lists them ("Kept from the original")
 //!   and can only remove them.
@@ -18,6 +19,7 @@
 
 mod append;
 pub mod block;
+mod block_codec;
 mod codec;
 pub mod descriptor;
 pub mod kinds;
@@ -29,7 +31,8 @@ pub mod value;
 mod write;
 
 pub use append::{append_to_form, form_to_append, APPEND_KIND};
-pub use block::{Block, BlockCodec, RawBlockCodec};
+pub use block::{Block, BlockCodec, BlockMemo};
+pub use block_codec::CatalogBlockCodec;
 pub use descriptor::descriptors;
 pub use kinds::{
     append_kind, kind, kind_for_type, kinds, Control, FieldDef, KindDef, KindGroup, OTHER_KIND,
@@ -37,7 +40,7 @@ pub use kinds::{
 pub use paths::{check_fields, form_path_for_issue, form_path_for_location};
 pub use preserved::{KeptPart, PreservedPart};
 pub use read::{element_group_to_form, element_to_form};
-pub use ui::{assign_ids, merge_ui, to_ui};
+pub use ui::{assign_ids, merge_ui, refresh_blocks, to_ui};
 pub use write::{form_to_element, form_to_elements};
 
 use crate::expr_build::condition::ConditionContext;

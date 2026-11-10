@@ -643,12 +643,13 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "key": "value",
         "label": "Bonus",
         "tab": "rules",
-        "control": "formula",
+        "control": "number",
         "required": true,
+        "min": -20.0,
+        "max": 20.0,
         "bindings": [
           "value"
-        ],
-        "dialect": "value"
+        ]
       }
     ]
   },

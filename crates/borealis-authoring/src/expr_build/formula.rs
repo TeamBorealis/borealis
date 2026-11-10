@@ -11,7 +11,7 @@
 //! | `saveDc` | `save_dc.formula` | `spell_rules::eval_save_dc_formula` | a sum of numbers, the proficiency bonus and ability modifiers (`8 + proficiency + wisdom:modifier`), or a class's spell save DC (`spell save DC (Cleric)`) |
 //! | `breathDc` | element `data.dc` (2024 breath weapons) | `breath::dc_formula_text` + `formula` | the same sums |
 //! | `noteDc` | `cunning_strike.save_dc` | `notes_d::eval_note_dc` | the same sums, abilities written bare (`8 + dexterity + proficiency`) |
-//! | `value` | `skill_bonus.value`, `skill_bonus_unproficient.value`, `attack_bonus.value` | `rule_view::eval_value` | one number, the proficiency bonus, half of it, or an ability modifier |
+//! | `value` | `skill_bonus.value`, `skill_bonus_unproficient.value` | `rule_view::eval_value` | one number, the proficiency bonus, half of it, or an ability modifier |
 //! | `valueOrClassLevel` | each `damage_reduction.plus` term | `combat::reduction_term` | a value, or a class level |
 //!
 //! The save DC sums are the subset the save-DC reader and the shared formula grammar both read, so the creator can
@@ -238,7 +238,6 @@ pub const FORMULA_FIELDS: &[(&str, &str, FormulaDialect)] = &[
     ("cunning_strike", "save_dc", FormulaDialect::NoteDc),
     ("skill_bonus", "value", FormulaDialect::Value),
     ("skill_bonus_unproficient", "value", FormulaDialect::Value),
-    ("attack_bonus", "value", FormulaDialect::Value),
     (
         "damage_reduction",
         "plus[]",

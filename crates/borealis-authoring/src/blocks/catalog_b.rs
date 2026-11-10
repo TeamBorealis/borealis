@@ -268,7 +268,8 @@ pub(super) const CUSTOM: &[BlockSpec] = &[
                     custom: false,
                 },
             ),
-            f("value", "Bonus", C::Formula(D::Value)).req(),
+            // `attack_rules` reads a whole number (`as_i64`), not a formula
+            f("value", "Bonus", C::Number { min: -20, max: 20 }).req(),
         ],
     ),
     gated(

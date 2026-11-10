@@ -246,13 +246,20 @@ export interface HomebrewRef {
   missing?: boolean;
 }
 
-/** One rule block of a form (spec 6). `fields` hold the block dialog's values; owned by WB-05. */
+/** One rule block of a form (spec 6; WB-04 form, WB-05 catalog). */
 export interface HomebrewBlock {
-  /** Stable key of the block inside the draft (UI lists, undo); never written to content. */
+  /** Stable key of the block inside the draft (UI lists, undo); never written to content. A new block, or a block
+   * whose kind changes, needs a new key. */
   key: string;
+  /** The `HomebrewBlockSpec.kind` of its dialog: `grant`, `select`, `list` (a select of type List), `stat`, a custom
+   * kind, `speed_multiply` (only inside a toggle's effects); or the kind of a rule kept whole (`unknown`, or a kind
+   * the catalog doesn't know: no fields, one `preserved` part). */
   kind: string;
-  /** The block as one plain sentence ("From level 5: lets the player choose 2 Eldritch Invocations"). */
+  /** The block as one plain sentence ("From level 5: lets the player choose 2 Eldritch Invocations"). The backend
+   * rewrites it from the values after each update. */
   sentence: string;
+  /** The block dialog's values, by field key: each the value of its field's control (`HomebrewBlockValue`), plus the
+   * gate fields `level` and `requirements`. Absent = not set. */
   fields: Record<string, unknown>;
   /** Parts of the rule the block dialog does not edit, kept byte-for-byte (read-only, removable; WB-04). */
   preserved?: HomebrewPreservedPart[];
@@ -367,6 +374,73 @@ export type HomebrewFormulaNode =
 /** Which engine reader a formula field is read by, so which terms its builder offers (spec 6.3; the field table is
  * `borealis_authoring::expr_build::formula::FORMULA_FIELDS`). */
 export type HomebrewFormulaDialect = "formula" | "saveDc" | "breathDc" | "noteDc" | "value" | "valueOrClassLevel";
+
+/* ----------------------------------------------------------------------------------------------------------------
+ * Block field values (spec 6; the WB-04/WB-05 join, Rust `borealis_authoring::form::CatalogBlockCodec`). The value
+ * of a key of `HomebrewBlock.fields` is the value of its block field's control (`HomebrewBlockField.control`); the
+ * gate fields are `level` (`number`, 1-20, "From level") and `requirements` (`condition`, "Only if"). A field that is
+ * absent (or null) is not set. The sample form in `api/__fixtures__/homebrew-form.json` has a block of each shape.
+ * ---------------------------------------------------------------------------------------------------------------- */
+
+/** Free casts per rest (`uses`): a number, `"proficiency"`, an ability (its modifier, at least 1), or a class table
+ * column. */
+export type HomebrewUsesValue = number | "proficiency" | HomebrewAbility | { type: "table"; key: string };
+
+/** `abilitySource`: an ability, or the ability chosen in a named choice. */
+export type HomebrewAbilitySourceValue = HomebrewAbility | { param: string };
+
+/** `abilityChoice`: any N different abilities, or a list of abilities. */
+export type HomebrewAbilityChoiceValue = number | HomebrewAbility[];
+
+/** `numberOrStatistic`: a number or a statistic. */
+export type HomebrewNumberOrStatisticValue = number | { type: "stat"; stat: string };
+
+/** The value a block field holds, by its control. `group`, `rows`, `variant` and `map` hold objects whose parts hold
+ * the values of their own controls (`HomebrewBlockField.fields` / `variants`); `blocks` holds nested blocks (a
+ * toggle's effects: never with `preserved`). */
+export interface HomebrewBlockValueByControl {
+  auto: unknown;
+  text: string;
+  multiline: string;
+  /** A number; with `choices`, also one of those words (`any`). */
+  number: number | string;
+  numbers: number[];
+  check: boolean;
+  combo: string;
+  chips: string[];
+  /** The id travels, the name is shown. */
+  reference: HomebrewRef;
+  references: HomebrewRef[];
+  /** A name in `scope`; a list when `multiple`. */
+  name: string | string[];
+  statistic: string;
+  /** `"2"`, `"wisdom:modifier"`, `"-dexterity:modifier"`. */
+  statValue: string;
+  numberOrStatistic: HomebrewNumberOrStatisticValue;
+  condition: HomebrewExprValue<HomebrewCondition>;
+  tagFilter: HomebrewExprValue<HomebrewTagFilter>;
+  equipped: HomebrewExprValue<HomebrewEquipped>;
+  formula: HomebrewExprValue<HomebrewFormulaNode>;
+  formulas: HomebrewExprValue<HomebrewFormulaNode>[];
+  /** Dice text (`1d10`). */
+  dice: string;
+  uses: HomebrewUsesValue;
+  abilitySource: HomebrewAbilitySourceValue;
+  abilityChoice: HomebrewAbilityChoiceValue;
+  /** Point splits (`[[2, 1], [1, 1, 1]]`). */
+  splits: number[][];
+  /** A column of the class table (`rages`). */
+  classCounter: string;
+  group: Record<string, unknown>;
+  rows: Record<string, unknown>[];
+  /** `type` is one of `variants`' values. */
+  variant: { type: string } & Record<string, unknown>;
+  map: Record<string, unknown>;
+  blocks: HomebrewBlock[];
+}
+
+/** The value of a block field edited with `control`. */
+export type HomebrewBlockValue<C extends keyof HomebrewBlockValueByControl> = HomebrewBlockValueByControl[C];
 
 /* ----------------------------------------------------------------------------------------------------------------
  * Form field values (spec 3.2-3.4, 15.1; owned by WB-04, Rust `borealis_authoring::form::value`). The value of a field

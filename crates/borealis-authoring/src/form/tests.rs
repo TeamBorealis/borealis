@@ -30,7 +30,7 @@ fn lookup() -> HashMap<String, RefInfo> {
 
 fn with_cx<T>(f: impl FnOnce(&FormContext<'_>) -> T) -> T {
     let l = lookup();
-    let codec = RawBlockCodec;
+    let codec = CatalogBlockCodec;
     let cx = FormContext {
         conditions: ConditionContext::new(["Warlock", "Wizard"]),
         lookup: &l,

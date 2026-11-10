@@ -208,7 +208,7 @@ pub struct HomebrewElementSummary {
     pub has_draft: bool,
 }
 
-/// One rule block of a form.
+/// One rule block of a form (`borealis_authoring::form::Block` on the wire).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HomebrewBlock {
@@ -216,6 +216,9 @@ pub struct HomebrewBlock {
     pub kind: String,
     pub sentence: String,
     pub fields: BTreeMap<String, Value>,
+    /// Parts of the rule the block dialog does not edit (read-only, removable).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub preserved: Vec<HomebrewPreservedPart>,
 }
 
 /// A part the form does not edit, kept byte-for-byte.
@@ -226,10 +229,13 @@ pub struct HomebrewPreservedPart {
     pub label: String,
 }
 
-/// The editable state of one draft.
+/// The editable state of one draft (`borealis_authoring::form::FormState` without its memo, `to_ui`).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HomebrewForm {
+    /// Stable key inside the draft (children are matched by it).
+    #[serde(default)]
+    pub key: String,
     pub kind: String,
     pub fields: BTreeMap<String, Value>,
     pub blocks: Vec<HomebrewBlock>,

@@ -6849,6 +6849,12 @@
       "name": "HomebrewPickerTarget"
      }
     },
+    "readOnly": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "required": {
      "opt": false,
      "t": {

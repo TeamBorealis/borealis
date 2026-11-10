@@ -3,6 +3,28 @@
     "blocks": [
       {
         "fields": {
+          "equipped": {
+            "original": "[armor:none]",
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "row": "slot",
+                      "slot": "armor",
+                      "test": {
+                        "kind": "none"
+                      }
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          },
           "name": "speed",
           "value": "40"
         },
@@ -14,7 +36,206 @@
             "label": "A setting Borealis does not use (“minimum”)"
           }
         ],
-        "sentence": "Rule: stat"
+        "sentence": "Changes Walking speed: +40, while wearing no armor"
+      },
+      {
+        "fields": {
+          "id": {
+            "id": "ID_GL_TRAIT_PACK_TACTICS",
+            "name": "Pack Tactics",
+            "type": "Racial Trait"
+          },
+          "level": 3,
+          "requirements": {
+            "original": "[level:3]",
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 3,
+                      "row": "level"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          },
+          "type": "Racial Trait"
+        },
+        "key": "b1",
+        "kind": "grant",
+        "sentence": "From level 3: gives Pack Tactics, only if level 3 or higher"
+      },
+      {
+        "fields": {
+          "name": "Language (Wolf)",
+          "supports": {
+            "original": "Standard||Exotic",
+            "value": {
+              "model": {
+                "root": {
+                  "items": [
+                    {
+                      "node": "row",
+                      "row": {
+                        "row": "tag",
+                        "tag": "Standard"
+                      }
+                    },
+                    {
+                      "node": "row",
+                      "row": {
+                        "row": "tag",
+                        "tag": "Exotic"
+                      }
+                    }
+                  ],
+                  "mode": "any",
+                  "node": "group"
+                },
+                "specific": false
+              },
+              "shape": "model"
+            }
+          },
+          "type": "Language"
+        },
+        "key": "b2",
+        "kind": "select",
+        "sentence": "Lets the player choose: Language (Wolf), from Standard or Exotic"
+      },
+      {
+        "fields": {
+          "items": [
+            {
+              "id": 1,
+              "text": "Grey"
+            },
+            {
+              "id": 2,
+              "text": "White"
+            }
+          ],
+          "name": "Coat (Wolf)",
+          "type": "List"
+        },
+        "key": "b3",
+        "kind": "list",
+        "sentence": "Lets the player pick from a written list: Coat (Wolf)"
+      },
+      {
+        "fields": {
+          "id": "howl",
+          "max": {
+            "expr": {
+              "original": "max(1, wisdom:modifier)",
+              "value": {
+                "model": {
+                  "args": [
+                    {
+                      "term": "number",
+                      "value": 1
+                    },
+                    {
+                      "ability": "wisdom",
+                      "term": "ability"
+                    }
+                  ],
+                  "term": "max"
+                },
+                "shape": "model"
+              }
+            },
+            "type": "formula"
+          },
+          "name": "Howl",
+          "regain": {
+            "short_rest": 1
+          }
+        },
+        "key": "b4",
+        "kind": "resource",
+        "sentence": "Limited uses: Howl (the higher of 1 and Wisdom modifier)"
+      },
+      {
+        "fields": {
+          "damage_types": [
+            "bludgeoning"
+          ],
+          "dice": "1d6",
+          "plus": [
+            {
+              "original": "dexterity:modifier",
+              "value": {
+                "model": {
+                  "ability": "dexterity",
+                  "term": "ability"
+                },
+                "shape": "model"
+              }
+            },
+            {
+              "original": "monk level",
+              "value": {
+                "model": {
+                  "class": "monk",
+                  "term": "classLevel"
+                },
+                "shape": "model"
+              }
+            }
+          ]
+        },
+        "key": "b5",
+        "kind": "damage_reduction",
+        "sentence": "Reduces bludgeoning damage by 1d6 + Dexterity modifier + Monk level"
+      },
+      {
+        "fields": {
+          "activation": "bonus_action",
+          "effects": [
+            {
+              "fields": {
+                "ability": "strength",
+                "roll": "ability_check"
+              },
+              "key": "e0",
+              "kind": "roll_advantage",
+              "sentence": "Advantage on Strength checks"
+            },
+            {
+              "fields": {
+                "name": "speed",
+                "value": "10"
+              },
+              "key": "e1",
+              "kind": "stat",
+              "sentence": "Changes Walking speed: +10"
+            }
+          ],
+          "id": "frenzy",
+          "name": "Frenzy"
+        },
+        "key": "b6",
+        "kind": "toggle",
+        "sentence": "On/off state: Frenzy (2 effects)"
+      },
+      {
+        "fields": {},
+        "key": "b7",
+        "kind": "unknown",
+        "preserved": [
+          {
+            "key": "rule",
+            "label": "A rule Borealis does not read (“howl”)"
+          }
+        ],
+        "sentence": "Kept as is: a rule this creator does not edit"
       }
     ],
     "children": [],

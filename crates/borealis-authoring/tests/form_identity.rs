@@ -5,8 +5,11 @@
 //! * the same after the wire round trip (the form the UI receives, serialized, read back and merged with the
 //!   backend's copy) and after the draft-file round trip (the full form serialized and read back);
 //! * every class with its granted class features as children, and every feat, background and subclass with theirs;
-//! * canonical writers: with the stored bytes forgotten (as if every field had been edited), each form still writes
-//!   an element, and reading that element gives the same field values (a fixed point).
+//! * every rule is a block of the block catalog (`CatalogBlockCodec`) with a plain sentence; what a block doesn't
+//!   edit is in its preserved bucket;
+//! * canonical writers: with all stored text forgotten (the fields' and blocks' memos, and the original text of every
+//!   builder value, as if every field and block had been edited), each form still writes an element, and reading
+//!   that element gives the same field and block values (a fixed point).
 //!
 //! Exceptions would be listed with their reason in `EXCEPTIONS` (T6: an asserted, reviewed list); it is empty. The
 //! counts are printed (`--nocapture`) and written to `target/form_identity.txt`.
@@ -14,9 +17,10 @@
 use borealis_authoring::expr_build::condition::ConditionContext;
 use borealis_authoring::form::{
     element_group_to_form, element_to_form, form_to_element, form_to_elements, kind_for_type,
-    merge_ui, to_ui, FormContext, FormState, RawBlockCodec, RefInfo,
+    merge_ui, to_ui, CatalogBlockCodec, FormContext, FormState, RefInfo,
 };
 use borealis_content::{ContentFile, Element, PackFileKind, PackManifest, Rule};
+use serde_json::Value;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write as _;
 use std::fs;
@@ -136,17 +140,108 @@ fn check_identity(
     Ok(())
 }
 
-/// The form with its stored bytes forgotten (the id kept): every field writes canonically.
+/// A builder value (`{value: {shape: ...}, original?}`) without the text it was read from, anywhere in `v`.
+fn without_originals(v: &Value) -> Value {
+    match v {
+        Value::Object(m) => {
+            let is_expr = m
+                .get("value")
+                .and_then(Value::as_object)
+                .is_some_and(|x| x.contains_key("shape"));
+            Value::Object(
+                m.iter()
+                    .filter(|(k, _)| !(is_expr && k.as_str() == "original"))
+                    .map(|(k, x)| (k.clone(), without_originals(x)))
+                    .collect(),
+            )
+        }
+        Value::Array(items) => Value::Array(items.iter().map(without_originals).collect()),
+        other => other.clone(),
+    }
+}
+
+fn fields_without_originals(fields: &BTreeMap<String, Value>) -> BTreeMap<String, Value> {
+    fields
+        .iter()
+        .map(|(k, v)| (k.clone(), without_originals(v)))
+        .collect()
+}
+
+/// The form with all stored text forgotten (the id kept): every field and block writes canonically.
 fn forgetful(form: &FormState) -> FormState {
     let mut f = form.clone();
     f.memo.fields.clear();
+    f.fields = fields_without_originals(&f.fields);
+    for b in &mut f.blocks {
+        b.memo = None;
+        b.fields = fields_without_originals(&b.fields);
+    }
     f
+}
+
+/// Where `a` and `b` differ in JSON shape (object keys, list lengths, value types; strings may differ in spelling):
+/// a canonical writer must not turn a number the engine reads into text.
+fn shape_difference(a: &Value, b: &Value, path: &str) -> Option<String> {
+    match (a, b) {
+        (Value::Object(x), Value::Object(y)) => {
+            if x.keys().ne(y.keys()) {
+                return Some(format!("{path}: keys {:?} vs {:?}", x.keys(), y.keys()));
+            }
+            x.iter()
+                .find_map(|(k, v)| shape_difference(v, &y[k], &format!("{path}.{k}")))
+        }
+        (Value::Array(x), Value::Array(y)) if x.len() == y.len() => x
+            .iter()
+            .zip(y)
+            .enumerate()
+            .find_map(|(i, (v, w))| shape_difference(v, w, &format!("{path}[{i}]"))),
+        (Value::String(_), Value::String(_)) | (Value::Bool(_), Value::Bool(_)) => None,
+        (Value::Number(x), Value::Number(y)) if x.is_i64() == y.is_i64() => None,
+        (Value::Null, Value::Null) => None,
+        _ => Some(format!("{path}: {a} vs {b}")),
+    }
+}
+
+/// Count the builder values (`{value: {shape}}`) in `v` by shape (`model`, `kept`).
+fn count_builders(v: &Value, out: &mut BTreeMap<String, usize>) {
+    match v {
+        Value::Object(m) => {
+            if let Some(shape) = m
+                .get("value")
+                .and_then(|x| x.get("shape"))
+                .and_then(Value::as_str)
+            {
+                *out.entry(shape.to_string()).or_default() += 1;
+                return;
+            }
+            m.values().for_each(|x| count_builders(x, out));
+        }
+        Value::Array(items) => items.iter().for_each(|x| count_builders(x, out)),
+        _ => {}
+    }
+}
+
+/// What a form's values are, stored text aside: fields, and each block's kind, values and kept parts.
+fn values(form: &FormState) -> Value {
+    let blocks: Vec<Value> = form
+        .blocks
+        .iter()
+        .map(|b| {
+            let kept: Vec<&str> = b.preserved.iter().map(|p| p.key.as_str()).collect();
+            serde_json::json!({
+                "kind": b.kind,
+                "fields": fields_without_originals(&b.fields),
+                "kept": kept,
+            })
+        })
+        .collect();
+    serde_json::json!({ "fields": fields_without_originals(&form.fields), "blocks": blocks })
 }
 
 #[test]
 fn every_bundled_element_round_trips_through_its_form() {
     let c = corpus();
-    let codec = RawBlockCodec;
+    let codec = CatalogBlockCodec;
     let cx = FormContext {
         conditions: ConditionContext::new(&c.classes),
         lookup: &c.lookup,
@@ -156,6 +251,8 @@ fn every_bundled_element_round_trips_through_its_form() {
     let mut by_kind: BTreeMap<&str, (usize, usize, usize)> = BTreeMap::new();
     let mut by_pack: BTreeMap<&str, usize> = BTreeMap::new();
     let mut kept_labels: BTreeMap<String, usize> = BTreeMap::new();
+    let mut block_kinds: BTreeMap<String, usize> = BTreeMap::new();
+    let mut builders: BTreeMap<String, usize> = BTreeMap::new();
     for (pack, e) in &c.elements {
         if EXCEPTIONS.iter().any(|(id, _)| *id == e.id) {
             continue;
@@ -173,15 +270,36 @@ fn every_bundled_element_round_trips_through_its_form() {
         }
         match form_to_element(&forgetful(&form), &cx) {
             Ok(canonical) => {
-                let again = element_to_form(&canonical, &cx);
-                if again.fields != form.fields {
+                let rules = |x: &Element| serde_json::to_value(&x.rules).expect("rules");
+                if let Some(d) = shape_difference(&rules(e), &rules(&canonical), "rules") {
                     failures.push(format!(
-                        "{pack} {}: canonical text reads differently\n  was {:?}\n  now {:?}",
-                        e.id, form.fields, again.fields
+                        "{pack} {}: canonical rules change shape: {d}",
+                        e.id
+                    ));
+                }
+                let again = element_to_form(&canonical, &cx);
+                if values(&again) != values(&form) {
+                    failures.push(format!(
+                        "{pack} {}: canonical text reads differently\n  was {}\n  now {}",
+                        e.id,
+                        values(&form),
+                        values(&again)
                     ));
                 }
             }
             Err(p) => failures.push(format!("{pack} {}: canonical write fails {p:?}", e.id)),
+        }
+        for b in &form.blocks {
+            if b.sentence.trim().is_empty() || b.sentence.contains("ID_") {
+                failures.push(format!(
+                    "{pack} {}: block {} has no plain sentence: {:?}",
+                    e.id, b.key, b.sentence
+                ));
+            }
+            *block_kinds.entry(b.kind.clone()).or_default() += 1;
+            for v in b.fields.values() {
+                count_builders(v, &mut builders);
+            }
         }
         let entry = by_kind.entry(kind_for_type(&e.ty).id).or_default();
         entry.0 += 1;
@@ -195,6 +313,12 @@ fn every_bundled_element_round_trips_through_its_form() {
             .chain(form.blocks.iter().flat_map(|b| b.preserved.iter()))
         {
             let label = p.kept.as_ref().map_or("?", |k| k.location.as_str());
+            let label = if form.preserved.iter().any(|q| std::ptr::eq(q, p)) {
+                label.to_string()
+            } else {
+                format!("block {label}")
+            };
+            let label = label.as_str();
             let label = label.split_once('.').map_or(label, |(head, _)| head);
             *kept_labels.entry(label.to_string()).or_default() += 1;
         }
@@ -215,6 +339,16 @@ fn every_bundled_element_round_trips_through_its_form() {
             report,
             "  kind {kind}: {n} elements, {blocks} blocks, {kept} preserved parts"
         );
+    }
+    let _ = writeln!(
+        report,
+        "  blocks: {} in {} block kinds",
+        block_kinds.values().sum::<usize>(),
+        block_kinds.len()
+    );
+    let _ = writeln!(report, "  builder values in blocks by shape: {builders:?}");
+    for (kind, n) in &block_kinds {
+        let _ = writeln!(report, "  block {kind}: {n}");
     }
     for (loc, n) in &kept_labels {
         let _ = writeln!(report, "  preserved {loc}: {n}");
@@ -252,7 +386,7 @@ fn child_types(ty: &str) -> &'static [&'static str] {
 #[test]
 fn parents_round_trip_with_their_children() {
     let c = corpus();
-    let codec = RawBlockCodec;
+    let codec = CatalogBlockCodec;
     let cx = FormContext {
         conditions: ConditionContext::new(&c.classes),
         lookup: &c.lookup,
