@@ -230,7 +230,11 @@ pub fn add_granted_blocks(graph: &Graph<'_>, stats: &StatSet, out: &mut Vec<Spel
             continue;
         }
         match &n.spell_class {
-            Some(class) if !out.iter().any(|b| &b.name == class) => {
+            Some(class)
+                if !out
+                    .iter()
+                    .any(|b| crate::spells::same_spellcasting(class, &b.name)) =>
+            {
                 // without an ability the spells keep their place (no block with DC 0)
                 let Some(ability) = element_ability(graph, parent) else {
                     continue;

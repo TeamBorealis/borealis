@@ -86,7 +86,9 @@ impl Evaluation<'_> {
                 let Rule::Select(rule) = &n.e.el.rules[slot.rule] else {
                     return false;
                 };
-                rule.spellcasting.as_deref() == Some(class)
+                rule.spellcasting
+                    .as_deref()
+                    .is_some_and(|c| crate::spells::same_spellcasting(c, class))
                     && state.replaced_in(&slot.key).iter().any(|p| {
                         p.level == level
                             && self

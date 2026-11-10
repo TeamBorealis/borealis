@@ -13,7 +13,8 @@ use borealis_engine::{Choice, Engine};
 use borealis_migrate::{convert_xml, Document};
 use std::path::Path;
 
-/// Synthetic Aurora XML in the three shapes: a class feature of a spellcasting class (a Warlock
+/// Synthetic Aurora XML in the three shapes (plus a Sacred Oath whose spells name the Paladin's
+/// spellcasting in another letter case): a class feature of a spellcasting class (a Warlock
 /// invocation), a racial trait of a subrace, and a subclass feature of a class without
 /// spellcasting (a Barbarian path). None of the grants names a spellcasting block.
 fn aurora_xml() -> ContentFile {
@@ -51,6 +52,20 @@ fn aurora_xml() -> ContentFile {
     <description><p>Synthetic.</p></description>
     <rules>
       <grant type="Spell" id="ID_PHB_SPELL_SPEAK_WITH_ANIMALS" />
+    </rules>
+  </element>
+  <element name="Oath of the Test Ward" type="Archetype" source="Test" id="ID_T_OS_ARCHETYPE_OATH_TEST_WARD">
+    <supports>Sacred Oath</supports>
+    <description><p>Synthetic.</p></description>
+    <rules>
+      <grant type="Archetype Feature" id="ID_T_OS_ARCHETYPE_FEATURE_WARD_SPELLS" level="3" />
+    </rules>
+  </element>
+  <element name="Ward Spells" type="Archetype Feature" source="Test" id="ID_T_OS_ARCHETYPE_FEATURE_WARD_SPELLS">
+    <description><p>Synthetic.</p></description>
+    <rules>
+      <grant type="Spell" id="ID_PHB_SPELL_SANCTUARY" spellcasting="paladin" prepared="true" />
+      <select type="Spell" name="Ward Pick" supports="Cleric,1" spellcasting="PALADIN" />
     </rules>
   </element>
 </elements>"#;
@@ -196,4 +211,27 @@ fn a_character_without_unlisted_spells_has_no_other_spells_block() {
     assert_eq!(blocks(&e.derive(&s)), vec!["Warlock"]);
     let s = character(&e, &[("Race", "Human")], "Fighter", 1);
     assert!(blocks(&e.derive(&s)).is_empty());
+}
+
+/// Aurora matches a grant's or select's `spellcasting` name to a class's spellcasting ignoring
+/// case (`SpellcasterSelectionControlViewModel`: `StringComparison.OrdinalIgnoreCase`), and
+/// community content writes `spellcasting="paladin"`: those spells are the Paladin's, with its
+/// save DC, not Other Spells.
+#[test]
+fn a_spellcasting_name_in_another_letter_case_joins_the_class_block() {
+    let Some(e) = engine() else { return };
+    let s = character(&e, &[("Race", "Human")], "Paladin", 3);
+    let s = choose(&e, &s, "Sacred Oath", "Oath of the Test Ward");
+    let s = choose(&e, &s, "Ward Pick", "Bless");
+    let snap = e.derive(&s);
+    assert_eq!(blocks(&snap), vec!["Paladin"]);
+    let paladin = snap.caster("Paladin").unwrap();
+    assert_eq!(paladin.ability, "Charisma");
+    let sanctuary = paladin
+        .spells
+        .iter()
+        .find(|x| x.name == "Sanctuary")
+        .expect("Sanctuary");
+    assert!(sanctuary.always_prepared, "granted prepared=\"true\"");
+    assert!(paladin.spells.iter().any(|x| x.name == "Bless" && x.known));
 }

@@ -503,3 +503,83 @@ fn a_feat_spellcasting_block_has_its_own_id_next_to_the_class() {
         .expect_err("unknown block");
     assert_eq!(err.code, ErrorCode::NotFound, "{err:?}");
 }
+
+/// A Sacred Oath whose spells name the Paladin's spellcasting in lower and upper case, as
+/// community Aurora content writes it (`spellcasting="paladin"`).
+fn install_lowercase_oath(app: &AppState) {
+    let xml = r#"<elements><info><name>Ward Oath</name><update version="0.0.1"><file name="ward.xml" url="https://example.invalid/ward.xml"/></update></info>
+<element name="Oath of the Test Ward" type="Archetype" source="Ward Oath" id="ID_T_MS_ARCHETYPE_OATH_TEST_WARD"><supports>Sacred Oath</supports><description><p>Synthetic.</p></description><rules><grant type="Archetype Feature" id="ID_T_MS_ARCHETYPE_FEATURE_WARD_SPELLS" level="3" /></rules></element>
+<element name="Ward Spells" type="Archetype Feature" source="Ward Oath" id="ID_T_MS_ARCHETYPE_FEATURE_WARD_SPELLS"><description><p>Synthetic.</p></description><rules><grant type="Spell" id="ID_PHB_SPELL_SANCTUARY" spellcasting="paladin" prepared="true" /><select type="Spell" name="Ward Pick" supports="Cleric,1" spellcasting="PALADIN" /></rules></element>
+</elements>"#;
+    use base64::Engine as _;
+    let req = borealis_lib::content_dto::ImportPackRequest {
+        file_name: "ward.xml".into(),
+        content_base64: base64::engine::general_purpose::STANDARD.encode(xml),
+        format: None,
+    };
+    app.import_pack(&req, &borealis_lib::content_packs::NullSink)
+        .expect("install");
+}
+
+/// Aurora matches a spell's `spellcasting` name to the class ignoring case: the oath's spells
+/// join the Paladin block (with its save DC), its spell slot feeds the Paladin's Magic tab, and
+/// no "Other Spells" block is made for them.
+#[test]
+fn a_lowercase_spellcasting_name_feeds_the_paladin_block_and_its_magic_tab() {
+    let (_dir, app) = app();
+    install_lowercase_oath(&app);
+    let request = NewCharacterRequest {
+        name: "Ward".into(),
+        ruleset: Ruleset::Dnd2014,
+        starting_level: 3,
+        gender: String::new(),
+        ability_method: AbilityMethodDto::PointBuy,
+        options: OptionsPatch::default(),
+        portrait: None,
+        group: None,
+    };
+    let s = app
+        .create_character(Ruleset::Dnd2014, &request)
+        .expect("create");
+    let id = s.id.clone();
+    let s = app
+        .apply_selection(&id, &slot_id(&s, "Race"), "ID_RACE_HUMAN")
+        .expect("race");
+    let s = app
+        .apply_selection(&id, &slot_id(&s, "Class"), "ID_WOTC_PHB_CLASS_PALADIN")
+        .expect("class");
+    let s = app
+        .apply_selection(
+            &id,
+            &slot_id(&s, "Sacred Oath"),
+            "ID_T_MS_ARCHETYPE_OATH_TEST_WARD",
+        )
+        .expect("oath");
+    let s = app
+        .apply_selection(&id, &slot_id(&s, "Ward Pick"), "ID_PHB_SPELL_BLESS")
+        .expect("ward pick");
+    let names: Vec<&str> = s
+        .spellcasting
+        .classes
+        .iter()
+        .map(|c| c.class_name.as_str())
+        .collect();
+    assert_eq!(names, ["Paladin"], "no Other Spells block");
+    let paladin = &s.spellcasting.classes[0];
+    assert!(paladin.save_dc >= 8, "a real save DC: {}", paladin.save_dc);
+    for spell in ["Sanctuary", "Bless"] {
+        assert!(
+            paladin.spells.iter().any(|x| x.name == spell),
+            "{spell} in the Paladin block"
+        );
+    }
+    let pick = s
+        .slots
+        .iter()
+        .find(|x| x.title == "Ward Pick")
+        .expect("Ward Pick slot");
+    assert_eq!(
+        pick.class_slot_id.as_deref(),
+        Some(paladin.class_slot_id.as_str())
+    );
+}

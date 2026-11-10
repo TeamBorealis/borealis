@@ -461,7 +461,11 @@ fn acquisition(
     let levelled = |id: &str| uni.get(id).and_then(|e| e.spell_level()).unwrap_or(0) > 0;
     let slot = snap.slots.iter().any(|s| {
         s.ty == "Spell"
-            && (s.spellcasting.as_deref() == Some(sc.name.as_str()) || s.owner.name == sc.name)
+            && (s
+                .spellcasting
+                .as_deref()
+                .is_some_and(|c| crate::spells::same_spellcasting(c, &sc.name))
+                || s.owner.name == sc.name)
             && (s.chosen.as_ref().is_some_and(|c| levelled(&c.id))
                 || s.options.iter().any(|o| o.level.unwrap_or(0) > 0)
                 || (!with_options && !s.name.to_lowercase().contains("cantrip")))

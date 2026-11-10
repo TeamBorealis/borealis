@@ -13,6 +13,8 @@
 //! loaded on top of the base, as users stack indexes, and only that repo's elements are swept.
 //! `BOREALIS_SWEEP_LIMIT` caps the elements swept per kind (quick runs);
 //! `BOREALIS_SWEEP_SKIP_BASE=1` sweeps only the stacked repos.
+//! `BOREALIS_SWEEP_ONLY` (comma-separated element ids, or `@file` with one id per line) sweeps
+//! only those classes, archetypes, origins, feats and items (re-checking a few failing ids).
 //!
 //! Every class takes a 2014 character from level 1 to 20 twice (open selects filled with their
 //! first option, then with their last option); every archetype is swept on the class that offers
@@ -33,6 +35,8 @@ mod review;
 
 use borealis_content::{ContentStore, ContentStoreBuilder, Element, PackOrigin, Rule, Ruleset};
 use borealis_engine::commands::{self, slot_key};
+use borealis_engine::other_spells::OTHER_SPELLS;
+use borealis_engine::snapshot::SpellcastingSnapshot;
 use borealis_engine::state::SlotKey;
 use borealis_engine::{invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity};
 use borealis_migrate::{migrate_path, write_output, MigrateOptions};
@@ -95,6 +99,37 @@ impl Origin {
 /// `BOREALIS_SWEEP_LIST=1` prints every problem per element (`LIST` lines) for triage.
 fn listing() -> bool {
     std::env::var("BOREALIS_SWEEP_LIST").is_ok()
+}
+
+/// Element ids named by `BOREALIS_SWEEP_ONLY` (ids, or `@file` with one per line); `None` = all.
+fn only_ids() -> Option<HashSet<String>> {
+    let raw = std::env::var("BOREALIS_SWEEP_ONLY").ok()?;
+    let text = match raw.strip_prefix('@') {
+        Some(path) => std::fs::read_to_string(path).expect("BOREALIS_SWEEP_ONLY file"),
+        None => raw,
+    };
+    Some(
+        text.split([',', '\n'])
+            .map(str::trim)
+            .filter(|t| !t.is_empty())
+            .map(str::to_string)
+            .collect(),
+    )
+}
+
+/// Is `sc` Aurora's "Other Spells" section as the engine builds it (`other_spells`): the one
+/// block of that name, with no ability (so no save DC or attack bonus), no slots and nothing to
+/// prepare?
+fn is_other_spells(sc: &SpellcastingSnapshot) -> bool {
+    sc.other
+        && sc.name == OTHER_SPELLS
+        && sc.ability.is_empty()
+        && sc.dc == 0
+        && sc.attack == 0
+        && sc.slots == [0; 9]
+        && sc.pact.is_none()
+        && !sc.prepare
+        && sc.prepare_limit.is_none()
 }
 
 /// `ID_*` tokens of an expression.
@@ -397,10 +432,83 @@ impl Sweeper<'_> {
             out.push("stat out of range: ability score or save".into());
         }
         for sc in &snap.spellcasting {
+            // Aurora's "Other Spells" (U19, `other_spells`): spells granted or picked with no
+            // spellcasting name, which Aurora prints with blank ability, save and attack boxes.
+            // Only the block the engine marks as that section may lack an ability, and it must
+            // then be exactly that section; every other block needs a real ability, DC and attack.
+            if sc.other {
+                if !is_other_spells(sc) {
+                    out.push("Other Spells block with casting stats".into());
+                }
+                out.extend(self.misplaced_other_spells(snap, sc));
+                continue;
+            }
             if !(8..=30).contains(&sc.dc) || sc.attack.abs() > 20 || sc.ability.is_empty() {
                 out.push("stat out of range: spell DC/attack/ability".into());
+                if listing() {
+                    println!(
+                        "LIST-SC {:?} ability={:?} dc={} attack={}",
+                        sc.name, sc.ability, sc.dc, sc.attack
+                    );
+                }
             }
         }
+        if snap.spellcasting.iter().filter(|sc| sc.other).count() > 1 {
+            out.push("more than one Other Spells block".into());
+        }
+    }
+
+    /// Spells of the Other Spells block that belong in another block: their grant (or the spell
+    /// select that picked them) names the spellcasting of a block the character has, matched as
+    /// Aurora matches it (ignoring case). Aurora prints those on that class's page with its DC.
+    fn misplaced_other_spells(
+        &self,
+        snap: &CharacterSnapshot,
+        sc: &SpellcastingSnapshot,
+    ) -> Vec<String> {
+        let named_block = |name: Option<&str>| {
+            name.is_some_and(|n| {
+                snap.spellcasting
+                    .iter()
+                    .any(|b| !b.other && borealis_engine::spells::same_spellcasting(n, &b.name))
+            })
+        };
+        let mut out = Vec::new();
+        for sp in &sc.spells {
+            let Some(g) = &sp.granted_by else { continue };
+            let granters = snap
+                .elements
+                .iter()
+                .filter_map(|r| self.store.element(&r.element.id))
+                .filter(|e| e.name == g.name && e.ty == g.ty);
+            for e in granters {
+                let grants: Vec<_> = e
+                    .rules
+                    .iter()
+                    .filter_map(|r| match r {
+                        Rule::Grant(gr) if gr.id == sp.id => Some(gr.spellcasting.as_deref()),
+                        _ => None,
+                    })
+                    .collect();
+                // a spell the element grants is placed by its grant; otherwise it was picked in
+                // one of the element's spell selects
+                let misplaced = if grants.is_empty() {
+                    e.rules.iter().any(|r| {
+                        matches!(r, Rule::Select(se) if se.ty == "Spell"
+                            && named_block(se.spellcasting.as_deref()))
+                    })
+                } else {
+                    grants.into_iter().any(named_block)
+                };
+                if misplaced {
+                    out.push(format!(
+                        "spell of a named spellcasting in Other Spells {}",
+                        sp.id
+                    ));
+                }
+            }
+        }
+        out
     }
 
     fn fill(&self, mut state: CharacterState, pick: Pick) -> CharacterState {
@@ -821,8 +929,13 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
         slot_lists: slot_lists(&store),
         unattributed: std::cell::RefCell::default(),
     };
+    let only = only_ids();
     let of_type = |ty: &str| -> Vec<&Element> {
-        elements.iter().filter(|e| e.ty == ty).take(limit).collect()
+        elements
+            .iter()
+            .filter(|e| e.ty == ty && only.as_ref().is_none_or(|o| o.contains(&e.id)))
+            .take(limit)
+            .collect()
     };
     let mut t = Tally::reviewed_by(&review);
     let mut panics = 0usize;
