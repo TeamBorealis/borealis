@@ -110,6 +110,9 @@ export interface AppSettings {
   /** Show the "Import only content you own" notice before every content import (default on; "Don't show this again" turns it off). */
   showImportNotice: boolean;
   search: SearchSettings;
+  /** HC3: the homebrew creator (START > HOMEBREW and its entry points) is shown. Off by default until 1.5.0; no settings
+   * control (dev builds and the web mock's `?creator=1` turn the creator on). */
+  creatorEnabled: boolean;
 }
 
 /** Settings > DATA FILES folders (display only; paths never go back to the backend). */

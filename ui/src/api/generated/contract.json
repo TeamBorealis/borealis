@@ -638,6 +638,280 @@
     "k": "prim"
    }
   },
+  "homebrew_block_catalog": {
+   "args": {},
+   "method": "homebrewBlockCatalog",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "HomebrewBlockSpec"
+    }
+   }
+  },
+  "homebrew_bulk_edit": {
+   "args": {
+    "elementIds": false,
+    "packId": false,
+    "patch": false
+   },
+   "method": "homebrewBulkEdit",
+   "response": {
+    "k": "ref",
+    "name": "ContentPack"
+   }
+  },
+  "homebrew_check_draft": {
+   "args": {
+    "draftId": false
+   },
+   "method": "homebrewCheckDraft",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "HomebrewProblem"
+    }
+   }
+  },
+  "homebrew_create_pack": {
+   "args": {
+    "request": false
+   },
+   "method": "homebrewCreatePack",
+   "response": {
+    "k": "ref",
+    "name": "ContentPack"
+   }
+  },
+  "homebrew_delete_elements": {
+   "args": {
+    "confirm": false,
+    "elementIds": false,
+    "packId": false
+   },
+   "method": "homebrewDeleteElements",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewDeleteResult"
+   }
+  },
+  "homebrew_discard_draft": {
+   "args": {
+    "draftId": false
+   },
+   "method": "homebrewDiscardDraft",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "homebrew_duplicate_element": {
+   "args": {
+    "elementId": false,
+    "packId": false
+   },
+   "method": "homebrewDuplicateElement",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewDraftView"
+   }
+  },
+  "homebrew_export_pack": {
+   "args": {
+    "leaveOutCopiedText": false,
+    "packId": false
+   },
+   "method": "homebrewExportPack",
+   "response": {
+    "k": "ref",
+    "name": "ExportResult"
+   }
+  },
+  "homebrew_kinds": {
+   "args": {},
+   "method": "homebrewKinds",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "HomebrewKindDescriptor"
+    }
+   }
+  },
+  "homebrew_list_drafts": {
+   "args": {},
+   "method": "homebrewListDrafts",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "HomebrewDraftSummary"
+    }
+   }
+  },
+  "homebrew_list_elements": {
+   "args": {
+    "packId": false
+   },
+   "method": "homebrewListElements",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "HomebrewElementSummary"
+    }
+   }
+  },
+  "homebrew_new_draft": {
+   "args": {
+    "copyFrom": true,
+    "deepCopy": true,
+    "kind": false,
+    "packId": false,
+    "parentId": true
+   },
+   "method": "homebrewNewDraft",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewDraftView"
+   }
+  },
+  "homebrew_open_draft": {
+   "args": {
+    "elementId": false,
+    "packId": false
+   },
+   "method": "homebrewOpenDraft",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewDraftView"
+   }
+  },
+  "homebrew_reference_options": {
+   "args": {
+    "draftId": true,
+    "filters": false,
+    "page": false,
+    "query": false,
+    "target": false
+   },
+   "method": "homebrewReferenceOptions",
+   "response": {
+    "k": "ref",
+    "name": "Page<HomebrewPickerRow>"
+   }
+  },
+  "homebrew_save_draft": {
+   "args": {
+    "draftId": false
+   },
+   "method": "homebrewSaveDraft",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewSaveResult"
+   }
+  },
+  "homebrew_set_spell_list": {
+   "args": {
+    "add": false,
+    "listTag": false,
+    "packId": false,
+    "remove": false
+   },
+   "method": "homebrewSetSpellList",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewSpellListView"
+   }
+  },
+  "homebrew_spell_list": {
+   "args": {
+    "listTag": false,
+    "packId": false
+   },
+   "method": "homebrewSpellList",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewSpellListView"
+   }
+  },
+  "homebrew_stat_catalog": {
+   "args": {},
+   "method": "homebrewStatCatalog",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "HomebrewStatGroup"
+    }
+   }
+  },
+  "homebrew_trial_end": {
+   "args": {
+    "trialId": false
+   },
+   "method": "homebrewTrialEnd",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "homebrew_trial_start": {
+   "args": {
+    "draftId": false,
+    "setup": false
+   },
+   "method": "homebrewTrialStart",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewTrialView"
+   }
+  },
+  "homebrew_trial_update": {
+   "args": {
+    "change": false,
+    "trialId": false
+   },
+   "method": "homebrewTrialUpdate",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewTrialView"
+   }
+  },
+  "homebrew_update_draft": {
+   "args": {
+    "draftId": false,
+    "form": false
+   },
+   "method": "homebrewUpdateDraft",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewDraftView"
+   }
+  },
+  "homebrew_update_pack": {
+   "args": {
+    "packId": false,
+    "patch": false
+   },
+   "method": "homebrewUpdatePack",
+   "response": {
+    "k": "ref",
+    "name": "ContentPack"
+   }
+  },
+  "homebrew_where_used": {
+   "args": {
+    "elementId": false
+   },
+   "method": "homebrewWhereUsed",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "HomebrewElementRef"
+    }
+   }
+  },
   "import_5etools": {
    "args": {
     "request": false
@@ -3377,6 +3651,12 @@
      }
     },
     "confirmRemoveLevel": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "creatorEnabled": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -6407,6 +6687,151 @@
     }
    }
   },
+  "HomebrewBlock": {
+   "k": "object",
+   "props": {
+    "fields": {
+     "opt": false,
+     "t": {
+      "k": "record",
+      "t": {
+       "k": "any"
+      }
+     }
+    },
+    "key": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sentence": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewBlockSpec": {
+   "k": "object",
+   "props": {
+    "common": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "coreOnly": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fields": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewFieldSpec"
+      }
+     }
+    },
+    "group": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "levelGated": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewCharacterRef": {
+   "k": "object",
+   "props": {
+    "characterId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewChoice": {
+   "k": "object",
+   "props": {
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "value": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewDeleteResult": {
+   "k": "object",
+   "props": {
+    "deleted": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pack": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ContentPack"
+     }
+    },
+    "usedBy": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewCharacterRef"
+      }
+     }
+    }
+   }
+  },
   "HomebrewDraft": {
    "k": "object",
    "props": {
@@ -6420,6 +6845,895 @@
      }
     },
     "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewDraftSummary": {
+   "k": "object",
+   "props": {
+    "draftId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "packId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "updatedAt": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewDraftView": {
+   "k": "object",
+   "props": {
+    "baseChanged": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "draftId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "form": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "HomebrewForm"
+     }
+    },
+    "generated": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "HomebrewGeneratedView"
+     }
+    },
+    "packId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "preview": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ElementDetail"
+     }
+    },
+    "problems": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewProblem"
+      }
+     }
+    },
+    "updatedAt": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewElementRef": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "packId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "relation": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewElementSummary": {
+   "k": "object",
+   "props": {
+    "edition": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementType": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "hasDraft": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "parentId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "problems": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "HomebrewProblemCounts"
+     }
+    }
+   }
+  },
+  "HomebrewFieldSpec": {
+   "k": "object",
+   "props": {
+    "allowCustom": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "bindings": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "choices": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewChoice"
+      }
+     }
+    },
+    "control": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "editions": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "expert": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "help": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "key": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "max": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "min": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "picker": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "HomebrewPickerTarget"
+     }
+    },
+    "required": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "section": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tab": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewForm": {
+   "k": "object",
+   "props": {
+    "blocks": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewBlock"
+      }
+     }
+    },
+    "children": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewForm"
+      }
+     }
+    },
+    "fields": {
+     "opt": false,
+     "t": {
+      "k": "record",
+      "t": {
+       "k": "any"
+      }
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "preserved": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewPreservedPart"
+      }
+     }
+    }
+   }
+  },
+  "HomebrewGeneratedView": {
+   "k": "object",
+   "props": {
+    "json": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tree": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "record",
+       "t": {
+        "k": "any"
+       }
+      }
+     }
+    }
+   }
+  },
+  "HomebrewKindDescriptor": {
+   "k": "object",
+   "props": {
+    "description": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "editions": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "elementTypes": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "fields": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewFieldSpec"
+      }
+     }
+    },
+    "group": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "parentKinds": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "pluralLabel": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tabs": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewTab"
+      }
+     }
+    }
+   }
+  },
+  "HomebrewLadderRow": {
+   "k": "object",
+   "props": {
+    "choices": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "features": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "problems": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewProblem"
+      }
+     }
+    },
+    "slots": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "HomebrewPickerRow": {
+   "k": "object",
+   "props": {
+    "draft": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "edition": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prerequisites": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "summary": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewPickerTarget": {
+   "k": "object",
+   "props": {
+    "multiple": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tags": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "types": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "HomebrewPreservedPart": {
+   "k": "object",
+   "props": {
+    "key": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewProblem": {
+   "k": "object",
+   "props": {
+    "code": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "message": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "severity": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewProblemCounts": {
+   "k": "object",
+   "props": {
+    "errors": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "warnings": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewSaveResult": {
+   "k": "object",
+   "props": {
+    "elementIds": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "pack": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ContentPack"
+     }
+    }
+   }
+  },
+  "HomebrewSpellListRow": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "material": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "onList": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "removable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "school": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "somatic": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "verbal": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewSpellListView": {
+   "k": "object",
+   "props": {
+    "count": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "listTag": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "own": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "rows": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewSpellListRow"
+      }
+     }
+    }
+   }
+  },
+  "HomebrewStatEntry": {
+   "k": "object",
+   "props": {
+    "classScoped": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewStatGroup": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "stats": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewStatEntry"
+      }
+     }
+    }
+   }
+  },
+  "HomebrewTab": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewTrialView": {
+   "k": "object",
+   "props": {
+    "changed": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "ladder": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewLadderRow"
+      }
+     }
+    },
+    "problems": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewProblem"
+      }
+     }
+    },
+    "snapshot": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "CharacterSnapshot"
+     }
+    },
+    "trialId": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -8248,6 +9562,27 @@
       "t": {
        "k": "ref",
        "name": "ElementSummary"
+      }
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "Page<HomebrewPickerRow>": {
+   "k": "object",
+   "props": {
+    "items": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewPickerRow"
       }
      }
     },

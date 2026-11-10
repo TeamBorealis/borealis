@@ -41,6 +41,7 @@ pub mod commands_ai_setup;
 pub mod commands_app_update;
 pub mod commands_content;
 pub mod commands_gear;
+pub mod commands_homebrew;
 pub mod commands_hp;
 #[cfg(ai_cli)]
 pub mod commands_import;
@@ -110,6 +111,8 @@ mod folder_access_mac;
 pub mod gear_facts;
 pub mod gear_info;
 pub mod homebrew_api;
+pub mod homebrew_creator;
+pub mod homebrew_dto;
 pub mod hp_api;
 pub mod ids;
 #[cfg(ai_cli)]
@@ -562,6 +565,30 @@ pub fn run() {
             commands_report::import_report_preview,
             #[cfg(ai_cli)]
             commands_report::import_report_send,
+            commands_homebrew::homebrew_kinds,
+            commands_homebrew::homebrew_block_catalog,
+            commands_homebrew::homebrew_stat_catalog,
+            commands_homebrew::homebrew_create_pack,
+            commands_homebrew::homebrew_update_pack,
+            commands_homebrew::homebrew_list_elements,
+            commands_homebrew::homebrew_new_draft,
+            commands_homebrew::homebrew_open_draft,
+            commands_homebrew::homebrew_update_draft,
+            commands_homebrew::homebrew_check_draft,
+            commands_homebrew::homebrew_save_draft,
+            commands_homebrew::homebrew_discard_draft,
+            commands_homebrew::homebrew_list_drafts,
+            commands_homebrew::homebrew_delete_elements,
+            commands_homebrew::homebrew_duplicate_element,
+            commands_homebrew::homebrew_bulk_edit,
+            commands_homebrew::homebrew_reference_options,
+            commands_homebrew::homebrew_where_used,
+            commands_homebrew::homebrew_spell_list,
+            commands_homebrew::homebrew_set_spell_list,
+            commands_homebrew::homebrew_trial_start,
+            commands_homebrew::homebrew_trial_update,
+            commands_homebrew::homebrew_trial_end,
+            commands_homebrew::homebrew_export_pack,
             commands_play::preview_convert_to_2024,
             commands_play::apply_convert_to_2024,
             commands_play::spend_resource,

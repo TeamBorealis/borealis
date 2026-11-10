@@ -392,6 +392,56 @@ user's `note` (<= 2000 chars) and `source` (null unless `includeSource`; drafts 
 the last 8 previews; `import_report_send` posts the stored bytes (HTTPS, no redirects) and forgets them; failures are `io_error`,
 an expired preview `not_found`. Payloads over 1.4 MB are refused with `invalid_argument`.
 
+### Homebrew creator
+
+The 1.5.0 creator (decisions HC1-HC4; `specs/homebrew-creator-spec.md` is the source of truth, section 15.2). Types:
+`ui/src/api/types/homebrew.ts` (TS) and `src-tauri/src/homebrew_dto.rs` (Rust, checked against the generated contract by
+`src-tauri/tests/contract_homebrew.rs`). Wrappers: `src-tauri/src/commands_homebrew.rs`, delegating to
+`src-tauri/src/homebrew_creator.rs` (the AI path keeps `homebrew_api.rs`). Long work runs through `commands_content.rs::blocking`.
+
+**Feature switch (HC3).** `AppSettings.creatorEnabled` (default `false`, no settings control) shows START > HOMEBREW and the
+creator's entry points; until 1.5.0 the UI reaches these commands only with it on (dev builds and the web mock's `?creator=1`).
+
+**Not implemented yet.** Until a command's work item lands (spec section 21), it rejects with `requirement_failed` and
+`details: { notImplemented: "<command>" }`. The web mock implements packs, elements and drafts in memory (kinds are sample
+forms) and answers the same error for bulk edit, reference options, spell lists, Try it and export.
+
+| Command | Args (camelCase keys) | Returns |
+|---|---|---|
+| `homebrew_kinds` | none | `HomebrewKindDescriptor[]` (fields, sub-tabs, bindings, editions) |
+| `homebrew_block_catalog` | none | `HomebrewBlockSpec[]` |
+| `homebrew_stat_catalog` | none | `HomebrewStatGroup[]` |
+| `homebrew_create_pack` | `{ request: HomebrewPackRequest }` (`name, code, edition: dnd2014\|dnd2024\|any, author?, description?, license?`) | `ContentPack` (`kind: "homebrew"`) |
+| `homebrew_update_pack` | `{ packId, patch: HomebrewPackPatch }` | `ContentPack` |
+| `homebrew_list_elements` | `{ packId }` | `HomebrewElementSummary[]` |
+| `homebrew_new_draft` | `{ packId, kind, copyFrom?, parentId?, deepCopy? }` | `HomebrewDraftView` |
+| `homebrew_open_draft` | `{ packId, elementId }` | `HomebrewDraftView` (resumes an existing draft) |
+| `homebrew_update_draft` | `{ draftId, form: HomebrewForm }` | `HomebrewDraftView` (autosaved; preview, problems, generated data) |
+| `homebrew_check_draft` | `{ draftId }` | `HomebrewProblem[]` (engine checks and the 1-20 sweep) |
+| `homebrew_save_draft` | `{ draftId }` | `HomebrewSaveResult` (`{ pack, elementIds }`); `invalid_argument` with `details` = the problems when errors exist |
+| `homebrew_discard_draft` | `{ draftId }` | `void` |
+| `homebrew_list_drafts` | none | `HomebrewDraftSummary[]` |
+| `homebrew_delete_elements` | `{ packId, elementIds, confirm }` | `HomebrewDeleteResult` (`{ deleted, usedBy, pack }`) |
+| `homebrew_duplicate_element` | `{ packId, elementId }` | `HomebrewDraftView` |
+| `homebrew_bulk_edit` | `{ packId, elementIds, patch: HomebrewBulkPatch }` | `ContentPack` |
+| `homebrew_reference_options` | `{ target: HomebrewPickerTarget, query, filters: HomebrewPickerFilters, page: { offset, limit }, draftId? }` | `Page<HomebrewPickerRow>` |
+| `homebrew_where_used` | `{ elementId }` | `HomebrewElementRef[]` |
+| `homebrew_spell_list` | `{ packId, listTag }` | `HomebrewSpellListView` |
+| `homebrew_set_spell_list` | `{ packId, listTag, add, remove }` | `HomebrewSpellListView` |
+| `homebrew_trial_start` | `{ draftId, setup: HomebrewTrialSetup }` | `HomebrewTrialView` (`{ trialId, snapshot, ladder, problems, changed }`) |
+| `homebrew_trial_update` | `{ trialId, change: HomebrewTrialChange }` | `HomebrewTrialView` |
+| `homebrew_trial_end` | `{ trialId }` | `void` |
+| `homebrew_export_pack` | `{ packId, leaveOutCopiedText }` | `ExportResult` (desktop `path`, phones `dataBase64` for the share sheet) |
+
+- **Ids never reach the screen.** They travel in `HomebrewRef`, picker rows and summaries; the UI shows names.
+- **Form.** `HomebrewForm { kind, fields, blocks, children, preserved }`: `fields` holds one value per
+  `HomebrewFieldSpec.key` of the kind; `blocks` are rule blocks (`{ key, kind, sentence, fields }`); `children` are the child
+  elements edited inside (a class's features); `preserved` lists the parts kept byte-for-byte (spec 3.4). The value shapes of
+  builders (WB-02), rich text (WB-03), blocks (WB-05) and per-kind fields (WB-04) are typed by those items.
+- **Problems** are plain sentences with a form `path` (`fields.level`, `blocks.2.fields.number`, `children.0.fields.name`)
+  and a `code` (an `IssueCode`, a rule problem, `sweep`, `engine`, `lint.*`, `balance.*`); errors block Save.
+- **Events:** saves end with the existing `borealis://content-reloaded`.
+
 ### AI tasks
 
 `ai_start_task` modes and what they need (`params` is a free JSON object, camelCase):

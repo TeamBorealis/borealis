@@ -45,6 +45,7 @@ import { NO_COMPANIONS, addCompanion, removeCompanion, updateCompanionOf } from 
 import { type MockCharacter, type RuleSettings, levelOf } from "./state";
 import { findByWireId, toWireSlotId } from "./slot-ids";
 import { MOCK_INDEX_STATUS, mockPassage, mockSearch } from "./search";
+import { MockHomebrew, notImplemented } from "./homebrew";
 
 export interface MockApiOptions {
   /** Artificial latency per call in ms (default 0). */
@@ -85,6 +86,8 @@ export interface MockApiOptions {
   contentNotices?: boolean;
   /** B-191: Deity element names the content offers (Manage > Deity lists them; default none, as the SRD). */
   deities?: readonly string[];
+  /** HC3: the homebrew creator is switched on (`?creator=1`); off by default, as in 1.4.x builds. */
+  creatorEnabled?: boolean;
 }
 
 const PROFILES: Record<"dnd2014" | "dnd2024", RulesetProfile> = {
@@ -110,6 +113,7 @@ export class MockApi implements Api {
   private ai: MockAi;
   private setup: MockAiSetup;
   private imp: MockImport;
+  private homebrew: MockHomebrew;
   /** Mock native dialogs (`pickPath`); tests may set `picks.next`. */
   readonly picks = new MockPicks();
   readonly fivetoolsUrls = new MockFiveToolsUrls();
@@ -142,9 +146,11 @@ export class MockApi implements Api {
     setClasslessEdition(opts.classlessEdition ?? null);
     setBackgroundAbilityList(opts.backgroundAbilityList ?? false);
     setMockDeities(opts.deities ?? []);
+    this.settings = { ...this.settings, creatorEnabled: opts.creatorEnabled ?? false };
     this.content = new ContentService((p) => this.emit("content:progress", p), () => this.emit("content:reloaded", { reason: "content changed" }), (p) => this.emit("import5etools:progress", p));
     this.ai = new MockAi((e) => this.emit("ai:event", e), { chunkDelayMs: opts.aiChunkDelayMs ?? 25, available: opts.aiAvailable ?? true });
     this.setup = new MockAiSetup((e) => this.emit("aisetup:event", e), opts.aiSetup);
+    this.homebrew = new MockHomebrew((pack) => this.content.putOwnPack(pack));
     this.imp = new MockImport((e) => this.emit("import:event", e), opts.importStepMs ?? 300);
     this.link = new MockDeviceLink((st) => this.emit("link:status", st), {
       mobile: this.mobile, peerAfterMs: opts.linkPeerAfterMs ?? null, devices: opts.linkDevices,
@@ -947,4 +953,30 @@ export class MockApi implements Api {
   async importDiscard({ draftId }: { draftId: string }) { await this.tick(); this.imp.discard(draftId); }
   async importReportPreview(req: Parameters<Api["importReportPreview"]>[0]) { await this.tick(); return this.reports.preview(req, (id) => this.imp.get(id)); }
   async importReportSend({ previewId }: { previewId: string }) { await this.tick(); return this.reports.send(previewId); }
+
+  /* Homebrew creator (packs, elements and drafts in memory; the rest rejects as the backend does until its work item lands) */
+  async homebrewKinds() { await this.tick(); return this.homebrew.kinds(); }
+  async homebrewBlockCatalog() { await this.tick(); return []; }
+  async homebrewStatCatalog() { await this.tick(); return []; }
+  async homebrewCreatePack({ request }: Parameters<Api["homebrewCreatePack"]>[0]) { await this.tick(); return this.homebrew.createPack(request); }
+  async homebrewUpdatePack({ packId, patch }: Parameters<Api["homebrewUpdatePack"]>[0]) { await this.tick(); return this.homebrew.updatePack(packId, patch); }
+  async homebrewListElements({ packId }: { packId: string }) { await this.tick(); return this.homebrew.listElements(packId); }
+  async homebrewNewDraft({ packId, kind, copyFrom }: Parameters<Api["homebrewNewDraft"]>[0]) { await this.tick(); return this.homebrew.newDraft(packId, kind, copyFrom); }
+  async homebrewOpenDraft({ packId, elementId }: { packId: string; elementId: string }) { await this.tick(); return this.homebrew.openDraft(packId, elementId); }
+  async homebrewUpdateDraft({ draftId, form }: Parameters<Api["homebrewUpdateDraft"]>[0]) { await this.tick(); return this.homebrew.updateDraft(draftId, form); }
+  async homebrewCheckDraft({ draftId }: { draftId: string }) { await this.tick(); return this.homebrew.checkDraft(draftId); }
+  async homebrewSaveDraft({ draftId }: { draftId: string }) { await this.tick(); return this.homebrew.saveDraft(draftId); }
+  async homebrewDiscardDraft({ draftId }: { draftId: string }) { await this.tick(); this.homebrew.discardDraft(draftId); }
+  async homebrewListDrafts() { await this.tick(); return this.homebrew.listDrafts(); }
+  async homebrewDeleteElements({ packId, elementIds }: Parameters<Api["homebrewDeleteElements"]>[0]) { await this.tick(); return this.homebrew.deleteElements(packId, elementIds); }
+  async homebrewDuplicateElement({ packId, elementId }: { packId: string; elementId: string }) { await this.tick(); return this.homebrew.duplicateElement(packId, elementId); }
+  async homebrewBulkEdit(_: Parameters<Api["homebrewBulkEdit"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_bulk_edit"); }
+  async homebrewReferenceOptions(_: Parameters<Api["homebrewReferenceOptions"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_reference_options"); }
+  async homebrewWhereUsed(_: { elementId: string }) { await this.tick(); return []; }
+  async homebrewSpellList(_: { packId: string; listTag: string }): Promise<never> { await this.tick(); throw notImplemented("homebrew_spell_list"); }
+  async homebrewSetSpellList(_: Parameters<Api["homebrewSetSpellList"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_set_spell_list"); }
+  async homebrewTrialStart(_: Parameters<Api["homebrewTrialStart"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_trial_start"); }
+  async homebrewTrialUpdate(_: Parameters<Api["homebrewTrialUpdate"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_trial_update"); }
+  async homebrewTrialEnd(_: { trialId: string }): Promise<never> { await this.tick(); throw notImplemented("homebrew_trial_end"); }
+  async homebrewExportPack(_: Parameters<Api["homebrewExportPack"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_export_pack"); }
 }

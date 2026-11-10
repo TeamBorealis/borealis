@@ -11,3 +11,4 @@ export * from "./importPreview";
 export * from "./sync";
 export * from "./semantic";
 export * from "./vault";
+export * from "./homebrew";

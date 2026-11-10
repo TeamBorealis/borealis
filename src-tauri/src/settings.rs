@@ -170,6 +170,9 @@ pub struct AppSettings {
     pub check_app_updates: bool,
     /// Local search (local-search-spec.md section 9).
     pub search: SearchSettings,
+    /// HC3: the homebrew creator is shown (START > HOMEBREW and its entry points). Off until 1.5.0; no settings
+    /// control, so 1.4.x looks unchanged (dev builds and the web mock turn it on in the UI).
+    pub creator_enabled: bool,
 }
 
 /// Device tier override for semantic search (S3; keyword search ignores it).
@@ -289,6 +292,7 @@ impl Default for AppSettings {
             show_import_notice: true,
             check_app_updates: true,
             search: SearchSettings::default(),
+            creator_enabled: false,
         }
     }
 }

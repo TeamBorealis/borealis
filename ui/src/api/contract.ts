@@ -125,6 +125,29 @@ import type {
   Attack,
   ConversionApplied,
   ConversionPreview,
+  HomebrewBlockSpec,
+  HomebrewBulkPatch,
+  HomebrewDeleteResult,
+  HomebrewDraftSummary,
+  HomebrewDraftView,
+  HomebrewElementRef,
+  HomebrewElementSummary,
+  HomebrewForm,
+  HomebrewKindDescriptor,
+  HomebrewKindId,
+  HomebrewPackPatch,
+  HomebrewPackRequest,
+  HomebrewPageRequest,
+  HomebrewPickerFilters,
+  HomebrewPickerRow,
+  HomebrewPickerTarget,
+  HomebrewProblem,
+  HomebrewSaveResult,
+  HomebrewSpellListView,
+  HomebrewStatGroup,
+  HomebrewTrialChange,
+  HomebrewTrialSetup,
+  HomebrewTrialView,
 } from "./types";
 
 export * from "./types";
@@ -605,6 +628,49 @@ export interface ApiMethods {
   importReportPreview(args: ImportReportRequest): Promise<ImportReportPreview>;
   /** Sends exactly the previewed payload (HTTPS POST to the Borealis website). */
   importReportSend(args: { previewId: string }): Promise<ImportReportSent>;
+
+  /* Homebrew creator (1.5.0; specs/homebrew-creator-spec.md section 15.2). Hidden until `AppSettings.creatorEnabled` (HC3).
+   * Until each command's work item lands, the backend rejects with `requirement_failed` and
+   * `details.notImplemented` = the command name. */
+  /** Every creator form: fields, sub-tabs, bindings and defaults per edition. */
+  homebrewKinds(): Promise<HomebrewKindDescriptor[]>;
+  /** Every rule block the forms offer (grant, select, list, stat and each custom rule kind). */
+  homebrewBlockCatalog(): Promise<HomebrewBlockSpec[]>;
+  /** The statistic picker's groups. */
+  homebrewStatCatalog(): Promise<HomebrewStatGroup[]>;
+  /** NEW PACK: writes the pack (with its Source element) and hot-reloads content. */
+  homebrewCreatePack(args: { request: HomebrewPackRequest }): Promise<ContentPack>;
+  homebrewUpdatePack(args: { packId: string; patch: HomebrewPackPatch }): Promise<ContentPack>;
+  homebrewListElements(args: { packId: string }): Promise<HomebrewElementSummary[]>;
+  /** A new element of `kind` (from a copy of `copyFrom`, as a child of `parentId`; `deepCopy` copies a class's features and subclasses too). */
+  homebrewNewDraft(args: { packId: string; kind: HomebrewKindId; copyFrom?: string; parentId?: string; deepCopy?: boolean }): Promise<HomebrewDraftView>;
+  /** Open a saved element; resumes its draft when one exists. */
+  homebrewOpenDraft(args: { packId: string; elementId: string }): Promise<HomebrewDraftView>;
+  /** Every edit (UI debounce 300 ms): autosaves the draft and returns the live preview, problems and generated data. */
+  homebrewUpdateDraft(args: { draftId: string; form: HomebrewForm }): Promise<HomebrewDraftView>;
+  /** The heavier engine checks and the 1-20 level sweep (spec 8.1 step 6). */
+  homebrewCheckDraft(args: { draftId: string }): Promise<HomebrewProblem[]>;
+  /** Validate, write the pack, hot-reload, delete the draft. Rejects with `invalid_argument` (details: the problems) when errors exist. */
+  homebrewSaveDraft(args: { draftId: string }): Promise<HomebrewSaveResult>;
+  homebrewDiscardDraft(args: { draftId: string }): Promise<void>;
+  homebrewListDrafts(): Promise<HomebrewDraftSummary[]>;
+  /** Without `confirm`: lists the local characters that use the elements and deletes only when none does. */
+  homebrewDeleteElements(args: { packId: string; elementIds: string[]; confirm: boolean }): Promise<HomebrewDeleteResult>;
+  /** A copy inside the same pack with a new id (deep for classes). */
+  homebrewDuplicateElement(args: { packId: string; elementId: string }): Promise<HomebrewDraftView>;
+  homebrewBulkEdit(args: { packId: string; elementIds: string[]; patch: HomebrewBulkPatch }): Promise<ContentPack>;
+  /** Picker rows for a reference field (loaded content plus the current pack's unsaved drafts). */
+  homebrewReferenceOptions(args: { target: HomebrewPickerTarget; query: string; filters: HomebrewPickerFilters; page: HomebrewPageRequest; draftId?: string }): Promise<Page<HomebrewPickerRow>>;
+  homebrewWhereUsed(args: { elementId: string }): Promise<HomebrewElementRef[]>;
+  homebrewSpellList(args: { packId: string; listTag: string }): Promise<HomebrewSpellListView>;
+  /** Add or remove spells (own spells change their tags; loaded spells get an append in the pack). */
+  homebrewSetSpellList(args: { packId: string; listTag: string; add: string[]; remove: string[] }): Promise<HomebrewSpellListView>;
+  /** Try it: a throwaway character with the draft, never saved or listed. */
+  homebrewTrialStart(args: { draftId: string; setup: HomebrewTrialSetup }): Promise<HomebrewTrialView>;
+  homebrewTrialUpdate(args: { trialId: string; change: HomebrewTrialChange }): Promise<HomebrewTrialView>;
+  homebrewTrialEnd(args: { trialId: string }): Promise<void>;
+  /** `.borealis-pack.zip`: desktop save dialog (`path`), phones the share sheet (`dataBase64`). */
+  homebrewExportPack(args: { packId: string; leaveOutCopiedText: boolean }): Promise<ExportResult>;
 }
 
 export type CommandName = keyof ApiMethods;
@@ -834,6 +900,30 @@ export const COMMANDS = {
   importDiscard: "import_discard",
   importReportPreview: "import_report_preview",
   importReportSend: "import_report_send",
+  homebrewKinds: "homebrew_kinds",
+  homebrewBlockCatalog: "homebrew_block_catalog",
+  homebrewStatCatalog: "homebrew_stat_catalog",
+  homebrewCreatePack: "homebrew_create_pack",
+  homebrewUpdatePack: "homebrew_update_pack",
+  homebrewListElements: "homebrew_list_elements",
+  homebrewNewDraft: "homebrew_new_draft",
+  homebrewOpenDraft: "homebrew_open_draft",
+  homebrewUpdateDraft: "homebrew_update_draft",
+  homebrewCheckDraft: "homebrew_check_draft",
+  homebrewSaveDraft: "homebrew_save_draft",
+  homebrewDiscardDraft: "homebrew_discard_draft",
+  homebrewListDrafts: "homebrew_list_drafts",
+  homebrewDeleteElements: "homebrew_delete_elements",
+  homebrewDuplicateElement: "homebrew_duplicate_element",
+  homebrewBulkEdit: "homebrew_bulk_edit",
+  homebrewReferenceOptions: "homebrew_reference_options",
+  homebrewWhereUsed: "homebrew_where_used",
+  homebrewSpellList: "homebrew_spell_list",
+  homebrewSetSpellList: "homebrew_set_spell_list",
+  homebrewTrialStart: "homebrew_trial_start",
+  homebrewTrialUpdate: "homebrew_trial_update",
+  homebrewTrialEnd: "homebrew_trial_end",
+  homebrewExportPack: "homebrew_export_pack",
 } as const satisfies Record<CommandName, string>;
 
 /** Backend -> UI push events (Tauri `emit`). */
