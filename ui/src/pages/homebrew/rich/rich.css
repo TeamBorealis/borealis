@@ -1,0 +1,62 @@
+/* Description editor (homebrew creator spec 7.1, 13.13, 16): the edit area is the Manage form's multiline field
+   (.hb-multiline), its content reads like the description pane, the toolbar is the Equipment inventory panel's icon+text
+   flat buttons (.eq-inv-actions). Existing tokens and values only (U7, HC4). */
+
+/* ProseMirror's required view rules (prosemirror-view/style/prosemirror.css, without its own selection colours) */
+.ProseMirror { position: relative; word-wrap: break-word; white-space: pre-wrap; white-space: break-spaces; font-variant-ligatures: none; font-feature-settings: "liga" 0; }
+.ProseMirror li { position: relative; }
+.ProseMirror-hideselection *::selection { background: transparent; }
+.ProseMirror-hideselection { caret-color: transparent; }
+.ProseMirror [draggable][contenteditable=false] { user-select: text; }
+img.ProseMirror-separator { display: inline !important; border: none !important; margin: 0 !important; }
+
+.rich-editor { display: flex; flex-direction: column; min-width: 0; }
+
+/* 13.13 toolbar: 10 px icon+text flat buttons; a narrow column wraps them */
+.rich-toolbar { flex-wrap: wrap; height: auto; min-height: 30px; row-gap: 6px; }
+.rich-toolbar button[aria-pressed="true"] { color: #fff; }
+.rich-toolbar button[aria-disabled="true"] { color: #4a4a4a; cursor: default; }
+@media (hover: hover) and (pointer: fine) { .rich-toolbar button[aria-disabled="true"]:hover { color: #4a4a4a; } }
+
+/* the edit area: .hb-multiline's field */
+.rich-edit { min-height: 120px; background: var(--field-bg, #1c1c1c); color: var(--text); border: 1px solid #424243; font: inherit; font-size: var(--fs-md); padding: 4px 5px; }
+.rich-edit[aria-invalid="true"] { border-color: var(--aur-danger); }
+
+/* content: the description pane's paragraphs, headings, lists and tables */
+.rich-edit p { margin: 0 0 6px; }
+.rich-edit h3 { margin: 12px 0 6px; padding-bottom: 1px; font-size: 16px; font-weight: 600; text-transform: uppercase; color: var(--desc-head, var(--text)); border-bottom: 1px solid #333333; }
+.rich-edit h4 { margin: 10px 0 4px; font-size: var(--fs-sm); font-weight: 600; color: var(--desc-head, var(--text)); }
+.rich-edit > :first-child { margin-top: 0; }
+.rich-edit ul, .rich-edit ol { margin: 0 0 6px; padding-left: 18px; }
+.rich-edit blockquote { margin: 0 0 6px; padding-left: 10px; border-left: 2px solid #333333; }
+.rich-edit table { border-collapse: collapse; margin: 0 0 6px; font-size: var(--fs-sm); }
+.rich-edit th, .rich-edit td { min-width: 40px; text-align: left; padding: 4px 8px; border: 1px solid var(--border); vertical-align: top; }
+.rich-edit th { color: var(--dark-4b); font-weight: 600; font-size: var(--fs-2xs); text-transform: uppercase; background: var(--accent-20); }
+.rich-edit .ProseMirror-selectednode { outline: 1px solid var(--gold); outline-offset: 1px; }
+
+/* kept blocks (7.3): rendered, read-only, removable */
+.rich-kept-block { margin: 0 0 6px; padding: 2px 6px 4px; border: 1px dashed #424243; cursor: default; user-select: none; }
+.rich-kept-head { display: flex; align-items: center; gap: 6px; min-height: 18px; }
+.rich-kept-label { font-size: 9px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
+.rich-kept-remove { margin-left: auto; background: transparent; border: 0; border-radius: 0; padding: 0 2px; height: 16px; min-height: 16px; color: #6d6d6d; font-size: 10px; font-weight: 600; text-transform: uppercase; cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .rich-kept-remove:hover { color: #fff; } }
+.rich-kept { color: var(--text-secondary); }
+
+/* escape lint (7.3): one warning line with a Fix button */
+.rich-lint { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; font-size: 11px; color: var(--aur-warning); }
+.rich-lint .icon { flex: none; width: 13px; height: 13px; }
+.rich-lint span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+
+/* Phones (16): 44 px targets in one scrolling row; while the editor has focus the toolbar sticks to the top of its
+   scroller, and with the keyboard open it docks above the keyboard. */
+html.phone .rich-toolbar { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; }
+html.phone .rich-toolbar button { flex: 0 0 auto; min-width: var(--ph-hit); padding: 4px 8px; }
+html.phone .rich-toolbar button[aria-pressed="true"] { background: var(--ph-accent-soft); }
+html.phone .rich-toolbar button[aria-disabled="true"] { color: var(--ph-text-3); opacity: 0.6; }
+html.phone .rich-docked .rich-toolbar { position: sticky; top: 0; z-index: 2; }
+html.phone.kb-open .rich-docked .rich-toolbar { position: fixed; left: var(--ph-gutter); right: var(--ph-gutter); top: auto; bottom: calc(var(--kb) + 8px); z-index: 30; }
+html.phone .rich-edit { min-height: 96px; padding: 10px 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text); font: 400 var(--ph-t-body)/1.35 var(--ph-font-ui); }
+html.phone .rich-edit:focus { border-color: var(--ph-accent); outline: 2px solid var(--ph-accent); outline-offset: -1px; }
+html.phone .rich-kept-remove { min-height: var(--ph-hit); padding: 0 12px; color: var(--ph-accent); font: 500 var(--ph-t-foot)/1.2 var(--ph-font-ui); text-transform: none; }
+html.phone .rich-lint { font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); }
+html.phone .rich-lint .hb-tool { min-height: var(--ph-hit); }
