@@ -399,6 +399,8 @@ export type HomebrewNumberOrStatisticValue = number | { type: "stat"; stat: stri
  * the values of their own controls (`HomebrewBlockField.fields` / `variants`); `blocks` holds nested blocks (a
  * toggle's effects: never with `preserved`). */
 export interface HomebrewBlockValueByControl {
+  /** Written by the creator, never by the backend: a grant's `type` is the picked element's type, a written list's row
+   * `id` is its number 1..n (a whole number, the engine's `ListItem.id`); `list.type` is `"List"`. */
   auto: unknown;
   text: string;
   multiline: string;

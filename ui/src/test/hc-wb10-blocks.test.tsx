@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -7,7 +9,8 @@ import { addMenuGroups, offeredBlocks } from "../pages/homebrew/blocks/AddBlockD
 import { BlockDialog, PreservedList } from "../pages/homebrew/blocks/BlockDialog";
 import { BlockList, blockProblems } from "../pages/homebrew/blocks/BlockList";
 import { shownSentence } from "../pages/homebrew/blocks/sentence";
-import { cleanFields, missingRequired, newBlock, numberRows } from "../pages/homebrew/blocks/values";
+import { cleanFields, missingRequired, newBlock, numberRows, withAutoType } from "../pages/homebrew/blocks/values";
+import { blockShapeProblems } from "../api/mock/homebrew-shapes";
 import { renderControl, Stateful } from "./hc-wb10-harness";
 
 // Homebrew WB-10: the rule block list (spec 6, 13.6: the Attacks list editor) and the generic block dialog rendered from
@@ -149,7 +152,9 @@ describe("WB-10 generic block dialog (spec 6.1-6.4)", () => {
     await user.click(screen.getByRole("button", { name: "Pick: What it gives" }));
     await user.dblClick(await within(await screen.findByRole("list", { name: "What it gives options" })).findByRole("button", { name: /^Stealth/ }));
     await user.click(screen.getByRole("button", { name: "OK" }));
-    expect(onOk.mock.lastCall![0]).toMatchObject({ kind: "grant", fields: { id: "skill-stealth", type: "skill" }, sentence: "Gives ... (Stealth)" });
+    // The id travels as a `HomebrewRef` (hc-wave2-join); the backend does not fill the type, so the dialog does.
+    expect(onOk.mock.lastCall![0]).toMatchObject({ kind: "grant", fields: { id: { id: "skill-stealth", name: "Stealth", type: "skill" }, type: "skill" }, sentence: "Gives ... (Stealth)" });
+    expect(blockShapeProblems(onOk.mock.lastCall![0], 0, MOCK_BLOCK_CATALOG, null)).toEqual([]);
   });
 
   it("a variant switches shape (a pool's maximum: a fixed number -> a formula)", async () => {
@@ -176,7 +181,8 @@ describe("WB-10 generic block dialog (spec 6.1-6.4)", () => {
     await user.type(texts[0]!, "Charity");
     await user.type(texts[1]!, "Honor");
     await user.click(screen.getByRole("button", { name: "OK" }));
-    expect(onOk.mock.lastCall![0].fields).toMatchObject({ type: "List", name: "Ideal", items: [{ id: "1", text: "Charity" }, { id: "2", text: "Honor" }] });
+    expect(onOk.mock.lastCall![0].fields).toMatchObject({ type: "List", name: "Ideal", items: [{ id: 1, text: "Charity" }, { id: 2, text: "Honor" }] });
+    expect(blockShapeProblems(onOk.mock.lastCall![0], 0, MOCK_BLOCK_CATALOG, null)).toEqual([]);
   });
 
   it("parts kept from the original are read-only and removable only", async () => {
@@ -205,6 +211,81 @@ describe("WB-10 generic block dialog (spec 6.1-6.4)", () => {
   });
 });
 
+describe("hc-wave3-integrate: blocks as the backend's catalog codec sends them", () => {
+  // The Rust sample form (`crates/borealis-authoring/tests/form_dto.rs`): typed values, nested effect blocks.
+  const fixture = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), "src/api/__fixtures__/homebrew-form.json"), "utf8")) as { form: HomebrewForm };
+  const sample = fixture.form.blocks;
+  const byKind = (kind: string) => sample.find((b) => b.kind === kind)!;
+
+  it("a grant read from content shows its element by name and OK sends the same value back", async () => {
+    const user = userEvent.setup();
+    const onOk = vi.fn();
+    const grant = byKind("grant");
+    await renderControl(<BlockDialog spec={spec("grant")} block={grant} isNew={false} problems={[]} onOk={onOk} onCancel={() => undefined} />);
+    expect(screen.getByRole("list", { name: "What it gives" }).textContent).toContain("Pack Tactics");
+    expect(document.body.textContent).not.toContain("ID_GL_TRAIT_PACK_TACTICS");
+    await user.click(screen.getByRole("button", { name: "OK" }));
+    expect(onOk.mock.lastCall![0].fields).toEqual(grant.fields);
+  });
+
+  it("a grant's type follows its element: picked sets it, cleared drops it, unchanged keeps it", () => {
+    const fields = spec("grant").fields;
+    const before = byKind("grant").fields;
+    const feat = { id: "ID_X_FEAT_Y", name: "Y", type: "Feat" };
+    expect(withAutoType(fields, before, { ...before, id: feat })).toMatchObject({ id: feat, type: "Feat" });
+    const { id: _id, ...cleared } = before;
+    expect(withAutoType(fields, before, cleared)).not.toHaveProperty("type");
+    expect(withAutoType(fields, before, { ...before, level: 5 })).toMatchObject({ type: "Racial Trait", level: 5 });
+    // a select has no auto type: its suggested pick changes nothing else
+    expect(withAutoType(spec("select").fields, {}, { default: feat })).toEqual({ default: feat });
+  });
+
+  it("a toggle's effects stay nested blocks: read ones keep their keys and sentences, a new one gets a key", async () => {
+    const user = userEvent.setup();
+    const onOk = vi.fn();
+    const toggle = byKind("toggle");
+    await renderControl(<BlockDialog spec={spec("toggle")} block={toggle} isNew={false} problems={[]} onOk={onOk} onCancel={() => undefined} />);
+    const effects = document.querySelector<HTMLElement>('[data-field="effects"]')!;
+    expect(within(effects).getByRole("list").textContent).toContain("Advantage on Strength checks");
+    await user.click(within(effects).getByRole("button", { name: "Add rule" }));
+    await user.click(within(await screen.findByRole("dialog", { name: "Add a rule" })).getByRole("button", { name: "Multiply a speed" }));
+    const nested = await screen.findByRole("dialog", { name: "New rule: Multiply a speed" });
+    await user.click(within(nested).getByRole("button", { name: "OK" }));
+    expect(screen.queryByRole("dialog", { name: "New rule: Multiply a speed" })).toBeNull();
+    await user.click(within(screen.getByRole("dialog", { name: spec("toggle").label })).getByRole("button", { name: "OK" }));
+    const sent = onOk.mock.lastCall![0] as HomebrewBlock;
+    const sentEffects = sent.fields.effects as HomebrewBlock[];
+    expect(sentEffects).toHaveLength(3);
+    expect(sentEffects.slice(0, 2)).toEqual(toggle.fields.effects);
+    expect(sentEffects[2]).toMatchObject({ kind: "speed_multiply", fields: { speed: "walk" } });
+    for (const e of sentEffects) expect(typeof e.key).toBe("string");
+    expect(new Set(sentEffects.map((e) => e.key)).size).toBe(sentEffects.length);
+    expect(blockShapeProblems(sent, 0, MOCK_BLOCK_CATALOG, null)).toEqual([]);
+  });
+
+  it("a nested effect's problem shows on its card", async () => {
+    const toggle = byKind("toggle");
+    await renderControl(<BlockDialog spec={spec("toggle")} block={toggle} isNew={false}
+      problems={[{ path: "effects.1.fields.value", message: "Give the number to add." }]} onOk={() => undefined} onCancel={() => undefined} />);
+    const cards = document.querySelectorAll<HTMLElement>('[data-field="effects"] .hb-block');
+    expect(cards[1]!.textContent).toContain("Give the number to add.");
+    expect(cards[0]!.textContent).not.toContain("Give the number to add.");
+  });
+
+  it("an attack bonus is a whole number from -20 to 20 that starts at +1", async () => {
+    const user = userEvent.setup();
+    const onOk = vi.fn();
+    const s = spec("attack_bonus");
+    expect(newBlock(s).fields.value).toBe(1);
+    await renderControl(<BlockDialog spec={s} block={newBlock(s)} isNew problems={[]} onOk={onOk} onCancel={() => undefined} />);
+    const box = screen.getByRole("spinbutton", { name: "Bonus" });
+    expect(box.getAttribute("aria-valuemin")).toBe("-20");
+    await user.click(screen.getByRole("button", { name: "OK" }));
+    expect(onOk.mock.lastCall![0].fields.value).toBe(1);
+    expect(blockShapeProblems(onOk.mock.lastCall![0], 0, MOCK_BLOCK_CATALOG, null)).toEqual([]);
+  });
+});
+
 describe("WB-10 form parts kept from the original (spec 3.4)", () => {
   it("lists each part in words with Remove; nothing can be added or edited", async () => {
     const user = userEvent.setup();
@@ -221,7 +302,7 @@ describe("WB-10 block values", () => {
   it("drops unset values, finds missing required ones, numbers rows", async () => {
     expect(cleanFields({ a: "", b: [], c: 0, d: false, e: { x: "" }, f: "x" })).toEqual({ c: 0, d: false, f: "x" });
     expect(missingRequired(spec("sense").fields, {}).map((f) => f.key)).toEqual(["sense"]);
-    expect(numberRows(spec("list").fields.find((f) => f.key === "items")!, [{ text: "a" }, { text: "b" }])).toEqual([{ text: "a", id: "1" }, { text: "b", id: "2" }]);
+    expect(numberRows(spec("list").fields.find((f) => f.key === "items")!, [{ text: "a" }, { text: "b" }])).toEqual([{ text: "a", id: 1 }, { text: "b", id: 2 }]);
     expect(newBlock(spec("list")).fields).toEqual({ type: "List", items: [] });
   });
 });

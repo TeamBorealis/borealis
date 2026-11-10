@@ -1,6 +1,7 @@
 import type {
   ElementSummary, HomebrewBlock, HomebrewBlockSpec, HomebrewExprNode, HomebrewForm, HomebrewPickerRow, HomebrewPickerTarget, HomebrewProblem, Page,
 } from "../types";
+import { blockShapeProblems } from "./homebrew-shapes";
 
 // The web mock's stand-ins for what WB-06/WB-07 do on the backend: picker rows (`homebrew_reference_options`), the live
 // problems of blocks and conditions, and the description preview. Enough for the creator's controls to be used and tested
@@ -58,7 +59,7 @@ function blockProblems(b: HomebrewBlock, i: number, catalog: readonly HomebrewBl
   const missing = spec.fields.filter((f) => f.required && f.control !== "auto" && empty(b.fields[f.key])).map((f): HomebrewProblem => ({
     severity: "error", message: `${spec.label}: fill in ${f.label.toLowerCase()}.`, path: `blocks.${i}.fields.${f.key}`, elementId, code: "block.required",
   }));
-  return [...missing, ...exprProblems(b.fields.requirements, `blocks.${i}.fields.requirements`, elementId)];
+  return [...blockShapeProblems(b, i, catalog, elementId), ...missing, ...exprProblems(b.fields.requirements, `blocks.${i}.fields.requirements`, elementId)];
 }
 
 /** The mock's live problems of a form: the name, the prerequisite's rows, every block. */

@@ -1,12 +1,12 @@
 import { useId, useState } from "react";
-import type { HomebrewBlock, HomebrewBlockSpec, HomebrewBuilderProblem, HomebrewCondition, HomebrewPreservedPart, HomebrewRef } from "../../../api/contract";
+import type { HomebrewBlock, HomebrewBlockSpec, HomebrewBuilderProblem, HomebrewCondition, HomebrewPreservedPart } from "../../../api/contract";
 import { Button, Dialog, Icon, NumericUpDown, ToggleSwitch, useConfirm } from "../../../components";
 import { ConditionBuilder } from "../builders/ConditionBuilder";
 import { asExprValue } from "../builders/words";
 import { useCreatorEnv, WithExpert } from "../env";
 import { FieldList } from "./BlockFieldControl";
 import { fallbackSentence } from "./sentence";
-import { type Fields, cleanFields, isEmptyValue, missingRequired } from "./values";
+import { type Fields, cleanFields, isEmptyValue, missingRequired, withAutoType } from "./values";
 
 /** Levels a "From level" gate offers (class and character levels). */
 const MAX_LEVEL = 20;
@@ -61,11 +61,8 @@ export function BlockDialog({ spec, block, isNew, problems, onOk, onCancel }: Bl
   const all = [...local, ...problems];
   const hasExpert = spec.fields.some((f) => f.expert);
 
-  const setValues = (next: Fields, picked?: { key: string; refs: HomebrewRef[] }) => {
-    const auto = spec.fields.find((f) => f.control === "auto" && f.key === "type");
-    const ref = picked?.refs[0];
-    setFields(auto && ref?.type && spec.fields.find((f) => f.key === picked!.key)?.control === "reference" ? { ...next, [auto.key]: ref.type } : next);
-  };
+  // A grant's element type is the creator's to write (the backend does not compute it, hc-wave2-join).
+  const setValues = (next: Fields) => setFields((before) => withAutoType(spec.fields, before, next));
   const ok = () => {
     if (missing.length > 0) { setTried(true); return; }
     const clean = cleanFields(fields);

@@ -22,7 +22,7 @@ export interface BlockListProps {
   onChange: (blocks: HomebrewBlock[]) => void;
   /** Kinds the list may hold (a toggle's effects); absent = every top-level kind. */
   kinds?: readonly string[];
-  /** The draft's problems (paths `blocks.N...`); a nested list gets none. */
+  /** The draft's problems (paths `blocks.N...`); a nested list gets its own, made relative to it. */
   problems: readonly HomebrewProblem[];
   /** The last form the backend answered with: its sentences replace the fallback ones while the block is unchanged. */
   answer: HomebrewForm | null;
@@ -122,7 +122,7 @@ export function BlockList({ label, blocks, onChange, kinds, problems, answer, ne
           {blocks.map((b, i) => {
             const spec = specOf(b.kind);
             const sentence = shownSentence(b, answer);
-            const bad = nested ? [] : problemsOfBlock(problems, i);
+            const bad = problemsOfBlock(problems, i);
             const kept = b.preserved?.length ?? 0;
             return (
               <li key={b.key} className={`atk hb-block ${bad.length ? "hb-block-bad" : ""}`} tabIndex={0} aria-current={sel === i} aria-label={sentence}
@@ -147,7 +147,7 @@ export function BlockList({ label, blocks, onChange, kinds, problems, answer, ne
           onPick={(spec) => { setAdding(false); setEditing({ index: blocks.length, block: newBlock(spec), isNew: true, spec }); }} />
       )}
       {editing && (
-        <BlockDialog spec={editing.spec} block={editing.block} isNew={editing.isNew} problems={editing.isNew || nested ? [] : blockProblems(problems, editing.index)}
+        <BlockDialog spec={editing.spec} block={editing.block} isNew={editing.isNew} problems={editing.isNew ? [] : blockProblems(problems, editing.index)}
           onOk={done} onCancel={() => setEditing(null)} />
       )}
     </div>

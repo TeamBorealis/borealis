@@ -1,6 +1,6 @@
 import { type ReactNode, useId } from "react";
 import type {
-  HomebrewBlockField, HomebrewBuilderProblem, HomebrewCondition, HomebrewEquipped, HomebrewFormulaNode, HomebrewRef, HomebrewTagFilter,
+  HomebrewBlockField, HomebrewBuilderProblem, HomebrewCondition, HomebrewEquipped, HomebrewFormulaNode, HomebrewProblem, HomebrewTagFilter,
 } from "../../../api/contract";
 import { CheckBox, ComboBox, EditableComboBox, Icon, NumericUpDown, TextBox } from "../../../components";
 import { ConditionBuilder } from "../builders/ConditionBuilder";
@@ -11,13 +11,13 @@ import { TagFilterBuilder } from "../builders/TagFilterBuilder";
 import { asExprValue } from "../builders/words";
 import { namesInScope, useCreatorEnv } from "../env";
 import { ChipsField } from "../pickers/ChipsField";
-import { IdRefField } from "../pickers/RefField";
+import { RefField } from "../pickers/RefField";
 import { StatisticField } from "../pickers/StatisticPicker";
 import { BlockList } from "./BlockList";
 import {
   AbilityChoiceControl, AbilitySourceControl, ClassCounterControl, NumberOrStatControl, NumberOrWords, NumbersControl, SplitsControl, StatValueControl, UsesControl,
 } from "./valueControls";
-import { type Fields, blockToRule, defaults, defaultVariant, isEmptyValue, numberRows, ruleToBlock } from "./values";
+import { type Fields, asBlocks, asRef, asRefs, defaults, defaultVariant, isEmptyValue, numberRows, startNumber } from "./values";
 
 /** The words every note field carries (spec 6.2). */
 export const NOTE_HELP = "Shown as a note; Borealis does not apply it.";
@@ -32,7 +32,7 @@ const strip = (problems: readonly HomebrewBuilderProblem[], path: string): Homeb
 export interface BlockFieldProps {
   field: HomebrewBlockField;
   value: unknown;
-  onChange: (value: unknown, picked?: HomebrewRef[]) => void;
+  onChange: (value: unknown) => void;
   /** The field's path inside the block's fields (`free_cast.uses`), for its problems. */
   path: string;
   /** Problems relative to the block's fields. */
@@ -72,20 +72,25 @@ export function BlockField(props: BlockFieldProps) {
 
 /** Several fields of one object (a block, a group, a row, a variant). */
 export function FieldList({ fields, values, onValues, path, problems }: {
-  fields: readonly HomebrewBlockField[]; values: Fields; onValues: (v: Fields, picked?: { key: string; refs: HomebrewRef[] }) => void; path: string; problems: readonly HomebrewBuilderProblem[];
+  fields: readonly HomebrewBlockField[]; values: Fields; onValues: (v: Fields) => void; path: string; problems: readonly HomebrewBuilderProblem[];
 }) {
   return (
     <div className="hb-bf-grid">
       {fields.map((f) => (
         <BlockField key={f.key} field={f} value={values[f.key]} siblings={values} path={join(path, f.key)} problems={problems}
-          onChange={(v, refs) => {
+          onChange={(v) => {
             const next = { ...values };
             if (v === undefined) delete next[f.key]; else next[f.key] = v;
-            onValues(next, refs ? { key: f.key, refs } : undefined);
+            onValues(next);
           }} />
       ))}
     </div>
   );
+}
+
+/** Problems of a nested block list at `path`, as the list reads a form's (`blocks.N.fields.<key>`). */
+function nestedProblems(problems: readonly HomebrewBuilderProblem[], path: string): HomebrewProblem[] {
+  return strip(problems, path).map((p) => ({ severity: "error", message: p.message, path: `blocks.${p.path}`, elementId: null, code: "builder" }));
 }
 
 const asString = (v: unknown): string => (typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
@@ -121,11 +126,11 @@ function FieldControl({ field, value, onChange, path, problems, siblings, inputI
       if (field.choices?.length) return <NumberOrWords label={label} value={value as number | string | undefined} onChange={onChange} min={field.min} max={field.max} choices={field.choices} allowCustom={field.allowCustom} />;
       // An optional number that is not set says so; a spinner would show its minimum as if chosen.
       if (!field.required && typeof value !== "number") {
-        return <span><button type="button" className="hb-pick-btn" aria-label={`Set: ${label}`} onClick={() => onChange(field.min ?? 0)}><Icon name="plus" />Set</button></span>;
+        return <span><button type="button" className="hb-pick-btn" aria-label={`Set: ${label}`} onClick={() => onChange(startNumber(field))}><Icon name="plus" />Set</button></span>;
       }
       return (
         <span className="hb-row-controls">
-          <NumericUpDown label={label} value={typeof value === "number" ? value : field.min ?? 0} min={field.min ?? 0} max={field.max ?? 999} onChange={onChange} />
+          <NumericUpDown label={label} value={typeof value === "number" ? value : startNumber(field)} min={field.min ?? 0} max={field.max ?? 999} onChange={onChange} />
           {!field.required && value !== undefined && <button type="button" className="hb-chip-x" aria-label={`Clear ${label}`} onClick={() => onChange(undefined)}><Icon name="x" /></button>}
         </span>
       );
@@ -162,11 +167,16 @@ function FieldControl({ field, value, onChange, path, problems, siblings, inputI
       return <AbilityChoiceControl label={label} value={value as never} onChange={onChange} />;
     case "splits":
       return <SplitsControl label={label} value={value as number[][] | undefined} onChange={setOrClear} />;
-    case "reference": case "references": {
-      const multiple = field.control === "references" || !!field.picker?.multiple;
-      const ids = multiple ? asStrings(value) : asString(value) ? [asString(value)] : [];
-      return <IdRefField id={inputId} label={label} target={field.picker ?? { types: [] }} ids={ids} multiple={multiple} describedBy={describedBy} invalid={invalid}
-        onIds={(next, refs) => onChange(multiple ? (next.length ? next : undefined) : next[0], refs)} />;
+    case "reference": {
+      // A `HomebrewRef` (the id travels, the name is shown; hc-wave2-join).
+      const ref = asRef(value);
+      return <RefField id={inputId} label={label} target={{ ...(field.picker ?? { types: [] }), multiple: false }} value={ref ? [ref] : []} describedBy={describedBy} invalid={invalid}
+        onChange={(refs) => onChange(refs[0])} />;
+    }
+    case "references": {
+      // `HomebrewRef[]`.
+      return <RefField id={inputId} label={label} target={{ ...(field.picker ?? { types: [] }), multiple: true }} value={asRefs(value)} describedBy={describedBy} invalid={invalid}
+        onChange={(refs) => onChange(refs.length ? refs : undefined)} />;
     }
     case "condition": {
       if (typeof value === "string") return <StrayText text={value} onRemove={() => onChange(undefined)} />;
@@ -196,9 +206,9 @@ function FieldControl({ field, value, onChange, path, problems, siblings, inputI
     case "map":
       return <MapControl field={field} value={value} onChange={onChange} path={path} problems={problems} />;
     case "blocks": {
-      const rules = Array.isArray(value) ? (value as Fields[]) : [];
-      const blocks = rules.map((r, i) => ruleToBlock(r, `${path}-${i}`));
-      return <BlockList label={label} blocks={blocks} kinds={field.kinds} problems={[]} answer={null} nested onChange={(next) => setOrClear(next.map(blockToRule))} />;
+      // Nested blocks (a toggle's effects, `HomebrewBlock[]`): their keys are kept, a new one gets a new key, and their
+      // problems (`effects.0.fields.value`) show on their cards as `blocks.0.fields.value`.
+      return <BlockList label={label} blocks={asBlocks(value)} kinds={field.kinds} problems={nestedProblems(problems, path)} answer={null} nested onChange={setOrClear} />;
     }
     default:
       return <p className="hb-pending">This part can't be edited here.</p>;

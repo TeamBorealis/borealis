@@ -15,6 +15,7 @@ import type {
 } from "../types";
 import type { DocJson } from "../../pages/homebrew/rich/types";
 import { MOCK_BLOCK_CATALOG } from "../mock/homebrew-catalog";
+import { blockShapeProblems } from "../mock/homebrew-shapes";
 
 // WB-04 (and the WB-04/WB-05 join for blocks): the form the backend sends (Rust `borealis_authoring::form`) has the shapes the TS types declare. The Rust
 // test `crates/borealis-authoring/tests/form_dto.rs` writes a sample form and three kind descriptors to the fixture;
@@ -441,5 +442,24 @@ describe("homebrew form shapes (WB-04)", () => {
       check(e);
     }
     expect(blocks.map((b) => b.kind)).toContain("list");
+  });
+
+  it("the mock reads every block of the backend's sample form as the backend does (hc-wave3-integrate)", () => {
+    const sample = fixture.form as HomebrewForm;
+    expect(sample.blocks.flatMap((b, i) => blockShapeProblems(b, i, MOCK_BLOCK_CATALOG, null))).toEqual([]);
+  });
+
+  it("the mock refuses the raw-codec shapes the backend no longer reads", () => {
+    const at = (b: HomebrewBlock) => blockShapeProblems(b, 0, MOCK_BLOCK_CATALOG, null).map((p) => p.path);
+    // a grant's element as a bare id (now a `HomebrewRef`)
+    expect(at({ key: "a", kind: "grant", sentence: "", fields: { id: "ID_X", type: "Feat" } })).toEqual(["blocks.0.fields.id"]);
+    // a written list's row numbers as text (the engine reads whole numbers)
+    expect(at({ key: "b", kind: "list", sentence: "", fields: { type: "List", name: "Coat", items: [{ id: "1", text: "Grey" }] } })).toEqual(["blocks.0.fields.items.0.id"]);
+    // a toggle's effects as stored rules (now nested blocks)
+    expect(at({ key: "c", kind: "toggle", sentence: "", fields: { id: "f", name: "F", effects: [{ kind: "stat", name: "speed", value: "10" }] } })).toEqual(["blocks.0.fields.effects.0"]);
+    // a formula as text (now a builder value), the attack bonus as a formula (now a number)
+    expect(at({ key: "d", kind: "attack_bonus", sentence: "", fields: { value: "2" } })).toEqual(["blocks.0.fields.value"]);
+    // a field the block does not have
+    expect(at({ key: "e", kind: "sense", sentence: "", fields: { sense: "darkvision", merge: "x" } })).toEqual(["blocks.0.fields.merge"]);
   });
 });

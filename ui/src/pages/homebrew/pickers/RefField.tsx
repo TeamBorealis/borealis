@@ -8,9 +8,6 @@ import { sameId } from "./refRows";
 /** Names of elements picked in this session, by lower-case id: an own unsaved element has nothing to look up yet. */
 const known = new Map<string, HomebrewRef>();
 
-/** The name of an element picked or looked up in this session, else "". */
-export const knownRefName = (id: string): string => known.get(id.toLowerCase())?.name ?? "";
-
 export function rememberRefs(refs: readonly HomebrewRef[]): void {
   for (const r of refs) if (r.name) known.set(r.id.toLowerCase(), r);
 }

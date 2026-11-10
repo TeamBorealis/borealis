@@ -181,6 +181,7 @@
     "allow-homebrew-trial-start",
     "allow-homebrew-trial-update",
     "allow-homebrew-trial-end",
+    "allow-homebrew-trial-options",
     "allow-homebrew-export-pack",
     "allow-ai-validate-homebrew",
     "allow-ai-add-homebrew-to-pack",

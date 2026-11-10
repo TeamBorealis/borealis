@@ -1,4 +1,4 @@
-import type { HomebrewBlock, HomebrewBlockField, HomebrewBlockSpec } from "../../../api/contract";
+import type { HomebrewBlock, HomebrewBlockField, HomebrewBlockSpec, HomebrewRef } from "../../../api/contract";
 import { asExprValue, isEmptyTree } from "../builders/words";
 
 export type Fields = Record<string, unknown>;
@@ -24,12 +24,20 @@ export function isEmptyValue(v: unknown): boolean {
   return false;
 }
 
+/** The number a number field starts at: its minimum (`fallback` without one), or +1 for a signed range
+ * (`attack_bonus.value` is -20..20: starting at -20 would be a penalty nobody chose). */
+export function startNumber(f: Pick<HomebrewBlockField, "min" | "max">, fallback = 0): number {
+  if (f.min === undefined) return fallback;
+  if (f.min >= 0) return f.min;
+  return Math.max(f.min, Math.min(1, f.max ?? 1));
+}
+
 /** The value a new block starts with for a field: required closed choices take their first choice, everything else is unset. */
 export function defaultValue(f: HomebrewBlockField): unknown {
   if (f.control === "variant" && f.variants?.length) return f.required ? defaultVariant(f.variants[0]!.value, f) : undefined;
   if (!f.required) return undefined;
   switch (f.control) {
-    case "number": return f.min ?? 1;
+    case "number": return startNumber(f, 1);
     case "combo": return f.allowCustom ? "" : f.choices?.[0]?.value ?? "";
     case "group": return defaults(f.fields ?? []);
     case "rows": return [];
@@ -71,16 +79,39 @@ export function missingRequired(spec: readonly HomebrewBlockField[], fields: Fie
   return spec.filter((f) => f.required && f.control !== "auto" && isEmptyValue(fields[f.key]));
 }
 
-/** Rows whose `auto` id is numbered 1..n (a written list's items, spec 6.1). */
+/** Rows whose `auto` id is numbered 1..n (a written list's items, spec 6.1). The backend writes the id as it is and
+ * the engine reads a whole number (`ListItem.id`), so the numbers are numbers. */
 export function numberRows(rowsField: HomebrewBlockField, rows: readonly Fields[]): Fields[] {
   const auto = (rowsField.fields ?? []).find((f) => f.control === "auto");
-  return auto ? rows.map((r, i) => ({ ...r, [auto.key]: String(i + 1) })) : [...rows];
+  return auto ? rows.map((r, i) => ({ ...r, [auto.key]: i + 1 })) : [...rows];
 }
 
-/** A rule object (`{kind, ...}`) as a block, and back (a toggle's effects are nested rules, spec 6.2). */
-export function ruleToBlock(rule: Fields, key: string): HomebrewBlock {
-  const { kind, ...fields } = rule;
-  return { key, kind: String(kind ?? ""), sentence: "", fields };
+/** A `reference` value (`HomebrewRef`), or null for anything else. */
+export function asRef(v: unknown): HomebrewRef | null {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return null;
+  const r = v as Partial<HomebrewRef>;
+  return typeof r.id === "string" && r.id !== "" ? { id: r.id, name: String(r.name ?? ""), type: String(r.type ?? ""), ...(r.missing ? { missing: true } : {}) } : null;
 }
 
-export const blockToRule = (b: HomebrewBlock): Fields => ({ kind: b.kind, ...b.fields });
+/** A `references` value (`HomebrewRef[]`), the entries that are references. */
+export const asRefs = (v: unknown): HomebrewRef[] => (Array.isArray(v) ? v.flatMap((x) => asRef(x) ?? []) : []);
+
+/** Nested blocks (a toggle's `effects`, `HomebrewBlock[]`): the entries that are blocks. */
+export const asBlocks = (v: unknown): HomebrewBlock[] =>
+  Array.isArray(v) ? v.filter((x): x is HomebrewBlock => typeof x === "object" && x !== null && typeof (x as HomebrewBlock).key === "string" && typeof (x as HomebrewBlock).kind === "string") : [];
+
+/**
+ * The element type of a block's picked element, for its `auto` field `type` (a grant's, spec 6.1): the backend does not
+ * compute it. The type follows the block's single `reference` field; clearing the pick clears it.
+ */
+export function withAutoType(spec: readonly HomebrewBlockField[], before: Fields, next: Fields): Fields {
+  const auto = spec.find((f) => f.control === "auto" && f.key === "type");
+  const refs = spec.filter((f) => f.control === "reference");
+  if (!auto || refs.length !== 1) return next;
+  const key = refs[0]!.key;
+  if (next[key] === before[key]) return next;
+  const ref = asRef(next[key]);
+  if (ref) return ref.type ? { ...next, [auto.key]: ref.type } : next;
+  const { [auto.key]: _old, ...rest } = next;
+  return rest;
+}

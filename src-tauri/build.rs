@@ -179,6 +179,7 @@ const COMMANDS: &[&str] = &[
     "homebrew_trial_start",
     "homebrew_trial_update",
     "homebrew_trial_end",
+    "homebrew_trial_options",
     "homebrew_export_pack",
     "preview_convert_to_2024",
     "apply_convert_to_2024",

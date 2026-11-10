@@ -1,9 +1,8 @@
 import type { HomebrewBlock, HomebrewBlockField, HomebrewBlockSpec, HomebrewForm } from "../../../api/contract";
 import { asExprValue } from "../builders/words";
 import type { CreatorEnv } from "../env";
-import { knownRefName } from "../pickers/RefField";
 import { statLabel } from "../pickers/StatisticPicker";
-import { isEmptyValue } from "./values";
+import { asRef, asRefs, isEmptyValue } from "./values";
 
 /** Values a sentence names at most (the backend's fallback sentence does the same, hc-wb05). */
 const SENTENCE_VALUES = 3;
@@ -26,9 +25,9 @@ function valueWords(f: HomebrewBlockField, v: unknown, env: CreatorEnv): string 
     case "check":
       return v === true ? f.label.toLowerCase() : null;
     case "reference":
-      return typeof v === "string" ? knownRefName(v) || null : null;
+      return asRef(v)?.name || null;
     case "references":
-      return Array.isArray(v) ? v.map((x) => knownRefName(String(x))).filter(Boolean).join(", ") || null : null;
+      return asRefs(v).map((r) => r.name).filter(Boolean).join(", ") || null;
     default:
       return null;
   }
