@@ -41,6 +41,16 @@ pub enum Control {
     Reference,
     /// The 2014/2024 counterpart picker (expert).
     MapsTo,
+    /// A whole number in `FieldDef::min..=max`.
+    Number,
+    /// Several element pickers.
+    References,
+    /// The tag filter builder (spec 6.3).
+    TagFilter,
+    /// An item pack's contents: items with amounts (spec 4.9).
+    Contents,
+    /// An Equipment Package's lettered options (spec 4.9).
+    PackageOptions,
 }
 
 impl Control {
@@ -61,6 +71,11 @@ impl Control {
             Self::Setters => "setters",
             Self::Reference => "reference",
             Self::MapsTo => "mapsTo",
+            Self::Number => "number",
+            Self::References => "references",
+            Self::TagFilter => "tagFilter",
+            Self::Contents => "contents",
+            Self::PackageOptions => "packageOptions",
         }
     }
 }
@@ -116,9 +131,17 @@ pub struct FieldDef {
     pub expert: bool,
     /// Plain-words help.
     pub help: Option<&'static str>,
+    /// The SectionSecondary heading it is grouped under.
+    pub section: Option<&'static str>,
+    /// Number range (`Control::Number`).
+    pub min: Option<i32>,
+    /// Number range (`Control::Number`).
+    pub max: Option<i32>,
+    /// Element types a reference field offers.
+    pub picker: &'static [&'static str],
 }
 
-const fn field(
+pub(crate) const fn field(
     key: &'static str,
     label: &'static str,
     tab: &'static str,
@@ -137,38 +160,65 @@ const fn field(
         read_only: false,
         expert: false,
         help: None,
+        section: None,
+        min: None,
+        max: None,
+        picker: &[],
     }
 }
 
 impl FieldDef {
-    const fn required(self) -> Self {
+    pub(crate) const fn required(self) -> Self {
         Self {
             required: true,
             ..self
         }
     }
-    const fn choices(self, choices: &'static [(&'static str, &'static str)], custom: bool) -> Self {
+    pub(crate) const fn choices(
+        self,
+        choices: &'static [(&'static str, &'static str)],
+        custom: bool,
+    ) -> Self {
         Self {
             choices,
             allow_custom: custom,
             ..self
         }
     }
-    const fn expert(self) -> Self {
+    pub(crate) const fn expert(self) -> Self {
         Self {
             expert: true,
             ..self
         }
     }
-    const fn read_only(self) -> Self {
+    pub(crate) const fn read_only(self) -> Self {
         Self {
             read_only: true,
             ..self
         }
     }
-    const fn help(self, help: &'static str) -> Self {
+    pub(crate) const fn help(self, help: &'static str) -> Self {
         Self {
             help: Some(help),
+            ..self
+        }
+    }
+    pub(crate) const fn section(self, section: &'static str) -> Self {
+        Self {
+            section: Some(section),
+            ..self
+        }
+    }
+    pub(crate) const fn range(self, min: i32, max: i32) -> Self {
+        Self {
+            min: Some(min),
+            max: Some(max),
+            ..self
+        }
+    }
+    pub(crate) const fn picker(self, types: &'static [&'static str]) -> Self {
+        Self {
+            picker: types,
             ..self
         }
     }
@@ -213,16 +263,16 @@ impl KindDef {
     }
 }
 
-const GENERAL: &str = "general";
-const RULES: &str = "rules";
-const DESCRIPTION: &str = "description";
-const TABS: &[(&str, &str)] = &[
+pub(crate) const GENERAL: &str = "general";
+pub(crate) const RULES: &str = "rules";
+pub(crate) const DESCRIPTION: &str = "description";
+pub(crate) const TABS: &[(&str, &str)] = &[
     (GENERAL, "General"),
     (RULES, "Rules"),
     (DESCRIPTION, "Description"),
 ];
-const BOTH: &[Ruleset] = &[Ruleset::Dnd2014, Ruleset::Dnd2024];
-const ONLY_2024: &[Ruleset] = &[Ruleset::Dnd2024];
+pub(crate) const BOTH: &[Ruleset] = &[Ruleset::Dnd2014, Ruleset::Dnd2024];
+pub(crate) const ONLY_2024: &[Ruleset] = &[Ruleset::Dnd2024];
 
 const EDITIONS: &[(&str, &str)] = &[
     ("", "The pack's edition"),
@@ -245,7 +295,7 @@ const ABILITIES: &[(&str, &str)] = &[
 ];
 
 /// GENERAL fields before the kind's own.
-fn head() -> Vec<FieldDef> {
+pub(crate) fn head() -> Vec<FieldDef> {
     vec![
         field("name", "Name", GENERAL, Control::Text, Codec::Name).required(),
         field(
@@ -263,7 +313,7 @@ fn head() -> Vec<FieldDef> {
 }
 
 /// The parts every form shares after the kind's own fields (spec 3.2).
-fn tail() -> Vec<FieldDef> {
+pub(crate) fn tail() -> Vec<FieldDef> {
     vec![
         field("tags", "Tags", GENERAL, Control::Tags, Codec::Tags),
         field(
@@ -643,6 +693,7 @@ pub fn kinds() -> &'static [KindDef] {
     static KINDS: OnceLock<Vec<KindDef>> = OnceLock::new();
     KINDS.get_or_init(|| {
         let mut all = small_kinds();
+        all.extend(super::item_kinds::item_kinds());
         all.push(other_kind());
         all
     })

@@ -105,8 +105,8 @@ export function Editor({ kind, draft, tab, onTab, narrow, preview, actions, tryI
         <div role="tabpanel" id="hb-tab-panel" aria-labelledby={`hb-tab-${current}`} className="hb-tabpanel">
           {current === PREVIEW_TAB.id ? preview : fields.length === 0
             ? <p className="hb-pending">Nothing to fill in here yet.</p>
-            : sections(fields).map(([title, list]) => (
-              <div key={title || "main"} className="hb-section">
+            : sections(fields).map(([title, list], i) => (
+              <div key={`${i}-${title}`} className="hb-section">
                 {title && <h3 className="hb-section-title">{title}</h3>}
                 <div className="mg-grid two">
                   {list.map((f) => (

@@ -4,7 +4,7 @@ use super::codec::{self, Codec};
 use super::kinds::{kind, KindDef};
 use super::preserved;
 use super::{FormContext, FormProblem, FormState};
-use borealis_content::{Element, Setter};
+use borealis_content::{Element, Rule, Setter};
 
 /// Sort key of a setter or tag: its stored position, or after every stored one in the order written.
 type SortKey = (usize, usize);
@@ -15,7 +15,22 @@ pub(crate) struct Out {
     setters: Vec<(SortKey, Setter)>,
     supports: Vec<(SortKey, String)>,
     seq: usize,
+    /// Rules written by blocks, in block order (`blocks.<i>`).
+    block_rules: Vec<(String, Rule)>,
+    /// Rules written by fields: stored position (`None` = new), rank among new ones, origin (`fields.<key>`).
+    field_rules: Vec<FieldRule>,
 }
+
+/// A rule a field writes (an armor's base AC, its stealth disadvantage).
+struct FieldRule {
+    slot: Option<usize>,
+    rank: u8,
+    origin: String,
+    rule: Rule,
+}
+
+/// Where a rule of a written element comes from: `blocks.<i>` or `fields.<key>`.
+pub(crate) type RuleOrigin = String;
 
 impl Out {
     fn new(element: Element) -> Self {
@@ -24,7 +39,45 @@ impl Out {
             setters: Vec::new(),
             supports: Vec::new(),
             seq: 0,
+            block_rules: Vec::new(),
+            field_rules: Vec::new(),
         }
+    }
+
+    /// Add rules a field writes: the `i`-th goes back to the stored position `slots[i]`; new ones go before every
+    /// other rule, ordered by `rank` (the order the creator writes them in, so a canonical write keeps the order).
+    pub(crate) fn field_rules(
+        &mut self,
+        items: impl IntoIterator<Item = (u8, Rule)>,
+        slots: &[usize],
+        origin: &str,
+    ) {
+        for (i, (rank, rule)) in items.into_iter().enumerate() {
+            self.field_rules.push(FieldRule {
+                slot: slots.get(i).copied(),
+                rank,
+                origin: origin.to_string(),
+                rule,
+            });
+        }
+    }
+
+    /// The first setter written so far called `name` (any case), for a field that edits part of another field's
+    /// setter (a cost's currency).
+    pub(crate) fn setter_mut(&mut self, name: &str) -> Option<&mut Setter> {
+        self.setters
+            .iter_mut()
+            .map(|(_, s)| s)
+            .find(|s| s.name.eq_ignore_ascii_case(name))
+    }
+
+    /// The value of the first setter written so far called `name`.
+    pub(crate) fn setter_value(&self, name: &str) -> Option<&str> {
+        self.setters
+            .iter()
+            .map(|(_, s)| s)
+            .find(|s| s.name.eq_ignore_ascii_case(name))
+            .map(|s| s.value.as_str())
     }
 
     fn key(&mut self, slots: &[usize], i: usize) -> SortKey {
@@ -52,13 +105,48 @@ impl Out {
         }
     }
 
-    fn finish(mut self) -> Element {
+    fn finish(mut self) -> (Element, Vec<RuleOrigin>) {
         self.setters.sort_by_key(|(k, _)| *k);
         self.supports.sort_by_key(|(k, _)| *k);
         self.element.setters = self.setters.into_iter().map(|(_, s)| s).collect();
         self.element.supports = self.supports.into_iter().map(|(_, t)| t).collect();
-        self.element
+        let (rules, origins) = merge_rules(self.block_rules, self.field_rules);
+        self.element.rules = rules;
+        (self.element, origins)
     }
+}
+
+/// The element's rules: field rules back at their stored positions, blocks in order in the positions left, then the
+/// new field rules in front (by rank). Unchanged, this is the stored order.
+fn merge_rules(
+    blocks: Vec<(String, Rule)>,
+    fields: Vec<FieldRule>,
+) -> (Vec<Rule>, Vec<RuleOrigin>) {
+    let (mut fixed, mut fresh): (Vec<FieldRule>, Vec<FieldRule>) =
+        fields.into_iter().partition(|f| f.slot.is_some());
+    fixed.sort_by_key(|f| f.slot);
+    fresh.sort_by_key(|f| f.rank);
+    let mut out: Vec<(String, Rule)> = Vec::new();
+    let mut fixed = fixed.into_iter().peekable();
+    let mut blocks = blocks.into_iter();
+    loop {
+        if fixed.peek().is_some_and(|f| f.slot <= Some(out.len())) {
+            let f = fixed.next().expect("peeked");
+            out.push((f.origin, f.rule));
+        } else if let Some(b) = blocks.next() {
+            out.push(b);
+        } else if let Some(f) = fixed.next() {
+            out.push((f.origin, f.rule));
+        } else {
+            break;
+        }
+    }
+    let all: Vec<(String, Rule)> = fresh
+        .into_iter()
+        .map(|f| (f.origin, f.rule))
+        .chain(out)
+        .collect();
+    all.into_iter().map(|(o, r)| (r, o)).unzip()
 }
 
 fn prefixed(prefix: &str, mut p: FormProblem) -> FormProblem {
@@ -95,6 +183,22 @@ pub(crate) fn write_as(
     form: &FormState,
     cx: &FormContext<'_>,
 ) -> Result<Element, Vec<FormProblem>> {
+    write_traced(kind, form, cx).map(|(e, _)| e)
+}
+
+/// Where each rule of the element a form writes comes from (`blocks.<i>`, `fields.<key>`); `None` when the form
+/// doesn't write.
+pub(crate) fn rule_origins(form: &FormState, cx: &FormContext<'_>) -> Option<Vec<RuleOrigin>> {
+    write_traced(kind(&form.kind)?, form, cx)
+        .ok()
+        .map(|(_, o)| o)
+}
+
+fn write_traced(
+    kind: &KindDef,
+    form: &FormState,
+    cx: &FormContext<'_>,
+) -> Result<(Element, Vec<RuleOrigin>), Vec<FormProblem>> {
     let mut problems = Vec::new();
     let mut base = Element::default();
     match form.id() {
@@ -116,7 +220,7 @@ pub(crate) fn write_as(
     }
     for (i, b) in form.blocks.iter().enumerate() {
         match cx.blocks.write(b, cx) {
-            Ok(Some(rule)) => out.element.rules.push(rule),
+            Ok(Some(rule)) => out.block_rules.push((format!("blocks.{i}"), rule)),
             Ok(None) => {}
             Err(p) => problems.push(prefixed(&format!("blocks.{i}."), p)),
         }

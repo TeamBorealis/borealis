@@ -3,9 +3,10 @@
 //! `blocks.2`, `fields.script`, `preserved.data.tag`).
 
 use super::codec::Codec;
-use super::kinds::kind;
+use super::kinds::{kind, Control};
 use super::{FormContext, FormProblem, FormState};
 use crate::expr_build::condition::{Condition, ConditionLanguage};
+use crate::expr_build::tag_filter::{TagFilter, TagFilterLanguage};
 use crate::expr_build::ExprValue;
 use borealis_content::Element;
 
@@ -35,18 +36,9 @@ fn index(text: &str, prefix: &str) -> Option<usize> {
     text.strip_prefix(prefix)?.strip_suffix(']')?.parse().ok()
 }
 
-/// The block that wrote the element's `rule`-th rule (blocks that write nothing are skipped).
-fn block_of_rule(form: &FormState, rule: usize, cx: &FormContext<'_>) -> Option<usize> {
-    let mut n = 0;
-    for (i, b) in form.blocks.iter().enumerate() {
-        if matches!(cx.blocks.write(b, cx), Ok(Some(_))) {
-            if n == rule {
-                return Some(i);
-            }
-            n += 1;
-        }
-    }
-    None
+/// The block (`blocks.<i>`) or field (`fields.<key>`) that wrote the element's `rule`-th rule.
+fn origin_of_rule(form: &FormState, rule: usize, cx: &FormContext<'_>) -> Option<String> {
+    super::write::rule_origins(form, cx)?.into_iter().nth(rule)
 }
 
 /// The form path of a location in `element`, the element `form` writes; `None` when no field or kept part holds it.
@@ -59,7 +51,7 @@ pub fn form_path_for_location(
 ) -> Option<String> {
     let top = location.split(['.', '[']).next().unwrap_or(location);
     if let Some(i) = index(location, "rules[") {
-        return block_of_rule(form, i, cx).map(|b| format!("blocks.{b}"));
+        return origin_of_rule(form, i, cx);
     }
     if let Some(i) = index(location, "setters[") {
         let s = element.setters.get(i)?;
@@ -141,6 +133,25 @@ fn builder_problems(
     out: &mut Vec<FormProblem>,
 ) {
     if let Some(k) = kind(&form.kind) {
+        for def in k.fields.iter().filter(|d| d.control == Control::TagFilter) {
+            let Some(v) = form.fields.get(def.key) else {
+                continue;
+            };
+            let Ok(value) = serde_json::from_value::<ExprValue<TagFilter>>(v.clone()) else {
+                continue;
+            };
+            for p in value.check::<TagFilterLanguage>(&()) {
+                let sub = if p.path.is_empty() {
+                    String::new()
+                } else {
+                    format!(".{}", p.path)
+                };
+                out.push(FormProblem::new(
+                    format!("{prefix}fields.{}{sub}", def.key),
+                    p.message,
+                ));
+            }
+        }
         for def in k.fields.iter().filter(|d| d.codec == Codec::Requirements) {
             let Some(v) = form.fields.get(def.key) else {
                 continue;

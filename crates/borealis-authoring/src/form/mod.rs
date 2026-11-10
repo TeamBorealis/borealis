@@ -22,6 +22,9 @@ pub mod block;
 mod block_codec;
 mod codec;
 pub mod descriptor;
+mod item_codec;
+mod item_kinds;
+pub mod item_value;
 pub mod kinds;
 mod paths;
 pub mod preserved;
@@ -171,13 +174,16 @@ pub struct Slots {
     /// Indices into `supports`.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub supports: Vec<usize>,
+    /// Indices into `rules`, for rules a field edits (an armor's base AC); the other rules are blocks.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rules: Vec<usize>,
 }
 
 impl Slots {
     /// True when no position is recorded.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.setters.is_empty() && self.supports.is_empty()
+        self.setters.is_empty() && self.supports.is_empty() && self.rules.is_empty()
     }
 }
 

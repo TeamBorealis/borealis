@@ -56,6 +56,8 @@ pub enum Codec {
     Blocks,
     /// The element an append adds to (its `id`), as a reference.
     Target,
+    /// An item field (spec 4.9; `item_codec`).
+    Item(super::item_codec::ItemField),
 }
 
 const RARITIES: [&str; 3] = ["standard", "exotic", "secret"];
@@ -90,6 +92,7 @@ impl Codec {
             }
             Self::Blocks => s("rules"),
             Self::Target => s("id"),
+            Self::Item(f) => f.bindings(),
         }
     }
 
@@ -108,6 +111,7 @@ impl Codec {
         match self {
             Self::SetterText(n) | Self::SetterFlag(n) | Self::SetterChips(n) => vec![n],
             Self::LanguageRarity => RARITIES.to_vec(),
+            Self::Item(f) => f.setter_names(),
             _ => Vec::new(),
         }
     }
@@ -118,6 +122,7 @@ impl Codec {
         match self {
             Self::DataText(k) => vec![k],
             Self::LanguageRarity => vec!["rarity"],
+            Self::Item(f) => f.data_keys(),
             _ => Vec::new(),
         }
     }
@@ -130,6 +135,10 @@ pub(crate) struct Reader<'e> {
     pub(crate) supports_taken: Vec<bool>,
     pub(crate) data_taken: BTreeSet<String>,
     pub(crate) owned_tags: BTreeSet<&'static str>,
+    /// Rules a field took (the others become blocks).
+    pub(crate) rules_taken: Vec<bool>,
+    /// Whole parts a field took (`extract`), so they are not kept as preserved parts.
+    pub(crate) parts_taken: BTreeSet<&'static str>,
 }
 
 impl<'e> Reader<'e> {
@@ -140,11 +149,13 @@ impl<'e> Reader<'e> {
             supports_taken: vec![false; e.supports.len()],
             data_taken: BTreeSet::new(),
             owned_tags,
+            rules_taken: vec![false; e.rules.len()],
+            parts_taken: BTreeSet::new(),
         }
     }
 
     /// Take the first untaken setter called `name` (any case).
-    fn take_setter(&mut self, name: &str) -> Option<(usize, &'e Setter)> {
+    pub(crate) fn take_setter(&mut self, name: &str) -> Option<(usize, &'e Setter)> {
         let e = self.e;
         let taken = &self.setters_taken;
         let i = (0..e.setters.len())
@@ -153,7 +164,7 @@ impl<'e> Reader<'e> {
         Some((i, &e.setters[i]))
     }
 
-    fn take_data(&mut self, key: &str) -> Option<&'e Value> {
+    pub(crate) fn take_data(&mut self, key: &str) -> Option<&'e Value> {
         let e = self.e;
         let v = e.data.get(key)?;
         self.data_taken.insert(key.to_string());
@@ -161,7 +172,7 @@ impl<'e> Reader<'e> {
     }
 
     /// Take every untaken tag `want` accepts, in order.
-    fn take_tags(&mut self, want: impl Fn(&str) -> bool) -> (Vec<String>, Vec<usize>) {
+    pub(crate) fn take_tags(&mut self, want: impl Fn(&str) -> bool) -> (Vec<String>, Vec<usize>) {
         let e = self.e;
         let mut tags = Vec::new();
         let mut slots = Vec::new();
@@ -177,12 +188,12 @@ impl<'e> Reader<'e> {
 }
 
 /// A `data` value that may be stored as `null`: `[value]` when stored, `[]` when absent.
-fn present(v: Option<&Value>) -> Value {
+pub(crate) fn present(v: Option<&Value>) -> Value {
     Value::Array(v.into_iter().cloned().collect())
 }
 
 /// The stored value of [`present`], if any.
-fn stored(raw: &Value) -> Option<&Value> {
+pub(crate) fn stored(raw: &Value) -> Option<&Value> {
     raw.as_array().and_then(|a| a.first())
 }
 
@@ -194,7 +205,7 @@ fn plain(value: Value, raw: Value) -> FieldMemo {
     memo(value, raw, Slots::default())
 }
 
-fn to_json<T: serde::Serialize>(v: &T) -> Value {
+pub(crate) fn to_json<T: serde::Serialize>(v: &T) -> Value {
     serde_json::to_value(v).unwrap_or(Value::Null)
 }
 
@@ -303,6 +314,7 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
             )
         }
         Codec::LanguageRarity => read_rarity(r),
+        Codec::Item(f) => super::item_codec::read(f, r, cx),
         Codec::Target => plain(
             if e.id.is_empty() {
                 Value::Null
@@ -376,11 +388,11 @@ pub(crate) fn decode<T: DeserializeOwned>(value: &Value, path: &str) -> Result<T
     })
 }
 
-fn decode_raw<T: DeserializeOwned>(raw: &Value) -> Option<T> {
+pub(crate) fn decode_raw<T: DeserializeOwned>(raw: &Value) -> Option<T> {
     serde_json::from_value(raw.clone()).ok()
 }
 
-fn raw_setters(raw: &Value) -> Vec<Setter> {
+pub(crate) fn raw_setters(raw: &Value) -> Vec<Setter> {
     match raw {
         Value::Array(items) => items.iter().filter_map(decode_raw).collect(),
         Value::Null => Vec::new(),
@@ -389,7 +401,7 @@ fn raw_setters(raw: &Value) -> Vec<Setter> {
 }
 
 /// An edited setter keeps the stored name spelling and attributes.
-fn edited_setter(name: &str, value: String, raw: Option<&Value>) -> Setter {
+pub(crate) fn edited_setter(name: &str, value: String, raw: Option<&Value>) -> Setter {
     match raw.and_then(decode_raw::<Setter>) {
         Some(old) => Setter { value, ..old },
         None => Setter::new(name, value),
@@ -409,6 +421,9 @@ pub(crate) fn write(
     let raw = memo.map(|m| &m.raw);
     let slots = memo.map(|m| m.slots.clone()).unwrap_or_default();
     if let Some(m) = unchanged {
+        if let Codec::Item(f) = codec {
+            return super::item_codec::write_raw(f, m, out, path, cx);
+        }
         return write_raw(codec, m, out, path);
     }
     let text = || decode::<String>(value, path);
@@ -486,6 +501,7 @@ pub(crate) fn write(
             }
         }
         Codec::LanguageRarity => write_rarity(&text()?, raw, &slots, out, path)?,
+        Codec::Item(f) => super::item_codec::write(f, value, memo, path, out, cx)?,
         Codec::Target => {
             let target: Option<RefValue> = decode(value, path)?;
             match target.filter(|t| !t.id.trim().is_empty()) {
@@ -585,7 +601,8 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
             }
         }
         Codec::Target => out.element.id = get(raw)?,
-        Codec::Blocks => {}
+        // item fields put their parts back in `item_codec::write_raw` (they need the context)
+        Codec::Item(_) | Codec::Blocks => {}
     }
     Ok(())
 }

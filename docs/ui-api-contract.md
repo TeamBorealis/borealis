@@ -524,6 +524,18 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   the loaded content plus the draft, rule problems, lints); `homebrew_check_draft` the engine checks (steps 6-7), all
   warnings or info. Errors block Save (`homebrew_save_draft` runs the live pipeline, then the validator on the saved
   pack); warnings and info never do. Balance hints are `info`.
+- **Item forms (WB-12).** Kinds `item`, `weapon`, `armor`, `magicItem`, `itemPack`, `equipmentPackage` (spec 4.9).
+  Their fields use `section` (SectionSecondary heading), `min`/`max` (`number`) and `picker` (`reference`/`references`:
+  element types, `multiple` for several). Values: `number` a whole number, `references` a `HomebrewRef[]`, `tagFilter` a
+  `HomebrewExprValue<HomebrewTagFilter>`, `contents` a `HomebrewContentsRow[]` (an item pack's `extract.items`),
+  `packageOptions` a `HomebrewPackageOption[]` (an Equipment Package's `data.options`); rows' `kept` travel back
+  unchanged. Each field writes every location that holds it: a weapon's category, properties, damage type and mastery
+  are `supports` ids (plus the `damage` setter's `type`, the `mastery` setter, and the 2024 `data` mirrors when the
+  element has them); an armor's Armor Class and stealth disadvantage are its `stat ac:armored:armor` / `ac:shield` and
+  `grant ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE` rules, and a magic armor's bonus its AC rule. Rules a field writes are
+  not blocks (the block list holds the others). Bad values (dice, ranges, costs, coins) are `form` problems at the field.
+  The web mock serves the six descriptors from `api/mock/homebrew-item-kinds.ts`, written by
+  `crates/borealis-authoring/tests/form_items.rs`.
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

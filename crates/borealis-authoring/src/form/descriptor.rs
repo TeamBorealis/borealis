@@ -1,6 +1,6 @@
 //! The kinds as the UI receives them from `homebrew_kinds` (`HomebrewKindDescriptor`, `HomebrewFieldSpec`).
 
-use super::kinds::{kinds, FieldDef, KindDef};
+use super::kinds::{kinds, Control, FieldDef, KindDef};
 use borealis_content::Ruleset;
 use serde::Serialize;
 
@@ -22,6 +22,17 @@ pub struct TabSpec {
     pub id: String,
     /// Shown uppercase.
     pub label: String,
+}
+
+/// What a reference field offers (`HomebrewPickerTarget`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PickerSpec {
+    /// Element types offered.
+    pub types: Vec<String>,
+    /// Several picks.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub multiple: Option<bool>,
 }
 
 /// One field (`HomebrewFieldSpec`).
@@ -55,6 +66,18 @@ pub struct FieldSpec {
     /// Shown, not edited.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub read_only: Option<bool>,
+    /// SectionSecondary heading.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub section: Option<String>,
+    /// Number range.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min: Option<i32>,
+    /// Number range.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max: Option<i32>,
+    /// Reference fields.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub picker: Option<PickerSpec>,
 }
 
 /// One kind (`HomebrewKindDescriptor`).
@@ -108,6 +131,13 @@ fn field_spec(f: &FieldDef) -> FieldSpec {
         help: f.help.map(str::to_string),
         expert: f.expert.then_some(true),
         read_only: f.read_only.then_some(true),
+        section: f.section.map(str::to_string),
+        min: f.min,
+        max: f.max,
+        picker: (!f.picker.is_empty()).then(|| PickerSpec {
+            types: strings(f.picker),
+            multiple: (f.control == Control::References).then_some(true),
+        }),
     }
 }
 

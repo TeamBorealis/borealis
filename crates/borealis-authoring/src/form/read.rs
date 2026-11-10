@@ -74,12 +74,14 @@ pub(crate) fn read_as(kind: &KindDef, e: &Element, key: String, cx: &FormContext
             .map(String::as_str)
             .filter(|k| !r.data_taken.contains(*k))
             .collect(),
+        parts: &r.parts_taken,
     };
     FormState {
         blocks: e
             .rules
             .iter()
             .enumerate()
+            .filter(|(i, _)| !r.rules_taken[*i])
             .map(|(i, rule)| cx.blocks.read(rule, format!("b{i}"), cx))
             .collect(),
         preserved: preserved::collect(&residue),

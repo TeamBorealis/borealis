@@ -42,7 +42,10 @@ export type HomebrewControl =
   | "reference" | "references" | "statistic" | "condition" | "tagFilter" | "equipped" | "formula"
   | "richText" | "sheet" | "grid" | "blocks" | "children" | "setters" | "mapsTo"
   | "auto" | "numbers" | "name" | "statValue" | "numberOrStatistic" | "formulas" | "dice" | "uses"
-  | "abilitySource" | "abilityChoice" | "splits" | "classCounter" | "group" | "rows" | "variant" | "map";
+  | "abilitySource" | "abilityChoice" | "splits" | "classCounter" | "group" | "rows" | "variant" | "map"
+  /** Item forms (WB-12): an item pack's contents and an Equipment Package's options (`HomebrewContentsRow[]`,
+   * `HomebrewPackageOption[]`). */
+  | "contents" | "packageOptions";
 
 /** One choice of a combo field. `value` is what the form stores; `label` is shown. */
 export interface HomebrewChoice {
@@ -487,6 +490,48 @@ export interface HomebrewMapsToValue {
   dnd2014: HomebrewRef | null;
   dnd2024: HomebrewRef | null;
   kind: "equivalent" | "approximate" | "none" | null;
+}
+
+/* Item form values (spec 4.9; owned by WB-12, Rust `borealis_authoring::form::item_value`). `number` fields hold a
+ * whole number, `references` a `HomebrewRef[]`, `tagFilter` a `HomebrewExprValue<HomebrewTagFilter>`. */
+
+/** One item of a pack (`extract.items[]`): the item and how many. */
+export interface HomebrewContentsRow {
+  /** null until an item is picked (the row writes nothing). */
+  item: HomebrewRef | null;
+  amount: number;
+  /** Unknown attributes of the stored row: send back unchanged. */
+  kept?: unknown;
+}
+
+/** The coins of a package option. */
+export interface HomebrewCoins {
+  cp: number;
+  sp: number;
+  ep: number;
+  gp: number;
+  pp: number;
+}
+
+/** One item of a package option: a picked item, or a generic item named in words (`name`). */
+export interface HomebrewPackageItem {
+  item: HomebrewRef | null;
+  name: string;
+  qty: number;
+  /** A remark shown after it ("prayers", "10 sheets"). */
+  note: string;
+  /** Unknown keys of the stored item: send back unchanged. */
+  kept?: Record<string, unknown>;
+}
+
+/** One lettered option of an Equipment Package (`data.options[]`). */
+export interface HomebrewPackageOption {
+  /** "A", "B". */
+  label: string;
+  items: HomebrewPackageItem[];
+  coins: HomebrewCoins;
+  /** Unknown keys of the stored option: send back unchanged. */
+  kept?: Record<string, unknown>;
 }
 
 /** A part of the element the form does not edit, written back byte-for-byte (spec 3.4). */

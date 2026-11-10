@@ -5,6 +5,8 @@ import type {
 import { apiError } from "./errors";
 import { descriptionHtml, formProblems } from "./homebrew-check";
 import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
+import { CORE_PICKER_ROWS } from "./homebrew-core-rows";
+import { MOCK_ITEM_KINDS } from "./homebrew-item-kinds";
 import type { TrialDraft } from "./homebrew-trial";
 
 /** The backend's answer for a creator command whose work item has not landed (contract: `details.notImplemented`). */
@@ -55,6 +57,8 @@ const KINDS: HomebrewKindDescriptor[] = [
     { ...field("category", "Category", "combo", "general", ["setter:category", "data.category"]), choices: choices("", "Origin", "General", "Fighting Style", "Epic Boon"), allowCustom: true },
   ]),
   kind("language", "Language", "Languages", "Language", "A language characters can learn."),
+  // The item forms (WB-12), as borealis-authoring describes them.
+  ...MOCK_ITEM_KINDS,
   {
     ...kind("other", "Other element", "Other elements", "Companion", "Any other kind of element, with the parts every form shares (expert).", [
       { ...field("type", "Type", "combo", "general", ["type"], true), choices: choices("Companion", "Familiar", "Property"), allowCustom: true },
@@ -66,7 +70,12 @@ const KINDS: HomebrewKindDescriptor[] = [
 ];
 
 const TYPE_TOKENS: Record<string, string> = { Spell: "SPELL", Feat: "FEAT", Language: "LANGUAGE", Companion: "COMPANION" };
-const PREVIEW_TYPES: Record<string, ElementType> = { spell: "spell", feat: "feat", language: "language" };
+const PREVIEW_TYPES: Record<string, ElementType> = {
+  spell: "spell", feat: "feat", language: "language",
+  item: "item", weapon: "weapon", armor: "armor", magicItem: "magic-item", itemPack: "item", equipmentPackage: "option",
+};
+/** Item facts the description pane lists (WB-12): field key and label. */
+const ITEM_FACTS: [string, string][] = [["rarity", "Rarity"], ["damage", "Damage"], ["cost", "Cost"], ["weight", "Weight (lb.)"]];
 const slug = (text: string): string => text.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "UNNAMED";
 const now = (): string => new Date().toISOString();
 
@@ -204,7 +213,7 @@ export class MockHomebrew {
     })));
     const drafts = [...this.drafts.values()].filter((d) => d.packId === draftPack && d.elementId === null && d.draftId !== draftId && String(d.form.fields.name ?? "").trim())
       .map((d): HomebrewPickerRow => ({ id: `draft:${d.draftId}`, name: String(d.form.fields.name).trim(), type: KINDS.find((k) => k.id === d.form.kind)?.elementTypes[0] ?? "", summary: "", prerequisites: null, sourceName: this.packs.get(d.packId)?.pack.name ?? "", edition: null, draft: true }));
-    return [...saved, ...drafts];
+    return [...saved, ...drafts, ...CORE_PICKER_ROWS];
   }
 
   /** A draft for Try it (spec 9): its last view, its kind and its pack's editions. */
@@ -236,6 +245,8 @@ export class MockHomebrew {
     const facts = [
       ...(typeof level === "number" ? [{ label: "Level", value: level === 0 ? "Cantrip" : String(level) }] : []),
       ...["school", "category"].filter((key) => text(key)).map((key) => ({ label: key === "school" ? "School" : "Category", value: text(key) })),
+      ...ITEM_FACTS.filter(([key]) => text(key)).map(([key, label]) => ({ label, value: text(key) })),
+      ...(typeof form.fields.enhancement === "number" && form.fields.enhancement > 0 ? [{ label: "Bonus", value: `+${form.fields.enhancement}` }] : []),
     ];
     const description = descriptionHtml(form.fields.description);
     return {

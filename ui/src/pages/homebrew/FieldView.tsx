@@ -12,6 +12,7 @@ import { TagFilterBuilder } from "./builders/TagFilterBuilder";
 import { asExprValue, relativeProblems } from "./builders/words";
 import { useCreatorEnv } from "./env";
 import { MapsToField, SettersField, SheetField } from "./fields/FormParts";
+import { ContentsField, contentsOf, optionsOf, PackageOptionsField } from "./fields/ItemParts";
 import { ChipsField } from "./pickers/ChipsField";
 import { RefField, refsOf } from "./pickers/RefField";
 import { StatisticField } from "./pickers/StatisticPicker";
@@ -36,7 +37,7 @@ const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is
 /** Builder controls show their row problems on the rows; under the field only the field's own sentences. */
 const BUILDERS: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "blocks"]);
 /** Controls that take the whole row of the form grid. */
-const WIDE: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "richText", "sheet", "setters", "mapsTo", "blocks", "references"]);
+const WIDE: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "richText", "sheet", "setters", "mapsTo", "blocks", "references", "contents", "packageOptions"]);
 
 /**
  * One form field in the Manage > Character form style (spec 13.4): FieldHeader label (10 SemiBold uppercase) over the
@@ -129,6 +130,10 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
       return <SettersField id={id} value={Array.isArray(value) ? value as HomebrewSetterRow[] : []} onChange={(v, typing) => onChange(v, typing)} />;
     case "mapsTo":
       return <MapsToField id={id} value={(value as HomebrewMapsToValue | null) ?? null} onChange={(v) => onChange(v, false)} />;
+    case "contents":
+      return <ContentsField id={id} label={label} value={contentsOf(value)} onChange={(rows) => onChange(rows, false)} />;
+    case "packageOptions":
+      return <PackageOptionsField id={id} label={label} value={optionsOf(value)} onChange={(options, typing) => onChange(options, typing)} />;
     case "blocks":
       return <div id={id}><BlockList label={label} blocks={Array.isArray(value) ? value as HomebrewBlock[] : []} onChange={(b) => onChange(b, false)} problems={problems} answer={env.answer} /></div>;
     default:

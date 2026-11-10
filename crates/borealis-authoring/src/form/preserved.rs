@@ -71,6 +71,8 @@ pub(crate) struct Residue<'a> {
     pub(crate) setters: Vec<usize>,
     pub(crate) supports: Vec<usize>,
     pub(crate) data: Vec<&'a str>,
+    /// Whole parts a field took (`extract`).
+    pub(crate) parts: &'a std::collections::BTreeSet<&'static str>,
 }
 
 /// The preserved parts of an element, in a stable order.
@@ -106,14 +108,18 @@ pub(crate) fn collect(r: &Residue<'_>) -> Vec<PreservedPart> {
             None,
         ));
     }
-    whole_parts(e, &mut out);
+    whole_parts(e, r.parts, &mut out);
     extras(e, &mut out);
     out
 }
 
-fn whole_parts(e: &Element, out: &mut Vec<PreservedPart>) {
+fn whole_parts(
+    e: &Element,
+    taken: &std::collections::BTreeSet<&'static str>,
+    out: &mut Vec<PreservedPart>,
+) {
     let mut add = |loc: &str, label: &str, value: Value| {
-        if !value.is_null() {
+        if !value.is_null() && !taken.contains(loc) {
             out.push(part(loc.to_string(), label.to_string(), loc, value, None));
         }
     };
