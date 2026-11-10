@@ -48,15 +48,18 @@ describe('hc-wb10 homebrew creator controls (web mock)', { tags: ['homebrew'] },
   test('desktop: prerequisite, rule blocks with the spell and statistic pickers, description, save', async (ctx) => {
     await bootToHome(ctx, '/?creator=1#/homebrew');
     await newSpell(ctx, false);
+    // A spell needs a school to be saved (WB-11).
+    await ctx.browser.locator('#hb-f-school-input').selectOption('Evocation');
 
     // GENERAL: a prerequisite row "Has <Wizard>" from the condition builder and the reference picker.
     await ctx.screen.getByRole('button', 'Add condition').tap();
-    await expect(ctx.screen.getByText('Pick the element this condition tests.')).toBeVisible();
+    // (PROBLEMS is open: a new spell asked for its school at first, so the sentence is also listed there)
+    await expect(ctx.screen.getByText('Pick the element this condition tests.').first()).toBeVisible();
     await clickCss(ctx, '[data-field="requirements"] .hb-pick-btn');
     await expect(ctx.screen.getByRole('dialog', /^Choose: Prerequisite/)).toBeVisible();
     await searchPicker(ctx, 'wizard');
     await dblClickCss(ctx, '.hb-pick-list .pick-row[data-row="Wizard"] button.pick-main');
-    await expect(ctx.screen.getByText('Pick the element this condition tests.')).toBeHidden();
+    await expect(ctx.screen.getByText('Pick the element this condition tests.').first()).toBeHidden();
     expectEqual('the row names the element', 'Wizard', await textOf(ctx, '[data-field="requirements"] .hb-ref-name'));
 
     // RULES: Insert opens the Add menu; "Gives a spell" -> the spell picker's Magic grid, level 3 -> Fireball.

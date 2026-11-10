@@ -20,8 +20,20 @@ export function pickerRow(e: ElementSummary): HomebrewPickerRow {
   };
 }
 
+/** The spell lists the mock's classes declare: a loaded class whose name some loaded spell carries as a tag
+ * (the backend reads each class's `spellcasting.list.supports`; `homebrew_refs::SPELL_LIST_TYPE`). */
+function spellListRows(loaded: readonly ElementSummary[], query: string, page: { offset: number; limit: number }): Page<HomebrewPickerRow> {
+  const tags = new Set(loaded.filter((e) => e.type === "spell").flatMap((e) => (e.tags ?? []).map((t) => t.toLowerCase())));
+  const words = query.trim().toLowerCase();
+  const rows = loaded.filter((e) => e.type === "class" && (tags.has(e.id.toLowerCase()) || tags.has(e.name.toLowerCase())) && e.name.toLowerCase().includes(words))
+    .map((e): HomebrewPickerRow => ({ id: e.name, name: e.name, type: "Spell List", summary: "", prerequisites: null, sourceName: e.sourceName, edition: null, draft: false }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return { total: rows.length, items: rows.slice(page.offset, page.offset + page.limit) };
+}
+
 /** Rows for a picker: loaded elements and the pack's own, by type, tags and the typed words; one page of them. */
 export function referenceRows(loaded: readonly ElementSummary[], own: readonly HomebrewPickerRow[], target: HomebrewPickerTarget, query: string, page: { offset: number; limit: number }): Page<HomebrewPickerRow> {
+  if (target.types.includes("Spell List")) return spellListRows(loaded, query, page);
   const types = new Set(target.types.map(typeKey));
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const tags = (target.tags ?? []).map((t) => t.toLowerCase());

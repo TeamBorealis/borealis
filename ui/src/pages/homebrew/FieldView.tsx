@@ -13,6 +13,7 @@ import { asExprValue, relativeProblems } from "./builders/words";
 import { useCreatorEnv } from "./env";
 import { MapsToField, SettersField, SheetField } from "./fields/FormParts";
 import { ContentsField, contentsOf, optionsOf, PackageOptionsField } from "./fields/ItemParts";
+import { SpellListsField } from "./fields/SpellListsField";
 import { ChipsField } from "./pickers/ChipsField";
 import { RefField, refsOf } from "./pickers/RefField";
 import { StatisticField } from "./pickers/StatisticPicker";
@@ -37,7 +38,16 @@ const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is
 /** Builder controls show their row problems on the rows; under the field only the field's own sentences. */
 const BUILDERS: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "blocks"]);
 /** Controls that take the whole row of the form grid. */
-const WIDE: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "richText", "sheet", "setters", "mapsTo", "blocks", "references", "contents", "packageOptions"]);
+const WIDE: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "richText", "sheet", "setters", "mapsTo", "blocks", "references", "contents", "packageOptions", "spellLists"]);
+
+/** A closed combo's choices, with the stored value kept as a choice when content holds one the list doesn't (a homebrew
+ * school), and a blank first choice while nothing is chosen (a new spell's school). */
+function withCurrent(choices: readonly { value: string; label: string }[], current: string): { value: string; label: string }[] {
+  const all = [...choices];
+  if (current !== "" && !all.some((c) => c.value === current)) all.push({ value: current, label: current });
+  if (current === "" && !all.some((c) => c.value === "")) all.unshift({ value: "", label: "" });
+  return all;
+}
 
 /**
  * One form field in the Manage > Character form style (spec 13.4): FieldHeader label (10 SemiBold uppercase) over the
@@ -101,7 +111,7 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
         return <EditableComboBox id={id} label={label} value={text(value)} options={(field.choices ?? []).map((c) => c.label).filter(Boolean)} onChange={(v) => onChange(v, true)} />;
       }
       if (!field.choices?.length) return <TextBox id={id} value={text(value)} aria-describedby={describedBy} invalid={invalid} onChange={(e) => onChange(e.target.value, true)} />;
-      return <ComboBox id={id} options={field.choices} value={text(value)} aria-describedby={describedBy} onChange={(v) => onChange(v, false)} />;
+      return <ComboBox id={id} options={withCurrent(field.choices, text(value))} value={text(value)} aria-describedby={describedBy} onChange={(v) => onChange(v, false)} />;
     case "toggle":
       return <span id={id}><ToggleSwitch label={label} checked={value === true} onChange={(v) => onChange(v, false)} /></span>;
     case "tags": case "chips":
@@ -128,6 +138,8 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
       return <SheetField id={id} value={(value as HomebrewSheetValue | null) ?? null} onChange={(v, typing) => onChange(v, typing)} />;
     case "setters":
       return <SettersField id={id} value={Array.isArray(value) ? value as HomebrewSetterRow[] : []} onChange={(v, typing) => onChange(v, typing)} />;
+    case "spellLists":
+      return <SpellListsField id={id} label={label} value={strings(value)} onChange={(v) => onChange(v, false)} describedBy={describedBy} invalid={invalid} />;
     case "mapsTo":
       return <MapsToField id={id} value={(value as HomebrewMapsToValue | null) ?? null} onChange={(v) => onChange(v, false)} />;
     case "contents":

@@ -536,6 +536,19 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   not blocks (the block list holds the others). Bad values (dice, ranges, costs, coins) are `form` problems at the field.
   The web mock serves the six descriptors from `api/mock/homebrew-item-kinds.ts`, written by
   `crates/borealis-authoring/tests/form_items.rs`.
+- **Spell form (WB-11).** Kind `spell` (element type `Spell`, spec 4.1). Its fields bind the engine setter and, only when
+  the element already has it, the 2024 mirror in `data` (`level` = setter `level` + `data.level`, `school`, `verbal`/
+  `somatic`/`material` = `hasVerbalComponent`... + `data.components.v/s/m`, `concentration`, `ritual`, `materialCost` =
+  `data.material_cost.amount`, `materialConsumed` = `.consumed`, `reactionTrigger` = `data.reaction_trigger`). `level` is
+  a combo of `"0"` (Cantrip) to `"9"`. `spellLists` (control `spellLists`, a string list) holds every support tag of the
+  spell, the way Aurora content puts a spell on a class list (`supports` + `data.classes`); the spell form has no `tags`
+  field. The lists it offers are the picker rows of the type `"Spell List"` (`homebrew_reference_options` with
+  `target.types: ["Spell List"]`: one row per plain `spellcasting.list.supports` tag of the loaded content and the
+  pack's drafts, `id` = `name` = the list), plus the lists the spell already has, plus new names. `HomebrewFieldSpec.default`
+  is the value a new element starts with (`homebrew_new_draft` fills it in: a new spell is a 1st-level action, Self,
+  Instantaneous, V and S; its school is the author's choice), and `section` groups fields under a SectionSecondary heading.
+  The web mock serves the real descriptor of every kind whose form has landed (`api/mock/homebrew-kinds.ts`, written by
+  `src-tauri/tests/contract_homebrew.rs`; `BOREALIS_UPDATE_SNAPSHOTS=1` rewrites it). Tab labels are upper case (`GENERAL`).
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

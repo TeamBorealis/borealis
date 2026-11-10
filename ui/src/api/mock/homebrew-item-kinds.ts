@@ -20,15 +20,15 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
     "tabs": [
       {
         "id": "general",
-        "label": "General"
+        "label": "GENERAL"
       },
       {
         "id": "rules",
-        "label": "Rules"
+        "label": "RULES"
       },
       {
         "id": "description",
-        "label": "Description"
+        "label": "DESCRIPTION"
       }
     ],
     "fields": [
@@ -584,15 +584,15 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
     "tabs": [
       {
         "id": "general",
-        "label": "General"
+        "label": "GENERAL"
       },
       {
         "id": "rules",
-        "label": "Rules"
+        "label": "RULES"
       },
       {
         "id": "description",
-        "label": "Description"
+        "label": "DESCRIPTION"
       }
     ],
     "fields": [
@@ -1171,15 +1171,15 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
     "tabs": [
       {
         "id": "general",
-        "label": "General"
+        "label": "GENERAL"
       },
       {
         "id": "rules",
-        "label": "Rules"
+        "label": "RULES"
       },
       {
         "id": "description",
-        "label": "Description"
+        "label": "DESCRIPTION"
       }
     ],
     "fields": [
@@ -1717,15 +1717,15 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
     "tabs": [
       {
         "id": "general",
-        "label": "General"
+        "label": "GENERAL"
       },
       {
         "id": "rules",
-        "label": "Rules"
+        "label": "RULES"
       },
       {
         "id": "description",
-        "label": "Description"
+        "label": "DESCRIPTION"
       }
     ],
     "fields": [
@@ -2338,15 +2338,15 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
     "tabs": [
       {
         "id": "general",
-        "label": "General"
+        "label": "GENERAL"
       },
       {
         "id": "rules",
-        "label": "Rules"
+        "label": "RULES"
       },
       {
         "id": "description",
-        "label": "Description"
+        "label": "DESCRIPTION"
       }
     ],
     "fields": [
@@ -2712,15 +2712,15 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
     "tabs": [
       {
         "id": "general",
-        "label": "General"
+        "label": "GENERAL"
       },
       {
         "id": "rules",
-        "label": "Rules"
+        "label": "RULES"
       },
       {
         "id": "description",
-        "label": "Description"
+        "label": "DESCRIPTION"
       }
     ],
     "fields": [

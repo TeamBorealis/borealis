@@ -3,6 +3,7 @@
 use super::kinds::{kinds, Control, FieldDef, KindDef};
 use borealis_content::Ruleset;
 use serde::Serialize;
+use serde_json::Value;
 
 /// One choice of a combo field.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -78,6 +79,9 @@ pub struct FieldSpec {
     /// Reference fields.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub picker: Option<PickerSpec>,
+    /// The value a new element starts with.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<Value>,
 }
 
 /// One kind (`HomebrewKindDescriptor`).
@@ -138,6 +142,7 @@ fn field_spec(f: &FieldDef) -> FieldSpec {
             types: strings(f.picker),
             multiple: (f.control == Control::References).then_some(true),
         }),
+        default: f.default_value(),
     }
 }
 

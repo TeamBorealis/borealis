@@ -581,15 +581,15 @@
       "tabs": [
         {
           "id": "general",
-          "label": "General"
+          "label": "GENERAL"
         },
         {
           "id": "rules",
-          "label": "Rules"
+          "label": "RULES"
         },
         {
           "id": "description",
-          "label": "Description"
+          "label": "DESCRIPTION"
         }
       ]
     },
@@ -794,15 +794,15 @@
       "tabs": [
         {
           "id": "general",
-          "label": "General"
+          "label": "GENERAL"
         },
         {
           "id": "rules",
-          "label": "Rules"
+          "label": "RULES"
         },
         {
           "id": "description",
-          "label": "Description"
+          "label": "DESCRIPTION"
         }
       ]
     },
@@ -876,11 +876,11 @@
       "tabs": [
         {
           "id": "general",
-          "label": "General"
+          "label": "GENERAL"
         },
         {
           "id": "rules",
-          "label": "Rules"
+          "label": "RULES"
         }
       ]
     }

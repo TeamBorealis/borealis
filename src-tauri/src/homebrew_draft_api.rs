@@ -217,8 +217,7 @@ impl AppState {
                 let k = kind(kind_id).ok_or_else(|| {
                     ApiError::invalid(format!("There is no form called {kind_id:?}."))
                 })?;
-                let mut form = FormState::new("e", k.id);
-                form.fields.insert("name".into(), json!(""));
+                let mut form = k.new_form("e");
                 if k.field("source").is_some() {
                     form.fields.insert("source".into(), json!(source));
                 }

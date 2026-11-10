@@ -15,6 +15,9 @@ use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 
+mod spell;
+pub use spell::{Component, SpellField};
+
 /// How one field maps to the element.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Codec {
@@ -58,6 +61,8 @@ pub enum Codec {
     Target,
     /// An item field (spec 4.9; `item_codec`).
     Item(super::item_codec::ItemField),
+    /// A spell field (spec 4.1): its setter and its 2024 mirror, or the spell lists.
+    Spell(SpellField),
 }
 
 const RARITIES: [&str; 3] = ["standard", "exotic", "secret"];
@@ -93,6 +98,17 @@ impl Codec {
             Self::Blocks => s("rules"),
             Self::Target => s("id"),
             Self::Item(f) => f.bindings(),
+            Self::Spell(f) => f.bindings(),
+        }
+    }
+
+    /// It holds the element's support tags (the Tags field, or a spell's lists).
+    #[must_use]
+    pub fn edits_supports(self) -> bool {
+        match self {
+            Self::Tags => true,
+            Self::Spell(f) => f.owns_supports(),
+            _ => false,
         }
     }
 
@@ -112,6 +128,7 @@ impl Codec {
             Self::SetterText(n) | Self::SetterFlag(n) | Self::SetterChips(n) => vec![n],
             Self::LanguageRarity => RARITIES.to_vec(),
             Self::Item(f) => f.setter_names(),
+            Self::Spell(f) => f.setter_names(),
             _ => Vec::new(),
         }
     }
@@ -123,6 +140,7 @@ impl Codec {
             Self::DataText(k) => vec![k],
             Self::LanguageRarity => vec!["rarity"],
             Self::Item(f) => f.data_keys(),
+            Self::Spell(f) => f.data_keys(),
             _ => Vec::new(),
         }
     }
@@ -323,6 +341,7 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
             },
             json!(e.id),
         ),
+        Codec::Spell(f) => spell::read(f, r),
         Codec::Blocks => return None,
     })
 }
@@ -502,6 +521,7 @@ pub(crate) fn write(
         }
         Codec::LanguageRarity => write_rarity(&text()?, raw, &slots, out, path)?,
         Codec::Item(f) => super::item_codec::write(f, value, memo, path, out, cx)?,
+        Codec::Spell(f) => spell::write(f, value, memo, path, out)?,
         Codec::Target => {
             let target: Option<RefValue> = decode(value, path)?;
             match target.filter(|t| !t.id.trim().is_empty()) {
@@ -601,6 +621,7 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
             }
         }
         Codec::Target => out.element.id = get(raw)?,
+        Codec::Spell(f) => spell::write_raw(f, m, out),
         // item fields put their parts back in `item_codec::write_raw` (they need the context)
         Codec::Item(_) | Codec::Blocks => {}
     }

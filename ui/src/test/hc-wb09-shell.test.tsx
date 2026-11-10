@@ -16,7 +16,7 @@ type User = ReturnType<typeof userEvent.setup>;
 async function packWithSpell(api: MockApi, name = "Ember Bolt"): Promise<string> {
   const pack = await api.homebrewCreatePack({ request: { name: "Ember Isles", code: "EMB", edition: "dnd2024" } });
   const d = await api.homebrewNewDraft({ packId: pack.id, kind: "spell" });
-  await api.homebrewUpdateDraft({ draftId: d.draftId, form: { ...d.form, fields: { ...d.form.fields, name, level: 1 } } });
+  await api.homebrewUpdateDraft({ draftId: d.draftId, form: { ...d.form, fields: { ...d.form.fields, name, school: "Evocation" } } });
   await api.homebrewSaveDraft({ draftId: d.draftId });
   return pack.id;
 }
@@ -212,6 +212,10 @@ describe("WB-09 HOMEBREW pack list and workspace", () => {
     await user.type(within(flyout).getByLabelText("Name"), "Ember Bolt");
     await user.click(within(flyout).getByRole("button", { name: "Create" }));
     await waitFor(() => expect(nameBox().value).toBe("Ember Bolt"));
+    // A new spell asks for its school (WB-11: the other required fields start filled in).
+    await waitFor(() => expect(screen.getByRole("button", { name: /Problems \(1\)/ })).toBeTruthy());
+    await user.selectOptions(screen.getByRole("combobox", { name: /^School/ }), "Evocation");
+    await waitFor(() => expect(screen.getByRole("button", { name: /Problems \(0\)/ })).toBeTruthy());
 
     // The sub-tab band shows the kind's tabs; the description pane shows the element live.
     expect(within(editor()).getAllByRole("tab").map((t) => t.textContent)).toEqual(["GENERAL", "RULES", "DESCRIPTION"]);
@@ -224,7 +228,9 @@ describe("WB-09 HOMEBREW pack list and workspace", () => {
     expect(nameBox().getAttribute("aria-describedby")).toBeTruthy();
     expect(document.getElementById(nameBox().getAttribute("aria-describedby")!)!.textContent).toBe("Give it a name.");
     expect(screen.getByRole("contentinfo", { name: "Status" }).textContent).toContain("1 problem");
-    await user.click(screen.getByRole("button", { name: /Problems \(1\)/ }));
+    // PROBLEMS opened by itself for the school; open it if it isn't
+    const problemsButton = screen.getByRole("button", { name: /Problems \(1\)/ });
+    if (problemsButton.getAttribute("aria-expanded") !== "true") await user.click(problemsButton);
     await user.click(within(screen.getByRole("list", { name: "Problems" })).getByRole("button", { name: "Give it a name." }));
     expect(document.activeElement).toBe(nameBox());
 

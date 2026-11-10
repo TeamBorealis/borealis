@@ -6781,6 +6781,12 @@
       "k": "prim"
      }
     },
+    "default": {
+     "opt": true,
+     "t": {
+      "k": "any"
+     }
+    },
     "dialect": {
      "opt": true,
      "t": {
@@ -7318,6 +7324,12 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "default": {
+     "opt": true,
+     "t": {
+      "k": "any"
      }
     },
     "editions": {

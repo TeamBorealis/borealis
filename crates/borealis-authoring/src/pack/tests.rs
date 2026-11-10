@@ -189,7 +189,7 @@ fn creator_json_follows_a_pack_edited_outside_the_app() {
     let mut content = ContentFile::new(vec![
         Element::new("ID_GH_SOURCE_X", "X", "Source", "X"),
         Element::new("ID_A", "A", "Language", "X"),
-        Element::new("ID_C", "C", "Spell", "X"),
+        Element::new("ID_C", "C", "Companion", "X"),
     ]);
     let adopted = CreatorFile::adopt("GH", "1.5.0", &content);
     assert_eq!(

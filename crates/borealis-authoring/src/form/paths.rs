@@ -70,7 +70,9 @@ pub fn form_path_for_location(
         "type" => Codec::Type,
         "source" => Codec::Source,
         "ruleset" => Codec::Edition,
-        "supports" => Codec::Tags,
+        "supports" => {
+            return field_with(form, Codec::edits_supports).or_else(|| preserved(form, top))
+        }
         "requirements" => Codec::Requirements,
         "prerequisite" => Codec::PrerequisiteText,
         "description" => Codec::Description,
