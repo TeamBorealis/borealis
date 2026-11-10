@@ -593,6 +593,7 @@ dependencies = [
  "borealis-ai",
  "borealis-android-assets",
  "borealis-assist",
+ "borealis-authoring",
  "borealis-bundle",
  "borealis-character",
  "borealis-content",

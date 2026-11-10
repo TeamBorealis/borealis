@@ -6722,6 +6722,165 @@
     }
    }
   },
+  "HomebrewBlockField": {
+   "k": "object",
+   "props": {
+    "allowCustom": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "bindings": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "choices": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewChoice"
+      }
+     }
+    },
+    "control": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "dialect": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "editions": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "expert": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fields": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewBlockField"
+      }
+     }
+    },
+    "help": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "key": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kinds": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "max": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "min": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "multiple": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "picker": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "HomebrewPickerTarget"
+     }
+    },
+    "required": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "scope": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "section": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "shownAsNote": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tab": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "variants": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewBlockVariant"
+      }
+     }
+    }
+   }
+  },
   "HomebrewBlockSpec": {
    "k": "object",
    "props": {
@@ -6737,17 +6896,29 @@
       "k": "prim"
      }
     },
+    "effectOnly": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "fields": {
      "opt": false,
      "t": {
       "k": "array",
       "t": {
        "k": "ref",
-       "name": "HomebrewFieldSpec"
+       "name": "HomebrewBlockField"
       }
      }
     },
     "group": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "groupLabel": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -6766,6 +6937,39 @@
      }
     },
     "levelGated": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "onlyIf": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewBlockVariant": {
+   "k": "object",
+   "props": {
+    "fields": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewBlockField"
+      }
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "value": {
      "opt": false,
      "t": {
       "k": "prim"

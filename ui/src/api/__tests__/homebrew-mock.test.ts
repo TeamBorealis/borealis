@@ -63,4 +63,19 @@ describe("homebrew creator contract (WB-00)", () => {
       details: { notImplemented: "homebrew_trial_end" },
     });
   });
+
+  it("serves the block and statistic catalogs the backend sends (WB-05)", async () => {
+    const api = new MockApi();
+    const blocks = await api.homebrewBlockCatalog();
+    expect(blocks.slice(0, 4).map((b) => b.kind)).toEqual(["grant", "select", "list", "stat"]);
+    expect(blocks.filter((b) => !["basic", "effects"].includes(b.group))).toHaveLength(69);
+    const resource = blocks.find((b) => b.kind === "resource");
+    expect(resource).toMatchObject({ group: "uses", common: true, levelGated: true, onlyIf: true });
+    const max = resource?.fields.find((f) => f.key === "max");
+    expect(max?.variants?.map((v) => v.value)).toEqual(["fixed", "stat", "table", "formula", "rolled"]);
+    expect(max?.variants?.find((v) => v.value === "formula")?.fields[0]).toMatchObject({ dialect: "formula", bindings: ["max.expr"] });
+    const stats = await api.homebrewStatCatalog();
+    expect(stats[0]?.id).toBe("abilities");
+    expect(stats.flatMap((g) => g.stats).find((s) => s.name === "darkvision:range")?.label).toBe("Darkvision range");
+  });
 });

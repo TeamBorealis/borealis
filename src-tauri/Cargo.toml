@@ -45,6 +45,7 @@ serde_json.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-appender.workspace = true
+borealis-authoring.workspace = true
 borealis-content.workspace = true
 borealis-engine.workspace = true
 borealis-character.workspace = true

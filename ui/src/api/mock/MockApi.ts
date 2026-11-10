@@ -46,6 +46,7 @@ import { type MockCharacter, type RuleSettings, levelOf } from "./state";
 import { findByWireId, toWireSlotId } from "./slot-ids";
 import { MOCK_INDEX_STATUS, mockPassage, mockSearch } from "./search";
 import { MockHomebrew, notImplemented } from "./homebrew";
+import { MOCK_BLOCK_CATALOG, MOCK_STAT_CATALOG } from "./homebrew-catalog";
 
 export interface MockApiOptions {
   /** Artificial latency per call in ms (default 0). */
@@ -956,8 +957,8 @@ export class MockApi implements Api {
 
   /* Homebrew creator (packs, elements and drafts in memory; the rest rejects as the backend does until its work item lands) */
   async homebrewKinds() { await this.tick(); return this.homebrew.kinds(); }
-  async homebrewBlockCatalog() { await this.tick(); return []; }
-  async homebrewStatCatalog() { await this.tick(); return []; }
+  async homebrewBlockCatalog() { await this.tick(); return MOCK_BLOCK_CATALOG; }
+  async homebrewStatCatalog() { await this.tick(); return MOCK_STAT_CATALOG; }
   async homebrewCreatePack({ request }: Parameters<Api["homebrewCreatePack"]>[0]) { await this.tick(); return this.homebrew.createPack(request); }
   async homebrewUpdatePack({ packId, patch }: Parameters<Api["homebrewUpdatePack"]>[0]) { await this.tick(); return this.homebrew.updatePack(packId, patch); }
   async homebrewListElements({ packId }: { packId: string }) { await this.tick(); return this.homebrew.listElements(packId); }

@@ -5,7 +5,7 @@
 use crate::content_dto::ContentPack;
 use crate::dto::{ExportResult, Page};
 use crate::error::ApiResult;
-use crate::homebrew_creator::not_implemented;
+use crate::homebrew_creator::{self, not_implemented};
 use crate::homebrew_dto::{
     HomebrewBlockSpec, HomebrewBulkPatch, HomebrewDeleteResult, HomebrewDraftSummary,
     HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary, HomebrewForm,
@@ -14,6 +14,8 @@ use crate::homebrew_dto::{
     HomebrewSaveResult, HomebrewSpellListView, HomebrewStatGroup, HomebrewTrialChange,
     HomebrewTrialSetup, HomebrewTrialView,
 };
+use crate::state::AppState;
+use tauri::State;
 
 /// Every creator form (spec 3-4).
 #[tauri::command]
@@ -24,13 +26,14 @@ pub fn homebrew_kinds() -> ApiResult<Vec<HomebrewKindDescriptor>> {
 /// The rule block catalog (spec 6).
 #[tauri::command]
 pub fn homebrew_block_catalog() -> ApiResult<Vec<HomebrewBlockSpec>> {
-    Err(not_implemented("homebrew_block_catalog"))
+    Ok(homebrew_creator::block_catalog())
 }
 
-/// The statistic picker's groups (spec 5.2).
+/// The statistic picker's groups (spec 5.2), with the names loaded packs use that the catalog doesn't know.
 #[tauri::command]
-pub fn homebrew_stat_catalog() -> ApiResult<Vec<HomebrewStatGroup>> {
-    Err(not_implemented("homebrew_stat_catalog"))
+pub fn homebrew_stat_catalog(state: State<'_, AppState>) -> ApiResult<Vec<HomebrewStatGroup>> {
+    let hub = state.hub()?;
+    Ok(homebrew_creator::stat_catalog(Some(hub.store.as_ref())))
 }
 
 /// NEW PACK (spec 14.1).

@@ -409,8 +409,8 @@ forms) and answers the same error for bulk edit, reference options, spell lists,
 | Command | Args (camelCase keys) | Returns |
 |---|---|---|
 | `homebrew_kinds` | none | `HomebrewKindDescriptor[]` (fields, sub-tabs, bindings, editions) |
-| `homebrew_block_catalog` | none | `HomebrewBlockSpec[]` |
-| `homebrew_stat_catalog` | none | `HomebrewStatGroup[]` |
+| `homebrew_block_catalog` | none | `HomebrewBlockSpec[]` (implemented, WB-05) |
+| `homebrew_stat_catalog` | none | `HomebrewStatGroup[]` (implemented, WB-05; plus a group `yourContent` for names loaded packs use) |
 | `homebrew_create_pack` | `{ request: HomebrewPackRequest }` (`name, code, edition: dnd2014\|dnd2024\|any, author?, description?, license?`) | `ContentPack` (`kind: "homebrew"`) |
 | `homebrew_update_pack` | `{ packId, patch: HomebrewPackPatch }` | `ContentPack` |
 | `homebrew_list_elements` | `{ packId }` | `HomebrewElementSummary[]` |
@@ -444,6 +444,18 @@ forms) and answers the same error for bulk edit, reference options, spell lists,
   `crates/borealis-authoring/tests/expr_dto.rs`). The UI edits `model` and sends `original` back unchanged: the backend
   writes the original text while the model means the same, else canonical text. Kept text is read-only (Remove only).
   Formula fields are read by different engine readers; `HomebrewFormulaDialect` says which terms a field offers.
+- **Block catalog (WB-05).** `homebrew_block_catalog` lists the core blocks (`grant`, `select`, `list` = a select of
+  type `List`, `stat`), one block per custom rule kind the engine reads (`custom_rules::KNOWN_KINDS`, 69) and the toggle
+  effect `speed_multiply` (`effectOnly`). A block's `fields` are `HomebrewBlockField`s: exactly the rule fields the
+  engine reads, never an unmodelled one; `level` and `requirements` are not fields but the flags `levelGated` ("From
+  level") and `onlyIf` ("Only if", the condition builder). `bindings[0]` is the field's path in the rule (`max.expr`);
+  `formula` fields carry the `dialect` of their reader; `shownAsNote` fields are text the engine shows verbatim. The
+  control vocabulary is documented on `HomebrewControl`. A block's `sentence` (in `HomebrewBlock`) comes from
+  `borealis_authoring::blocks::sentence`. The web mock serves the same catalogs (`api/mock/homebrew-catalog.ts`, generated
+  by `src-tauri/tests/contract_homebrew.rs`).
+- **Statistic catalog (WB-05).** `homebrew_stat_catalog` groups every statistic name the bundled packs use, in plain words;
+  `classScoped` entries are patterns (`{class}:spellcasting:slots:{n}`) written from a class picker and a number. Names
+  the loaded packs use that the catalog doesn't know come last, in the group `yourContent`.
 - **Problems** are plain sentences with a form `path` (`fields.level`, `blocks.2.fields.number`, `children.0.fields.name`)
   and a `code` (an `IssueCode`, a rule problem, `sweep`, `engine`, `lint.*`, `balance.*`); errors block Save.
 - **Events:** saves end with the existing `borealis://content-reloaded`.

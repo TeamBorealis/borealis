@@ -85,17 +85,59 @@ pub struct HomebrewKindDescriptor {
     pub fields: Vec<HomebrewFieldSpec>,
 }
 
+/// One shape of a `variant` block field (`resource.max`: fixed, statistic, class table, formula, rolled).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomebrewBlockVariant {
+    pub value: String,
+    pub label: String,
+    pub fields: Vec<HomebrewBlockField>,
+}
+
+/// One field of a block dialog: a form field plus what the block controls need.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomebrewBlockField {
+    #[serde(flatten)]
+    pub base: HomebrewFieldSpec,
+    /// `formula` / `formulas`: the dialect of the field's engine reader.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dialect: Option<String>,
+    /// Free text the engine shows verbatim ("Shown as a note; Borealis does not apply it").
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub shown_as_note: Option<bool>,
+    /// `name`: what the name names.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+    /// `name`: several names.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub multiple: Option<bool>,
+    /// `group`, `rows`: the parts; `map`: the key and the value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fields: Option<Vec<HomebrewBlockField>>,
+    /// `variant`: the shapes, chosen by `type`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub variants: Option<Vec<HomebrewBlockVariant>>,
+    /// `blocks`: the block kinds the nested list holds.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kinds: Option<Vec<String>>,
+}
+
 /// One rule block kind of the catalog.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HomebrewBlockSpec {
     pub kind: String,
     pub label: String,
+    /// Add menu group id (`HomebrewBlockGroup`).
     pub group: String,
+    pub group_label: String,
     pub common: bool,
     pub core_only: bool,
+    pub effect_only: bool,
     pub level_gated: bool,
-    pub fields: Vec<HomebrewFieldSpec>,
+    pub only_if: bool,
+    pub fields: Vec<HomebrewBlockField>,
 }
 
 /// One statistic of the statistic picker.

@@ -24,11 +24,25 @@ export interface HomebrewTab {
   label: string;
 }
 
-/** The control a field is edited with (spec 4, 13.4). Builders and pickers are documented in spec 5-7. */
+/** The control a field is edited with (spec 4, 13.4). Builders and pickers are documented in spec 5-7. The second group
+ * is used by block dialogs (`HomebrewBlockField`, WB-05):
+ * - `auto`: written by the creator, never shown (a grant's element type, a written list's row numbers).
+ * - `number` with `choices`: a number or one of those words (`any`, `all`); with `allowCustom`, any text too.
+ * - `numbers`: a list of whole numbers (spell levels). `chips` with `choices`: a list from those values.
+ * - `name`: a name in `scope` (a pool, a toggle, a named choice, a class...); `multiple` for a list.
+ * - `statValue`: text `"2"`, a statistic, or `"-<statistic>"`. `numberOrStatistic`: a number or `{type: "stat", stat}`.
+ * - `formulas`: a list of formula terms in `dialect`. `dice`: dice text (`1d10`).
+ * - `uses`: a number, `"proficiency"`, an ability name, or `{type: "table", key}`.
+ * - `abilitySource`: an ability name or `{param: <named choice>}`. `abilityChoice`: a number (any N abilities) or a list
+ *   of abilities. `splits`: point splits (`[[2, 1], [1, 1, 1]]`). `classCounter`: a column of the class table.
+ * - `group` (an object of `fields`), `rows` (a list of such objects), `variant` (an object whose `type` picks one of
+ *   `variants`), `map` (an object from keys to values; `fields` = [key, value]), `blocks` (nested blocks of `kinds`). */
 export type HomebrewControl =
   | "text" | "multiline" | "number" | "combo" | "check" | "toggle" | "tags" | "chips"
   | "reference" | "references" | "statistic" | "condition" | "tagFilter" | "equipped" | "formula"
-  | "richText" | "sheet" | "grid" | "blocks" | "children";
+  | "richText" | "sheet" | "grid" | "blocks" | "children"
+  | "auto" | "numbers" | "name" | "statValue" | "numberOrStatistic" | "formulas" | "dice" | "uses"
+  | "abilitySource" | "abilityChoice" | "splits" | "classCounter" | "group" | "rows" | "variant" | "map";
 
 /** One choice of a combo field. `value` is what the form stores; `label` is shown. */
 export interface HomebrewChoice {
@@ -97,22 +111,66 @@ export interface HomebrewKindDescriptor {
   fields: HomebrewFieldSpec[];
 }
 
-/** One rule block kind of the block catalog (spec 6.1-6.2; the catalog is owned by WB-05). */
+/** Add menu groups of the block catalog (spec 6.2). */
+export type HomebrewBlockGroup =
+  | "basic" | "abilities" | "spells" | "uses" | "attacks" | "defence" | "checks" | "effects" | "coreRules";
+
+/** What a `name` field names: picked from the names in scope (pools, toggles, auras, selects, named choices,
+ * extra damage, features, classes, spell lists, spells). */
+export type HomebrewNameScope =
+  | "resource" | "toggle" | "aura" | "select" | "choice" | "extraDamage" | "feature" | "class" | "spellList" | "spell";
+
+/** One shape of a `variant` block field (`resource` maximum: fixed, statistic, class table, formula, rolled). */
+export interface HomebrewBlockVariant {
+  /** The `type` value. */
+  value: string;
+  label: string;
+  /** The object's other parts. */
+  fields: HomebrewBlockField[];
+}
+
+/** One field of a block dialog (spec 6.2; WB-05). `key` is the rule field (or the part's key inside its parent);
+ * `bindings[0]` is its path in the rule (`max.expr`); `tab` is `rules`. */
+export interface HomebrewBlockField extends HomebrewFieldSpec {
+  /** `formula` / `formulas`: the dialect of the field's engine reader (offer only its terms). */
+  dialect?: HomebrewFormulaDialect;
+  /** Free text the engine shows verbatim; `help` is "Shown as a note; Borealis does not apply it." */
+  shownAsNote?: boolean;
+  /** `name`: what it names. */
+  scope?: HomebrewNameScope;
+  /** `name`: several names. */
+  multiple?: boolean;
+  /** `group` and `rows`: the parts; `map`: [key, value]. */
+  fields?: HomebrewBlockField[];
+  /** `variant`: the shapes. */
+  variants?: HomebrewBlockVariant[];
+  /** `blocks`: the block kinds the nested list holds (a toggle's effects). */
+  kinds?: string[];
+}
+
+/** One rule block kind of the block catalog (spec 6.1-6.2; WB-05, `borealis_authoring::blocks`). */
 export interface HomebrewBlockSpec {
-  /** `grant`, `select`, `list`, `stat`, or a custom rule kind (`resource`, `grant_spell`...). */
+  /** `grant`, `select`, `list` (a select of type List), `stat`, a custom rule kind (`resource`, `grant_spell`...), or the
+   * toggle effect `speed_multiply`. */
   kind: string;
   /** Plain words ("Gives a spell"). */
   label: string;
-  /** Add-menu group ("Spells", "Uses & resources"...). */
-  group: string;
+  /** Add-menu group. */
+  group: HomebrewBlockGroup;
+  /** Its heading ("Uses & resources"). */
+  groupLabel: string;
   /** Listed first in the Add menu. */
   common: boolean;
   /** Hidden unless "Show core-rule blocks" (expert). */
   coreOnly: boolean;
-  /** The block takes "From level" (a gate field). */
+  /** Offered only inside a toggle's effects. */
+  effectOnly: boolean;
+  /** The dialog shows "From level" (`level`). */
   levelGated: boolean;
-  /** The block's dialog fields (the kind's known fields only, never an unmodelled one). */
-  fields: HomebrewFieldSpec[];
+  /** The dialog shows "Only if" (`requirements`, the condition builder). */
+  onlyIf: boolean;
+  /** The block's dialog fields: exactly the fields the engine reads, never an unmodelled one. */
+  fields: HomebrewBlockField[];
 }
 
 /** One statistic of the statistic picker (spec 5.2; catalog owned by WB-05). */
