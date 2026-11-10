@@ -115,6 +115,32 @@ describe("B-55 W3 equipment add-item list", () => {
     expect(within(rowOf(grid, "Hooded Lantern")).queryByRole("button", { name: /versions of/ })).toBeNull();
   });
 
+  it("a category holding only the other edition lists its items under the character's edition filter (A5)", async () => {
+    // A 2024 character's Trade Goods are all 2014 items (SRD 5.1): the category counted them while the 2024 filter emptied
+    // its list. Here the 2014-only Trident stands in as that category's one item.
+    const api = new MockApi();
+    const id = await seededId(api, "Seraphine");
+    const weapons = await api.searchItems({ category: "Weapons", limit: 1000, characterId: id });
+    const trident = { ...weapons.items.find((i) => i.id === "trident")!, category: "Trade Goods" };
+    const categories = await api.listItemCategories({ characterId: id });
+    vi.spyOn(api, "listItemCategories").mockResolvedValue([...categories, { name: "Trade Goods", count: 1 }]);
+    const search = api.searchItems.bind(api);
+    vi.spyOn(api, "searchItems").mockImplementation(async (q) => (q.category === "Trade Goods" ? { total: 1, items: q.offset ? [] : [trident] } : search(q)));
+    const user = userEvent.setup();
+    renderApp("/equipment", { api, openCharacterId: id });
+    // The filter holds the character's edition (TV1 A4), as the other categories show.
+    await category(user, "Adventuring Gear");
+    expect(within(await screen.findByRole("group", { name: "Edition" })).getByRole("button", { name: "2024" }).getAttribute("aria-pressed")).toBe("true");
+    const goods = await category(user, "Trade Goods");
+    expect(await within(goods).findByRole("button", { name: "Trident" })).toBeTruthy();
+    expect(within(goods).queryByText(/Nothing matches/)).toBeNull();
+    // A list of one edition offers no Edition choice; the next mixed list still holds the character's edition.
+    expect(screen.queryByRole("group", { name: "Edition" })).toBeNull();
+    const gear = await category(user, "Adventuring Gear");
+    await within(gear).findByRole("button", { name: "Hooded Lantern" });
+    expect(within(await screen.findByRole("group", { name: "Edition" })).getByRole("button", { name: "2024" }).getAttribute("aria-pressed")).toBe("true");
+  });
+
   it("with strict mode on only the character's edition is listed", async () => {
     const { user } = await openEquipment((api, id) => api.setAllowCrossEdition({ characterId: id, allow: false }));
     const weapons = await category(user, "Weapons");

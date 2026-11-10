@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { Api, CharacterSnapshot, ItemCategory, ItemSummary, Page } from "../../api/contract";
 import { isApiError } from "../../api/contract";
 import { Alert, Button, ComboBox, useConfirm } from "../../components";
-import { groupVersions, sourcesOf, visibleRows, type PickerFilter, type VersionLike } from "../../lib/versions";
+import { editionsOf, effectiveFilter, groupVersions, sourcesOf, visibleRows, type PickerFilter, type VersionLike } from "../../lib/versions";
 import { EditionSegments, SourceFilterButton } from "../builder/PickerFilterBar";
 import { VersionMenu } from "../builder/VersionMenu";
 import { usePhone } from "../../lib/phone";
@@ -82,7 +82,10 @@ export function EquipmentTab({ view = "all" }: { view?: GearView }) {
   const rows = useMemo(() => groupVersions(items.data?.items ?? []), [items.data]);
   const charEd = snapshot?.ruleset ?? "dnd2024";
   const filter: PickerFilter = { text: "", edition, sources: sourcesByCategory[category] ?? null };
-  const visible = visibleRows(rows, filter, charEd, null, menuPicks);
+  // A5: the Edition filter applies only to a category holding both editions. A 2024 character's Trade Goods are all 2014
+  // items; filtering them to 2024 emptied the list while the category still counted them.
+  const editions = useMemo(() => editionsOf(rows), [rows]);
+  const visible = visibleRows(rows, effectiveFilter(filter, editions), charEd, null, menuPicks);
   const listSources = useMemo(() => sourcesOf(rows), [rows]);
   const pickedId = pickedItem?.id ?? "";
   // A generic magic weapon or armor is added on a base picked in a second list, as in the classic builder.
@@ -168,7 +171,7 @@ export function EquipmentTab({ view = "all" }: { view?: GearView }) {
         {!phone && cmds}
         <button type="button" className="eq-filter-tile" aria-label="Filter items" aria-pressed={filterOn} title="Turn the name filter on or off" onClick={() => setFilterOn((v) => !v)}><Glyph name="filter" /></button>
         <span className="eq-filter"><input type="text" aria-label="Filter text" placeholder="filter name and keywords..." value={query} onChange={(e) => setQuery(e.target.value)} /><button type="button" aria-label="Clear" onClick={() => setQuery("")}><Glyph name="x" /></button></span>
-        <span className="eq-edition"><EditionSegments value={edition} onChange={setEdition} /></span>
+        {editions.length > 1 && <span className="eq-edition"><EditionSegments value={edition} onChange={setEdition} /></span>}
         <span className="eq-source"><SourceFilterButton filter={filter} onChange={setFilter} sources={listSources} /></span>
         <Button className="eq-coins" onClick={() => setCoins(true)}>Manage coins: {inv.totalGp} gp</Button>
       </div>
