@@ -95,6 +95,17 @@ export function DescriptionPane({ elementId, fallback }: { elementId: string | n
   const held = lastShown.get(api);
   const d = el.data ?? (held?.id === elementId ? held : null);
   if (!d) return <PaneShell title="Loading" imageIcon={false}><p className="muted">Loading...</p></PaneShell>;
+  // Rendered in place (not as a child component), so the pane stays the same element from Loading to loaded.
+  return detailPane(d, openCompendium);
+}
+
+/** One element in the pane, exactly as the builder shows it (also the homebrew creator's live preview, spec 13.2). */
+export function ElementDetailView({ d }: { d: ElementDetail }) {
+  const { openCompendium } = useShell();
+  return detailPane(d, openCompendium);
+}
+
+function detailPane(d: ElementDetail, openCompendium: ReturnType<typeof useShell>["openCompendium"]): ReactNode {
   const dupIntro = repeatsBody(d.shortDescription, d.descriptionHtml);
   const facts = d.facts.filter((f) => !HOST_FACTS.includes(f.label));
   const plain = `${d.name}. ${d.shortDescription} ${d.descriptionHtml.replace(/<[^>]+>/g, " ")}`;

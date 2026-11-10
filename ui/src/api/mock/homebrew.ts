@@ -1,5 +1,5 @@
 import type {
-  ApiError, BookRuleset, ContentPack, HomebrewDeleteResult, HomebrewDraftSummary, HomebrewDraftView, HomebrewElementSummary, HomebrewFieldSpec,
+  ApiError, BookRuleset, ContentPack, ElementDetail, ElementType, HomebrewDeleteResult, HomebrewDraftSummary, HomebrewDraftView, HomebrewElementSummary, HomebrewFieldSpec,
   HomebrewForm, HomebrewKindDescriptor, HomebrewKindId, HomebrewPackPatch, HomebrewPackRequest, HomebrewProblem, HomebrewSaveResult, Ruleset,
 } from "../types";
 import { apiError } from "./errors";
@@ -16,9 +16,11 @@ const RULES = { id: "rules", label: "RULES" };
 const field = (key: string, label: string, control: HomebrewFieldSpec["control"], tab: string, bindings: string[], required = false): HomebrewFieldSpec =>
   ({ key, label, control, tab, bindings, required });
 
+const choices = (...labels: string[]) => labels.map((label) => ({ value: label, label }));
+
 const SHARED: HomebrewFieldSpec[] = [
   field("name", "Name", "text", "general", ["name"], true),
-  field("edition", "Edition", "combo", "general", ["ruleset"]),
+  { ...field("edition", "Edition", "combo", "general", ["ruleset"]), choices: [{ value: "", label: "Pack default" }, { value: "dnd2014", label: "2014" }, { value: "dnd2024", label: "2024" }] },
   field("tags", "Tags", "tags", "general", ["supports"]),
   field("description", "Description", "richText", "description", ["description"]),
 ];
@@ -32,13 +34,16 @@ const kind = (id: string, label: string, pluralLabel: string, elementType: strin
 const KINDS: HomebrewKindDescriptor[] = [
   kind("spell", "Spell", "Spells", "Spell", "A spell for class spell lists.", [
     { ...field("level", "Level", "number", "general", ["setter:level", "data.level"], true), min: 0, max: 9 },
-    field("school", "School", "combo", "general", ["setter:school", "data.school"], true),
+    { ...field("school", "School", "combo", "general", ["setter:school", "data.school"], true), choices: choices("", "Abjuration", "Conjuration", "Divination", "Enchantment", "Evocation", "Illusion", "Necromancy", "Transmutation") },
   ]),
-  kind("feat", "Feat", "Feats", "Feat", "A feat characters can take.", [field("category", "Category", "combo", "general", ["setter:category", "data.category"])]),
+  kind("feat", "Feat", "Feats", "Feat", "A feat characters can take.", [
+    { ...field("category", "Category", "combo", "general", ["setter:category", "data.category"]), choices: choices("", "Origin", "General", "Fighting Style", "Epic Boon"), allowCustom: true },
+  ]),
   kind("language", "Language", "Languages", "Language", "A language characters can learn."),
 ];
 
 const TYPE_TOKENS: Record<string, string> = { Spell: "SPELL", Feat: "FEAT", Language: "LANGUAGE" };
+const PREVIEW_TYPES: Record<string, ElementType> = { spell: "spell", feat: "feat", language: "language" };
 const slug = (text: string): string => text.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "UNNAMED";
 const now = (): string => new Date().toISOString();
 
@@ -54,6 +59,8 @@ const rulesetsOf = (edition: BookRuleset): Ruleset[] => (edition === "any" ? ["d
 export class MockHomebrew {
   private packs = new Map<string, OwnPack>();
   private drafts = new Map<string, HomebrewDraftView>();
+  /** Drafts that received an edit: only those are "unsaved changes" (spec 10.1: a draft is written by every update). */
+  private touched = new Set<string>();
   private nextDraft = 1;
 
   constructor(private putPack: (pack: ContentPack) => ContentPack) {}
@@ -86,7 +93,7 @@ export class MockHomebrew {
 
   listElements(packId: string): HomebrewElementSummary[] {
     const own = this.own(packId);
-    const drafted = new Set([...this.drafts.values()].map((d) => d.elementId));
+    const drafted = new Set([...this.drafts.values()].filter((d) => this.touched.has(d.draftId)).map((d) => d.elementId));
     return [...own.elements.values()].map(({ summary }) => ({ ...summary, hasDraft: drafted.has(summary.id) }));
   }
 
@@ -107,6 +114,7 @@ export class MockHomebrew {
 
   updateDraft(draftId: string, form: HomebrewForm): HomebrewDraftView {
     const draft = this.draft(draftId);
+    this.touched.add(draftId);
     return this.store(draft.packId, draft.elementId, form, draftId);
   }
 
@@ -127,16 +135,18 @@ export class MockHomebrew {
     const pack = { ...own.pack, elementCount: elements.size, version: bumpPatch(own.pack.version) };
     this.packs.set(own.pack.id, { ...own, pack, elements });
     this.drafts.delete(draftId);
+    this.touched.delete(draftId);
     return { pack: this.putPack(pack), elementIds: [id] };
   }
 
   discardDraft(draftId: string): void {
     this.draft(draftId);
     this.drafts.delete(draftId);
+    this.touched.delete(draftId);
   }
 
   listDrafts(): HomebrewDraftSummary[] {
-    return [...this.drafts.values()].map((d) => ({ draftId: d.draftId, packId: d.packId, elementId: d.elementId, kind: d.form.kind, name: String(d.form.fields.name ?? ""), updatedAt: d.updatedAt }));
+    return [...this.drafts.values()].filter((d) => this.touched.has(d.draftId)).map((d) => ({ draftId: d.draftId, packId: d.packId, elementId: d.elementId, kind: d.form.kind, name: String(d.form.fields.name ?? ""), updatedAt: d.updatedAt }));
   }
 
   deleteElements(packId: string, elementIds: string[]): HomebrewDeleteResult {
@@ -166,6 +176,24 @@ export class MockHomebrew {
     return d;
   }
 
+  /** The live description pane: the name, the description text and the kind's facts, as the builder shows an element. */
+  private preview(packId: string, id: string, form: HomebrewForm): ElementDetail {
+    const own = this.own(packId);
+    const k = KINDS.find((x) => x.id === form.kind);
+    const text = (key: string) => (typeof form.fields[key] === "string" ? String(form.fields[key]).trim() : "");
+    const level = form.fields.level;
+    const facts = [
+      ...(typeof level === "number" ? [{ label: "Level", value: level === 0 ? "Cantrip" : String(level) }] : []),
+      ...["school", "category"].filter((key) => text(key)).map((key) => ({ label: key === "school" ? "School" : "Category", value: text(key) })),
+    ];
+    const description = text("description");
+    return {
+      id, name: text("name") || "Unnamed", type: PREVIEW_TYPES[form.kind] ?? "option", source: own.pack.sourceIds[0] ?? own.pack.id,
+      sourceName: own.pack.name, shortDescription: "", prerequisites: null, rulesets: own.pack.rulesets,
+      descriptionHtml: description ? `<p>${escapeHtml(description)}</p>` : "", facts: k ? facts : [], grants: [],
+    };
+  }
+
   private freeId(own: OwnPack, base: string): string {
     if (!own.elements.has(base)) return base;
     for (let n = 2; ; n += 1) if (!own.elements.has(`${base}_${n}`)) return `${base}_${n}`;
@@ -175,12 +203,16 @@ export class MockHomebrew {
     const named = String(form.fields.name ?? "").trim() !== "";
     const problems: HomebrewProblem[] = named ? [] : [{ severity: "error", message: "Give it a name.", path: "fields.name", elementId, code: "form.required" }];
     const view: HomebrewDraftView = {
-      draftId, packId, elementId, form, preview: null, problems, updatedAt: now(), baseChanged: false,
+      draftId, packId, elementId, form, preview: this.preview(packId, elementId ?? draftId, form), problems, updatedAt: now(), baseChanged: false,
       generated: { json: JSON.stringify({ name: form.fields.name ?? "" }, null, 2), tree: [] },
     };
     this.drafts.set(draftId, view);
     return view;
   }
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function bumpPatch(version: string): string {

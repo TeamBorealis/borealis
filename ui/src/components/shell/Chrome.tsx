@@ -118,7 +118,8 @@ export function SubBand() {
   const { pathname } = useLocation();
   const { setHost } = useShell();
   const start = activeTab(pathname).id === "start";
-  const subnav = startSubnav(usePlatform().mobile);
+  const { mobile, creatorEnabled } = usePlatform();
+  const subnav = startSubnav(mobile, creatorEnabled);
   // Longest matching sub-tab wins so /content/sources does not also light up Additional Content.
   const single = SINGLE_SUBTABS.find((s) => pathname === s.to || pathname.startsWith(`${s.to}/`));
   const activeSub = subnav.filter((s) => pathname === s.to || pathname.startsWith(`${s.to}/`)).sort((a, b) => b.to.length - a.to.length)[0]?.to;

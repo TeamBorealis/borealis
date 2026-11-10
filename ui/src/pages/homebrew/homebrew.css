@@ -1,0 +1,111 @@
+/* Homebrew creator (spec 13): composed from the classic builder's own parts (Sources manager grid, Equipment catalogue
+   panels, Manage form fields, the shell's sub-tab band, the description pane). Only layout and the problem states live here;
+   colours are the existing tokens (no new colour, font, radius or shadow, HC4). */
+
+/* 13.1 pack list: the Sources grid with Name / Edition / Elements / Version */
+.hb-pack-grid .v4-grid-head, .hb-pack-grid .v4-grid-row { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) 90px 90px; }
+.hb-pack-grid .v4-grid-row { cursor: default; }
+.hb-open { margin: 14px 0 0; }
+.hb-mark { display: inline-block; margin-left: 8px; padding: 0 4px; font-size: 9px; font-weight: 600; line-height: 14px; border: 1px solid currentColor; vertical-align: middle; }
+.hb-mark.hb-error { color: var(--aur-danger-bright); }
+.hb-mark.hb-warning { color: var(--aur-warning); }
+.hb-mark-draft { display: inline-grid; place-items: center; margin-left: 6px; color: var(--gold); vertical-align: middle; }
+.hb-mark-draft .icon { width: 12px; height: 12px; }
+@media (max-width: 899px) {
+  .hb-pack-grid .v4-grid-head, .hb-pack-grid .v4-grid-row { grid-template-columns: minmax(0, 1fr) 110px; }
+  .hb-pack-grid .v4-grid-head > :nth-child(n+3), .hb-pack-grid .v4-grid-row > :nth-child(n+3) { display: none; }
+}
+
+/* 13.2 workspace: CATEGORIES | element grid | editor | description pane (11* : 5*) */
+.hb-ws { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.hb-ws-head { display: flex; align-items: center; gap: 12px; min-height: 26px; padding: 4px 20px 0; font-size: 11px; color: var(--text-secondary); }
+.hb-back { background: transparent; border: 0; padding: 0; min-height: 0; height: auto; color: var(--text-secondary); font-size: 10px; font-weight: 600; text-transform: uppercase; cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .hb-back:hover { color: var(--text); } }
+.hb-back { display: inline-flex; align-items: center; gap: 2px; }
+.hb-back .icon { width: 12px; height: 12px; }
+.hb-ws-pack { font-weight: 600; text-transform: uppercase; color: var(--text); }
+.hb-ws-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 30.63%); flex: 1 1 0; min-height: 0; }
+.hb-ws-left { display: grid; grid-template-columns: 170px 220px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 10px; padding: 6px 12px 12px 20px; min-height: 0; }
+.hb-ws-desc { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #131313; border-left: 2px solid #1a1c1d; }
+.hb-ws-desc .desc-scroll { overflow-y: scroll; }
+.hb-cats { min-height: 0; }
+.hb-elements { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.hb-element-scroll { flex: 1 1 0; min-height: 0; }
+.hb-elements .ap-band h2 { font-size: 12px; }
+.hb-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; height: auto; flex: none; }
+.hb-tools .eq-filter { flex: 1 1 100%; margin-left: 0; }
+.hb-tools .eq-cmds { display: flex; gap: 6px; }
+.hb-tool { height: 26px; min-height: 26px; padding: 0 10px; background: #3a3a3a; border: 0; border-radius: 2px; color: var(--text-body); font-size: 10px; font-weight: 600; text-transform: uppercase; cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .hb-tool:hover:not(:disabled) { background: #4a4a4a; } }
+.hb-tool:disabled { color: var(--gray-2); cursor: default; }
+.hb-new-name { cursor: default; }
+
+/* Editor: title band, command row, PROBLEMS, the 30 px sub-tab band, the form */
+.hb-ws-editor { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.hb-editor { display: flex; flex-direction: column; min-height: 0; flex: 1 1 0; overflow-y: auto; }
+.hb-editor > .ap-band h2 { font-size: 12px; }
+.hb-autosave { margin-left: auto; font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; color: var(--gray-6); }
+.hb-autosave.hb-error { color: var(--aur-danger-bright); }
+.hb-commands { padding-left: 0; }
+.hb-commands .icon { width: 13px; height: 13px; }
+.hb-error-line { margin: 4px 0; font-size: 11px; color: var(--aur-danger-bright); }
+.hb-problems { margin: 4px 0 8px; }
+.hb-problems .aur-expander-body { padding: 4px 0; }
+.hb-checking { font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; color: var(--gray-6); margin-right: 6px; }
+.hb-problems-none { margin: 4px 8px; font-size: 11px; color: var(--text-secondary); }
+.hb-problem-list { list-style: none; margin: 0; padding: 0; }
+.hb-problem { display: flex; align-items: flex-start; gap: 6px; width: 100%; min-height: 21px; height: auto; padding: 2px 8px; background: transparent; border: 0; border-radius: 0; text-align: left; font-size: 11px; color: var(--text-body); cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .hb-problem:hover { background: var(--accent-20); } }
+.hb-problem .icon { flex: none; width: 13px; height: 13px; margin-top: 1px; }
+.hb-problem.hb-error .icon { color: var(--aur-danger-bright); }
+.hb-problem.hb-warning .icon { color: var(--aur-warning); }
+.hb-band.aur-subband { flex: none; padding-left: 0; }
+.hb-band .tabs.sub { padding-left: 0; }
+.hb-tabpanel { padding: 12px 2px 20px 0; }
+.hb-section + .hb-section { margin-top: 16px; }
+.hb-section-title { margin: 0 0 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
+.hb-pending { margin: 2px 0; font-size: 11px; font-style: italic; color: var(--text-secondary); }
+.hb-empty { margin: 40px auto; max-width: 500px; text-align: center; font-size: 14px; font-weight: 600; line-height: 20px; color: var(--text-secondary); }
+.hb-empty p { margin: 0 0 14px; }
+
+/* Fields (13.4) and their problems (8.3): label in warning orange or danger red with an icon, the sentence below */
+.hb-field > label { display: flex; align-items: center; gap: 3px; }
+.hb-field > label .icon { width: 11px; height: 11px; }
+.hb-field.hb-error > label { color: var(--aur-danger); }
+.hb-field.hb-warning > label { color: var(--aur-warning); }
+.hb-req { color: var(--text-secondary); }
+.hb-field-msg p { margin: 2px 0 0; font-size: 11px; }
+.hb-field.hb-error .hb-field-msg { color: var(--aur-danger-bright); }
+.hb-field.hb-warning .hb-field-msg { color: var(--aur-warning); }
+.hb-field-help { margin: 2px 0 0; font-size: 11px; color: var(--text-secondary); }
+.hb-multiline { width: 100%; min-height: 60px; resize: vertical; background: var(--field-bg, #1c1c1c); color: var(--text); border: 1px solid #424243; font: inherit; font-size: var(--fs-md); padding: 4px 5px; }
+.hb-check { display: flex; align-items: center; min-height: 26px; }
+
+/* Flyouts: New pack, New element (13.11: the New Character flyout's dashed option cards) */
+.hb-flyout-text { width: 100%; min-height: 60px; resize: vertical; background: #fff; color: #161616; border: 0; font: inherit; font-size: var(--fs-md); padding: 4px 6px; }
+.hb-kind-cards { display: flex; flex-direction: column; gap: 8px; }
+.hb-kind-card { display: block; width: 100%; height: auto; min-height: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; border-radius: 0; }
+.hb-kind-card[aria-checked="true"] { background: var(--accent-80); border-style: solid; }
+.hb-kind-name { display: block; color: #d5d5d5; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+.hb-kind-desc { display: block; margin-top: 6px; font-size: 11px; font-weight: 300; color: var(--text-secondary); }
+
+/* Narrow windows and phones (spec 16): list, then the editor with a back button; kinds as chips */
+.hb-ws.narrow { height: auto; min-height: 100%; }
+.hb-ws.narrow .hb-ws-head { padding: 8px 16px 0; }
+.hb-ws-list, .hb-ws.narrow .hb-ws-editor { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.hb-ws.narrow .hb-editor { flex: none; overflow: visible; }
+.hb-ws.narrow .hb-element-scroll { flex: none; }
+.hb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.hb-chip { height: 26px; min-height: 26px; padding: 0 10px; background: transparent; border: 1px solid var(--accent-80); border-radius: 2px; color: var(--text-body); font-size: 11px; cursor: pointer; }
+.hb-chip[aria-pressed="true"] { background: var(--accent-80); color: var(--text); }
+html.phone .hb-editor { --eq-pin-gap: 8px; }
+html.phone .hb-tool { min-height: var(--ph-hit); height: auto; padding: 0 16px; border-radius: var(--ph-r-md); background: var(--ph-raised); color: var(--ph-text); font: 600 var(--ph-t-foot)/1.2 var(--ph-font-ui); text-transform: none; }
+html.phone .hb-tool:disabled { color: var(--ph-text-3); }
+html.phone .hb-pack-grid .v4-grid-head, html.phone .hb-pack-grid .v4-grid-row { grid-template-columns: minmax(0, 1fr); }
+html.phone .hb-pack-grid .v4-grid-head > :nth-child(n+2), html.phone .hb-pack-grid .v4-grid-row > :nth-child(n+2) { display: none; }
+html.phone .hb-chip { min-height: var(--ph-hit); border-radius: var(--ph-r-pill); border-color: var(--ph-field-line); background: transparent; color: var(--ph-text); font: 500 var(--ph-t-foot)/1.2 var(--ph-font-ui); padding: 0 14px; }
+html.phone .hb-chip[aria-pressed="true"] { background: var(--ph-accent); border-color: var(--ph-accent); color: var(--ph-on-accent); }
+html.phone .hb-commands.eq-pin { background: var(--ph-bg); justify-content: space-between; height: auto; min-height: var(--ph-hit); }
+html.phone .hb-commands.eq-pin button { min-height: var(--ph-hit); font-size: var(--ph-t-foot); text-transform: none; }
+html.phone .hb-problem { min-height: var(--ph-hit); align-items: center; }
+html.phone .hb-ws.narrow .hb-ws-desc, html.phone .hb-ws.narrow .desc-pane { background: transparent; }

@@ -5,7 +5,7 @@ import {
   mdiHammer, mdiInformationOutline, mdiLink, mdiLock, mdiMagnify, mdiMenu, mdiMinus, mdiOpenInApp, mdiPackageVariantClosed,
   mdiPencil, mdiPlus, mdiRobotOutline, mdiScriptText, mdiSend, mdiShield, mdiStar, mdiStop, mdiSwordCross, mdiTrashCanOutline,
   mdiUpload, mdiWeb, mdiCheckboxMarkedOutline, mdiDotsVertical, mdiTagMultiple, mdiImageMultipleOutline, mdiMicrophone,
-  mdiFolderSearchOutline, mdiFolderRemoveOutline, mdiBackupRestore, mdiChevronDoubleDown, mdiQrcode, mdiQrcodeScan, mdiKeyboardOutline, mdiDevices, mdiMenuDown, mdiHelpCircleOutline,
+  mdiFolderSearchOutline, mdiFolderRemoveOutline, mdiBackupRestore, mdiChevronDoubleDown, mdiQrcode, mdiQrcodeScan, mdiKeyboardOutline, mdiDevices, mdiMenuDown, mdiHelpCircleOutline, mdiUndo, mdiRedo,
 } from "@mdi/js";
 
 /** Icon set: Material Design Icons (Apache-2.0) via @mdi/js. */
@@ -20,6 +20,8 @@ const PATHS = {
   bot: mdiRobotOutline,
   cog: mdiCog,
   pen: mdiPencil,
+  undo: mdiUndo,
+  redo: mdiRedo,
   search: mdiMagnify,
   plus: mdiPlus,
   minus: mdiMinus,

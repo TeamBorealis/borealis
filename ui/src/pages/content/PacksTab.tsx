@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
 import type { ContentPack } from "../../api/contract";
 import { Button, useConfirm, useImportNotice, useToast } from "../../components";
 import { filesToInputs } from "../../lib/files";
@@ -24,7 +25,8 @@ export function PacksTab() {
   const confirm = useConfirm();
   const notice = useImportNotice();
   const packs = useAsync(() => api.listPacks(), [api]);
-  const { mobile } = usePlatform();
+  const { mobile, creatorEnabled } = usePlatform();
+  const nav = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => api.subscribe("content:reloaded", packs.reload), [api, packs.reload]);
   const preview = (request: Parameters<typeof api.previewImportPack>[0]["request"]) => startImportPreview(api, request, (m) => toast.push(m, "error"));
@@ -64,6 +66,7 @@ export function PacksTab() {
           {p.redistributable === false && <span className="chip warning">Local import — not redistributable</span>}
           {p.attribution && <span className="muted small" style={{ display: "block" }}>{p.attribution}</span>}
         </span>
+        {creatorEnabled && p.kind === "homebrew" && <Button small onClick={() => nav(`/homebrew/${encodeURIComponent(p.id)}`)}>Edit in Homebrew</Button>}
         {p.kind !== "bundled" && <Button small variant="danger" onClick={() => void remove(p)}>Remove</Button>}
       </div>
     </li>
