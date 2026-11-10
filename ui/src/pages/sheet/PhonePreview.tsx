@@ -9,7 +9,6 @@ import { errorMessage } from "../../state/useAsync";
 import { framePreviewHtml } from "./previewFrame";
 
 export const PREVIEW_TITLE = "Character sheet preview";
-const SHARE_TITLE = "Character sheet";
 
 export interface PhonePreviewProps {
   characterId: string;
@@ -52,7 +51,7 @@ export function PhonePreview({ characterId, preview, loading, error, options, on
   };
   const shareHere = async (r: SheetShare) => {
     try {
-      const done = await shareBase64File(r.fileName, r.mime, r.dataBase64 ?? "", SHARE_TITLE);
+      const done = await shareBase64File(r.fileName, r.mime, r.dataBase64 ?? "");
       if (done === "unsupported") { downloadBase64(r.fileName, r.mime, r.dataBase64 ?? ""); toast.push(`Exported ${r.fileName}`); }
     } catch (e) { toast.push(errorMessage(e), "error"); }
   };

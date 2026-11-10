@@ -7,6 +7,7 @@ import { usePlatform } from "../../state/platform";
 import { setStatus } from "../../state/status";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { downloadBase64 } from "../../lib/files";
+import { shareBase64File } from "../../lib/webShare";
 import { bundleExportedLine, bundleSharedLine, formatBytes, isFinal, statusLine } from "./messages";
 import type { TransferMode, TransferRole } from "./openTransfer";
 import { ScanOverlay } from "./ScanOverlay";
@@ -106,12 +107,10 @@ export function TransferDialog({ role: mode, initialIds, onClose }: { role: Tran
     setReady(r);
   });
   const shareReady = (r: BundleShare) => call(async () => {
-    const file = new File([Uint8Array.from(atob(r.dataBase64 ?? ""), (c) => c.charCodeAt(0))], r.fileName, { type: BUNDLE_MIME });
-    const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean; share?: (d: { files: File[]; title: string }) => Promise<void> };
-    if (typeof nav.share === "function" && nav.canShare?.({ files: [file] })) {
-      try { await nav.share({ files: [file], title: "Borealis bundle" }); } catch (e) { if ((e as { name?: string }).name === "AbortError") return; throw e; }
-      setStatus(bundleSharedLine(r.fileName));
-    } else {
+    const done = await shareBase64File(r.fileName, BUNDLE_MIME, r.dataBase64 ?? "");
+    if (done === "cancelled") return;
+    if (done === "shared") setStatus(bundleSharedLine(r.fileName));
+    else {
       downloadBase64(r.fileName, BUNDLE_MIME, r.dataBase64 ?? "");
       setStatus(`Saved ${r.fileName}. Send it to the other device and open it with Borealis.`);
     }

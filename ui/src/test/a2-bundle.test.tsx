@@ -167,6 +167,8 @@ describe("A2 share sheet (phone)", () => {
       await user.click(within(dlg).getByRole("button", { name: "Share" }));
       await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
       expect(share.mock.calls[0]![0].files[0].name).toBe("Seraphine Vale.borealis");
+      // Only the file: a title would reach iOS Save to Files as a stray text.txt.
+      expect(Object.keys(share.mock.calls[0]![0])).toEqual(["files"]);
       await waitFor(() => expect(screen.queryByRole("dialog", { name: "Share as a file" })).toBeNull());
       expect(statusBar().textContent).toContain("Shared Seraphine Vale.borealis.");
     } finally {
