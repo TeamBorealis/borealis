@@ -1468,7 +1468,10 @@ impl<'u> Graph<'u> {
             if n.always_prepared {
                 return false;
             }
-            known |= n.spell_class.as_deref() == Some(class);
+            known |= n
+                .spell_class
+                .as_deref()
+                .is_some_and(|c| crate::spells::same_spellcasting(c, class));
         }
         known
     }

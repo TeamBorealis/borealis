@@ -209,9 +209,12 @@ fn caster(
         input.character.build.restricted_sources.iter().cloned(),
     );
     let own_slots = || {
-        snap.slots
-            .iter()
-            .filter(|s| s.spellcasting.as_deref() == Some(c.name.as_str()) && s.rejected.is_none())
+        snap.slots.iter().filter(|s| {
+            s.spellcasting
+                .as_deref()
+                .is_some_and(|n| borealis_engine::spells::same_spellcasting(n, &c.name))
+                && s.rejected.is_none()
+        })
     };
     let spells: Vec<SpellEntry> = c
         .spells

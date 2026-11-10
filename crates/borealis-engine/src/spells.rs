@@ -197,6 +197,15 @@ fn feature_given(n: &crate::graph::Node<'_>, class_prepares: bool) -> bool {
     !class_prepares && matches!(n.origin, Origin::Granted(_)) && spell_level(n.e) > 0
 }
 
+/// Does a grant's or select's `spellcasting` name `named` name the spellcasting `block`? Aurora
+/// compares them ignoring case (`SpellcasterSelectionControlViewModel`,
+/// `StringComparison.OrdinalIgnoreCase`), and community content writes `spellcasting="paladin"`
+/// for the Paladin's oath spells.
+#[must_use]
+pub fn same_spellcasting(named: &str, block: &str) -> bool {
+    named == block || named.to_lowercase() == block.to_lowercase()
+}
+
 pub(crate) fn spell_level(e: &crate::universe::UElem) -> u32 {
     e.spell_level().unwrap_or(0)
 }
@@ -281,10 +290,11 @@ pub fn spellcasting_snapshots(
         // spells picked in this class's selection slots (Spellbook (Wizard n), Evocation Savant)
         // are written in the spellbook; always-prepared picks and cantrips are not
         let mut picked_into_book: Vec<SpellEntry> = Vec::new();
-        for (_, n) in graph
-            .nodes_of_type("Spell")
-            .filter(|(_, n)| n.spell_class.as_deref() == Some(info.name.as_str()))
-        {
+        for (_, n) in graph.nodes_of_type("Spell").filter(|(_, n)| {
+            n.spell_class
+                .as_deref()
+                .is_some_and(|c| same_spellcasting(c, &info.name))
+        }) {
             let always = n.always_prepared || feature_given(n, prepare);
             let entry = SpellEntry {
                 id: n.e.el.id.clone(),
@@ -638,5 +648,14 @@ mod tests {
         assert_eq!(caster_contribution("THIRD_UP", 20, d), 7);
         assert_eq!(caster_contribution("FOURTH_UP", 18, d), 5);
         assert_eq!(caster_contribution("SOLO", 18, d), 0);
+    }
+
+    #[test]
+    fn spellcasting_names_match_ignoring_case_only() {
+        assert!(same_spellcasting("Paladin", "Paladin"));
+        assert!(same_spellcasting("paladin", "Paladin"));
+        assert!(same_spellcasting("SORCERER", "Sorcerer"));
+        assert!(!same_spellcasting("Paladin ", "Paladin"));
+        assert!(!same_spellcasting("charisma", "Paladin"));
     }
 }

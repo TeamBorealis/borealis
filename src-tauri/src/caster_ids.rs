@@ -82,7 +82,10 @@ pub fn caster_name(snap: &Engine, id: &str) -> Option<String> {
 #[must_use]
 pub fn slot_caster_id(snap: &Engine, slot: &SlotSnapshot) -> Option<String> {
     let name = slot.spellcasting.as_deref()?;
-    let at = snap.spellcasting.iter().position(|c| c.name == name)?;
+    let at = snap
+        .spellcasting
+        .iter()
+        .position(|c| borealis_engine::spells::same_spellcasting(name, &c.name))?;
     caster_ids(snap).into_iter().nth(at)
 }
 
