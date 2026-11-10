@@ -38,7 +38,9 @@ export function referenceRows(loaded: readonly ElementSummary[], own: readonly H
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const tags = (target.tags ?? []).map((t) => t.toLowerCase());
   const loadedRows = loaded.filter((e) => (tags.length === 0 || (e.tags ?? []).some((t) => tags.includes(t.toLowerCase())))).map(pickerRow);
-  const rows = [...own, ...loadedRows].filter((r) => (types.size === 0 || types.has(typeKey(r.type))) && words.every((w) => `${r.name} ${r.summary}`.toLowerCase().includes(w)));
+  // the core proficiency rows (WB-16) are offered to proficiency pickers only: their skill names are the sample skills'
+  const rows = [...own, ...loadedRows].filter((r) => (types.size === 0 ? !r.id.startsWith("ID_PROFICIENCY_") : types.has(typeKey(r.type)))
+    && words.every((w) => `${r.name} ${r.summary}`.toLowerCase().includes(w)));
   const sorted = rows.sort((a, b) => a.name.localeCompare(b.name));
   return { total: sorted.length, items: sorted.slice(page.offset, page.offset + page.limit) };
 }

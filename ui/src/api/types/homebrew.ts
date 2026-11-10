@@ -47,7 +47,10 @@ export type HomebrewControl =
    * `HomebrewPackageOption[]`). */
   | "contents" | "packageOptions"
   /** A spell's lists (WB-11): one check box per spell list the loaded classes declare, plus new list names. */
-  | "spellLists";
+  | "spellLists"
+  /** Class form (WB-16): the LEVELS grid (`HomebrewChildEntry[]` with levels), the class table (`HomebrewTableColumn[]`),
+   * the skill choice (`HomebrewSkillChoice`) and the starting-equipment package (`HomebrewChildEntry[]`, one entry). */
+  | "levels" | "classTable" | "skillChoice" | "package";
 
 /** One choice of a combo field. `value` is what the form stores; `label` is shown. */
 export interface HomebrewChoice {
@@ -561,6 +564,29 @@ export interface HomebrewForm {
   children: HomebrewForm[];
   /** Kept from the original (read-only, removable). */
   preserved: HomebrewPreservedPart[];
+}
+
+/** One entry of a children field (WB-16, controls `children`, `levels`, `package`): a child form of the draft (`child`, its
+ * key) or an element not edited here (`element`), and for a class, the level it is gained at. */
+export interface HomebrewChildEntry {
+  level?: number;
+  child?: string;
+  element?: HomebrewRef;
+}
+
+/** A class's skill choice (WB-16): choose `count` of `skills`; `tagged` is a 2014 tag filter kept as is (`Skill,Fighter`). */
+export interface HomebrewSkillChoice {
+  count: number;
+  skills: HomebrewRef[];
+  tagged?: string;
+}
+
+/** One counter column of a class table (WB-16, `data.progression.<key>`): a value per level, level 1 first. */
+export interface HomebrewTableColumn {
+  /** The key a rule's `table` maximum names; empty for a new column (written from the label). */
+  key: string;
+  label: string;
+  values: (number | string | null)[];
 }
 
 export type HomebrewProblemSeverity = "error" | "warning" | "info";

@@ -2705,7 +2705,9 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
     "elementTypes": [
       "Equipment Package"
     ],
-    "parentKinds": [],
+    "parentKinds": [
+      "class"
+    ],
     "editions": [
       "dnd2024"
     ],

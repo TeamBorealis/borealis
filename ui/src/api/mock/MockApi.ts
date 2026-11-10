@@ -970,7 +970,7 @@ export class MockApi implements Api {
   async homebrewCreatePack({ request }: Parameters<Api["homebrewCreatePack"]>[0]) { await this.tick(); return this.homebrew.createPack(request); }
   async homebrewUpdatePack({ packId, patch }: Parameters<Api["homebrewUpdatePack"]>[0]) { await this.tick(); return this.homebrew.updatePack(packId, patch); }
   async homebrewListElements({ packId }: { packId: string }) { await this.tick(); return this.homebrew.listElements(packId); }
-  async homebrewNewDraft({ packId, kind, copyFrom }: Parameters<Api["homebrewNewDraft"]>[0]) { await this.tick(); return this.homebrew.newDraft(packId, kind, copyFrom); }
+  async homebrewNewDraft({ packId, kind, copyFrom, parentId }: Parameters<Api["homebrewNewDraft"]>[0]) { await this.tick(); return this.homebrew.newDraft(packId, kind, copyFrom, parentId); }
   async homebrewOpenDraft({ packId, elementId, draftId }: Parameters<Api["homebrewOpenDraft"]>[0]) { await this.tick(); return this.homebrew.openDraft(packId, elementId, draftId); }
   async homebrewUpdateDraft({ draftId, form }: Parameters<Api["homebrewUpdateDraft"]>[0]) { await this.tick(); return this.homebrew.updateDraft(draftId, form); }
   async homebrewCheckDraft({ draftId }: { draftId: string }) { await this.tick(); return this.homebrew.checkDraft(draftId); }

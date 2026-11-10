@@ -20,4 +20,11 @@ export const CORE_PICKER_ROWS: readonly HomebrewPickerRow[] = [
     row(`ID_INTERNAL_WEAPON_GROUP_${n.toUpperCase()}`, `Weapon Group (${n})`, "Weapon Group")),
   ...["Cleave", "Graze", "Nick", "Push", "Sap", "Slow", "Topple", "Vex"].map((n) =>
     row(`ID_2024_MASTERY_${n.toUpperCase()}`, n, "Mastery Property", "", "dnd2024")),
+  // The proficiencies a class grants (WB-16): skills (tagged Skill in the core pack), armor training and weapon groups.
+  ...named("ID_PROFICIENCY_SKILL_", "Proficiency", ["Acrobatics", "Animal Handling", "Arcana", "Athletics", "Deception", "History", "Insight",
+    "Intimidation", "Investigation", "Medicine", "Nature", "Perception", "Performance", "Persuasion", "Religion", "Sleight of Hand", "Stealth", "Survival"]),
+  ...["Light Armor", "Medium Armor", "Heavy Armor", "Shields"].map((n) =>
+    row(`ID_PROFICIENCY_ARMOR_PROFICIENCY_${n.toUpperCase().replace(" ", "_")}`, `Armor Proficiency (${n})`, "Proficiency")),
+  ...["Simple Weapons", "Martial Weapons"].map((n) =>
+    row(`ID_PROFICIENCY_WEAPON_PROFICIENCY_${n.toUpperCase().replace(" ", "_")}`, `Weapon Proficiency (${n})`, "Proficiency")),
 ];

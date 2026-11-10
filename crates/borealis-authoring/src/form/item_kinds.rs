@@ -611,15 +611,19 @@ fn equipment_package() -> KindDef {
         .section(PACKAGE)
         .help("The player takes one option: its items and coins."),
     ];
-    kind(
-        "equipmentPackage",
-        "Starting equipment",
-        "Starting equipment",
-        "The starting equipment choices of a class or background (A or B).",
-        &["Equipment Package"],
-        ONLY_2024,
-        own,
-    )
+    KindDef {
+        // edited inside its class too (the class's EQUIPMENT tab, WB-16)
+        parent_kinds: &["class"],
+        ..kind(
+            "equipmentPackage",
+            "Starting equipment",
+            "Starting equipment",
+            "The starting equipment choices of a class or background (A or B).",
+            &["Equipment Package"],
+            ONLY_2024,
+            own,
+        )
+    }
 }
 
 /// The six item forms, in New element order.

@@ -528,7 +528,7 @@ fn duplicates_and_copies_are_new_elements_with_their_provenance() {
         .find(|p| p.id == pack)
         .unwrap();
     assert_eq!(listed.redistributable, None);
-    // copying the pack's book, a child, or a deep copy are not offered
+    // copying the pack's book, a child where there is no place for one, or a deep copy are not offered
     assert_eq!(
         app.state
             .homebrew_new_draft(
@@ -542,12 +542,13 @@ fn duplicates_and_copies_are_new_elements_with_their_provenance() {
             .code,
         ErrorCode::InvalidArgument
     );
+    // a child inside an element whose form holds none (WB-16 made `parentId` real)
     assert_eq!(
         app.state
             .homebrew_new_draft(&pack, "language", None, Some(&id), None)
             .unwrap_err()
             .code,
-        ErrorCode::RequirementFailed
+        ErrorCode::InvalidArgument
     );
 }
 

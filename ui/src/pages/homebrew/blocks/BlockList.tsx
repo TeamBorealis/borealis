@@ -12,6 +12,15 @@ import { BlockDialog } from "./BlockDialog";
 import { shownSentence } from "./sentence";
 import { newBlock } from "./values";
 
+/** Kinds whose blocks can be gained again at other levels (`borealis-authoring::form::repeat`, WB-16). */
+export const REPEAT_KINDS: readonly string[] = ["classFeature"];
+
+/** The reserved block field: the levels a block is gained again at. */
+export const AGAIN_AT = "againAt";
+
+/** The levels a block is gained again at. */
+export const againAt = (b: HomebrewBlock): number[] => (Array.isArray(b.fields[AGAIN_AT]) ? (b.fields[AGAIN_AT] as number[]).filter((n) => typeof n === "number") : []);
+
 /** The window event the creator's Insert / Ctrl+Enter key sends to the RULES list (spec 12.2 `addBlock`). */
 export const ADD_BLOCK_EVENT = "hb-add-block";
 
@@ -28,6 +37,8 @@ export interface BlockListProps {
   answer: HomebrewForm | null;
   /** A list inside a block dialog (no global keys). */
   nested?: boolean;
+  /** Its blocks can be gained again at other levels (a class feature's, spec 4.5). */
+  repeat?: boolean;
 }
 
 type Editing = { index: number; block: HomebrewBlock; isNew: boolean; spec: HomebrewBlockSpec };
@@ -48,7 +59,7 @@ const problemsOfBlock = (problems: readonly HomebrewProblem[], i: number): Homeb
  * Enter edits, Delete removes (undoable), Alt+Up / Alt+Down move it (spec 12.2, 17). A block with problems is marked
  * with an icon and the problem in words.
  */
-export function BlockList({ label, blocks, onChange, kinds, problems, answer, nested }: BlockListProps) {
+export function BlockList({ label, blocks, onChange, kinds, problems, answer, nested, repeat = false }: BlockListProps) {
   const env = useCreatorEnv();
   const [sel, setSel] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
@@ -121,7 +132,8 @@ export function BlockList({ label, blocks, onChange, kinds, problems, answer, ne
         <ul className="atk-list hb-block-list" aria-label={label} ref={list}>
           {blocks.map((b, i) => {
             const spec = specOf(b.kind);
-            const sentence = shownSentence(b, answer);
+            const again = againAt(b);
+            const sentence = again.length > 0 ? `${shownSentence(b, answer)} Again at level${again.length > 1 ? "s" : ""} ${again.join(", ")}.` : shownSentence(b, answer);
             const bad = problemsOfBlock(problems, i);
             const kept = b.preserved?.length ?? 0;
             return (
@@ -147,7 +159,7 @@ export function BlockList({ label, blocks, onChange, kinds, problems, answer, ne
           onPick={(spec) => { setAdding(false); setEditing({ index: blocks.length, block: newBlock(spec), isNew: true, spec }); }} />
       )}
       {editing && (
-        <BlockDialog spec={editing.spec} block={editing.block} isNew={editing.isNew} problems={editing.isNew ? [] : blockProblems(problems, editing.index)}
+        <BlockDialog spec={editing.spec} block={editing.block} isNew={editing.isNew} problems={editing.isNew ? [] : blockProblems(problems, editing.index)} repeat={repeat}
           onOk={done} onCancel={() => setEditing(null)} />
       )}
     </div>

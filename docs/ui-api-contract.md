@@ -408,8 +408,8 @@ creator's entry points; until 1.5.0 the UI reaches these commands only with it o
 `details: { notImplemented: "<command>" }`. Implemented in the backend: the catalogs and kinds, packs, the element list,
 drafts (new, open, update, save, discard, list), delete, duplicate and reference options (WB-04/05/06), the
 validation of drafts with `homebrew_check_draft` (WB-07) and Try it (WB-08); bulk edit, where-used and spell lists
-(WB-23) and export (WB-24) still answer it, and so do
-`homebrew_new_draft` with `parentId` (WB-16/18) and a `deepCopy` of an element with features (WB-22). The web mock
+(WB-23) and export (WB-24) still answer it, and so does
+a `deepCopy` of an element with features (WB-22). `homebrew_new_draft` with `parentId` makes a child (WB-16). The web mock
 implements packs, elements and drafts in memory (kinds are sample forms).
 
 | Command | Args (camelCase keys) | Returns |
@@ -577,6 +577,33 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   kinds `racialTrait` (`parentKinds ["species","race","subRace","raceVariant"]`) and `speciesTraitOption`
   (`["species","racialTrait"]`, 2024) have the shared parts only and are not offered by New element. `min`/`max` and
   `picker` are the field spec parts the item forms use (above).
+- **Children (WB-16).** `homebrew_new_draft {packId, kind, parentId, copyFrom?}` makes a child: `parentId` is a draft of
+  the pack (its `draftId`) or a saved element of it (its draft is opened or resumed); the child (new, or a copy of the
+  loaded element `copyFrom`) is the parent form's last child, listed in the parent's children field for its type (a
+  class feature at level 1 on the LEVELS grid, a class's starting-equipment package). The answer is the parent's
+  `HomebrewDraftView` (its draft is written); `invalid_argument` when the parent's form has no place for that kind. A
+  children field (controls `children`, `levels`, `package`) holds `HomebrewChildEntry[]` `{ level?, child?, element? }`:
+  `child` is the key of a child form of the draft, `element` a `HomebrewRef` to an element not edited here (a copied
+  class still gives the original's features). A child no children field lists is a problem at `children.<i>`.
+- **Class form (WB-16).** Kind `class` (element type `Class`, spec 4.5), tabs GENERAL, PROFICIENCIES, LEVELS,
+  SPELLCASTING (WB-17), MULTICLASS, EQUIPMENT, RULES, DESCRIPTION. A new class (`homebrew_new_draft {kind: "class"}`) has
+  the pack's edition (2024 for a Both-editions pack) and three generated children on the grid: Ability Score Improvement
+  (4, 8, 12, 16, 19; 2024: 4, 8, 12, 16), the subclass choice (3) and, 2024 only, the Epic Boon (19). Fields: `hitDie`
+  (setter `hd` + 2024 mirrors), `primaryAbilities` (`data.primary_abilities`), the first-class-only `savingThrows`,
+  `armor`, `weapons`, `tools` (grants with `requirements: "!<multiclass id>"`) and `skills` (control `skillChoice`,
+  `HomebrewSkillChoice { count, skills: HomebrewRef[], tagged? }`: the select `"Skill Proficiency (<Class>)"`; `tagged`
+  is a 2014 tag filter kept as is); `levels` (control `levels`, class features each at a level); `table` (control
+  `classTable`, `HomebrewTableColumn[] { key, label, values[20] }` = `data.progression`, which `table` maximums read);
+  `multiclass` (the section on/off), `mcRequirements`, `mcPrerequisite` (written from the condition while empty or as
+  written), `mcProficiencies`, `mcProficiencyText` (likewise); `equipment` (control `package`, one entry: the
+  Equipment Package child edited inline with its `options`). The multiclass id is generated (`ID_<CODE>_MULTICLASS_
+  <CLASS>`, a copy's too) and every "first class only" names it. Kind `classFeature` (child of `class`) has the shared
+  parts plus `asiLevels` (control `numbers`), `subclassLabel` and `epicBoon` (2024; `editions: ["dnd2024"]`): their
+  rules are written from the class's name (`"Ability Score Improvement (<Class> N)"`, 2014 `"Improvement Option
+  (<Class> N)"`; select `Archetype` supporting `"<Class> Subclass"` or, 2014, the label; `"Epic Boon (<Class>)"`). A
+  feature's `data.class`/`data.level` follow the class. A class feature's block holds `fields.againAt` (levels): the
+  block is written again at those levels ("also gained again at levels"; the base level in its name and supports is
+  renumbered). `HomebrewFieldSpec.editions` limits a field to editions.
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

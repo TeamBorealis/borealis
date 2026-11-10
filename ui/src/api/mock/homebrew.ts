@@ -4,6 +4,7 @@ import type {
 } from "../types";
 import { apiError } from "./errors";
 import { descriptionHtml, formProblems } from "./homebrew-check";
+import { addChild, newChildKey, newClassForm, newForm } from "./homebrew-class";
 import { featPrerequisite } from "./homebrew-feat";
 import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
 import { CORE_PICKER_ROWS } from "./homebrew-core-rows";
@@ -49,7 +50,7 @@ const kind = (id: string, label: string, pluralLabel: string, elementType: strin
 });
 
 /** Kinds whose own form has landed in `borealis-authoring`: the mock serves their real descriptors (generated). */
-const REAL_KINDS = ["spell", "feat", "featFeature", "species", "race", "subRace", "raceVariant", "racialTrait", "speciesTraitOption"];
+const REAL_KINDS = ["spell", "feat", "featFeature", "species", "race", "subRace", "raceVariant", "racialTrait", "speciesTraitOption", "class", "classFeature"];
 const realKinds = (): HomebrewKindDescriptor[] => REAL_KINDS.map((id) => {
   const k = MOCK_KIND_DESCRIPTORS.find((d) => d.id === id);
   if (!k) throw new Error(`homebrew-kinds.ts has no ${id} form`);
@@ -74,11 +75,12 @@ const KINDS: HomebrewKindDescriptor[] = [
 
 const TYPE_TOKENS: Record<string, string> = {
   Spell: "SPELL", Feat: "FEAT", "Feat Feature": "FEAT_FEATURE", Species: "SPECIES", Race: "RACE", "Sub Race": "SUBRACE", "Race Variant": "RACE_VARIANT",
-  "Racial Trait": "TRAIT", "Species Trait Option": "TRAIT_OPTION", Language: "LANGUAGE", Companion: "COMPANION",
+  "Racial Trait": "TRAIT", "Species Trait Option": "TRAIT_OPTION", Language: "LANGUAGE", Companion: "COMPANION", Class: "CLASS",
+  "Class Feature": "CLASS_FEATURE",
 };
 const PREVIEW_TYPES: Record<string, ElementType> = {
   spell: "spell", feat: "feat", language: "language", species: "race", race: "race", subRace: "subrace", raceVariant: "subrace", racialTrait: "racial-trait",
-  speciesTraitOption: "racial-trait",
+  speciesTraitOption: "racial-trait", class: "class", classFeature: "class-feature",
   item: "item", weapon: "weapon", armor: "armor", magicItem: "magic-item", itemPack: "item", equipmentPackage: "option",
 };
 /** Item facts the description pane lists (WB-12): field key and label. */
@@ -136,14 +138,27 @@ export class MockHomebrew {
     return [...own.elements.values()].map(({ summary }) => ({ ...summary, hasDraft: drafted.has(summary.id) }));
   }
 
-  newDraft(packId: string, kindId: HomebrewKindId, copyFrom?: string): HomebrewDraftView {
-    this.own(packId);
+  newDraft(packId: string, kindId: HomebrewKindId, copyFrom?: string, parentId?: string): HomebrewDraftView {
+    const own = this.own(packId);
     if (copyFrom) throw notImplemented("homebrew_new_draft (copy)");
     const k = KINDS.find((x) => x.id === kindId);
     if (!k) throw apiError("invalid_argument", `Unknown kind ${kindId}.`);
-    // `KindDef::new_form`: an empty name and every field's starting value.
-    const starts = Object.fromEntries(k.fields.filter((f) => f.default !== undefined).map((f) => [f.key, f.default]));
-    return this.store(packId, null, { kind: kindId, fields: { name: "", ...starts }, blocks: [], children: [], preserved: [] });
+    if (parentId) return this.newChild(packId, k, parentId);
+    // A class is of one edition and starts with its generated features (WB-16); every other kind is `KindDef::new_form`.
+    const form = k.id === "class"
+      ? newClassForm(KINDS, own.pack.rulesets.length === 1 && own.pack.rulesets[0] === "dnd2014" ? "dnd2014" : "dnd2024")
+      : { ...newForm(k, "e"), key: undefined };
+    return this.store(packId, null, form);
+  }
+
+  /** `homebrew_new_draft {parentId}` (WB-16): a child inside its parent's draft (or a saved element's), given by the
+   * parent's field for it; the answer is the parent's draft. */
+  private newChild(packId: string, kind: HomebrewKindDescriptor, parentId: string): HomebrewDraftView {
+    const draft = this.drafts.get(parentId) ?? this.openDraft(packId, parentId);
+    const next = addChild(draft.form, newForm(kind, newChildKey(draft.form)), KINDS);
+    if (!next) throw apiError("invalid_argument", `A ${kind.label.toLowerCase()} can't be made inside this element.`);
+    this.touched.add(draft.draftId);
+    return this.store(packId, draft.elementId, next, draft.draftId);
   }
 
   openDraft(packId: string, elementId?: string, draftId?: string): HomebrewDraftView {
@@ -273,7 +288,12 @@ export class MockHomebrew {
   }
 
   private store(packId: string, elementId: string | null, form: HomebrewForm, draftId = `draft-${this.nextDraft++}`): HomebrewDraftView {
-    const problems = formProblems(form, MOCK_BLOCK_CATALOG, elementId, KINDS.find((k) => k.id === form.kind));
+    const problems = [
+      ...formProblems(form, MOCK_BLOCK_CATALOG, elementId, KINDS.find((k) => k.id === form.kind)),
+      // a child's problems, at its path (`children.0.fields.name`)
+      ...form.children.flatMap((c, i) => formProblems(c, MOCK_BLOCK_CATALOG, null, KINDS.find((k) => k.id === c.kind))
+        .map((p) => ({ ...p, path: `children.${i}.${p.path ?? ""}`.replace(/\.$/, "") }))),
+    ];
     const view: HomebrewDraftView = {
       draftId, packId, elementId, form, preview: this.preview(packId, elementId ?? draftId, form), problems, updatedAt: now(), baseChanged: false,
       generated: { json: JSON.stringify({ name: form.fields.name ?? "" }, null, 2), tree: [] },

@@ -5,6 +5,7 @@ import { ConditionBuilder } from "../builders/ConditionBuilder";
 import { asExprValue } from "../builders/words";
 import { useCreatorEnv, WithExpert } from "../env";
 import { FieldList } from "./BlockFieldControl";
+import { NumbersControl } from "./valueControls";
 import { fallbackSentence } from "./sentence";
 import { type Fields, cleanFields, isEmptyValue, missingRequired, withAutoType } from "./values";
 
@@ -20,6 +21,8 @@ export interface BlockDialogProps {
   problems: readonly HomebrewBuilderProblem[];
   onOk: (block: HomebrewBlock) => void;
   onCancel: () => void;
+  /** "Also gained again at levels" (a class feature's block, spec 4.5): the levels its copies are written at. */
+  repeat?: boolean;
 }
 
 /** "Kept from the original" (spec 3.4): read-only parts in plain words, each with Remove. Nothing can be added. */
@@ -47,7 +50,7 @@ export function PreservedList({ parts, onRemove, label = "Kept from the original
  * engine reads requirements, an Expert toggle for rarely used fields, and the parts kept from the original with Remove.
  * Swiping the phone sheet down (or Escape) cancels; it asks first only when something was changed (spec 16, O4 B).
  */
-export function BlockDialog({ spec, block, isNew, problems, onOk, onCancel }: BlockDialogProps) {
+export function BlockDialog({ spec, block, isNew, problems, onOk, onCancel, repeat = false }: BlockDialogProps) {
   const env = useCreatorEnv();
   const confirm = useConfirm();
   const levelId = useId();
@@ -87,6 +90,15 @@ export function BlockDialog({ spec, block, isNew, problems, onOk, onCancel }: Bl
                 const { level: _l, ...rest } = f;
                 return n === 1 && block.fields.level === undefined ? rest : { ...rest, level: n };
               })} /></span>
+            </div>
+          )}
+          {repeat && spec.levelGated && (
+            <div className="mg-f hb-field hb-bf-wide" data-field="againAt">
+              <label>Also gained again at levels</label>
+              <NumbersControl label="Also gained again at levels" min={1} max={MAX_LEVEL}
+                value={(Array.isArray(fields.againAt) ? fields.againAt as number[] : []).filter((n) => n !== level)}
+                onChange={(v) => setFields((f) => { const { againAt: _a, ...rest } = f; return v && v.length > 0 ? { ...rest, againAt: v } : rest; })} />
+              <p className="hb-field-help">The rule is written again at each of these levels (a choice at level 4, 8 and 12; a counter that grows).</p>
             </div>
           )}
           {spec.fields.length === 0 && <p className="hb-field-help">This rule has nothing to fill in.</p>}

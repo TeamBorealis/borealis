@@ -1,8 +1,9 @@
 //! Form to elements.
 
+use super::child_refs::{self, ChildInfo, ParentInfo};
 use super::codec::{self, Codec};
 use super::kinds::{kind, KindDef};
-use super::preserved;
+use super::{preserved, repeat};
 use super::{FormContext, FormProblem, FormState};
 use borealis_content::{Element, Rule, Setter};
 
@@ -21,6 +22,14 @@ pub(crate) struct Out {
     field_rules: Vec<FieldRule>,
     /// The form's [`super::Memo::layout`]: the stored places of fields whose memo is gone.
     layout: Vec<String>,
+    /// The parent, when this is a child written with it (a class feature knows its class).
+    pub(crate) parent: Option<ParentInfo>,
+    /// The form's children (for the fields that give them).
+    pub(crate) children: Vec<ChildInfo>,
+    /// A class's multiclass section id (`Memo::multiclass_id`).
+    pub(crate) multiclass_id: Option<String>,
+    /// A class's "first class only" requirement (`!<multiclass id>`), when it has a multiclass section.
+    pub(crate) first_class_only: Option<String>,
 }
 
 /// A rule a field writes (an armor's base AC, its stealth disadvantage).
@@ -44,6 +53,10 @@ impl Out {
             block_rules: Vec::new(),
             field_rules: Vec::new(),
             layout: Vec::new(),
+            parent: None,
+            children: Vec::new(),
+            multiclass_id: None,
+            first_class_only: None,
         }
     }
 
@@ -121,19 +134,26 @@ impl Out {
 }
 
 /// A rule of the element being merged: its origin and, for a field's, its order among new rules (rank, then the
-/// order written).
+/// order written). A block's rules (and its copies at other levels) have no order: they are no field's neighbours.
 struct Placed {
     origin: String,
     order: Option<(u8, usize)>,
     rule: Rule,
 }
 
-/// The element's rules. Field rules go back to their stored positions and blocks, in order, to the positions `layout`
-/// gives blocks (without a layout, the positions no field rule holds); more blocks go last. Unchanged, this is the
-/// stored order, and a field that writes fewer rules than it read leaves the others in their stored order. A field
-/// whose memo is gone (its stored text forgotten) takes its places from `layout`. Then each new field rule, by rank:
+/// The rules a block writes, its copies at other levels too (`blocks.<i>`).
+fn is_block(origin: &str) -> bool {
+    origin.starts_with("blocks.")
+}
+
+/// The element's rules. Field rules go back to their stored positions and blocks, in order, to the positions left for
+/// blocks (the `""` places of `layout`, or without one the positions no field rule holds); more blocks go last.
+/// Unchanged, this is the stored order, and a field that writes fewer rules than it read leaves the others in their
+/// stored order. A field whose memo is gone (its stored text forgotten) takes its places from `layout`. Then each new
+/// rule, by rank and order written:
 ///
-/// * a field that has rules placed already: after its last one (a darkvision range after its Vision grant);
+/// * a field (or block) that has rules placed already: after its last one (a darkvision range after its Vision grant,
+///   a class feature added to the LEVELS grid after the others, a block's new copy after the block);
 /// * else, before the first rule of the placed field next after it in rank and form order;
 /// * else, after the last rule of the placed field before it;
 /// * with no field rule placed at all, in front (so a new element's field rules lead, by rank).
@@ -143,19 +163,22 @@ fn merge_rules(
     layout: &[String],
 ) -> (Vec<Rule>, Vec<RuleOrigin>) {
     let fields = with_layout_slots(fields, layout);
+    let held: Vec<usize> = fields.iter().filter_map(|f| f.slot).collect();
     let (mut stored, mut fresh): (Vec<_>, Vec<_>) = fields
         .into_iter()
         .enumerate()
         .map(|(seq, f)| {
+            let order = (f.rank, seq);
             let p = Placed {
+                order: (!is_block(&f.origin)).then_some(order),
                 origin: f.origin,
-                order: Some((f.rank, seq)),
                 rule: f.rule,
             };
-            (f.slot.map(|s| (s, 0)), p)
+            let key = f.slot.map_or((usize::from(order.0), seq), |s| (s, 0));
+            (key, f.slot.is_some(), p)
         })
-        .partition(|(slot, _)| slot.is_some());
-    let places = block_places(layout, &stored);
+        .partition(|(_, is_stored, _)| *is_stored);
+    let places = block_places(layout, &held);
     stored.extend(blocks.into_iter().enumerate().map(|(j, (origin, rule))| {
         // more blocks than places go last, in order
         let place = places.get(j).map_or((usize::MAX, j), |&p| (p, 0));
@@ -164,32 +187,29 @@ fn merge_rules(
             order: None,
             rule,
         };
-        (Some(place), p)
+        (place, true, p)
     }));
-    stored.sort_by_key(|(place, _)| *place);
-    fresh.sort_by_key(|(_, p)| p.order);
-    let mut out: Vec<Placed> = stored.into_iter().map(|(_, p)| p).collect();
-    for (_, p) in fresh {
+    stored.sort_by_key(|(place, _, _)| *place);
+    fresh.sort_by_key(|(order, _, _)| *order);
+    let mut out: Vec<Placed> = stored.into_iter().map(|(_, _, p)| p).collect();
+    for (_, _, p) in fresh {
         let at = new_rule_position(&out, &p);
         out.insert(at, p);
     }
     out.into_iter().map(|p| (p.rule, p.origin)).unzip()
 }
 
-/// The stored positions of block rules, in order: the `""` places of `layout`, or without one the positions no stored
-/// field rule holds (up to the last of them).
-fn block_places(layout: &[String], fields: &[(Option<(usize, usize)>, Placed)]) -> Vec<usize> {
-    if !layout.is_empty() {
-        return (0..layout.len())
-            .filter(|p| layout[*p].is_empty())
-            .collect();
-    }
-    let held: Vec<usize> = fields
-        .iter()
-        .filter_map(|(slot, _)| slot.map(|s| s.0))
-        .collect();
-    let end = held.iter().max().map_or(0, |m| m + 1);
-    (0..end).filter(|p| !held.contains(p)).collect()
+/// The stored positions of block rules, in order: the positions no stored field rule (nor block copy) holds, among
+/// the `""` places of `layout` or, without one, up to the last held position.
+fn block_places(layout: &[String], held: &[usize]) -> Vec<usize> {
+    let end = if layout.is_empty() {
+        held.iter().max().map_or(0, |m| m + 1)
+    } else {
+        layout.len()
+    };
+    (0..end)
+        .filter(|p| !held.contains(p) && layout.get(*p).is_none_or(String::is_empty))
+        .collect()
 }
 
 /// Field rules with no slot take the stored places `layout` gives their field, when no rule holds them.
@@ -209,25 +229,25 @@ fn with_layout_slots(mut fields: Vec<FieldRule>, layout: &[String]) -> Vec<Field
     fields
 }
 
-/// Where a new field rule goes among the rules placed so far (see [`merge_rules`]).
+/// Where a new rule goes among the rules placed so far (see [`merge_rules`]).
 fn new_rule_position(out: &[Placed], p: &Placed) -> usize {
     let last_of = |origin: &str| out.iter().rposition(|q| q.origin == origin);
     if let Some(i) = last_of(&p.origin) {
         return i + 1;
     }
-    let placed = || out.iter().filter(|q| q.order.is_some());
-    if let Some(next) = placed()
-        .filter(|q| q.order > p.order)
-        .min_by_key(|q| q.order)
-    {
+    let Some(order) = p.order else {
+        return out.len();
+    };
+    let placed = || out.iter().filter_map(|q| q.order.map(|o| (o, q)));
+    if let Some((_, next)) = placed().filter(|(o, _)| *o > order).min_by_key(|(o, _)| *o) {
         return out
             .iter()
             .position(|q| q.origin == next.origin)
             .unwrap_or(0);
     }
     placed()
-        .max_by_key(|q| q.order)
-        .and_then(|prev| last_of(&prev.origin))
+        .max_by_key(|(o, _)| *o)
+        .and_then(|(_, prev)| last_of(&prev.origin))
         .map_or(0, |i| i + 1)
 }
 
@@ -265,20 +285,38 @@ pub(crate) fn write_as(
     form: &FormState,
     cx: &FormContext<'_>,
 ) -> Result<Element, Vec<FormProblem>> {
-    write_traced(kind, form, cx).map(|(e, _)| e)
+    write_traced(kind, form, None, cx).map(|(e, _)| e)
 }
 
 /// Where each rule of the element a form writes comes from (`blocks.<i>`, `fields.<key>`); `None` when the form
 /// doesn't write.
 pub(crate) fn rule_origins(form: &FormState, cx: &FormContext<'_>) -> Option<Vec<RuleOrigin>> {
-    write_traced(kind(&form.kind)?, form, cx)
+    write_traced(kind(&form.kind)?, form, None, cx)
         .ok()
         .map(|(_, o)| o)
+}
+
+/// What a class knows before its fields write: its multiclass id and "first class only" (`!<id>`, only with a
+/// multiclass section).
+fn prepare_class(form: &FormState, out: &mut Out) {
+    out.multiclass_id.clone_from(&form.memo.multiclass_id);
+    let on = form
+        .fields
+        .get("multiclass")
+        .or_else(|| form.memo.fields.get("multiclass").map(|m| &m.value))
+        .and_then(serde_json::Value::as_bool)
+        == Some(true);
+    out.first_class_only = if on {
+        out.multiclass_id.as_ref().map(|id| format!("!{id}"))
+    } else {
+        None
+    };
 }
 
 fn write_traced(
     kind: &KindDef,
     form: &FormState,
+    parent: Option<&ParentInfo>,
     cx: &FormContext<'_>,
 ) -> Result<(Element, Vec<RuleOrigin>), Vec<FormProblem>> {
     let mut problems = Vec::new();
@@ -291,6 +329,18 @@ fn write_traced(
     base.ty = kind.new_element_type().unwrap_or_default().to_string();
     let mut out = Out::new(base);
     out.layout.clone_from(&form.memo.layout);
+    out.parent = parent.cloned();
+    out.children = form
+        .children
+        .iter()
+        .map(|c| ChildInfo {
+            key: c.key.clone(),
+            id: c.id().map(str::to_string),
+        })
+        .collect();
+    if kind.id == super::kinds::CLASS_KIND {
+        prepare_class(form, &mut out);
+    }
     for f in kind.fields.iter().filter(|f| f.codec != Codec::Blocks) {
         let path = format!("fields.{}", f.key);
         let memo = form.memo.fields.get(f.key);
@@ -301,9 +351,26 @@ fn write_traced(
             problems.push(p);
         }
     }
+    let repeats = repeat::repeats(kind.id);
     for (i, b) in form.blocks.iter().enumerate() {
+        let origin = format!("blocks.{i}");
         match cx.blocks.write(b, cx) {
-            Ok(Some(rule)) => out.block_rules.push((format!("blocks.{i}"), rule)),
+            Ok(Some(rule)) => {
+                let (copies, slots) = if repeats {
+                    repeat::copies(b, &rule)
+                } else {
+                    (Vec::new(), None)
+                };
+                out.block_rules.push((origin.clone(), rule));
+                match slots {
+                    Some(slots) => {
+                        out.field_rules(copies.into_iter().map(|r| (0, r)), &slots, &origin)
+                    }
+                    None => out
+                        .block_rules
+                        .extend(copies.into_iter().map(|r| (origin.clone(), r))),
+                }
+            }
             Ok(None) => {}
             Err(p) => problems.push(prefixed(&format!("blocks.{i}."), p)),
         }
@@ -311,11 +378,18 @@ fn write_traced(
     if let Err(p) = preserved::restore(&form.preserved, &mut out) {
         problems.push(p);
     }
-    if problems.is_empty() {
-        Ok(out.finish())
-    } else {
-        Err(problems)
+    problems.extend(child_refs::orphans(form));
+    if !problems.is_empty() {
+        return Err(problems);
     }
+    let (mut element, origins) = out.finish();
+    if let Some((old, new)) = codec::class_renamed(form) {
+        codec::rename_requirement_ids(&mut element, &old, &new);
+    }
+    if let Some(p) = parent {
+        child_refs::patch_child(&mut element, form, p);
+    }
+    Ok((element, origins))
 }
 
 /// Every element a form writes: the element, then each child's (depth first). Problems carry form paths
@@ -329,7 +403,7 @@ pub fn form_to_elements(
 ) -> Result<Vec<Element>, Vec<FormProblem>> {
     let mut elements = Vec::new();
     let mut problems = Vec::new();
-    collect(form, "", cx, &mut elements, &mut problems);
+    collect(form, None, "", cx, &mut elements, &mut problems);
     if problems.is_empty() {
         Ok(elements)
     } else {
@@ -339,16 +413,29 @@ pub fn form_to_elements(
 
 fn collect(
     form: &FormState,
+    parent: Option<&ParentInfo>,
     prefix: &str,
     cx: &FormContext<'_>,
     elements: &mut Vec<Element>,
     problems: &mut Vec<FormProblem>,
 ) {
-    match form_to_element(form, cx) {
+    let written = match kind(&form.kind) {
+        Some(k) => write_traced(k, form, parent, cx).map(|(e, _)| e),
+        None => form_to_element(form, cx),
+    };
+    match written {
         Ok(e) => elements.push(e),
         Err(ps) => problems.extend(ps.into_iter().map(|p| prefixed(prefix, p))),
     }
     for (i, c) in form.children.iter().enumerate() {
-        collect(c, &format!("{prefix}children.{i}."), cx, elements, problems);
+        let info = child_refs::parent_info(form, c);
+        collect(
+            c,
+            Some(&info),
+            &format!("{prefix}children.{i}."),
+            cx,
+            elements,
+            problems,
+        );
     }
 }

@@ -15,10 +15,16 @@ use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 
+mod class;
+mod class_feature;
+mod class_mc;
 mod feat;
 mod feat_prereq;
 mod species;
 mod spell;
+pub(crate) use class::ABILITY_CHOICES;
+pub use class::{ClassField, ProficiencyGroup, SkillChoice, TableColumn};
+pub use class_feature::FeatureField;
 pub use feat::FeatField;
 pub use species::{Movement, NameKind, Sense, SpeciesField};
 pub use spell::{Component, SpellField};
@@ -72,6 +78,18 @@ pub enum Codec {
     Feat(FeatField),
     /// A species field (spec 4.4): size, speed, senses, traits, languages, ability increases, the parent race.
     Species(SpeciesField),
+    /// The children a parent gives (spec 3.1): `grant`s of elements of type `ty`, each a child form of the draft or a
+    /// reference; `levelled` for a class's LEVELS grid (each at a level).
+    Children {
+        /// The child element type.
+        ty: &'static str,
+        /// The entries have class levels.
+        levelled: bool,
+    },
+    /// A class field (spec 4.5).
+    Class(ClassField),
+    /// A generated class feature's field (spec 4.5: ability score improvements, subclass choice, epic boon).
+    Feature(FeatureField),
 }
 
 const RARITIES: [&str; 3] = ["standard", "exotic", "secret"];
@@ -110,6 +128,12 @@ impl Codec {
             Self::Spell(f) => f.bindings(),
             Self::Feat(f) => f.bindings(),
             Self::Species(f) => f.bindings(),
+            Self::Children { ty, levelled } => vec![format!(
+                "rules:grant {ty}{}",
+                if levelled { " (level)" } else { "" }
+            )],
+            Self::Class(f) => f.bindings(),
+            Self::Feature(f) => f.bindings(),
         }
     }
 
@@ -157,6 +181,7 @@ impl Codec {
             Self::Spell(f) => f.setter_names(),
             Self::Feat(f) => f.setter_names(),
             Self::Species(f) => f.setter_names(),
+            Self::Class(f) => f.setter_names(),
             _ => Vec::new(),
         }
     }
@@ -171,6 +196,7 @@ impl Codec {
             Self::Spell(f) => f.data_keys(),
             Self::Feat(f) => f.data_keys(),
             Self::Species(f) => f.data_keys(),
+            Self::Class(f) => f.data_keys(),
             _ => Vec::new(),
         }
     }
@@ -389,6 +415,9 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
         Codec::Spell(f) => spell::read(f, r),
         Codec::Feat(f) => feat::read(f, r, cx),
         Codec::Species(f) => species::read(f, r, cx),
+        Codec::Children { ty, levelled } => super::child_refs::read(ty, levelled, r, cx),
+        Codec::Class(f) => class::read(f, r, cx),
+        Codec::Feature(f) => class_feature::read(f, r),
         Codec::Blocks => return None,
     })
 }
@@ -483,8 +512,26 @@ pub(crate) fn write(
     out: &mut Out,
     cx: &FormContext<'_>,
 ) -> Result<(), FormProblem> {
-    if let Codec::Feat(f) = codec {
-        return feat::write(f, value, memo, path, out, cx);
+    match codec {
+        Codec::Feat(f) => return feat::write(f, value, memo, path, out, cx),
+        Codec::Class(f) => return class::write(f, value, memo, path, out, cx),
+        Codec::Feature(f) => return class_feature::write(f, value, memo, path, out),
+        Codec::Children { ty, levelled } => {
+            if let Some(m) = memo.filter(|m| m.value == *value) {
+                let rules: Vec<borealis_content::Rule> = m
+                    .raw
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|r| serde_json::from_value(r.clone()).ok())
+                    .collect();
+                let rank = super::child_refs::RANK_CHILDREN;
+                out.field_rules(rules.into_iter().map(|r| (rank, r)), &m.slots.rules, path);
+                return Ok(());
+            }
+            return super::child_refs::write(ty, levelled, value, memo, path, out);
+        }
+        _ => {}
     }
     let unchanged = memo.filter(|m| m.value == *value);
     let raw = memo.map(|m| &m.raw);
@@ -573,7 +620,9 @@ pub(crate) fn write(
         Codec::Item(f) => super::item_codec::write(f, value, memo, path, out, cx)?,
         Codec::Spell(f) => spell::write(f, value, memo, path, out)?,
         Codec::Species(f) => species::write(f, value, memo, path, out)?,
-        Codec::Feat(_) => unreachable!("feat fields are written above"),
+        Codec::Feat(_) | Codec::Class(_) | Codec::Feature(_) | Codec::Children { .. } => {
+            unreachable!("written above")
+        }
         Codec::Target => {
             let target: Option<RefValue> = decode(value, path)?;
             match target.filter(|t| !t.id.trim().is_empty()) {
@@ -676,7 +725,72 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
         Codec::Spell(f) => spell::write_raw(f, m, out),
         Codec::Species(f) => species::write_raw(f, m, out, path),
         // item fields put their parts back in `item_codec::write_raw` (they need the context)
-        Codec::Item(_) | Codec::Feat(_) | Codec::Blocks => {}
+        Codec::Item(_)
+        | Codec::Feat(_)
+        | Codec::Class(_)
+        | Codec::Feature(_)
+        | Codec::Children { .. }
+        | Codec::Blocks => {}
     }
     Ok(())
+}
+
+/// A class's multiclass id as read and as it is now, when they differ (a copy gets its own id, spec 5.3).
+pub(crate) fn class_renamed(form: &super::FormState) -> Option<(String, String)> {
+    let new = form.memo.multiclass_id.clone()?;
+    let old = form
+        .memo
+        .fields
+        .get("multiclass")
+        .and_then(|m| m.raw.get("part"))
+        .and_then(|p| p.get("id"))
+        .and_then(Value::as_str)?
+        .to_string();
+    (old != new).then_some((old, new))
+}
+
+/// `text` with every whole id `old` written as `new` (ids are `A-Z0-9_` runs).
+fn rename_id(text: &str, old: &str, new: &str) -> String {
+    let is_id = |c: char| c.is_ascii_alphanumeric() || c == '_';
+    let mut out = String::new();
+    let mut word = String::new();
+    for c in text.chars().chain(std::iter::once('\0')) {
+        if is_id(c) {
+            word.push(c);
+            continue;
+        }
+        out.push_str(if word == old { new } else { &word });
+        word.clear();
+        if c != '\0' {
+            out.push(c);
+        }
+    }
+    out
+}
+
+fn rename_in(v: &mut Value, old: &str, new: &str) {
+    match v {
+        Value::Object(m) => {
+            for (k, x) in m.iter_mut() {
+                match x {
+                    Value::String(t) if k == "requirements" => *t = rename_id(t, old, new),
+                    _ => rename_in(x, old, new),
+                }
+            }
+        }
+        Value::Array(items) => items.iter_mut().for_each(|x| rename_in(x, old, new)),
+        _ => {}
+    }
+}
+
+/// The element with the multiclass id `old` written as `new` in every requirement (its own, its rules' and its
+/// multiclass section's): a copied class's "first class only" names its own multiclass section.
+pub(crate) fn rename_requirement_ids(e: &mut Element, old: &str, new: &str) {
+    let Ok(mut v) = serde_json::to_value(&*e) else {
+        return;
+    };
+    rename_in(&mut v, old, new);
+    if let Ok(renamed) = serde_json::from_value(v) {
+        *e = renamed;
+    }
 }

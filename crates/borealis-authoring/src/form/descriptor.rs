@@ -82,6 +82,9 @@ pub struct FieldSpec {
     /// The value a new element starts with.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<Value>,
+    /// Shown only for these editions.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub editions: Option<Vec<Ruleset>>,
 }
 
 /// One kind (`HomebrewKindDescriptor`).
@@ -143,6 +146,7 @@ fn field_spec(f: &FieldDef) -> FieldSpec {
             multiple: (f.control == Control::References).then_some(true),
         }),
         default: f.default_value(),
+        editions: (!f.editions.is_empty()).then(|| f.editions.to_vec()),
     }
 }
 

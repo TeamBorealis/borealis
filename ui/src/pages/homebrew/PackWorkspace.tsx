@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import type { HomebrewDraftView, HomebrewElementSummary, HomebrewKindDescriptor, HomebrewProblem } from "../../api/contract";
+import type { HomebrewDraftView, HomebrewElementSummary, HomebrewForm, HomebrewKindDescriptor, HomebrewProblem } from "../../api/contract";
 import { Button, Icon, useToast } from "../../components";
 import { useNarrow } from "../../components/shell/useNarrow";
 import { useApi } from "../../state/ApiContext";
@@ -170,6 +170,24 @@ export function PackWorkspace() {
 
   const tryIt = () => { if (draft.view) setTryItOpen(true); };
 
+  /** A child of the open element (WB-16): what is pending is sent first, then the backend makes the child inside the
+   * draft (`homebrew_new_draft {parentId}`), and its answer is one undoable edit (with `place`'s changes). */
+  const newChild = async (kindId: string, place?: (form: HomebrewForm, key: string) => HomebrewForm): Promise<string | null> => {
+    const draftId = draft.view?.draftId;
+    if (!draftId) return null;
+    try {
+      if (!(await draft.flush())) return null;
+      const view = await api.homebrewNewDraft({ packId, kind: kindId, parentId: draftId });
+      const key = view.form.children[view.form.children.length - 1]?.key;
+      if (!key) return null;
+      draft.edit(place ? place(view.form, key) : view.form);
+      return key;
+    } catch (e) {
+      toast.push(errorMessage(e), "error");
+      return null;
+    }
+  };
+
   useCreatorKeys({
     save: () => void save(),
     undo: () => draft.undo(),
@@ -192,8 +210,8 @@ export function PackWorkspace() {
     ? <ElementDetailView d={draft.view.preview} />
     : <aside className="desc-pane" aria-label="Description" />;
   const editor = openKind && draft.form
-    ? <Editor kind={openKind} draft={draft} tab={tab} onTab={setTab} narrow={narrow} preview={preview} tryItOpen={tryItOpen}
-      actions={{ onSave: () => void save(), onTryIt: tryIt, onTryItClose: () => setTryItOpen(false), onDuplicate: () => void duplicate(), onJump: jump }} />
+    ? <Editor kind={openKind} kinds={kinds.data ?? []} draft={draft} tab={tab} onTab={setTab} narrow={narrow} preview={preview} tryItOpen={tryItOpen}
+      actions={{ onSave: () => void save(), onTryIt: tryIt, onTryItClose: () => setTryItOpen(false), onDuplicate: () => void duplicate(), onJump: jump, onNewChild: newChild }} />
     : <div className="hb-empty"><p>Choose an element in the list, or make a new one.</p><Button onClick={() => setNewOpen(true)} disabled={offered.length === 0}>New element</Button></div>;
   const list = (
     <ElementList kind={listKind} rows={listRows} unsaved={unsaved} openId={openId} filter={filter} filterRef={filterRef} onFilter={setFilter}

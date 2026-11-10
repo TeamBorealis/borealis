@@ -19,7 +19,8 @@ use borealis_authoring::form::{
     element_group_to_form, element_to_form, form_to_element, form_to_elements, kind_for_type,
     merge_ui, to_ui, CatalogBlockCodec, FormContext, FormState, RefInfo,
 };
-use borealis_content::{ContentFile, Element, PackFileKind, PackManifest, Rule};
+use borealis_authoring::pack::granted_children;
+use borealis_content::{ContentFile, Element, PackFileKind, PackManifest};
 use serde_json::Value;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write as _;
@@ -202,6 +203,41 @@ fn shape_difference(a: &Value, b: &Value, path: &str) -> Option<String> {
     }
 }
 
+/// The shape of a value (keys and value types, strings' spelling aside), for comparing rules in any order.
+fn shape_of(v: &Value) -> String {
+    match v {
+        Value::Object(m) => format!(
+            "{{{}}}",
+            m.iter()
+                .map(|(k, x)| format!("{k}:{}", shape_of(x)))
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        Value::Array(items) => format!(
+            "[{}]",
+            items.iter().map(shape_of).collect::<Vec<_>>().join(",")
+        ),
+        Value::String(_) => "s".into(),
+        Value::Bool(_) => "b".into(),
+        Value::Number(n) if n.is_i64() => "i".into(),
+        Value::Number(_) => "f".into(),
+        Value::Null => "n".into(),
+    }
+}
+
+/// Where the rules of a canonical write differ in shape from the stored ones. A canonical write may put rules in
+/// another order (rules that fields hold before the blocks, a block's copies at other levels after it, WB-16), so
+/// the rules are compared rule by rule, and else as a set of shapes.
+fn rules_shape_difference(a: &Value, b: &Value) -> Option<String> {
+    let d = shape_difference(a, b, "rules")?;
+    let set = |v: &Value| {
+        let mut s: Vec<String> = v.as_array().into_iter().flatten().map(shape_of).collect();
+        s.sort();
+        s
+    };
+    (set(a) != set(b)).then_some(d)
+}
+
 /// Count the builder values (`{value: {shape}}`) in `v` by shape (`model`, `kept`).
 fn count_builders(v: &Value, out: &mut BTreeMap<String, usize>) {
     match v {
@@ -271,7 +307,7 @@ fn every_bundled_element_round_trips_through_its_form() {
         match form_to_element(&forgetful(&form), &cx) {
             Ok(canonical) => {
                 let rules = |x: &Element| serde_json::to_value(&x.rules).expect("rules");
-                if let Some(d) = shape_difference(&rules(e), &rules(&canonical), "rules") {
+                if let Some(d) = rules_shape_difference(&rules(e), &rules(&canonical)) {
                     failures.push(format!(
                         "{pack} {}: canonical rules change shape: {d}",
                         e.id
@@ -371,18 +407,6 @@ fn every_bundled_element_round_trips_through_its_form() {
     );
 }
 
-/// Children: each element's granted elements of its child types, in rule order.
-fn child_types(ty: &str) -> &'static [&'static str] {
-    match ty {
-        "Class" => &["Class Feature"],
-        "Archetype" => &["Archetype Feature"],
-        "Feat" => &["Feat Feature"],
-        "Background" => &["Background Feature"],
-        "Race" | "Sub Race" | "Species" => &["Racial Trait"],
-        _ => &[],
-    }
-}
-
 #[test]
 fn parents_round_trip_with_their_children() {
     let c = corpus();
@@ -392,25 +416,11 @@ fn parents_round_trip_with_their_children() {
         lookup: &c.lookup,
         blocks: &codec,
     };
-    let by_id: HashMap<&str, &Element> =
-        c.elements.iter().map(|(_, e)| (e.id.as_str(), e)).collect();
     let mut groups = 0;
     let mut children = 0;
+    let all: Vec<Element> = c.elements.iter().map(|(_, e)| e.clone()).collect();
     for (_, parent) in &c.elements {
-        let types = child_types(&parent.ty);
-        let mut kids: Vec<&Element> = Vec::new();
-        for rule in &parent.rules {
-            if let Rule::Grant(g) = rule {
-                if let Some(child) = by_id
-                    .get(g.id.as_str())
-                    .filter(|e| types.contains(&e.ty.as_str()))
-                {
-                    if !kids.iter().any(|k| k.id == child.id) {
-                        kids.push(child);
-                    }
-                }
-            }
-        }
+        let kids: Vec<&Element> = granted_children(parent, &all);
         if kids.is_empty() {
             continue;
         }

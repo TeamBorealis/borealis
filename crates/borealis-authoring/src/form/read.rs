@@ -3,6 +3,7 @@
 use super::codec::{self, Codec, Reader};
 use super::kinds::{kind_for_type, KindDef};
 use super::preserved::{self, Residue};
+use super::{child_refs, repeat};
 use super::{FormContext, FormState, Memo};
 use borealis_content::Element;
 use std::collections::{BTreeMap, BTreeSet};
@@ -32,6 +33,7 @@ pub fn element_group_to_form(
         .enumerate()
         .map(|(i, c)| read_one(c, format!("e/{i}"), cx))
         .collect();
+    child_refs::link(&mut form);
     form
 }
 
@@ -52,6 +54,7 @@ pub(crate) fn read_as(kind: &KindDef, e: &Element, key: String, cx: &FormContext
         id: (!e.id.is_empty()).then(|| e.id.clone()),
         fields: BTreeMap::new(),
         layout: Vec::new(),
+        multiclass_id: e.multiclass.as_ref().map(|m| m.id.clone()),
     };
     let mut fields = BTreeMap::new();
     let ordered = kind
@@ -66,6 +69,19 @@ pub(crate) fn read_as(kind: &KindDef, e: &Element, key: String, cx: &FormContext
         }
     }
     memo.layout = layout(&memo, e.rules.len());
+    // copies of a block at other levels ("also gained again at levels") are part of their block
+    let copies = if repeat::repeats(kind.id) {
+        let free: Vec<bool> = r.rules_taken.iter().map(|t| !t).collect();
+        let found = repeat::detect(&e.rules, &free);
+        for (_, cs) in &found {
+            for (j, _) in cs {
+                r.take_rule(*j);
+            }
+        }
+        found
+    } else {
+        Vec::new()
+    };
     let residue = Residue {
         e,
         setters: untaken(&r.setters_taken),
@@ -78,14 +94,21 @@ pub(crate) fn read_as(kind: &KindDef, e: &Element, key: String, cx: &FormContext
             .collect(),
         parts: &r.parts_taken,
     };
+    let blocks = e
+        .rules
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| !r.rules_taken[*i] || copies.iter().any(|(b, _)| b == i))
+        .map(|(i, rule)| {
+            let mut block = cx.blocks.read(rule, format!("b{i}"), cx);
+            if let Some((_, cs)) = copies.iter().find(|(b, _)| *b == i) {
+                repeat::attach(&mut block, cs, &e.rules, rule);
+            }
+            block
+        })
+        .collect();
     FormState {
-        blocks: e
-            .rules
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| !r.rules_taken[*i])
-            .map(|(i, rule)| cx.blocks.read(rule, format!("b{i}"), cx))
-            .collect(),
+        blocks,
         preserved: preserved::collect(&residue),
         key,
         kind: kind.id.to_string(),

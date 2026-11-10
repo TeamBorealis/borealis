@@ -11,9 +11,12 @@ use borealis_content::Ruleset;
 use serde_json::{json, Value};
 use std::sync::OnceLock;
 
+mod class;
 mod feat;
 mod species;
 mod spell;
+
+pub use class::{new_class_form, CLASS_FEATURE_KIND, CLASS_KIND};
 
 /// The generic form (spec 4.12), also the form of every type no other kind writes.
 pub const OTHER_KIND: &str = "other";
@@ -59,6 +62,18 @@ pub enum Control {
     PackageOptions,
     /// A spell's lists: one check box per spell list loaded classes declare, plus new list names.
     SpellLists,
+    /// Whole numbers in `FieldDef::min..=max` (levels).
+    Numbers,
+    /// A parent's children list (sub-features): each a child form or a reference ([`super::ChildEntry`]).
+    Children,
+    /// A class's LEVELS grid: its children, each at a level, with the class table beside them.
+    Levels,
+    /// A class table's counter columns ([`super::codec::TableColumn`]).
+    ClassTable,
+    /// A class's skill choice ([`super::codec::SkillChoice`]).
+    SkillChoice,
+    /// A starting-equipment package edited inside its owner (a child, or a reference).
+    Package,
 }
 
 impl Control {
@@ -85,6 +100,12 @@ impl Control {
             Self::Contents => "contents",
             Self::PackageOptions => "packageOptions",
             Self::SpellLists => "spellLists",
+            Self::Numbers => "numbers",
+            Self::Children => "children",
+            Self::Levels => "levels",
+            Self::ClassTable => "classTable",
+            Self::SkillChoice => "skillChoice",
+            Self::Package => "package",
         }
     }
 }
@@ -150,6 +171,8 @@ pub struct FieldDef {
     pub picker: &'static [&'static str],
     /// The value a new element starts with, as JSON text.
     pub default: Option<&'static str>,
+    /// The editions it is shown for (empty = both).
+    pub editions: &'static [Ruleset],
 }
 
 pub(crate) const fn field(
@@ -176,6 +199,7 @@ pub(crate) const fn field(
         max: None,
         picker: &[],
         default: None,
+        editions: &[],
     }
 }
 
@@ -233,6 +257,9 @@ impl FieldDef {
             picker: types,
             ..self
         }
+    }
+    pub(crate) const fn editions(self, editions: &'static [Ruleset]) -> Self {
+        Self { editions, ..self }
     }
     /// `default` is JSON text (`"\"1\""`, `"true"`).
     const fn default(self, default: &'static str) -> Self {
@@ -734,6 +761,8 @@ pub fn kinds() -> &'static [KindDef] {
             spell::spell_kind(),
             feat::feat_kind(),
             feat::feat_feature_kind(),
+            class::class_kind(),
+            class::class_feature_kind(),
         ];
         all.extend(species::species_kinds());
         all.extend(small_kinds());
