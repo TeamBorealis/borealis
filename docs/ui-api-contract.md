@@ -537,6 +537,18 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   Instantaneous, V and S; its school is the author's choice), and `section` groups fields under a SectionSecondary heading.
   The web mock serves the real descriptor of every kind whose form has landed (`api/mock/homebrew-kinds.ts`, written by
   `src-tauri/tests/contract_homebrew.rs`; `BOREALIS_UPDATE_SNAPSHOTS=1` rewrites it). Tab labels are upper case (`GENERAL`).
+- **Feat form (WB-13).** Kind `feat` (element type `Feat`, spec 4.2), for 2014 and 2024 feats. `category` (combo with
+  custom text: Origin, General, Fighting Style, Epic Boon) binds the setter `category`, the support tags
+  `"<Category> Feat"` and `"Feat"` (what a 2024 feat choice offers by) and, when the element has it, `data.category`;
+  empty = a 2014 feat (no category setter or tags). `requirements` (control `condition`) is one condition for
+  `requirements` and, when the element has it, `data.prerequisite` (`level_min`, `abilities_any`, `requires_feature`:
+  the part of the condition every character must meet; terms only `data.prerequisite` held are read into the condition).
+  `prerequisiteText` is the display `prerequisite`: left empty, or as it was written from the condition, it is written
+  from the condition ("Level 4+, Strength or Dexterity 13+"); typed, it is kept. `repeatable` binds the setter
+  `allow duplicate` (a feat stored with it keeps it) and `data.repeatable.allowed` (a new feat that can be taken again
+  gets `{allowed: true}`); `repeatDistinct` ("Spell List") is `data.repeatable.distinct_param` (`spell_list`). The feat
+  form has no `allowDuplicate` field. Kind `featFeature` (element type `Feat Feature`, group `child`, `parentKinds:
+  ["feat"]`) has the shared parts only; it is not offered by New element.
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

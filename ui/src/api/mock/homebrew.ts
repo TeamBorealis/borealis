@@ -4,6 +4,7 @@ import type {
 } from "../types";
 import { apiError } from "./errors";
 import { descriptionHtml, formProblems } from "./homebrew-check";
+import { featPrerequisite } from "./homebrew-feat";
 import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
 import { MOCK_KIND_DESCRIPTORS } from "./homebrew-kinds";
 import type { TrialDraft } from "./homebrew-trial";
@@ -46,19 +47,16 @@ const kind = (id: string, label: string, pluralLabel: string, elementType: strin
 });
 
 /** Kinds whose own form has landed in `borealis-authoring`: the mock serves their real descriptors (generated). */
-const REAL_KINDS = ["spell"];
+const REAL_KINDS = ["spell", "feat", "featFeature"];
 const realKinds = (): HomebrewKindDescriptor[] => REAL_KINDS.map((id) => {
   const k = MOCK_KIND_DESCRIPTORS.find((d) => d.id === id);
   if (!k) throw new Error(`homebrew-kinds.ts has no ${id} form`);
   return k;
 });
 
-/** The forms of the web mock: the real ones (WB-11 spell), then samples for kinds whose form is still to come. */
+/** The forms of the web mock: the real ones (WB-11 spell, WB-13 feat), then samples for kinds whose form is still to come. */
 const KINDS: HomebrewKindDescriptor[] = [
   ...realKinds(),
-  kind("feat", "Feat", "Feats", "Feat", "A feat characters can take.", [
-    { ...field("category", "Category", "combo", "general", ["setter:category", "data.category"]), choices: choices("", "Origin", "General", "Fighting Style", "Epic Boon"), allowCustom: true },
-  ]),
   kind("language", "Language", "Languages", "Language", "A language characters can learn."),
   {
     ...kind("other", "Other element", "Other elements", "Companion", "Any other kind of element, with the parts every form shares (expert).", [
@@ -70,7 +68,7 @@ const KINDS: HomebrewKindDescriptor[] = [
   },
 ];
 
-const TYPE_TOKENS: Record<string, string> = { Spell: "SPELL", Feat: "FEAT", Language: "LANGUAGE", Companion: "COMPANION" };
+const TYPE_TOKENS: Record<string, string> = { Spell: "SPELL", Feat: "FEAT", "Feat Feature": "FEAT_FEATURE", Language: "LANGUAGE", Companion: "COMPANION" };
 const PREVIEW_TYPES: Record<string, ElementType> = { spell: "spell", feat: "feat", language: "language" };
 const slug = (text: string): string => text.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "UNNAMED";
 const now = (): string => new Date().toISOString();
@@ -207,7 +205,7 @@ export class MockHomebrew {
   pickerRows(draftId?: string): HomebrewPickerRow[] {
     const draftPack = draftId ? this.drafts.get(draftId)?.packId : undefined;
     const saved = [...this.packs.values()].flatMap((own) => [...own.elements.values()].map(({ summary, form }): HomebrewPickerRow => ({
-      id: summary.id, name: summary.name, type: summary.elementType, summary: String(form.fields.summary ?? ""), prerequisites: null,
+      id: summary.id, name: summary.name, type: summary.elementType, summary: String(form.fields.summary ?? ""), prerequisites: featPrerequisite(form),
       sourceName: own.pack.name, edition: summary.edition, draft: false, ...spellRow(form),
     })));
     const drafts = [...this.drafts.values()].filter((d) => d.packId === draftPack && d.elementId === null && d.draftId !== draftId && String(d.form.fields.name ?? "").trim())
@@ -249,7 +247,7 @@ export class MockHomebrew {
     const description = descriptionHtml(form.fields.description);
     return {
       id, name: text("name") || "Unnamed", type: PREVIEW_TYPES[form.kind] ?? "option", source: own.pack.sourceIds[0] ?? own.pack.id,
-      sourceName: own.pack.name, shortDescription: "", prerequisites: null, rulesets: own.pack.rulesets,
+      sourceName: own.pack.name, shortDescription: "", prerequisites: featPrerequisite(form), rulesets: own.pack.rulesets,
       descriptionHtml: description, facts: k ? facts : [], grants: [],
     };
   }

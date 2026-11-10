@@ -15,7 +15,10 @@ use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 
+mod feat;
+mod feat_prereq;
 mod spell;
+pub use feat::FeatField;
 pub use spell::{Component, SpellField};
 
 /// How one field maps to the element.
@@ -61,6 +64,8 @@ pub enum Codec {
     Target,
     /// A spell field (spec 4.1): its setter and its 2024 mirror, or the spell lists.
     Spell(SpellField),
+    /// A feat field (spec 4.2): category, prerequisite, repeatable, in both the 2014 and the 2024 shape.
+    Feat(FeatField),
 }
 
 const RARITIES: [&str; 3] = ["standard", "exotic", "secret"];
@@ -96,7 +101,23 @@ impl Codec {
             Self::Blocks => s("rules"),
             Self::Target => s("id"),
             Self::Spell(f) => f.bindings(),
+            Self::Feat(f) => f.bindings(),
         }
+    }
+
+    /// It edits `requirements` with the condition builder.
+    #[must_use]
+    pub fn is_condition(self) -> bool {
+        matches!(
+            self,
+            Self::Requirements | Self::Feat(FeatField::Prerequisite)
+        )
+    }
+
+    /// It edits the display `prerequisite`.
+    #[must_use]
+    pub fn is_prerequisite_text(self) -> bool {
+        matches!(self, Self::PrerequisiteText | Self::Feat(FeatField::Shown))
     }
 
     /// It holds the element's support tags (the Tags field, or a spell's lists).
@@ -125,6 +146,7 @@ impl Codec {
             Self::SetterText(n) | Self::SetterFlag(n) | Self::SetterChips(n) => vec![n],
             Self::LanguageRarity => RARITIES.to_vec(),
             Self::Spell(f) => f.setter_names(),
+            Self::Feat(f) => f.setter_names(),
             _ => Vec::new(),
         }
     }
@@ -136,6 +158,7 @@ impl Codec {
             Self::DataText(k) => vec![k],
             Self::LanguageRarity => vec!["rarity"],
             Self::Spell(f) => f.data_keys(),
+            Self::Feat(f) => f.data_keys(),
             _ => Vec::new(),
         }
     }
@@ -330,6 +353,7 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
             json!(e.id),
         ),
         Codec::Spell(f) => spell::read(f, r),
+        Codec::Feat(f) => feat::read(f, r, cx),
         Codec::Blocks => return None,
     })
 }
@@ -424,6 +448,9 @@ pub(crate) fn write(
     out: &mut Out,
     cx: &FormContext<'_>,
 ) -> Result<(), FormProblem> {
+    if let Codec::Feat(f) = codec {
+        return feat::write(f, value, memo, path, out, cx);
+    }
     let unchanged = memo.filter(|m| m.value == *value);
     let raw = memo.map(|m| &m.raw);
     let slots = memo.map(|m| m.slots.clone()).unwrap_or_default();
@@ -506,6 +533,7 @@ pub(crate) fn write(
         }
         Codec::LanguageRarity => write_rarity(&text()?, raw, &slots, out, path)?,
         Codec::Spell(f) => spell::write(f, value, memo, path, out)?,
+        Codec::Feat(_) => unreachable!("feat fields are written above"),
         Codec::Target => {
             let target: Option<RefValue> = decode(value, path)?;
             match target.filter(|t| !t.id.trim().is_empty()) {
@@ -606,7 +634,7 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
         }
         Codec::Target => out.element.id = get(raw)?,
         Codec::Spell(f) => spell::write_raw(f, m, out),
-        Codec::Blocks => {}
+        Codec::Feat(_) | Codec::Blocks => {}
     }
     Ok(())
 }

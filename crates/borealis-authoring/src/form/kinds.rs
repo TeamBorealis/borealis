@@ -11,6 +11,7 @@ use borealis_content::Ruleset;
 use serde_json::{json, Value};
 use std::sync::OnceLock;
 
+mod feat;
 mod spell;
 
 /// The generic form (spec 4.12), also the form of every type no other kind writes.
@@ -687,7 +688,11 @@ fn other_kind() -> KindDef {
 pub fn kinds() -> &'static [KindDef] {
     static KINDS: OnceLock<Vec<KindDef>> = OnceLock::new();
     KINDS.get_or_init(|| {
-        let mut all = vec![spell::spell_kind()];
+        let mut all = vec![
+            spell::spell_kind(),
+            feat::feat_kind(),
+            feat::feat_feature_kind(),
+        ];
         all.extend(small_kinds());
         all.push(other_kind());
         all
