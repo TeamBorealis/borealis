@@ -2,10 +2,10 @@
 //!
 //! Everything here reads the element JSON only; no model output is trusted for any number.
 
-use borealis_ai::retrieval::html_to_text;
 use borealis_content::monster_types::Cr;
 use borealis_content::rules::Rule;
 use borealis_content::setter;
+use borealis_content::text::html_to_text;
 use borealis_content::{Element, MonsterData};
 
 /// Ability names a `stat` rule can raise.

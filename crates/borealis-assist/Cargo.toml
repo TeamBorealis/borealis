@@ -13,6 +13,7 @@ workspace = true
 borealis-content.workspace = true
 borealis-engine.workspace = true
 borealis-ai.workspace = true
+borealis-authoring.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

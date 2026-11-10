@@ -4,14 +4,12 @@
 //! The model never touches these numbers; it may only write prose about the flags.
 
 mod baselines;
-mod engine_check;
 mod measure;
 mod report;
 
 use serde::{Deserialize, Serialize};
 
 pub use baselines::{Baselines, FEAT_ASI_FLOOR, FEAT_PROF_FLOOR, MIN_SAMPLES, RARITY_BONUS_FLOOR};
-pub use engine_check::{load_into_engine, CharacterCheck, EngineCheck};
 pub use measure::{damage_average, dice_expressions};
 pub use report::balance_report;
 

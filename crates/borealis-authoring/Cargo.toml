@@ -1,0 +1,18 @@
+[package]
+name = "borealis-authoring"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+description = "Deterministic content authoring for the homebrew creator: ids, spellcasting tables, engine checks, balance baselines (no AI)"
+
+[lints]
+workspace = true
+
+# No AI dependency, ever (spec 15.1, G7): `cargo tree -p borealis-authoring` must not list borealis-ai.
+[dependencies]
+borealis-content.workspace = true
+borealis-engine.workspace = true
+serde.workspace = true
+serde_json.workspace = true

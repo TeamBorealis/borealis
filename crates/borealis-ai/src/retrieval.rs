@@ -8,6 +8,8 @@
 //! description (HTML stripped, weight 1). Elements without a description are skipped because
 //! there is nothing to cite.
 
+/// Strip HTML tags and decode the common entities (shared with the deterministic crates).
+pub use borealis_content::text::html_to_text;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::{Arc, OnceLock};
 
@@ -317,32 +319,6 @@ fn stem(word: &str) -> String {
         w = w.strip_suffix('e').unwrap_or(w);
     }
     w.to_string()
-}
-
-/// Strip HTML tags and decode the common entities; block tags become spaces.
-#[must_use]
-pub fn html_to_text(html: &str) -> String {
-    let mut out = String::with_capacity(html.len());
-    let mut in_tag = false;
-    for c in html.chars() {
-        match c {
-            '<' => in_tag = true,
-            '>' if in_tag => {
-                in_tag = false;
-                out.push(' ');
-            }
-            _ if in_tag => {}
-            _ => out.push(c),
-        }
-    }
-    let decoded = out
-        .replace("&nbsp;", " ")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
-        .replace("&#39;", "'")
-        .replace("&amp;", "&");
-    decoded.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// A window of about [`SNIPPET_CHARS`] characters starting near the first query-term match.

@@ -8,6 +8,7 @@ members = [
   "crates/borealis-sheet",
   "crates/borealis-ai",
   "crates/borealis-assist",
+  "crates/borealis-authoring",
   "crates/borealis-import-5etools",
   "crates/borealis-bundle",
   "crates/borealis-link",
@@ -46,6 +47,7 @@ borealis-migrate = { path = "crates/borealis-migrate" }
 borealis-sheet = { path = "crates/borealis-sheet" }
 borealis-ai = { path = "crates/borealis-ai" }
 borealis-assist = { path = "crates/borealis-assist" }
+borealis-authoring = { path = "crates/borealis-authoring" }
 borealis-search = { path = "crates/borealis-search" }
 borealis-embed = { path = "crates/borealis-embed" }
 # default-features = false: dependents opt into the network stack and OS store explicitly.

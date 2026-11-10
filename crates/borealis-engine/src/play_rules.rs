@@ -11,6 +11,7 @@ use crate::snapshot::{
 use crate::spell_rules::progression;
 use crate::stats::StatSet;
 use crate::universe::{Cond, UElem, UStat, Universe, Val};
+use borealis_content::formula::{self, FormulaContext};
 use borealis_content::rules::{CustomRule, StatRule};
 use borealis_content::{Element, Rule};
 use serde_json::Value;
@@ -335,46 +336,22 @@ struct ExprCtx<'a> {
     mods: &'a [i32; 6],
 }
 
-fn split_top(expr: &str, ops: &[char]) -> Option<(String, char, String)> {
-    let mut depth = 0i32;
-    let chars: Vec<(usize, char)> = expr.char_indices().collect();
-    for (i, ch) in chars.iter().rev() {
-        match ch {
-            ')' => depth += 1,
-            '(' => depth -= 1,
-            c if depth == 0 && ops.contains(c) && *i > 0 => {
-                return Some((
-                    expr[..*i].trim().to_string(),
-                    *c,
-                    expr[*i + c.len_utf8()..].trim().to_string(),
-                ));
-            }
-            _ => {}
-        }
+impl FormulaContext for ExprCtx<'_> {
+    fn proficiency(&self) -> i32 {
+        self.stats.sum("proficiency")
     }
-    None
+
+    fn ability_modifier(&self, ability: &str) -> Option<i32> {
+        crate::ids::ability_index(ability).map(|i| self.mods[i])
+    }
+
+    fn class_level(&self, class: &str) -> i32 {
+        self.graph.class_levels.get(class).copied().unwrap_or(0)
+    }
 }
 
-fn split_commas(inner: &str) -> Vec<&str> {
-    let mut depth = 0i32;
-    let mut start = 0;
-    let mut out = Vec::new();
-    for (i, ch) in inner.char_indices() {
-        match ch {
-            '(' => depth += 1,
-            ')' => depth -= 1,
-            ',' if depth == 0 => {
-                out.push(&inner[start..i]);
-                start = i + 1;
-            }
-            _ => {}
-        }
-    }
-    out.push(&inner[start..]);
-    out
-}
-
-/// Evaluate a content formula (`5*cleric level`, `max(1, charisma:modifier)`, `ceil(druid level / 2)`).
+/// Evaluate a content formula (`5*cleric level`, `max(1, charisma:modifier)`, `ceil(druid level / 2)`); the grammar is
+/// `borealis_content::formula`, shared with the homebrew creator.
 pub(crate) fn eval_formula(
     graph: &Graph<'_>,
     stats: &StatSet,
@@ -385,69 +362,7 @@ pub(crate) fn eval_formula(
 }
 
 fn eval_expr(expr: &str, cx: &ExprCtx<'_>) -> Option<i32> {
-    let e = expr.trim();
-    if let Some((l, '/', r)) = e
-        .strip_prefix("ceil(")
-        .and_then(|x| x.strip_suffix(')'))
-        .and_then(|x| split_top(x, &['/']))
-    {
-        let (a, b) = (eval_expr(&l, cx)?, eval_expr(&r, cx)?);
-        return (b > 0).then(|| (a + b - 1) / b);
-    }
-    if let Some((l, op, r)) = split_top(e, &['+', '-']) {
-        let (a, b) = (eval_expr(&l, cx)?, eval_expr(&r, cx)?);
-        return Some(if op == '+' { a + b } else { a - b });
-    }
-    if let Some((l, op, r)) = split_top(e, &['*', '/']) {
-        let (a, b) = (eval_expr(&l, cx)?, eval_expr(&r, cx)?);
-        return if op == '*' {
-            Some(a * b)
-        } else {
-            a.checked_div(b)
-        };
-    }
-    for f in ["max", "min", "floor"] {
-        if let Some(inner) = e
-            .strip_prefix(f)
-            .and_then(|r| r.trim_start().strip_prefix('('))
-            .and_then(|r| r.strip_suffix(')'))
-        {
-            let vals: Option<Vec<i32>> = split_commas(inner)
-                .into_iter()
-                .map(|p| eval_expr(p, cx))
-                .collect();
-            let vals = vals?;
-            return match f {
-                "max" => vals.into_iter().max(),
-                "min" => vals.into_iter().min(),
-                _ => vals.first().copied(),
-            };
-        }
-    }
-    if let Some(inner) = e.strip_prefix('(').and_then(|r| r.strip_suffix(')')) {
-        return eval_expr(inner, cx);
-    }
-    if let Ok(n) = e.parse::<i32>() {
-        return Some(n);
-    }
-    let lower = e.to_lowercase();
-    if lower == "proficiency" || lower == "proficiency bonus" {
-        return Some(cx.stats.sum("proficiency"));
-    }
-    if let Some(a) = lower.strip_suffix(":modifier") {
-        let i = crate::ids::ability_index(a)?;
-        return Some(cx.mods[i]);
-    }
-    if let Some(class) = lower.strip_suffix(" level") {
-        return Some(
-            cx.graph
-                .class_levels
-                .get(class.trim())
-                .copied()
-                .unwrap_or(0),
-        );
-    }
-    None
+    formula::parse(expr).ok()?.eval(cx)
 }
 
 fn class_name(el: &Element) -> Option<&str> {

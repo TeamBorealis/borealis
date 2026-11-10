@@ -684,6 +684,7 @@ name = "borealis-assist"
 version = "1.4.0"
 dependencies = [
  "borealis-ai",
+ "borealis-authoring",
  "borealis-content",
  "borealis-engine",
  "flate2",
@@ -694,6 +695,16 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "borealis-authoring"
+version = "1.4.0"
+dependencies = [
+ "borealis-content",
+ "borealis-engine",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
