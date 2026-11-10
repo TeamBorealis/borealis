@@ -9,6 +9,7 @@
 //! * [`stats`]: the statistic catalog of the statistic picker.
 //! * [`form`]: the creator's form model (fields bound to model locations, rule blocks, the preserved bucket) and the
 //!   element/form round trip.
+//! * [`pack`]: the homebrew pack layout, `creator.json`, child elements, saving and deleting steps.
 //! * [`rich`]: the description tree and its one HTML writer (`borealis_content::rich`, re-exported here; see
 //!   `specs/handoffs/hc-wb04.md` for why it stays in `borealis-content`).
 //!
@@ -21,6 +22,7 @@ mod edition;
 pub mod expr_build;
 pub mod form;
 pub mod ids;
+pub mod pack;
 pub mod stats;
 
 pub use borealis_content::rich;

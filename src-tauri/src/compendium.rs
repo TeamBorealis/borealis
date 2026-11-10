@@ -184,14 +184,7 @@ impl AppState {
         let el = hub
             .element(element_id)
             .ok_or_else(|| ApiError::not_found("That element does not exist."))?;
-        let mut html = description_html(el);
-        html.push_str(&mastery_html(&hub.store, el));
-        Ok(ElementDetail {
-            summary: summary(&hub.store, el),
-            description_html: html,
-            facts: facts(&hub.store, el),
-            grants: crate::element_grants::grants(&hub.store, el),
-        })
+        Ok(element_detail(&hub.store, el))
     }
 
     /// Type and source filters with their counts.
@@ -227,6 +220,20 @@ impl AppState {
                 })
                 .collect(),
         })
+    }
+}
+
+/// One element as the description pane shows it: sanitised description, facts and grants, looked up in `store`
+/// (the element itself need not be in it: the homebrew creator previews a draft this way).
+#[must_use]
+pub(crate) fn element_detail(store: &ContentStore, el: &Element) -> ElementDetail {
+    let mut html = description_html(el);
+    html.push_str(&mastery_html(store, el));
+    ElementDetail {
+        summary: summary(store, el),
+        description_html: html,
+        facts: facts(store, el),
+        grants: crate::element_grants::grants(store, el),
     }
 }
 

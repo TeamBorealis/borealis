@@ -60,23 +60,56 @@ impl ParsedPack {
         for entry in &manifest.files {
             let path = safe_join(dir, &entry.path)?;
             let text = read_text(&path)?;
-            let name = format!("{}/{}", manifest.id, entry.path);
             entries.push(match entry.kind {
-                PackFileKind::Content => {
-                    let mut file =
-                        ContentFile::from_json_str(&text).map_err(|e| e.in_file(&path))?;
-                    if file.ruleset.is_none() && manifest.rulesets.len() == 1 {
-                        file.ruleset = manifest.rulesets.first().copied();
-                    }
-                    ParsedEntry::Content(name, file)
-                }
+                PackFileKind::Content => ParsedEntry::Content(
+                    entry.path.clone(),
+                    ContentFile::from_json_str(&text).map_err(|e| e.in_file(&path))?,
+                ),
                 PackFileKind::Index => ParsedEntry::Index(
-                    name,
+                    entry.path.clone(),
                     IndexFile::from_json_str(&text).map_err(|e| e.in_file(&path))?,
                 ),
             });
         }
-        Ok(Self {
+        Ok(Self::assemble(manifest, entries))
+    }
+
+    /// A pack from its manifest and its content files held in memory, `(path in the manifest, file)`: the same
+    /// result as [`ParsedPack::read`] on a folder holding exactly these files (the homebrew creator builds the pack it
+    /// is about to write, checks it, then writes it). Files the manifest lists that are not given are left out.
+    #[must_use]
+    pub fn from_parts(manifest: PackManifest, files: Vec<(String, ContentFile)>) -> Self {
+        let entries = manifest
+            .files
+            .iter()
+            .filter(|f| f.kind == PackFileKind::Content)
+            .filter_map(|f| {
+                files
+                    .iter()
+                    .find(|(path, _)| *path == f.path)
+                    .map(|(path, file)| ParsedEntry::Content(path.clone(), file.clone()))
+            })
+            .collect();
+        Self::assemble(manifest, entries)
+    }
+
+    /// Entries are named `<pack id>/<path>`; a content file without its own ruleset takes the pack's only one.
+    fn assemble(manifest: PackManifest, entries: Vec<ParsedEntry>) -> Self {
+        let entries = entries
+            .into_iter()
+            .map(|e| match e {
+                ParsedEntry::Content(path, mut file) => {
+                    if file.ruleset.is_none() && manifest.rulesets.len() == 1 {
+                        file.ruleset = manifest.rulesets.first().copied();
+                    }
+                    ParsedEntry::Content(format!("{}/{path}", manifest.id), file)
+                }
+                ParsedEntry::Index(path, index) => {
+                    ParsedEntry::Index(format!("{}/{path}", manifest.id), index)
+                }
+            })
+            .collect();
+        Self {
             info: PackInfo {
                 id: manifest.id,
                 name: manifest.name,
@@ -86,7 +119,7 @@ impl ParsedPack {
             },
             origin: manifest.origin,
             entries,
-        })
+        }
     }
 
     /// The pack's manifest summary.
@@ -200,6 +233,64 @@ impl ContentStoreBuilder {
             };
         }
         self
+    }
+
+    /// True when a pack with this id was added ([`add_parsed_pack`](Self::add_parsed_pack)).
+    #[must_use]
+    pub fn has_pack(&self, id: &str) -> bool {
+        self.packs.iter().any(|p| p.id == id)
+    }
+
+    /// The builder with the pack `pack.info().id` replaced by `pack`, in the same load position: its files and
+    /// indexes take the place of the old pack's, so the result equals adding the new pack in the old one's place
+    /// (the homebrew creator's fast reload, spec 14.1). `None` when no such pack was added.
+    #[must_use]
+    pub fn replace_pack(mut self, pack: ParsedPack) -> Option<Self> {
+        let id = pack.info.id.clone();
+        let pack_at = self.packs.iter().position(|p| p.id == id)?;
+        let prefix = format!("{id}/");
+        let file_at = self
+            .files
+            .iter()
+            .position(|f| f.name.starts_with(&prefix))
+            .unwrap_or_else(|| self.files_before_pack(pack_at));
+        let index_at = self
+            .indexes
+            .iter()
+            .position(|i| i.file.starts_with(&prefix))
+            .unwrap_or(self.indexes.len());
+        self.files.retain(|f| !f.name.starts_with(&prefix));
+        self.indexes.retain(|i| !i.file.starts_with(&prefix));
+        let file_at = file_at.min(self.files.len());
+        let index_at = index_at.min(self.indexes.len());
+        let mut files = Vec::new();
+        let mut indexes = Vec::new();
+        for entry in pack.entries {
+            match entry {
+                ParsedEntry::Content(name, file) => files.push(PendingFile {
+                    name,
+                    origin: pack.origin,
+                    file,
+                }),
+                ParsedEntry::Index(name, index) => indexes.push(LoadedIndex { file: name, index }),
+            }
+        }
+        self.files.splice(file_at..file_at, files);
+        self.indexes.splice(index_at..index_at, indexes);
+        self.packs[pack_at] = pack.info;
+        Some(self)
+    }
+
+    /// Where the files of the pack at `pack_at` go when it has none: after the files of every earlier pack.
+    fn files_before_pack(&self, pack_at: usize) -> usize {
+        let earlier: Vec<String> = self.packs[..pack_at]
+            .iter()
+            .map(|p| format!("{}/", p.id))
+            .collect();
+        self.files
+            .iter()
+            .rposition(|f| earlier.iter().any(|e| f.name.starts_with(e.as_str())))
+            .map_or(0, |i| i + 1)
     }
 
     /// Load every content `*.json` below `dir` (skipping `pack.json` and `*.index.json`),

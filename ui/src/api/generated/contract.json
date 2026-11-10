@@ -778,7 +778,8 @@
   },
   "homebrew_open_draft": {
    "args": {
-    "elementId": false,
+    "draftId": true,
+    "elementId": true,
     "packId": false
    },
    "method": "homebrewOpenDraft",
@@ -7613,6 +7614,12 @@
       "k": "prim"
      }
     },
+    "level": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "name": {
      "opt": false,
      "t": {
@@ -7625,10 +7632,23 @@
       "k": "prim"
      }
     },
+    "school": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "sourceName": {
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "spell": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "SpellFacts"
      }
     },
     "summary": {

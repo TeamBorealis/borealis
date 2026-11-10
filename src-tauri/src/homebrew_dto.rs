@@ -1,14 +1,13 @@
 //! Wire types of the homebrew creator (1.5.0; `specs/homebrew-creator-spec.md` section 15.2). They mirror
 //! `ui/src/api/types/homebrew.ts` field for field (camelCase on the wire); `tests/contract_homebrew.rs` checks each
-//! against the generated contract. Inner parts owned by later work items (field values, block fields, rich text,
-//! builder states) travel as JSON values until those items type them.
+//! against the generated contract. The form itself is `borealis_authoring::form::FormState` (WB-06); inner parts owned
+//! by later work items travel as JSON values until those items type them.
 
 use crate::content_dto::ContentPack;
 use crate::dto::{CharacterSnapshot, Ruleset};
 use crate::dto_ext::ElementDetail;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
-use std::collections::BTreeMap;
 
 /// One editor sub-tab (`general`, `levels`, `rules`...).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -208,40 +207,17 @@ pub struct HomebrewElementSummary {
     pub has_draft: bool,
 }
 
-/// One rule block of a form (`borealis_authoring::form::Block` on the wire).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct HomebrewBlock {
-    pub key: String,
-    pub kind: String,
-    pub sentence: String,
-    pub fields: BTreeMap<String, Value>,
-    /// Parts of the rule the block dialog does not edit (read-only, removable).
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub preserved: Vec<HomebrewPreservedPart>,
-}
+/// One rule block of a form: `borealis_authoring::form::Block` (its `memo` never travels: `to_ui` strips it).
+pub type HomebrewBlock = borealis_authoring::form::Block;
 
-/// A part the form does not edit, kept byte-for-byte.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct HomebrewPreservedPart {
-    pub key: String,
-    pub label: String,
-}
+/// A part the form does not edit, kept byte-for-byte: `borealis_authoring::form::PreservedPart` (its `kept` bytes
+/// never travel).
+pub type HomebrewPreservedPart = borealis_authoring::form::PreservedPart;
 
-/// The editable state of one draft (`borealis_authoring::form::FormState` without its memo, `to_ui`).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct HomebrewForm {
-    /// Stable key inside the draft (children are matched by it).
-    #[serde(default)]
-    pub key: String,
-    pub kind: String,
-    pub fields: BTreeMap<String, Value>,
-    pub blocks: Vec<HomebrewBlock>,
-    pub children: Vec<HomebrewForm>,
-    pub preserved: Vec<HomebrewPreservedPart>,
-}
+/// The editable state of one draft: `borealis_authoring::form::FormState`. Sent as `to_ui` of the stored form (no
+/// memo, no kept bytes); what the UI sends back is merged into the stored form by key (`merge_ui`), so a memo or
+/// kept bytes in a request are ignored.
+pub type HomebrewForm = borealis_authoring::form::FormState;
 
 /// One validation finding.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -359,6 +335,13 @@ pub struct HomebrewPickerRow {
     pub source_name: String,
     pub edition: Option<Ruleset>,
     pub draft: bool,
+    /// Spells only (the spell picker's Magic grid, spec 13.7): level 0-9, school and casting facts.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub level: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub school: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub spell: Option<crate::gear_facts::SpellFacts>,
 }
 
 /// Where-used row. `relation`: `grants`, `selects`, `requires` or `lists`.

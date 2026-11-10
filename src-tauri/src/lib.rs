@@ -112,7 +112,12 @@ pub mod gear_facts;
 pub mod gear_info;
 pub mod homebrew_api;
 pub mod homebrew_creator;
+pub mod homebrew_draft_api;
+pub mod homebrew_drafts;
 pub mod homebrew_dto;
+pub mod homebrew_files;
+pub mod homebrew_packs;
+pub mod homebrew_refs;
 pub mod hp_api;
 pub mod ids;
 #[cfg(ai_cli)]

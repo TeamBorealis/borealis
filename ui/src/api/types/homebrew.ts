@@ -1,4 +1,4 @@
-import type { BookRuleset, ElementDetail, Ruleset } from "./core";
+import type { BookRuleset, ElementDetail, Ruleset, SpellFacts } from "./core";
 import type { CharacterSnapshot } from "./character";
 import type { ContentPack } from "./content";
 
@@ -618,6 +618,10 @@ export interface HomebrewPickerRow {
   edition: Ruleset | null;
   /** An unsaved draft of the current pack. */
   draft: boolean;
+  /** Spells only (WB-10, the spell picker's Magic grid, spec 13.7): level 0-9, school and casting facts. */
+  level?: number;
+  school?: string;
+  spell?: SpellFacts;
 }
 
 /** Where-used (spec 12.3). */

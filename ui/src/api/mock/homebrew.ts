@@ -104,7 +104,13 @@ export class MockHomebrew {
     return this.store(packId, null, { kind: kindId, fields: { name: "" }, blocks: [], children: [], preserved: [] });
   }
 
-  openDraft(packId: string, elementId: string): HomebrewDraftView {
+  openDraft(packId: string, elementId?: string, draftId?: string): HomebrewDraftView {
+    if (draftId) {
+      const draft = this.draft(draftId);
+      if (draft.packId !== packId) throw apiError("not_found", "That draft belongs to another pack.");
+      return draft;
+    }
+    if (!elementId) throw apiError("invalid_argument", "Say which element to open.");
     const existing = [...this.drafts.values()].find((d) => d.elementId === elementId);
     if (existing) return existing;
     const saved = this.own(packId).elements.get(elementId);
