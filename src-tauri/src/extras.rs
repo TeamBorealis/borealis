@@ -260,6 +260,7 @@ fn caster(
                     .other
                     .then(|| borealis_engine::other_spells::source_label(s))
                     .flatten(),
+                no_slot: s.no_slot,
             }
         })
         .collect();

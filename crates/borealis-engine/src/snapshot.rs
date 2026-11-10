@@ -322,6 +322,10 @@ pub struct SpellEntry {
     /// The element that granted the spell (none for spells prepared from a class list).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granted_by: Option<SpellGrant>,
+    /// The feature that grants it lets the character cast it without expending a spell slot
+    /// (`grant_spell` mode `at_will_no_slot`: 2024 Pact of the Chain's Find Familiar).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub no_slot: bool,
 }
 
 /// The granting element of a spell (feeds the spell card footer).

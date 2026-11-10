@@ -22,7 +22,7 @@ function useCast(play: PlayState) {
     if (!spent) return;
     const concentrates = spell.concentration && play.concentrationSpells.some((c) => c.id === spell.id);
     if (concentrates) await run((api, characterId) => api.setConcentration({ characterId, spellId: spell.id }));
-    const how = choice.kind === "ritual" ? "as a ritual" : choice.pact ? `with a Pact Magic slot (level ${choice.level})` : `with a level ${choice.level} slot`;
+    const how = choice.kind === "free" ? "without a slot" : choice.kind === "ritual" ? "as a ritual" : choice.pact ? `with a Pact Magic slot (level ${choice.level})` : `with a level ${choice.level} slot`;
     const ended = concentrates && play.concentration && play.concentration.id !== spell.id ? ` ${play.concentration.name} ends.` : "";
     toast.push(`Cast ${spell.name} ${how}.${concentrates ? ` Concentrating on ${spell.name}.` : ""}${ended}`);
   };

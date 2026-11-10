@@ -191,3 +191,30 @@ fn srd_subclass_spells_are_always_prepared() {
                 .as_ref()
                 .is_some_and(|g| g.name != "Fiend Spells")));
 }
+
+/// The SRD 5.2.1 Pact of the Chain lets the Warlock cast Find Familiar without a spell slot
+/// (`grant_spell` mode `at_will_no_slot` on the Warlock list): it is ready without being
+/// prepared and never counts against the prepared spells (reported on the Borealis Discord).
+#[test]
+fn srd_pact_of_the_chain_find_familiar_is_ready_and_uncounted() {
+    let Some(e) = engine(false) else { return };
+    let s = build(&e, &[("Class", "Warlock")], 1);
+    let before = e.derive(&s);
+    let open: Vec<&str> = before
+        .slots
+        .iter()
+        .filter(|k| k.chosen.is_none())
+        .map(|k| k.name.as_str())
+        .collect();
+    let slot = open
+        .iter()
+        .find(|n| n.starts_with("Eldritch Invocation"))
+        .unwrap_or_else(|| panic!("no open invocation slot: {open:?}"));
+    let s = choose(&e, &s, slot, "Pact of the Chain");
+    let snap = e.derive(&s);
+    let c = snap.caster("Warlock").expect("Warlock block");
+    assert!(c.prepare, "the 2024 Warlock prepares its spells");
+    let x = spell(c, "Find Familiar");
+    assert!(x.prepared && x.always_prepared && x.no_slot, "{x:?}");
+    assert_eq!(c.prepared_count, 0, "Find Familiar counts as prepared");
+}

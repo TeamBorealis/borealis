@@ -283,6 +283,8 @@ export interface SpellEntry {
   added?: boolean;
   /** "Other Spells" only: where the spell came from (the invocation, the race), as Aurora's sheet appends it to the name. */
   grantedFrom?: string;
+  /** The feature that grants it lets the character cast it without expending a spell slot (2024 Pact of the Chain's Find Familiar). */
+  noSlot?: boolean;
 }
 
 export interface ClassSpellcasting {

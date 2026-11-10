@@ -543,6 +543,10 @@ pub struct SpellEntry {
     /// sheet appends it to the name.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub granted_from: Option<String>,
+    /// The feature that grants it lets the character cast it without expending a spell slot
+    /// (2024 Pact of the Chain's Find Familiar): Play offers that first.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub no_slot: bool,
 }
 
 /// Spellcasting of one class.

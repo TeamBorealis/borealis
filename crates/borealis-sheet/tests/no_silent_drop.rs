@@ -102,6 +102,7 @@ fn grow(
             known: true,
             damage: None,
             granted_by: None,
+            no_slot: false,
         });
         names.push(name);
     }
@@ -215,6 +216,7 @@ fn run_legacy(base: &(Character, CharacterSnapshot), label: &str) {
                     known: true,
                     damage: None,
                     granted_by: None,
+                    no_slot: false,
                 });
                 name
             })

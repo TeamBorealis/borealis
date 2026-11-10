@@ -1,6 +1,7 @@
 //! Spellcasting: per-class slots, DC, attack, prepared limits and the pure multiclass
 //! slot computation.
 
+use crate::custom_rules::X_SPELL_MODE;
 use crate::diag::{code, DiagSink, Diagnostic, Severity};
 use crate::eval::{supports_match, NoDynamics};
 use crate::graph::{Graph, NodeId, Origin};
@@ -184,6 +185,7 @@ fn add_prepared_extensions(
             known: true,
             damage: None,
             granted_by: Some(extension_grant(graph, *node)),
+            no_slot: false,
         });
     }
 }
@@ -195,6 +197,27 @@ fn add_prepared_extensions(
 /// and a class that prepares still needs the grant's own `prepared` flag.
 fn feature_given(n: &crate::graph::Node<'_>, class_prepares: bool) -> bool {
     !class_prepares && matches!(n.origin, Origin::Granted(_)) && spell_level(n.e) > 0
+}
+
+/// The `grant_spell` mode of the grant that put spell node `n` on the character, if any.
+fn grant_mode<'g>(graph: &'g Graph<'_>, n: &crate::graph::Node<'_>) -> Option<&'g str> {
+    let (Some(parent), Origin::Granted(ri)) = (n.parent, n.origin) else {
+        return None;
+    };
+    match graph.nodes[parent].e.el.rules.get(ri) {
+        Some(borealis_content::Rule::Grant(g)) => {
+            g.extra.attributes.get(X_SPELL_MODE).map(String::as_str)
+        }
+        _ => None,
+    }
+}
+
+/// A levelled spell a feature lets the character cast itself, at will without a slot or as a
+/// ritual (`grant_spell` mode `at_will_no_slot` or `ritual_only`: Pact of the Chain's Find
+/// Familiar), is ready without being prepared and never counts against the prepared spells, in
+/// a class that prepares as well. The feature casts it, not the class's preparation.
+fn feature_cast(mode: Option<&str>, n: &crate::graph::Node<'_>) -> bool {
+    matches!(mode, Some("at_will_no_slot" | "ritual_only")) && spell_level(n.e) > 0
 }
 
 /// Does a grant's or select's `spellcasting` name `named` name the spellcasting `block`? Aurora
@@ -295,7 +318,8 @@ pub fn spellcasting_snapshots(
                 .as_deref()
                 .is_some_and(|c| same_spellcasting(c, &info.name))
         }) {
-            let always = n.always_prepared || feature_given(n, prepare);
+            let mode = grant_mode(graph, n);
+            let always = n.always_prepared || feature_given(n, prepare) || feature_cast(mode, n);
             let entry = SpellEntry {
                 id: n.e.el.id.clone(),
                 name: n.e.el.name.clone(),
@@ -305,6 +329,7 @@ pub fn spellcasting_snapshots(
                 known: true,
                 damage: cantrip_damage(n.e, graph.total_level()),
                 granted_by: spell_grant(graph, n),
+                no_slot: mode == Some("at_will_no_slot"),
             };
             if rules.spellbook.is_some()
                 && !always
@@ -317,6 +342,7 @@ pub fn spellcasting_snapshots(
             if let Some(known) = spells.iter_mut().find(|s| s.id == entry.id) {
                 known.prepared |= entry.prepared;
                 known.always_prepared |= entry.always_prepared;
+                known.no_slot |= entry.no_slot;
                 continue;
             }
             spells.push(entry);
@@ -337,6 +363,7 @@ pub fn spellcasting_snapshots(
                 known: true,
                 damage: cantrip_damage(e, graph.total_level()),
                 granted_by: None,
+                no_slot: false,
             })
         };
         let book: Vec<SpellEntry> = if rules.spellbook.is_some() {
@@ -394,6 +421,7 @@ pub fn spellcasting_snapshots(
                             known: false,
                             damage: cantrip_damage(cand, graph.total_level()),
                             granted_by: None,
+                            no_slot: false,
                         });
                     }
                 }

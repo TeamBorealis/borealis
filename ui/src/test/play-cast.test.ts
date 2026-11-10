@@ -39,4 +39,14 @@ describe("cast choices", () => {
     expect(defaultChoice(spell(1, true), castChoices(spell(1, true), play([[1, 2, 2]])))).toBeNull();
     expect(castChoices(spell(1), play([[1, 2, 2]]))).toEqual([]);
   });
+
+  it("a spell its feature casts without a slot offers that first and a tap spends nothing (2024 Pact of the Chain)", () => {
+    const familiar = { ...spell(1, true), name: "Find Familiar", noSlot: true };
+    const p = play([], [1, 1, 0]);
+    const choices = castChoices(familiar, p);
+    expect(choices.map(choiceLabel)).toEqual(["Without a slot", "Pact Magic slot, level 1 (1 left)", "As a ritual (no slot)"]);
+    expect(defaultChoice(familiar, choices)).toEqual({ kind: "free" });
+    // with every slot spent it can still be cast
+    expect(castChoices(familiar, play([], [1, 1, 1])).map(choiceLabel)).toEqual(["Without a slot", "As a ritual (no slot)"]);
+  });
 });

@@ -11214,6 +11214,12 @@
       "k": "prim"
      }
     },
+    "noSlot": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "origin": {
      "opt": false,
      "t": {

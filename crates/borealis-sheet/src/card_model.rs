@@ -375,6 +375,7 @@ mod tests {
             known: true,
             damage: None,
             granted_by: grant,
+            no_slot: false,
         }
     }
 
