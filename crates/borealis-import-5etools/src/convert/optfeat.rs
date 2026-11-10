@@ -229,7 +229,9 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     el.data
         .insert("feature_types".into(), serde_json::json!(of.feature_type));
     let (label, own_block) = spell_label(sh, &of.feature_type);
-    let spells = spells_extra::convert(sh, ent.ruleset, &label, &of.additional_spells, own_block);
+    let mut spells =
+        spells_extra::convert(sh, ent.ruleset, &label, &of.additional_spells, own_block);
+    spells_extra::no_slot_by_text(&mut spells.direct, &Renderer::plain(&of.entries));
     partial.extend(spells.partial);
     if !spells.options.is_empty() {
         partial.push(
@@ -359,6 +361,76 @@ mod tests {
         let conv = convert(&sh, &mut st, &ent);
         assert_eq!(conv.elements[0].ty, "Option");
         assert_eq!(crate::pack::file_for(&conv.elements[0]), "options.json");
+    }
+
+    /// The `grant_spell` modes of an optional feature's converted rules, by spell id.
+    fn grant_modes(conv: &Conv) -> Vec<(String, String, String)> {
+        conv.elements
+            .iter()
+            .flat_map(|e| e.rules.iter())
+            .filter_map(|r| match r {
+                Rule::Custom(c) if c.kind == "grant_spell" => Some((
+                    c.fields["spell"].as_str()?.to_string(),
+                    c.fields["mode"].as_str()?.to_string(),
+                    c.fields["spell_list"]
+                        .as_str()
+                        .unwrap_or_default()
+                        .to_string(),
+                )),
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn pact_of_the_chain(source: &str, ruleset: borealis_content::Ruleset, text: &str) -> Conv {
+        let sh = Shared::default();
+        let mut st = State::default();
+        let spell = if source == "XPHB" {
+            "find familiar|xphb"
+        } else {
+            "find familiar"
+        };
+        let raw = json!({"name": "Pact of the Chain", "source": source, "featureType": ["EI"],
+            "additionalSpells": [{"ability": "cha", "innate": {"_": {"ritual": [spell]}}}],
+            "entries": [text]});
+        let ent = Ent {
+            name: "Pact of the Chain".into(),
+            source: source.into(),
+            ruleset,
+            is_srd: true,
+            file: "optionalfeatures.json".into(),
+            raw,
+        };
+        convert(&sh, &mut st, &ent)
+    }
+
+    #[test]
+    fn pact_of_the_chain_2024_casts_find_familiar_without_a_slot() {
+        // 2024: the data marks Find Familiar `ritual`, the text says it is cast without a slot
+        let new = pact_of_the_chain(
+            "XPHB",
+            borealis_content::Ruleset::Dnd2024,
+            "You learn the {@spell Find Familiar|XPHB} spell and can cast it as a {@action Magic|XPHB} action without expending a spell slot.",
+        );
+        let modes = grant_modes(&new);
+        assert_eq!(modes.len(), 1, "{modes:?}");
+        assert!(modes[0].0.contains("FIND_FAMILIAR"), "{modes:?}");
+        assert_eq!(
+            (modes[0].1.as_str(), modes[0].2.as_str()),
+            ("at_will_no_slot", "Warlock")
+        );
+        // 2014: the spell is cast as a ritual, and stays ritual-only
+        let old = pact_of_the_chain(
+            "PHB",
+            borealis_content::Ruleset::Dnd2014,
+            "You learn the {@spell find familiar} spell and can cast it as a ritual. The spell doesn't count against your number of spells known.",
+        );
+        let modes = grant_modes(&old);
+        assert_eq!(modes.len(), 1, "{modes:?}");
+        assert_eq!(
+            (modes[0].1.as_str(), modes[0].2.as_str()),
+            ("ritual_only", "Warlock")
+        );
     }
 
     #[test]

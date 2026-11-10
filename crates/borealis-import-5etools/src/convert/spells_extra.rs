@@ -748,6 +748,29 @@ fn merge_duplicate_grants(rules: Vec<Rule>) -> Vec<Rule> {
     out
 }
 
+/// What the owner's text says when a granted spell is cast through it without a slot.
+const NO_SLOT_TEXT: &str = "without expending a spell slot";
+
+/// The data can mark a spell the owner casts itself as `ritual` while the owner's text says it
+/// is cast without expending a spell slot (2024 Pact of the Chain: "You learn the Find Familiar
+/// spell and can cast it as a Magic action without expending a spell slot"). The text decides:
+/// such ritual-only grants become `at_will_no_slot`, as the bundled SRD 5.2.1 invocation has it.
+/// A spell that is cast only as a ritual (2014 Pact of the Chain) keeps `ritual_only`.
+pub fn no_slot_by_text(rules: &mut [Rule], owner_text: &str) {
+    if !owner_text.to_lowercase().contains(NO_SLOT_TEXT) {
+        return;
+    }
+    for rule in rules {
+        if let Rule::Custom(c) = rule {
+            if c.kind == "grant_spell"
+                && c.fields.get("mode").and_then(Value::as_str) == Some("ritual_only")
+            {
+                c.fields.insert("mode".into(), json!("at_will_no_slot"));
+            }
+        }
+    }
+}
+
 /// A ritual-only spell that is also granted plainly is cast normally as well: the plain grant's
 /// mode wins.
 fn widen_ritual_only(fields: &mut Map<String, Value>, plain: &GrantRule) {

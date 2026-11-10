@@ -37,6 +37,7 @@ fn fixtures_contain_only_srd_flagged_entries() {
     let mut files = Vec::new();
     walk(&fixtures(), &mut files);
     walk(&creature_fixtures(), &mut files);
+    walk(&fixtures().join("../warlock"), &mut files);
     assert!(files.len() >= 12, "fixture files missing");
     let mut entries = 0;
     for path in files {
