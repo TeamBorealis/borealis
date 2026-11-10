@@ -188,7 +188,8 @@ pub fn sweep_findings(
     sweep_engine(&Engine::new(&store), ruleset, ids, targets)
 }
 
-/// The sweep of `targets` on an engine that holds the draft already (its store loads without errors).
+/// The level sweep of `targets` on an engine that holds the draft already (its store loads without errors; also
+/// Try it's private engine, spec 9): every target swept 1-20.
 #[must_use]
 pub fn sweep_engine(
     engine: &Engine,

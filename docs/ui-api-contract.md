@@ -406,9 +406,9 @@ creator's entry points; until 1.5.0 the UI reaches these commands only with it o
 
 **Not implemented yet.** Until a command's work item lands (spec section 21), it rejects with `requirement_failed` and
 `details: { notImplemented: "<command>" }`. Implemented in the backend: the catalogs and kinds, packs, the element list,
-drafts (new, open, update, save, discard, list), delete, duplicate and reference options (WB-04/05/06), and the
-validation of drafts with `homebrew_check_draft` (WB-07); Try it (WB-08), bulk edit, where-used and spell lists (WB-23)
-and export (WB-24) still answer it, and so do
+drafts (new, open, update, save, discard, list), delete, duplicate and reference options (WB-04/05/06), the
+validation of drafts with `homebrew_check_draft` (WB-07) and Try it (WB-08); bulk edit, where-used and spell lists
+(WB-23) and export (WB-24) still answer it, and so do
 `homebrew_new_draft` with `parentId` (WB-16/18) and a `deepCopy` of an element with features (WB-22). The web mock
 implements packs, elements and drafts in memory (kinds are sample forms).
 
@@ -440,6 +440,19 @@ implements packs, elements and drafts in memory (kinds are sample forms).
 | `homebrew_trial_options` | `{ trialId, slotId, query?, limit?, offset? }` | `Page<SlotOption>` (a trial choice's options, as `get_slot_options`) |
 | `homebrew_export_pack` | `{ packId, leaveOutCopiedText }` | `ExportResult` (desktop `path`, phones `dataBase64` for the share sheet) |
 
+- **Try it (WB-08, `homebrew_trial.rs`).** A trial is a test character on a private engine that holds the draft's
+  elements (with the ids they would get now); it is never saved, listed or opened as a character, and never changes the
+  open character. `setup: {}` takes the defaults: the draft's (else its pack's) edition, the SRD picks of that edition
+  (Fighter, Human, Soldier, the first SRD subclass), the standard array by the class's main abilities, and the level
+  the draft is first on the character. The draft takes its slot by element type (class/species/background at level 1,
+  else the first choice that offers it, a feat at the first ability score improvement, a spell through its class's
+  lists, an item added and equipped, anything else as a test grant). A choice holding the draft comes back `locked`
+  and refuses changes (`invalid_argument`). `change` is a level (clamped to 1-20), a setup (another edition or
+  `asSecondClass` starts from that setup's picks; new `abilityScores` keep the choices) or `{slotId, elementId}`
+  (`null` clears). `asSecondClass` builds Fighter 1, then the draft from level 2 through the `Multiclass` slot and
+  reports a missed multiclass prerequisite (it is taken anyway). `changed` lists snapshot paths and `<list>:<name>`
+  entries that differ from the same character without the draft. Two trials are kept at once; one idle for 30 minutes
+  is dropped, and every trial command then answers `not_found`.
 - **Ids never reach the screen.** They travel in `HomebrewRef`, picker rows and summaries; the UI shows names.
 - **Form.** `HomebrewForm { kind, fields, blocks, children, preserved }`: `fields` holds one value per
   `HomebrewFieldSpec.key` of the kind; `blocks` are rule blocks (`{ key, kind, sentence, fields }`); `children` are the child

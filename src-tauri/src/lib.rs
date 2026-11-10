@@ -119,6 +119,10 @@ pub mod homebrew_dto;
 pub mod homebrew_files;
 pub mod homebrew_packs;
 pub mod homebrew_refs;
+pub mod homebrew_trial;
+mod homebrew_trial_build;
+mod homebrew_trial_place;
+mod homebrew_trial_view;
 pub mod hp_api;
 pub mod ids;
 #[cfg(ai_cli)]
