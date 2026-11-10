@@ -1246,7 +1246,7 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "label": "Label",
         "tab": "rules",
         "control": "text",
-        "required": true,
+        "required": false,
         "bindings": [
           "name"
         ]
@@ -1818,7 +1818,7 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "label": "Save DC",
         "tab": "rules",
         "control": "formula",
-        "required": true,
+        "required": false,
         "bindings": [
           "save_dc"
         ],

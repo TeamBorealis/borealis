@@ -9,8 +9,18 @@ use borealis_engine::{CharacterState, Choice, Engine, Severity as EngineSeverity
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-/// Test class used for feat checks (2014 SRD fighter).
+/// Test class used for feat checks: the SRD fighter of the edition.
 const TEST_CLASS_ID: &str = "ID_WOTC_PHB_CLASS_FIGHTER";
+/// The 2024 SRD fighter (a 2024 character can't take the 2014 class).
+const TEST_CLASS_ID_2024: &str = "ID_2024_CLASS_FIGHTER";
+
+fn test_class(ruleset: Ruleset) -> &'static str {
+    if ruleset == Ruleset::Dnd2024 {
+        TEST_CLASS_ID_2024
+    } else {
+        TEST_CLASS_ID
+    }
+}
 const TEST_CLASS_NAME: &str = "Fighter";
 /// Fighter level with an ability score improvement slot.
 const FEAT_LEVEL: u32 = 4;
@@ -105,7 +115,7 @@ pub fn load_into_engine(
     let characters = new_ids
         .into_iter()
         .map(|(id, ty)| {
-            let c = try_character(&engine, ruleset, &id, &ty);
+            let c = take_element(&engine, ruleset, &id, &ty);
             (id, c)
         })
         .collect();
@@ -117,7 +127,10 @@ pub fn load_into_engine(
     }
 }
 
-fn try_character(engine: &Engine, ruleset: Ruleset, id: &str, ty: &str) -> CharacterCheck {
+/// A test character of `ruleset` takes the element `id` of type `ty` (a species or race in its slot, a feat at the
+/// first feat slot of a level-4 fighter, an item in the inventory); other types are only derived.
+#[must_use]
+pub fn take_element(engine: &Engine, ruleset: Ruleset, id: &str, ty: &str) -> CharacterCheck {
     let base = commands::new_character(engine, ruleset);
     match ty {
         "Race" | "Species" => take_species(engine, base, id),
@@ -153,7 +166,13 @@ fn take_feat(engine: &Engine, ruleset: Ruleset, id: &str) -> CharacterCheck {
         return CharacterCheck::Skipped("no class slot".into());
     };
     let steps = (|| {
-        s = commands::select(engine, &s, &key, Choice::Element(TEST_CLASS_ID.into()))?.state;
+        s = commands::select(
+            engine,
+            &s,
+            &key,
+            Choice::Element(test_class(ruleset).into()),
+        )?
+        .state;
         s = commands::set_base_scores(engine, &s, TEST_SCORES)?.state;
         for _ in 1..FEAT_LEVEL {
             s = commands::level_up_main(engine, &s, None)?.state;
@@ -168,8 +187,34 @@ fn take_feat(engine: &Engine, ruleset: Ruleset, id: &str) -> CharacterCheck {
     })();
     match steps {
         Ok(o) => derived(engine, &o.state, id),
+        // a 2024 character takes feats at feat choices (the level-4 one), not at an Aurora improvement slot
+        Err(e) if ruleset == Ruleset::Dnd2024 => match feat_choice(engine, &s, id) {
+            Some(Ok(state)) => derived(engine, &state, id),
+            Some(Err(e)) => CharacterCheck::Refused(e.to_string()),
+            None if s.level() >= FEAT_LEVEL => CharacterCheck::Refused(format!(
+                "no feat choice of a level {FEAT_LEVEL} fighter offers it (check its tags and prerequisite)"
+            )),
+            None => CharacterCheck::Refused(e.to_string()),
+        },
         Err(e) => CharacterCheck::Refused(e.to_string()),
     }
+}
+
+/// Take feat `id` at an open choice that offers it (`None` when none does).
+fn feat_choice(
+    engine: &Engine,
+    state: &CharacterState,
+    id: &str,
+) -> Option<Result<CharacterState, commands::CommandError>> {
+    let snap = engine.derive(state);
+    let slot = snap
+        .slots
+        .iter()
+        .find(|s| s.chosen.is_none() && s.options.iter().any(|o| o.id == id))?;
+    Some(
+        commands::select(engine, state, &slot.key, Choice::Element(id.to_string()))
+            .map(|o| o.state),
+    )
 }
 
 /// Derive the sheet; engine errors that name the element make the check fail.

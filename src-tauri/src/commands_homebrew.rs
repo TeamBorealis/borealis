@@ -110,11 +110,13 @@ pub fn homebrew_update_draft(
     state.homebrew_update_draft(&draft_id, &form)
 }
 
-/// Engine checks and the level sweep (spec 8.1 step 6).
+/// Engine checks and the level sweep (spec 8.1 step 6), off the main thread.
 #[tauri::command]
-pub fn homebrew_check_draft(draft_id: String) -> ApiResult<Vec<HomebrewProblem>> {
-    let _ = draft_id;
-    Err(not_implemented("homebrew_check_draft"))
+pub async fn homebrew_check_draft(
+    app: tauri::AppHandle,
+    draft_id: String,
+) -> ApiResult<Vec<HomebrewProblem>> {
+    crate::commands_content::blocking(app, move |s, _| s.homebrew_check_draft(&draft_id)).await
 }
 
 /// Validate, write the pack, hot-reload (spec 10.1).

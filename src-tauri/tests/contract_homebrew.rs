@@ -363,7 +363,6 @@ fn request_types_read_what_the_ui_sends() {
 fn creator_commands_answer_not_implemented_until_their_item_lands() {
     use borealis_lib::commands_homebrew as hb;
     let errs = [
-        hb::homebrew_check_draft("d1".into()).unwrap_err(),
         hb::homebrew_where_used("ID_X".into()).unwrap_err(),
         hb::homebrew_export_pack("p".into(), true).unwrap_err(),
     ];

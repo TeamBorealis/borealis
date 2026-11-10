@@ -1,10 +1,14 @@
 //! The engine sweep: a test character of the right edition takes the class (or the parent class
 //! plus the subclass) and levels 1 to 20, deriving at every level.
+//!
+//! What it finds is typed ([`SweepProblem`], [`SweepFinding`]) so the homebrew creator can say it in plain words
+//! (`check::messages`); [`engine_sweep`] gives the same findings as text ([`SweepIssue`]) for the import pipeline.
 
 use std::collections::HashSet;
+use std::fmt;
 
 use borealis_content::file::{ContentFile, PackOrigin};
-use borealis_content::{ContentStoreBuilder, Ruleset, Severity as ContentSeverity};
+use borealis_content::{ContentStoreBuilder, Issue, Ruleset, Severity as ContentSeverity};
 use borealis_engine::commands::{self, slot_key};
 use borealis_engine::{CharacterState, Choice, Engine, Severity as EngineSeverity, SlotKey};
 use serde::{Deserialize, Serialize};
@@ -13,7 +17,7 @@ use serde::{Deserialize, Serialize};
 pub const MAX_LEVEL: u32 = 20;
 const TEST_SCORES: [i32; 6] = [15, 14, 14, 12, 12, 10];
 
-/// A problem found at a level.
+/// A problem found at a level, as text.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SweepIssue {
     /// Level (0 = while loading).
@@ -24,11 +28,102 @@ pub struct SweepIssue {
     pub message: String,
 }
 
-fn issue(level: u32, element_id: Option<&str>, message: impl Into<String>) -> SweepIssue {
-    SweepIssue {
+/// What the sweep can find.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SweepProblem {
+    /// The content validator's error on a draft element (the draft doesn't load).
+    Store(Issue),
+    /// The test character has no class slot (the edition's core content is missing).
+    NoClassSlot,
+    /// The engine refuses the class (reason from the engine).
+    ClassRefused(String),
+    /// Levelling up fails (reason from the engine).
+    LevelUpFails(String),
+    /// Selecting the subclass fails (reason from the engine).
+    SubclassRefused(String),
+    /// The parent class never offers the subclass.
+    SubclassNeverOffered,
+    /// An engine error on a draft element while deriving (message from the engine).
+    Engine(String),
+    /// A selection the engine marks invalid (its debug text).
+    BrokenSelection(String),
+    /// A select of the draft offers nothing.
+    EmptySelect {
+        /// The select's name (its label).
+        name: String,
+        /// The element type it selects.
+        ty: String,
+    },
+    /// A feature the class grants does not appear at its level.
+    MissingFeature(String),
+    /// A caster class shows no spellcasting.
+    NoSpellcasting,
+    /// The slot table shrinks at this level.
+    SlotsShrink(u32),
+    /// The slot table never grows.
+    SlotsFlat,
+    /// A caster class never gets slots.
+    NoSlots,
+}
+
+impl fmt::Display for SweepProblem {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Store(i) => f.write_str(&i.message),
+            Self::NoClassSlot => f.write_str("the test character has no class slot"),
+            Self::ClassRefused(e) => write!(f, "the engine refuses the class: {e}"),
+            Self::LevelUpFails(e) => f.write_str(e),
+            Self::SubclassRefused(e) => write!(f, "selecting the subclass fails: {e}"),
+            Self::SubclassNeverOffered => f.write_str(
+                "the parent class never offers this subclass (check `supports` against the parent's subclass choice)",
+            ),
+            Self::Engine(m) => f.write_str(m),
+            Self::BrokenSelection(d) => write!(f, "broken selection: {d}"),
+            Self::EmptySelect { name, ty } => write!(f, "select \"{name}\" ({ty}) offers no options"),
+            Self::MissingFeature(id) => write!(f, "feature {id} is missing"),
+            Self::NoSpellcasting => f.write_str("no spellcasting appears for the class"),
+            Self::SlotsShrink(level) => write!(f, "spell slots shrink at level {level}"),
+            Self::SlotsFlat => f.write_str("the spell slot table does not increase over levels 1-20"),
+            Self::NoSlots => f.write_str("the class never gets spell slots"),
+        }
+    }
+}
+
+/// One finding of the sweep.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SweepFinding {
+    /// Level (0 = while loading).
+    pub level: u32,
+    /// Draft element to blame, if known.
+    pub element_id: Option<String>,
+    /// What went wrong.
+    pub problem: SweepProblem,
+}
+
+impl SweepFinding {
+    /// The finding as text (the import pipeline's [`SweepIssue`]).
+    #[must_use]
+    pub fn to_issue(&self) -> SweepIssue {
+        let message = match &self.problem {
+            SweepProblem::LevelUpFails(e) => format!("level-up to {} fails: {e}", self.level),
+            SweepProblem::MissingFeature(id) => {
+                format!("feature {id} is missing at level {}", self.level)
+            }
+            other => other.to_string(),
+        };
+        SweepIssue {
+            level: self.level,
+            element_id: self.element_id.clone(),
+            message,
+        }
+    }
+}
+
+fn issue(level: u32, element_id: Option<&str>, problem: SweepProblem) -> SweepFinding {
+    SweepFinding {
         level,
         element_id: element_id.map(str::to_string),
-        message: message.into(),
+        problem,
     }
 }
 
@@ -58,29 +153,56 @@ pub fn engine_sweep(
     ids: &HashSet<String>,
     targets: &[SweepTarget],
 ) -> Vec<SweepIssue> {
+    sweep_findings(base, ruleset, pack_name, file, ids, targets)
+        .iter()
+        .map(SweepFinding::to_issue)
+        .collect()
+}
+
+/// [`engine_sweep`], typed.
+pub fn sweep_findings(
+    base: &ContentStoreBuilder,
+    ruleset: Ruleset,
+    pack_name: &str,
+    file: ContentFile,
+    ids: &HashSet<String>,
+    targets: &[SweepTarget],
+) -> Vec<SweepFinding> {
     let store = base
         .clone()
         .add_file(pack_name, PackOrigin::Custom, file)
         .build();
-    let mut issues: Vec<SweepIssue> = store
+    let issues: Vec<SweepFinding> = store
         .validate()
         .into_iter()
         .filter(|i| i.severity == ContentSeverity::Error)
         .filter_map(|i| {
-            let id = i.element?;
-            ids.contains(&id).then(|| issue(0, Some(&id), i.message))
+            let id = i.element.clone()?;
+            ids.contains(&id)
+                .then(|| issue(0, Some(&id), SweepProblem::Store(i)))
         })
         .collect();
     if !issues.is_empty() {
         return issues;
     }
-    let engine = Engine::new(&store);
+    sweep_engine(&Engine::new(&store), ruleset, ids, targets)
+}
+
+/// The sweep of `targets` on an engine that holds the draft already (its store loads without errors).
+#[must_use]
+pub fn sweep_engine(
+    engine: &Engine,
+    ruleset: Ruleset,
+    ids: &HashSet<String>,
+    targets: &[SweepTarget],
+) -> Vec<SweepFinding> {
+    let mut issues = Vec::new();
     for t in targets {
-        issues.extend(sweep_one(&engine, ruleset, ids, t));
+        issues.extend(sweep_one(engine, ruleset, ids, t));
     }
     // A problem that persists is reported once, at the first level it shows.
     let mut seen = HashSet::new();
-    issues.retain(|i| seen.insert((i.element_id.clone(), i.message.clone())));
+    issues.retain(|i: &SweepFinding| seen.insert((i.element_id.clone(), i.to_issue().message)));
     issues
 }
 
@@ -89,17 +211,17 @@ fn sweep_one(
     ruleset: Ruleset,
     ids: &HashSet<String>,
     t: &SweepTarget,
-) -> Vec<SweepIssue> {
+) -> Vec<SweepFinding> {
     let mut out = Vec::new();
     let root = Some(t.root_id.as_str());
     let mut state = commands::new_character(engine, ruleset);
     let snap = engine.derive(&state);
     let Some(key) = slot_key(&snap, "ID_LEVEL_1", "Class", 1) else {
-        return vec![issue(0, root, "the test character has no class slot")];
+        return vec![issue(0, root, SweepProblem::NoClassSlot)];
     };
     state = match commands::select(engine, &state, &key, Choice::Element(t.class_id.clone())) {
         Ok(o) => o.state,
-        Err(e) => return vec![issue(1, root, format!("the engine refuses the class: {e}"))],
+        Err(e) => return vec![issue(1, root, SweepProblem::ClassRefused(e.to_string()))],
     };
     if let Ok(o) = commands::set_base_scores(engine, &state, TEST_SCORES) {
         state = o.state;
@@ -114,7 +236,7 @@ fn sweep_one(
                     out.push(issue(
                         level,
                         root,
-                        format!("level-up to {level} fails: {e}"),
+                        SweepProblem::LevelUpFails(e.to_string()),
                     ));
                     break;
                 }
@@ -138,7 +260,7 @@ fn sweep_one(
                         Err(e) => out.push(issue(
                             level,
                             Some(sub),
-                            format!("selecting the subclass fails: {e}"),
+                            SweepProblem::SubclassRefused(e.to_string()),
                         )),
                     }
                 }
@@ -152,7 +274,7 @@ fn sweep_one(
             out.push(issue(
                 MAX_LEVEL,
                 Some(sub),
-                "the parent class never offers this subclass (check `supports` against the parent's subclass choice)",
+                SweepProblem::SubclassNeverOffered,
             ));
         }
     }
@@ -166,13 +288,14 @@ const FILL_ROUNDS: usize = 4;
 const FILL_TRIES: usize = 8;
 
 /// Picks of the character as a whole (and the class and subclass, made apart): the sweep
-/// looks at the class alone and leaves them open.
-const NOT_FILLED: [&str; 7] = [
+/// looks at the class alone and leaves them open. The background is picked (on the copy that
+/// judges empty selects only): its skills are what a player's second Expertise draws on (the
+/// SRD Bard's at level 9, after the class's three skills went to the first).
+const NOT_FILLED: [&str; 6] = [
     "Archetype",
     "Class",
     "Race",
     "Sub Race",
-    "Background",
     "Alignment",
     "Deity",
 ];
@@ -276,20 +399,24 @@ fn collect_level(
     level: u32,
     ids: &HashSet<String>,
     t: &SweepTarget,
-    out: &mut Vec<SweepIssue>,
+    out: &mut Vec<SweepFinding>,
     totals: &mut Vec<(u32, i32)>,
 ) {
     for d in &snap.diagnostics {
         let ours = d.element.as_ref().is_some_and(|e| ids.contains(e));
         if d.severity == EngineSeverity::Error && ours {
-            out.push(issue(level, d.element.as_deref(), d.message.clone()));
+            out.push(issue(
+                level,
+                d.element.as_deref(),
+                SweepProblem::Engine(d.message.clone()),
+            ));
         }
     }
     for inv in &snap.invalid_selections {
         out.push(issue(
             level,
             Some(t.root_id.as_str()),
-            format!("broken selection: {inv:?}"),
+            SweepProblem::BrokenSelection(format!("{inv:?}")),
         ));
     }
     for s in snap
@@ -300,7 +427,10 @@ fn collect_level(
         out.push(issue(
             level,
             Some(&s.owner.id),
-            format!("select \"{}\" ({}) offers no options", s.name, s.ty),
+            SweepProblem::EmptySelect {
+                name: s.name.clone(),
+                ty: s.ty.clone(),
+            },
         ));
     }
     for (fid, flevel) in &t.features {
@@ -308,7 +438,7 @@ fn collect_level(
             out.push(issue(
                 level,
                 Some(fid),
-                format!("feature {fid} is missing at level {level}"),
+                SweepProblem::MissingFeature(fid.clone()),
             ));
         }
     }
@@ -322,14 +452,14 @@ fn collect_level(
             out.push(issue(
                 level,
                 Some(t.root_id.as_str()),
-                "no spellcasting appears for the class",
+                SweepProblem::NoSpellcasting,
             ));
         }
         totals.push((level, total));
     }
 }
 
-fn check_slot_table(t: &SweepTarget, totals: &[(u32, i32)], out: &mut Vec<SweepIssue>) {
+fn check_slot_table(t: &SweepTarget, totals: &[(u32, i32)], out: &mut Vec<SweepFinding>) {
     if !t.casts {
         return;
     }
@@ -338,7 +468,7 @@ fn check_slot_table(t: &SweepTarget, totals: &[(u32, i32)], out: &mut Vec<SweepI
             out.push(issue(
                 w[1].0,
                 Some(t.root_id.as_str()),
-                format!("spell slots shrink at level {}", w[1].0),
+                SweepProblem::SlotsShrink(w[1].0),
             ));
         }
     }
@@ -349,14 +479,14 @@ fn check_slot_table(t: &SweepTarget, totals: &[(u32, i32)], out: &mut Vec<SweepI
             out.push(issue(
                 l.0,
                 Some(t.root_id.as_str()),
-                "the spell slot table does not increase over levels 1-20",
+                SweepProblem::SlotsFlat,
             ));
         }
     } else if !totals.is_empty() {
         out.push(issue(
             MAX_LEVEL,
             Some(t.root_id.as_str()),
-            "the class never gets spell slots",
+            SweepProblem::NoSlots,
         ));
     }
 }

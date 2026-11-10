@@ -38,6 +38,9 @@ use std::collections::{BTreeMap, BTreeSet};
 #[derive(Debug, Clone, Copy, Default)]
 pub struct CatalogBlockCodec;
 
+/// The problem of a block whose values can't make a rule yet (its required fields say which).
+pub(crate) const INCOMPLETE: &str = "This block isn't complete yet. Fill in what it needs.";
+
 /// "From level": a class or progression level.
 const LEVEL: Control = Control::Number { min: 1, max: 20 };
 
@@ -516,8 +519,11 @@ impl BlockCodec for CatalogBlockCodec {
         if let Some(whole) = kept().find(|k| k.location == WHOLE) {
             return serde_json::from_value(whole.value.clone())
                 .map(Some)
-                .map_err(|e| {
-                    FormProblem::new("preserved", format!("This kept rule can't be read ({e})."))
+                .map_err(|_| {
+                    FormProblem::new(
+                        "preserved",
+                        "This rule, kept from the original, can't be read any more. Remove it or undo the last change.",
+                    )
                 });
         }
         let Some(spec) = blocks::block(&block.kind) else {
@@ -565,9 +571,7 @@ impl BlockCodec for CatalogBlockCodec {
         map.insert("kind".into(), Value::String(rule_kind(spec.kind).into()));
         serde_json::from_value(Value::Object(map))
             .map(Some)
-            .map_err(|e| {
-                FormProblem::new("fields", format!("This rule is not complete yet ({e})."))
-            })
+            .map_err(|_| FormProblem::new("fields", INCOMPLETE))
     }
 
     fn refresh(&self, block: &Block, cx: &FormContext<'_>) -> Block {

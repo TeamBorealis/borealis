@@ -406,8 +406,9 @@ creator's entry points; until 1.5.0 the UI reaches these commands only with it o
 
 **Not implemented yet.** Until a command's work item lands (spec section 21), it rejects with `requirement_failed` and
 `details: { notImplemented: "<command>" }`. Implemented in the backend: the catalogs and kinds, packs, the element list,
-drafts (new, open, update, save, discard, list), delete, duplicate and reference options (WB-04/05/06); `homebrew_check_draft`
-(WB-07), Try it (WB-08), bulk edit, where-used and spell lists (WB-23) and export (WB-24) still answer it, and so do
+drafts (new, open, update, save, discard, list), delete, duplicate and reference options (WB-04/05/06), and the
+validation of drafts with `homebrew_check_draft` (WB-07); Try it (WB-08), bulk edit, where-used and spell lists (WB-23)
+and export (WB-24) still answer it, and so do
 `homebrew_new_draft` with `parentId` (WB-16/18) and a `deepCopy` of an element with features (WB-22). The web mock
 implements packs, elements and drafts in memory (kinds are sample forms).
 
@@ -422,7 +423,7 @@ implements packs, elements and drafts in memory (kinds are sample forms).
 | `homebrew_new_draft` | `{ packId, kind, copyFrom?, parentId?, deepCopy? }` | `HomebrewDraftView` |
 | `homebrew_open_draft` | `{ packId, elementId?, draftId? }` | `HomebrewDraftView` (resumes the element's edited draft; `draftId` resumes a never-saved element's draft) |
 | `homebrew_update_draft` | `{ draftId, form: HomebrewForm }` | `HomebrewDraftView` (autosaved; preview, problems, generated data) |
-| `homebrew_check_draft` | `{ draftId }` | `HomebrewProblem[]` (engine checks and the 1-20 sweep) |
+| `homebrew_check_draft` | `{ draftId }` | `HomebrewProblem[]` (engine checks, the 1-20 sweep, choices that offer nothing, balance hints; never errors; runs off the main thread) |
 | `homebrew_save_draft` | `{ draftId }` | `HomebrewSaveResult` (`{ pack, elementIds }`); `invalid_argument` with `details` = the problems when errors exist |
 | `homebrew_discard_draft` | `{ draftId }` | `void` |
 | `homebrew_list_drafts` | none | `HomebrewDraftSummary[]` |
@@ -499,8 +500,17 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   `homebrew_update_draft` ignores what the UI sends for read-only fields (Source). Picker rows are the loaded elements plus,
   with `draftId`, the pack's never-saved elements (`draft: true`, with the id they would get now); spells carry `level`,
   `school` and `spell`.
-- **Problems** are plain sentences with a form `path` (`fields.level`, `blocks.2.fields.number`, `children.0.fields.name`)
-  and a `code` (an `IssueCode`, a rule problem, `sweep`, `engine`, `lint.*`, `balance.*`); errors block Save.
+- **Problems (WB-07)** are plain sentences (no ids, keys or jargon) with a form `path` (`fields.level`,
+  `blocks.2.fields.number`, `blocks.0.fields.effects.1.fields.name`, `children.0.fields.name`; null = the element), the
+  `elementId` of a saved element (null for one not saved yet) and a `code`: an `IssueCode` (`dangling_reference`), a rule
+  problem (`content.unknown_rule_kind`, `content.unknown_rule_field`), or the creator's own (`form.required`, `form`,
+  `block.required`, `block.range`, `block.dice`, `block.choice`, `block.shape`, `lint.duplicate_name`,
+  `lint.empty_description`, `lint.escape`, `lint.unknown_pool`, `lint.select_empty`, `lint.spell_list_empty`,
+  `engine.refused`, `sweep.<finding>`, `balance.<metric>`); sentences per code: `borealis_authoring::check::messages`.
+  `homebrew_update_draft` sends the live pipeline's problems (spec 8.1 steps 1-5: form, schema, the content validator over
+  the loaded content plus the draft, rule problems, lints); `homebrew_check_draft` the engine checks (steps 6-7), all
+  warnings or info. Errors block Save (`homebrew_save_draft` runs the live pipeline, then the validator on the saved
+  pack); warnings and info never do. Balance hints are `info`.
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

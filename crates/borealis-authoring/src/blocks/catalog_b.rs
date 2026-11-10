@@ -241,7 +241,8 @@ pub(super) const CUSTOM: &[BlockSpec] = &[
         "Channel Divinity option",
         G::Uses,
         &[
-            f("name", "Label", C::Text).req(),
+            // not required: the SRD's Preserve Life has none (its feature names it)
+            f("name", "Label", C::Text),
             f("duration", "Lasts", C::Text).note(),
             f("attack_bonus", "Attack bonus", FORMULA),
             f("pool_hit_points", "Pool of hit points", FORMULA),
@@ -415,7 +416,8 @@ pub(super) const CUSTOM: &[BlockSpec] = &[
         "Cunning strike",
         G::Attacks,
         &[
-            f("save_dc", "Save DC", C::Formula(D::NoteDc)).req(),
+            // not required: the SRD's Improved Cunning Strike only raises the number of effects
+            f("save_dc", "Save DC", C::Formula(D::NoteDc)),
             f("max_effects", "Effects per hit", COUNT),
         ],
     ),

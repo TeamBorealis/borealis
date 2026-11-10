@@ -217,7 +217,12 @@ fn a_draft_is_written_by_its_first_edit_and_saved_with_a_frozen_id() {
         f.fields.insert("name".into(), json!("  Gloom\u{0}speak "));
         f.fields.insert("source".into(), json!("Forged"));
     });
-    assert!(named.problems.is_empty(), "{:?}", named.problems);
+    // only the hint that the description is still empty (info never counts as a problem)
+    assert!(
+        named.problems.iter().all(|p| p.severity == "info"),
+        "{:?}",
+        named.problems
+    );
     assert_eq!(
         named.form.fields["source"], "Gloom Hollow",
         "read-only fields keep their value"
@@ -368,24 +373,38 @@ fn saves_with_problems_are_refused_and_change_nothing() {
         .unwrap_err();
     assert_eq!(e.code, ErrorCode::InvalidArgument);
     assert_eq!(e.details.as_ref().unwrap()[0]["path"], "fields.name");
-    // a deity without its alignment, domains and symbol: the content validator's errors
+    // a deity without its alignment, domains and symbol: the form's required fields, in plain words (the content
+    // validator's missing setters are the same fields, told once)
     let deity = app.named(&pack, "deity", "Gloomfather");
     let e = app
         .state
         .homebrew_save_draft(&deity.draft_id, &app.sink)
         .unwrap_err();
     let details = e.details.unwrap();
-    let codes: Vec<&str> = details
+    let told: Vec<(&str, &str, &str)> = details
         .as_array()
         .unwrap()
         .iter()
-        .filter_map(|p| p["code"].as_str())
+        .map(|p| {
+            (
+                p["code"].as_str().unwrap(),
+                p["path"].as_str().unwrap(),
+                p["message"].as_str().unwrap(),
+            )
+        })
         .collect();
-    assert!(
-        codes.iter().all(|c| *c == "missing_required_setter"),
-        "{codes:?}"
+    assert_eq!(
+        told,
+        vec![
+            (
+                "form.required",
+                "fields.alignment",
+                "A deity needs an alignment."
+            ),
+            ("form.required", "fields.domains", "A deity needs domains."),
+            ("form.required", "fields.symbol", "A deity needs a symbol."),
+        ]
     );
-    assert_eq!(codes.len(), 3);
     assert_eq!(
         std::fs::read_to_string(app.pack_dir(&pack).join("content.json")).unwrap(),
         before

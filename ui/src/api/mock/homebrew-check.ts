@@ -1,10 +1,11 @@
 import type {
-  ElementSummary, HomebrewBlock, HomebrewBlockSpec, HomebrewExprNode, HomebrewForm, HomebrewPickerRow, HomebrewPickerTarget, HomebrewProblem, Page,
+  ElementSummary, HomebrewBlock, HomebrewBlockSpec, HomebrewExprNode, HomebrewFieldSpec, HomebrewForm, HomebrewKindDescriptor, HomebrewPickerRow, HomebrewPickerTarget, HomebrewProblem, Page,
 } from "../types";
 import { blockShapeProblems } from "./homebrew-shapes";
 
 // The web mock's stand-ins for what WB-06/WB-07 do on the backend: picker rows (`homebrew_reference_options`), the live
-// problems of blocks and conditions, and the description preview. Enough for the creator's controls to be used and tested
+// problems of forms, blocks and conditions (the backend's `borealis_authoring::check` sentences, word for word), and the
+// description preview. Enough for the creator's controls to be used and tested
 // on the mock; the real answers come from `borealis-authoring`.
 
 /** "Magic Item" -> "magic-item": the creator's type names against the mock's element types. */
@@ -52,21 +53,71 @@ function exprProblems(v: unknown, path: string, elementId: string | null): Homeb
   }));
 }
 
-/** A block's required fields and its condition (WB-07's `blocks.N.fields.<key>` sentences). */
+/** A block's label as the start of a sentence ("Gives ..." -> "Gives"), as `check::fields` writes it. */
+const blockLabel = (spec: HomebrewBlockSpec): string => spec.label.replace(/[.\s]+$/, "");
+
+/** "From level" of gated blocks (`check::fields::LEVELS`). */
+const LEVELS = { min: 1, max: 20 };
+
+/** Dice text: terms joined by + or -, each a whole number or NdM (`check::is_dice`). */
+export function isDice(text: string): boolean {
+  const t = text.replace(/\s+/g, "").replace(/^[+-]/, "").toLowerCase();
+  return t !== "" && t.split(/[+-]/).every((term) => /^(\d*d\d+|\d+)$/.test(term));
+}
+
+/** Numbers out of range and dice that aren't dice, in a block's own fields (the backend's `block.range` / `block.dice`). */
+function valueProblems(spec: HomebrewBlockSpec, b: HomebrewBlock, i: number, elementId: string | null): HomebrewProblem[] {
+  const label = blockLabel(spec);
+  const at = (key: string) => `blocks.${i}.fields.${key}`;
+  const out: HomebrewProblem[] = [];
+  const range = (key: string, field: string, min: number, max: number): void => {
+    out.push({ severity: "error", message: `${label}: ${field.toLowerCase()} must be a whole number from ${min} to ${max}.`, path: at(key), elementId, code: "block.range" });
+  };
+  const level = b.fields.level;
+  if (spec.levelGated && typeof level === "number" && (!Number.isInteger(level) || level < LEVELS.min || level > LEVELS.max)) range("level", "From level", LEVELS.min, LEVELS.max);
+  for (const f of spec.fields) {
+    const v = b.fields[f.key];
+    if (f.control === "number" && typeof v === "number" && f.min !== undefined && f.max !== undefined && (!Number.isInteger(v) || v < f.min || v > f.max)) range(f.key, f.label, f.min, f.max);
+    if (f.control === "dice" && typeof v === "string" && v.trim() !== "" && !isDice(v)) {
+      out.push({ severity: "warning", message: `${label}: write ${f.label.toLowerCase()} as dice, like 2d6 or 1d8+2.`, path: at(f.key), elementId, code: "block.dice" });
+    }
+  }
+  return out;
+}
+
+/** A block's required fields, ranges, dice and its condition (the backend's `blocks.N.fields.<key>` sentences). */
 function blockProblems(b: HomebrewBlock, i: number, catalog: readonly HomebrewBlockSpec[], elementId: string | null): HomebrewProblem[] {
   const spec = catalog.find((s) => s.kind === b.kind);
   if (!spec) return [];
   const missing = spec.fields.filter((f) => f.required && f.control !== "auto" && empty(b.fields[f.key])).map((f): HomebrewProblem => ({
-    severity: "error", message: `${spec.label}: fill in ${f.label.toLowerCase()}.`, path: `blocks.${i}.fields.${f.key}`, elementId, code: "block.required",
+    severity: "error", message: `${blockLabel(spec)}: fill in ${f.label.toLowerCase()}.`, path: `blocks.${i}.fields.${f.key}`, elementId, code: "block.required",
   }));
-  return [...blockShapeProblems(b, i, catalog, elementId), ...missing, ...exprProblems(b.fields.requirements, `blocks.${i}.fields.requirements`, elementId)];
+  return [...blockShapeProblems(b, i, catalog, elementId), ...missing, ...valueProblems(spec, b, i, elementId), ...exprProblems(b.fields.requirements, `blocks.${i}.fields.requirements`, elementId)];
 }
 
-/** The mock's live problems of a form: the name, the prerequisite's rows, every block. */
-export function formProblems(form: HomebrewForm, catalog: readonly HomebrewBlockSpec[], elementId: string | null): HomebrewProblem[] {
-  const named = String(form.fields.name ?? "").trim() !== "";
+/** "a deity", "an alignment", "domains" (`check::messages::with_article`). */
+export function withArticle(noun: string): string {
+  if (noun.endsWith("s") && !noun.endsWith("ss") && !noun.endsWith("us")) return noun;
+  return `${/^[aeiou]/i.test(noun) ? "an" : "a"} ${noun}`;
+}
+
+/** Required fields of the form left empty: "Give it a name.", "A deity needs an alignment." (`check::fields`). */
+function requiredProblems(form: HomebrewForm, kind: HomebrewKindDescriptor | undefined, elementId: string | null): HomebrewProblem[] {
+  type Field = Pick<HomebrewFieldSpec, "key" | "label" | "required" | "readOnly" | "control">;
+  const fields: readonly Field[] = kind?.fields ?? [{ key: "name", label: "Name", required: true, control: "text" }];
+  const subject = kind?.id === "other" || !kind ? "This element" : withArticle(kind.label.toLowerCase()).replace(/^./, (c) => c.toUpperCase());
+  const blank = (v: unknown): boolean => (typeof v === "string" ? v.trim() === "" : empty(v));
+  return fields.filter((f) => f.required && !f.readOnly && f.control !== "reference" && blank(form.fields[f.key])).map((f): HomebrewProblem => ({
+    severity: "error", path: `fields.${f.key}`, elementId, code: "form.required",
+    message: f.key === "name" ? "Give it a name." : `${subject} needs ${withArticle(f.label.toLowerCase())}.`,
+  }));
+}
+
+/** The mock's live problems of a form: required fields, the prerequisite's rows, every block. The engine checks
+ * (`homebrew_check_draft`: test character, level sweep, balance) are the backend's only; the mock has none. */
+export function formProblems(form: HomebrewForm, catalog: readonly HomebrewBlockSpec[], elementId: string | null, kind?: HomebrewKindDescriptor): HomebrewProblem[] {
   return [
-    ...(named ? [] : [{ severity: "error" as const, message: "Give it a name.", path: "fields.name", elementId, code: "form.required" }]),
+    ...requiredProblems(form, kind, elementId),
     ...exprProblems(form.fields.requirements, "fields.requirements", elementId),
     ...form.blocks.flatMap((b, i) => blockProblems(b, i, catalog, elementId)),
   ];

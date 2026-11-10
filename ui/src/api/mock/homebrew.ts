@@ -47,8 +47,9 @@ const kind = (id: string, label: string, pluralLabel: string, elementType: strin
 /** Sample forms for the web mock; the real descriptors come from `borealis-authoring` (WB-04). */
 const KINDS: HomebrewKindDescriptor[] = [
   kind("spell", "Spell", "Spells", "Spell", "A spell for class spell lists.", [
-    { ...field("level", "Level", "number", "general", ["setter:level", "data.level"], true), min: 0, max: 9 },
-    { ...field("school", "School", "combo", "general", ["setter:school", "data.school"], true), choices: choices("", "Abjuration", "Conjuration", "Divination", "Enchantment", "Evocation", "Illusion", "Necromancy", "Transmutation") },
+    // Not required here: the spell form (WB-11) brings its required fields together with the defaults a new spell starts with.
+    { ...field("level", "Level", "number", "general", ["setter:level", "data.level"]), min: 0, max: 9 },
+    { ...field("school", "School", "combo", "general", ["setter:school", "data.school"]), choices: choices("", "Abjuration", "Conjuration", "Divination", "Enchantment", "Evocation", "Illusion", "Necromancy", "Transmutation") },
   ]),
   kind("feat", "Feat", "Feats", "Feat", "A feat characters can take.", [
     { ...field("category", "Category", "combo", "general", ["setter:category", "data.category"]), choices: choices("", "Origin", "General", "Fighting Style", "Epic Boon"), allowCustom: true },
@@ -146,7 +147,8 @@ export class MockHomebrew {
     return this.store(draft.packId, draft.elementId, form, draftId);
   }
 
-  checkDraft(draftId: string): HomebrewProblem[] { return this.draft(draftId).problems; }
+  /** The engine checks (test character, level sweep, balance hints) need the engine: the mock has none to report. */
+  checkDraft(draftId: string): HomebrewProblem[] { this.draft(draftId); return []; }
 
   saveDraft(draftId: string): HomebrewSaveResult {
     const draft = this.draft(draftId);
@@ -249,7 +251,7 @@ export class MockHomebrew {
   }
 
   private store(packId: string, elementId: string | null, form: HomebrewForm, draftId = `draft-${this.nextDraft++}`): HomebrewDraftView {
-    const problems = formProblems(form, MOCK_BLOCK_CATALOG, elementId);
+    const problems = formProblems(form, MOCK_BLOCK_CATALOG, elementId, KINDS.find((k) => k.id === form.kind));
     const view: HomebrewDraftView = {
       draftId, packId, elementId, form, preview: this.preview(packId, elementId ?? draftId, form), problems, updatedAt: now(), baseChanged: false,
       generated: { json: JSON.stringify({ name: form.fields.name ?? "" }, null, 2), tree: [] },

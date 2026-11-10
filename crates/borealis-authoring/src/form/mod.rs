@@ -33,6 +33,7 @@ mod write;
 pub use append::{append_to_form, form_to_append, APPEND_KIND};
 pub use block::{Block, BlockCodec, BlockMemo};
 pub use block_codec::CatalogBlockCodec;
+pub(crate) use block_codec::INCOMPLETE;
 pub use descriptor::descriptors;
 pub use kinds::{
     append_kind, kind, kind_for_type, kinds, Control, FieldDef, KindDef, KindGroup, OTHER_KIND,

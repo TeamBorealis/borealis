@@ -40,9 +40,17 @@ fn in_scope(el: &Element, ruleset: Ruleset) -> bool {
 impl Baselines {
     /// Measure every element of the enabled packs that belongs to `ruleset`.
     pub fn from_store(store: &ContentStore, ruleset: Ruleset) -> Self {
+        Self::from_elements(store.iter().map(|s| &s.element), ruleset)
+    }
+
+    /// Measure every one of `elements` that belongs to `ruleset` (the homebrew creator leaves the draft out, so a draft
+    /// is never compared with itself).
+    pub fn from_elements<'e>(
+        elements: impl Iterator<Item = &'e Element>,
+        ruleset: Ruleset,
+    ) -> Self {
         let mut b = Self::default();
-        for stored in store.iter() {
-            let el = &stored.element;
+        for el in elements {
             if !in_scope(el, ruleset) {
                 continue;
             }

@@ -522,9 +522,11 @@ export interface HomebrewProblem {
   message: string;
   /** Form path of the field (`fields.level`, `blocks.2.fields.number`, `children.0.fields.name`); null = the element. */
   path: string | null;
-  /** The element it belongs to (a class draft has features), else null. */
+  /** The saved element it belongs to (a class draft has features); null for the element itself before its first save. */
   elementId: string | null;
-  /** Machine-readable code (an `IssueCode`, a rule problem, `sweep`, `engine`, `lint.*`, `balance.*`). */
+  /** Machine-readable code: an `IssueCode` (`dangling_reference`), a rule problem (`content.unknown_rule_kind`), or the
+   * creator's own (`form.required`, `block.*`, `lint.*`, `engine.refused`, `sweep.*`, `balance.*`; see
+   * `docs/ui-api-contract.md` "Problems"). */
   code: string;
 }
 
