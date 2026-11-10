@@ -12,10 +12,67 @@ use crate::homebrew_dto::{
 use crate::state::AppState;
 use borealis_authoring::form::{assign_ids, form_to_elements, CatalogBlockCodec, FormContext};
 use borealis_content::{ContentStore, Element};
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 
 /// Most rows one page holds.
 const MAX_PAGE: usize = 500;
+
+/// The picker type of spell lists (WB-11, the spell form's lists): one row per list a loaded or drafted class
+/// declares (`spellcasting.list.supports`, a plain tag), its name as id and name. Not an element type.
+pub const SPELL_LIST_TYPE: &str = "Spell List";
+
+/// A `spellcasting.list.supports` that is one plain tag ("Wizard"), not an expression.
+fn plain_list_tag(supports: &str) -> Option<&str> {
+    let t = supports.trim();
+    let plain = !t.is_empty()
+        && t.chars()
+            .all(|c| c.is_alphanumeric() || matches!(c, ' ' | '-' | '\'' | '_'));
+    (plain && !t.starts_with("ID_")).then_some(t)
+}
+
+/// One row per spell list `elements` declare, by name (first spelling and book kept), filtered by `query`.
+fn spell_list_rows<'a>(
+    elements: impl Iterator<Item = (&'a Element, bool)>,
+    query: &str,
+    page: HomebrewPageRequest,
+) -> Page<HomebrewPickerRow> {
+    let mut lists: BTreeMap<String, HomebrewPickerRow> = BTreeMap::new();
+    for (el, draft) in elements {
+        let Some(name) = el
+            .spellcasting
+            .as_ref()
+            .and_then(|s| s.list.as_ref())
+            .and_then(|l| plain_list_tag(&l.supports))
+        else {
+            continue;
+        };
+        if !name.to_lowercase().contains(query) {
+            continue;
+        }
+        lists
+            .entry(name.to_lowercase())
+            .or_insert_with(|| HomebrewPickerRow {
+                id: name.to_string(),
+                name: name.to_string(),
+                ty: SPELL_LIST_TYPE.to_string(),
+                summary: String::new(),
+                prerequisites: None,
+                source_name: el.source.clone(),
+                edition: None,
+                draft,
+                level: None,
+                school: None,
+                spell: None,
+            });
+    }
+    let total = lists.len();
+    let items = lists
+        .into_values()
+        .skip(page.offset)
+        .take(page.limit.min(MAX_PAGE))
+        .collect();
+    Page { total, items }
+}
 
 /// One candidate before paging: the element and whether it is an unsaved draft of the pack.
 struct Candidate<'a> {
@@ -135,6 +192,11 @@ impl AppState {
             Some(id) => self.hb_unsaved_elements(id)?,
             None => Vec::new(),
         };
+        if target.types.iter().any(|t| t == SPELL_LIST_TYPE) {
+            let own = drafted.iter().map(|e| (e, true));
+            let loaded = hub.store.iter().map(|s| (&s.element, false));
+            return Ok(spell_list_rows(own.chain(loaded), &query, page));
+        }
         let mut seen: HashSet<&str> = HashSet::new();
         let mut found: Vec<Candidate<'_>> = drafted
             .iter()

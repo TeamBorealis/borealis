@@ -55,7 +55,7 @@ describe("homebrew creator problems on the mock (WB-07)", () => {
     const api = new MockApi();
     const { id: packId } = await api.homebrewCreatePack({ request: PACK });
     const d = await api.homebrewNewDraft({ packId, kind: "spell" });
-    expect(d.problems.map((p) => p.message)).toEqual(["Give it a name."]);
+    expect(d.problems.map((p) => p.message)).toEqual(["Give it a name.", "A spell needs a school."]);
     expect(await api.homebrewCheckDraft({ draftId: d.draftId })).toEqual([]);
   });
 });

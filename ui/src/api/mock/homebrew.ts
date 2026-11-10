@@ -5,6 +5,7 @@ import type {
 import { apiError } from "./errors";
 import { descriptionHtml, formProblems } from "./homebrew-check";
 import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
+import { MOCK_KIND_DESCRIPTORS } from "./homebrew-kinds";
 import type { TrialDraft } from "./homebrew-trial";
 
 /** The backend's answer for a creator command whose work item has not landed (contract: `details.notImplemented`). */
@@ -44,13 +45,17 @@ const kind = (id: string, label: string, pluralLabel: string, elementType: strin
   tabs: [GENERAL, RULES, DESCRIPTION], fields: [...SHARED, ...extra],
 });
 
-/** Sample forms for the web mock; the real descriptors come from `borealis-authoring` (WB-04). */
+/** Kinds whose own form has landed in `borealis-authoring`: the mock serves their real descriptors (generated). */
+const REAL_KINDS = ["spell"];
+const realKinds = (): HomebrewKindDescriptor[] => REAL_KINDS.map((id) => {
+  const k = MOCK_KIND_DESCRIPTORS.find((d) => d.id === id);
+  if (!k) throw new Error(`homebrew-kinds.ts has no ${id} form`);
+  return k;
+});
+
+/** The forms of the web mock: the real ones (WB-11 spell), then samples for kinds whose form is still to come. */
 const KINDS: HomebrewKindDescriptor[] = [
-  kind("spell", "Spell", "Spells", "Spell", "A spell for class spell lists.", [
-    // Not required here: the spell form (WB-11) brings its required fields together with the defaults a new spell starts with.
-    { ...field("level", "Level", "number", "general", ["setter:level", "data.level"]), min: 0, max: 9 },
-    { ...field("school", "School", "combo", "general", ["setter:school", "data.school"]), choices: choices("", "Abjuration", "Conjuration", "Divination", "Enchantment", "Evocation", "Illusion", "Necromancy", "Transmutation") },
-  ]),
+  ...realKinds(),
   kind("feat", "Feat", "Feats", "Feat", "A feat characters can take.", [
     { ...field("category", "Category", "combo", "general", ["setter:category", "data.category"]), choices: choices("", "Origin", "General", "Fighting Style", "Epic Boon"), allowCustom: true },
   ]),
@@ -123,8 +128,11 @@ export class MockHomebrew {
   newDraft(packId: string, kindId: HomebrewKindId, copyFrom?: string): HomebrewDraftView {
     this.own(packId);
     if (copyFrom) throw notImplemented("homebrew_new_draft (copy)");
-    if (!KINDS.some((k) => k.id === kindId)) throw apiError("invalid_argument", `Unknown kind ${kindId}.`);
-    return this.store(packId, null, { kind: kindId, fields: { name: "" }, blocks: [], children: [], preserved: [] });
+    const k = KINDS.find((x) => x.id === kindId);
+    if (!k) throw apiError("invalid_argument", `Unknown kind ${kindId}.`);
+    // `KindDef::new_form`: an empty name and every field's starting value.
+    const starts = Object.fromEntries(k.fields.filter((f) => f.default !== undefined).map((f) => [f.key, f.default]));
+    return this.store(packId, null, { kind: kindId, fields: { name: "", ...starts }, blocks: [], children: [], preserved: [] });
   }
 
   openDraft(packId: string, elementId?: string, draftId?: string): HomebrewDraftView {
@@ -200,7 +208,7 @@ export class MockHomebrew {
     const draftPack = draftId ? this.drafts.get(draftId)?.packId : undefined;
     const saved = [...this.packs.values()].flatMap((own) => [...own.elements.values()].map(({ summary, form }): HomebrewPickerRow => ({
       id: summary.id, name: summary.name, type: summary.elementType, summary: String(form.fields.summary ?? ""), prerequisites: null,
-      sourceName: own.pack.name, edition: summary.edition, draft: false,
+      sourceName: own.pack.name, edition: summary.edition, draft: false, ...spellRow(form),
     })));
     const drafts = [...this.drafts.values()].filter((d) => d.packId === draftPack && d.elementId === null && d.draftId !== draftId && String(d.form.fields.name ?? "").trim())
       .map((d): HomebrewPickerRow => ({ id: `draft:${d.draftId}`, name: String(d.form.fields.name).trim(), type: KINDS.find((k) => k.id === d.form.kind)?.elementTypes[0] ?? "", summary: "", prerequisites: null, sourceName: this.packs.get(d.packId)?.pack.name ?? "", edition: null, draft: true }));
@@ -232,10 +240,11 @@ export class MockHomebrew {
     const own = this.own(packId);
     const k = KINDS.find((x) => x.id === form.kind);
     const text = (key: string) => (typeof form.fields[key] === "string" ? String(form.fields[key]).trim() : "");
-    const level = form.fields.level;
+    const level = spellLevel(form);
     const facts = [
-      ...(typeof level === "number" ? [{ label: "Level", value: level === 0 ? "Cantrip" : String(level) }] : []),
+      ...(level !== undefined ? [{ label: "Level", value: level === 0 ? "Cantrip" : String(level) }] : []),
       ...["school", "category"].filter((key) => text(key)).map((key) => ({ label: key === "school" ? "School" : "Category", value: text(key) })),
+      ...(form.kind === "spell" ? SPELL_FACTS.filter(([key]) => text(key)).map(([key, label]) => ({ label, value: text(key) })) : []),
     ];
     const description = descriptionHtml(form.fields.description);
     return {
@@ -261,6 +270,30 @@ export class MockHomebrew {
   }
 }
 
+
+/** A spell form's level ("0"-"9", as the level combo stores it). */
+function spellLevel(form: HomebrewForm): number | undefined {
+  const n = Number(form.fields.level);
+  return form.kind === "spell" && form.fields.level !== "" && Number.isInteger(n) && n >= 0 && n <= 9 ? n : undefined;
+}
+
+/** The spell facts the live description pane lists after level and school. */
+const SPELL_FACTS: readonly (readonly [string, string])[] = [["time", "Casting Time"], ["range", "Range"], ["duration", "Duration"]];
+
+/** A saved spell's picker columns (the backend's `homebrew_refs` spell facts): level, school, V/S/M, ritual, concentration. */
+function spellRow(form: HomebrewForm): Pick<HomebrewPickerRow, "level" | "school" | "spell"> {
+  const level = spellLevel(form);
+  if (level === undefined) return {};
+  const f = form.fields;
+  const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
+  return {
+    level, school: str(f.school),
+    spell: {
+      castingTime: str(f.time), range: str(f.range), duration: str(f.duration), verbal: f.verbal === true, somatic: f.somatic === true,
+      material: f.material === true, materialText: str(f.materialText), concentration: f.concentration === true, ritual: f.ritual === true,
+    },
+  };
+}
 
 function bumpPatch(version: string): string {
   const [major = "1", minor = "0", patch = "0"] = version.split(".");

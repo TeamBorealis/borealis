@@ -42,7 +42,9 @@ export type HomebrewControl =
   | "reference" | "references" | "statistic" | "condition" | "tagFilter" | "equipped" | "formula"
   | "richText" | "sheet" | "grid" | "blocks" | "children" | "setters" | "mapsTo"
   | "auto" | "numbers" | "name" | "statValue" | "numberOrStatistic" | "formulas" | "dice" | "uses"
-  | "abilitySource" | "abilityChoice" | "splits" | "classCounter" | "group" | "rows" | "variant" | "map";
+  | "abilitySource" | "abilityChoice" | "splits" | "classCounter" | "group" | "rows" | "variant" | "map"
+  /** A spell's lists (WB-11): one check box per spell list the loaded classes declare, plus new list names. */
+  | "spellLists";
 
 /** One choice of a combo field. `value` is what the form stores; `label` is shown. */
 export interface HomebrewChoice {
@@ -91,6 +93,8 @@ export interface HomebrewFieldSpec {
   expert?: boolean;
   /** Shown, not edited (the Source label). */
   readOnly?: boolean;
+  /** The value a new element starts with (WB-11: a new spell is a 1st-level action with V and S). */
+  default?: unknown;
 }
 
 /** One creator form (spec 3.1, 4). */

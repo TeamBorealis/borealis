@@ -64,6 +64,9 @@ describe('hc-wb09 homebrew creator shell (web mock)', { tags: ['homebrew'] }, ()
     // Redo by Ctrl+Shift+Z, then Ctrl+S saves the element (on this route it never saves a character).
     await pressKey(ctx, 'Control+Shift+z');
     await waitValue(ctx, NAME, 'Ember Lance');
+    // A second redo brings the school back: a spell needs one to be saved (WB-11).
+    await pressKey(ctx, 'Control+Shift+z');
+    await waitValue(ctx, '#hb-f-school-input', 'Evocation');
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Ember Lance')).toBeVisible();
     await waitFor(ctx, (_: null) => /Spells \(1\)/.test(document.querySelector('[aria-label="Element kinds"]')?.textContent ?? ''), null, 'Spells (1)');
@@ -82,11 +85,15 @@ describe('hc-wb09 homebrew creator shell (web mock)', { tags: ['homebrew'] }, ()
     await ctx.browser.locator('#hb-new-name').fill('Ember Bolt');
     await ctx.screen.getByRole('button', 'Create').tap();
     await waitValue(ctx, NAME, 'Ember Bolt');
+    // A new spell asks for its school (WB-11); choose it so the name is the one problem.
+    await ctx.browser.locator('#hb-f-school-input').selectOption('Evocation');
 
     await ctx.browser.locator(NAME).fill('');
     await expect(ctx.screen.getByRole('button', /Problems \(1\)/)).toBeVisible();
     expectEqual('status line', '1 problem', await statusMsg(ctx));
-    await ctx.screen.getByRole('button', /Problems \(1\)/).tap();
+    // PROBLEMS opened by itself for the school at first; open it if it is closed.
+    const expanded = await ctx.browser.evaluate((_: null) => document.querySelector('.hb-problems [aria-expanded]')?.getAttribute('aria-expanded') ?? '', null);
+    if (expanded !== 'true') await ctx.screen.getByRole('button', /Problems \(1\)/).tap();
     await ctx.screen.getByRole('button', 'Give it a name.').tap();
     await waitFor(ctx, (sel: string) => document.activeElement === document.querySelector(sel), NAME, 'focus on the name field');
   });

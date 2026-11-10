@@ -162,19 +162,47 @@ fn an_empty_description_is_a_hint_only() {
 
 #[test]
 fn a_missing_required_setter_points_at_the_field_that_holds_it() {
+    // a spell (its own form): the form says it once per field, the validator's missing setter is not said again
     let spell = element(
         json!({"id": "ID_T_SPELL_NEW", "name": "New", "type": "Spell", "source": "T",
         "description": "<p>x</p>", "setters": [{"name": "level", "value": "1"}]}),
     );
     let got = run(&spell, &[]);
-    let missing: Vec<&(Option<String>, String, String, ProblemSeverity)> = got
+    let errors: Vec<(&str, &str, &str)> = got
+        .iter()
+        .filter(|p| p.3 == ProblemSeverity::Error)
+        .map(|p| (p.0.as_deref().unwrap_or(""), p.1.as_str(), p.2.as_str()))
+        .collect();
+    assert_eq!(
+        errors,
+        [
+            ("fields.school", "form.required", "A spell needs a school."),
+            (
+                "fields.time",
+                "form.required",
+                "A spell needs a casting time."
+            ),
+            ("fields.range", "form.required", "A spell needs a range."),
+            (
+                "fields.duration",
+                "form.required",
+                "A spell needs a duration."
+            ),
+        ],
+        "{got:?}"
+    );
+    // a class (still the generic form): the missing hit die points at the expert setter rows
+    let class = element(
+        json!({"id": "ID_T_CLASS_NEW", "name": "New", "type": "Class", "source": "T", "description": "<p>x</p>"}),
+    );
+    let got = run(&class, &[]);
+    let missing: Vec<_> = got
         .iter()
         .filter(|p| p.1 == "missing_required_setter")
         .collect();
-    assert_eq!(missing.len(), 4, "{got:?}");
-    assert!(missing.iter().all(|p| p.3 == ProblemSeverity::Error));
-    assert_eq!(missing[0].2, "A spell needs a school.");
+    assert_eq!(missing.len(), 1, "{got:?}");
     assert_eq!(missing[0].0.as_deref(), Some("fields.setters"));
+    assert_eq!(missing[0].3, ProblemSeverity::Error);
 }
 
 #[test]

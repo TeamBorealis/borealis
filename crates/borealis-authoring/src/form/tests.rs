@@ -296,7 +296,7 @@ fn description_sheet_compendium_and_counterpart() {
 
 fn spell() -> Element {
     el(json!({
-        "id": "ID_X_SPELL_EMBER", "name": "Ember", "type": "Spell", "source": "X", "ruleset": "dnd2024",
+        "id": "ID_X_SPELL_EMBER", "name": "Ember", "type": "Companion", "source": "X", "ruleset": "dnd2024",
         "supports": ["Wizard"], "description": "<p>Fire.</p>",
         "setters": [{"name": "level", "value": "1"}, {"name": "short", "value": "Hot."},
                     {"name": "school", "value": "Evocation", "attributes": {"addition": "x"}}],
@@ -321,9 +321,9 @@ fn generic_form_rows_blocks_and_preserved_parts() {
         let f = element_to_form(&e, cx);
         assert_eq!(
             f.kind, OTHER_KIND,
-            "spells open in the generic form until their own form exists"
+            "companions open in the generic form until their own form exists"
         );
-        assert_eq!(f.fields["type"], json!("Spell"));
+        assert_eq!(f.fields["type"], json!("Companion"));
         assert_eq!(f.fields["summary"], json!("Hot."));
         assert_eq!(f.fields["setters"].as_array().unwrap().len(), 2);
         assert_eq!(one(&f, cx), e);
@@ -625,7 +625,7 @@ fn kinds_bind_every_location_once() {
         assert_eq!(kind_for_type(ty).element_types, [ty]);
     }
     assert_eq!(kind_for_type("Companion").id, OTHER_KIND);
-    assert_eq!(kind_for_type("Spell").id, OTHER_KIND);
+    assert_eq!(kind_for_type("Spell").id, "spell");
     assert!(kind(APPEND_KIND).is_some());
     assert!(
         kinds().iter().all(|k| k.id != APPEND_KIND),

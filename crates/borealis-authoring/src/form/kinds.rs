@@ -6,8 +6,12 @@
 //! of WB-11..WB-20 take their types over).
 
 use super::codec::Codec;
+use super::FormState;
 use borealis_content::Ruleset;
+use serde_json::{json, Value};
 use std::sync::OnceLock;
+
+mod spell;
 
 /// The generic form (spec 4.12), also the form of every type no other kind writes.
 pub const OTHER_KIND: &str = "other";
@@ -41,6 +45,8 @@ pub enum Control {
     Reference,
     /// The 2014/2024 counterpart picker (expert).
     MapsTo,
+    /// A spell's lists: one check box per spell list loaded classes declare, plus new list names.
+    SpellLists,
 }
 
 impl Control {
@@ -61,6 +67,7 @@ impl Control {
             Self::Setters => "setters",
             Self::Reference => "reference",
             Self::MapsTo => "mapsTo",
+            Self::SpellLists => "spellLists",
         }
     }
 }
@@ -116,6 +123,10 @@ pub struct FieldDef {
     pub expert: bool,
     /// Plain-words help.
     pub help: Option<&'static str>,
+    /// The SectionSecondary heading it is grouped under (spec 13.4).
+    pub section: Option<&'static str>,
+    /// The value a new element starts with, as JSON text.
+    pub default: Option<&'static str>,
 }
 
 const fn field(
@@ -137,6 +148,8 @@ const fn field(
         read_only: false,
         expert: false,
         help: None,
+        section: None,
+        default: None,
     }
 }
 
@@ -171,6 +184,25 @@ impl FieldDef {
             help: Some(help),
             ..self
         }
+    }
+    const fn section(self, section: &'static str) -> Self {
+        Self {
+            section: Some(section),
+            ..self
+        }
+    }
+    /// `default` is JSON text (`"\"1\""`, `"true"`).
+    const fn default(self, default: &'static str) -> Self {
+        Self {
+            default: Some(default),
+            ..self
+        }
+    }
+
+    /// The value a new element starts with, if the field has one.
+    #[must_use]
+    pub fn default_value(&self) -> Option<Value> {
+        self.default.and_then(|d| serde_json::from_str(d).ok())
     }
 }
 
@@ -211,15 +243,28 @@ impl KindDef {
     pub fn new_element_type(&self) -> Option<&'static str> {
         self.element_types.first().copied()
     }
+
+    /// The form of a new element of this kind: an empty name and every field's starting value.
+    #[must_use]
+    pub fn new_form(&self, key: impl Into<String>) -> FormState {
+        let mut form = FormState::new(key, self.id);
+        form.fields.insert("name".into(), json!(""));
+        for f in &self.fields {
+            if let Some(v) = f.default_value() {
+                form.fields.insert(f.key.to_string(), v);
+            }
+        }
+        form
+    }
 }
 
 const GENERAL: &str = "general";
 const RULES: &str = "rules";
 const DESCRIPTION: &str = "description";
 const TABS: &[(&str, &str)] = &[
-    (GENERAL, "General"),
-    (RULES, "Rules"),
-    (DESCRIPTION, "Description"),
+    (GENERAL, "GENERAL"),
+    (RULES, "RULES"),
+    (DESCRIPTION, "DESCRIPTION"),
 ];
 const BOTH: &[Ruleset] = &[Ruleset::Dnd2014, Ruleset::Dnd2024];
 const ONLY_2024: &[Ruleset] = &[Ruleset::Dnd2024];
@@ -642,7 +687,8 @@ fn other_kind() -> KindDef {
 pub fn kinds() -> &'static [KindDef] {
     static KINDS: OnceLock<Vec<KindDef>> = OnceLock::new();
     KINDS.get_or_init(|| {
-        let mut all = small_kinds();
+        let mut all = vec![spell::spell_kind()];
+        all.extend(small_kinds());
         all.push(other_kind());
         all
     })
@@ -661,7 +707,7 @@ pub fn append_kind() -> &'static KindDef {
         element_types: &[],
         parent_kinds: &[],
         editions: BOTH,
-        tabs: &[(GENERAL, "General"), (RULES, "Rules")],
+        tabs: &[(GENERAL, "GENERAL"), (RULES, "RULES")],
         fields: vec![
             field(
                 "target",

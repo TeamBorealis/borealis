@@ -26,6 +26,12 @@ async function newSpell(user: ReturnType<typeof userEvent.setup>) {
   await user.type(within(flyout).getByLabelText("Name"), "Ember Bolt");
   await user.click(within(flyout).getByRole("button", { name: "Create" }));
   await waitFor(() => expect(nameBox().value).toBe("Ember Bolt"));
+  // the spell form's one required field without a starting value (WB-11); phones show it as a sheet select, not needed there
+  const school = screen.queryByRole("combobox", { name: /^School/ });
+  if (school) {
+    await user.selectOptions(school, "Evocation");
+    await waitFor(() => expect(screen.getByRole("button", { name: /Problems \(0\)/ })).toBeTruthy());
+  }
   const lastForm = (): HomebrewForm => update.mock.lastCall![0].form;
   return { api, update, lastForm };
 }
