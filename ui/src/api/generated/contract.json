@@ -6714,6 +6714,16 @@
       "k": "prim"
      }
     },
+    "preserved": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewPreservedPart"
+      }
+     }
+    },
     "sentence": {
      "opt": false,
      "t": {
@@ -7341,6 +7351,12 @@
       "name": "HomebrewPickerTarget"
      }
     },
+    "readOnly": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "required": {
      "opt": false,
      "t": {
@@ -7391,6 +7407,12 @@
       "t": {
        "k": "any"
       }
+     }
+    },
+    "key": {
+     "opt": true,
+     "t": {
+      "k": "prim"
      }
     },
     "kind": {

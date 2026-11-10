@@ -40,7 +40,7 @@ export interface HomebrewTab {
 export type HomebrewControl =
   | "text" | "multiline" | "number" | "combo" | "check" | "toggle" | "tags" | "chips"
   | "reference" | "references" | "statistic" | "condition" | "tagFilter" | "equipped" | "formula"
-  | "richText" | "sheet" | "grid" | "blocks" | "children"
+  | "richText" | "sheet" | "grid" | "blocks" | "children" | "setters" | "mapsTo"
   | "auto" | "numbers" | "name" | "statValue" | "numberOrStatistic" | "formulas" | "dice" | "uses"
   | "abilitySource" | "abilityChoice" | "splits" | "classCounter" | "group" | "rows" | "variant" | "map";
 
@@ -89,6 +89,8 @@ export interface HomebrewFieldSpec {
   help?: string;
   /** Only an expert sees it (Expert toggle, spec 6.4). */
   expert?: boolean;
+  /** Shown, not edited (the Source label). */
+  readOnly?: boolean;
 }
 
 /** One creator form (spec 3.1, 4). */
@@ -252,6 +254,8 @@ export interface HomebrewBlock {
   /** The block as one plain sentence ("From level 5: lets the player choose 2 Eldritch Invocations"). */
   sentence: string;
   fields: Record<string, unknown>;
+  /** Parts of the rule the block dialog does not edit, kept byte-for-byte (read-only, removable; WB-04). */
+  preserved?: HomebrewPreservedPart[];
 }
 
 /* ----------------------------------------------------------------------------------------------------------------
@@ -364,6 +368,51 @@ export type HomebrewFormulaNode =
  * `borealis_authoring::expr_build::formula::FORMULA_FIELDS`). */
 export type HomebrewFormulaDialect = "formula" | "saveDc" | "breathDc" | "noteDc" | "value" | "valueOrClassLevel";
 
+/* ----------------------------------------------------------------------------------------------------------------
+ * Form field values (spec 3.2-3.4, 15.1; owned by WB-04, Rust `borealis_authoring::form::value`). The value of a field
+ * in `HomebrewForm.fields`, by control: `text`/`multiline`/`combo` a string (`""` = not set), `check`/`toggle` a boolean,
+ * `tags`/`chips` a string list, `reference` a `HomebrewRef` or null, `condition` a `HomebrewExprValue<HomebrewCondition>`,
+ * `richText` the description tree (`DocJson`, `pages/homebrew/rich/types.ts`), `sheet` a `HomebrewSheetValue` or null,
+ * `setters` a `HomebrewSetterRow[]`, `mapsTo` a `HomebrewMapsToValue` or null. A sample of each is in
+ * `api/__fixtures__/homebrew-form.json`, written by `crates/borealis-authoring/tests/form_dto.rs`.
+ * ---------------------------------------------------------------------------------------------------------------- */
+
+/** One row of the expert "Other properties" list (spec 4.12): a setter's name, value and attributes. */
+export interface HomebrewSetterRow {
+  name: string;
+  value: string;
+  attributes: Record<string, string>;
+}
+
+/** One sheet line: text with `{{stat}}` placeholders, from a level (absent = 1). */
+export interface HomebrewSheetLine {
+  text: string;
+  level?: number | null;
+  usage?: string | null;
+  action?: string | null;
+  /** Unknown attributes of the stored line: send back unchanged. */
+  kept?: unknown;
+}
+
+/** "On the character sheet" (spec 3.2). */
+export interface HomebrewSheetValue {
+  /** Listed on the sheet; null = yes. */
+  display: boolean | null;
+  /** Short name. */
+  alt: string | null;
+  /** "1/Long Rest". */
+  usage: string | null;
+  action: string | null;
+  lines: HomebrewSheetLine[];
+}
+
+/** "2014/2024 counterpart" (expert). */
+export interface HomebrewMapsToValue {
+  dnd2014: HomebrewRef | null;
+  dnd2024: HomebrewRef | null;
+  kind: "equivalent" | "approximate" | "none" | null;
+}
+
 /** A part of the element the form does not edit, written back byte-for-byte (spec 3.4). */
 export interface HomebrewPreservedPart {
   /** Stable key (for Remove). */
@@ -377,6 +426,9 @@ export interface HomebrewPreservedPart {
  * text, numbers, booleans, string lists, `HomebrewRef`s, and the builder/rich-text states (owned by WB-02, WB-03).
  */
 export interface HomebrewForm {
+  /** Stable key of the form inside the draft (`e`, a child `e/0`); children are matched by it. A new child needs a new
+   * key. The element id is never sent: the backend keeps it. */
+  key?: string;
   kind: HomebrewKindId;
   fields: Record<string, unknown>;
   blocks: HomebrewBlock[];

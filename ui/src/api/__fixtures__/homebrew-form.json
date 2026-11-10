@@ -1,0 +1,667 @@
+{
+  "form": {
+    "blocks": [
+      {
+        "fields": {
+          "name": "speed",
+          "value": "40"
+        },
+        "key": "b0",
+        "kind": "stat",
+        "preserved": [
+          {
+            "key": "minimum",
+            "label": "A setting Borealis does not use (“minimum”)"
+          }
+        ],
+        "sentence": "Rule: stat"
+      }
+    ],
+    "children": [],
+    "fields": {
+      "allowDuplicate": true,
+      "compendium": false,
+      "description": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "A ",
+                "type": "text"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "wolf",
+                "type": "text"
+              },
+              {
+                "text": ".",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "edition": "dnd2024",
+      "keywords": [
+        "beast",
+        "pet"
+      ],
+      "mapsTo": {
+        "dnd2014": {
+          "id": "ID_WOLF",
+          "missing": true,
+          "name": "",
+          "type": ""
+        },
+        "dnd2024": null,
+        "kind": "approximate"
+      },
+      "name": "Wolf",
+      "prerequisiteText": "Level 3",
+      "requirements": {
+        "original": "[level:3]",
+        "value": {
+          "model": {
+            "items": [
+              {
+                "node": "row",
+                "row": {
+                  "min": 3,
+                  "row": "level"
+                }
+              }
+            ],
+            "mode": "all",
+            "node": "group"
+          },
+          "shape": "model"
+        }
+      },
+      "setters": [
+        {
+          "attributes": {
+            "unit": "ft"
+          },
+          "name": "speed",
+          "value": "40"
+        }
+      ],
+      "sheet": {
+        "action": null,
+        "alt": null,
+        "display": null,
+        "lines": [
+          {
+            "action": null,
+            "level": 2,
+            "text": "Bite {{level}}",
+            "usage": null
+          }
+        ],
+        "usage": "1/Long Rest"
+      },
+      "source": "Gloom",
+      "summary": "A wolf.",
+      "tags": [
+        "Beast"
+      ],
+      "type": "Companion"
+    },
+    "key": "e",
+    "kind": "other",
+    "preserved": [
+      {
+        "key": "data.pack_size",
+        "label": "Stored detail “pack size”"
+      }
+    ]
+  },
+  "kinds": [
+    {
+      "description": "A language characters can speak.",
+      "editions": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "elementTypes": [
+        "Language"
+      ],
+      "fields": [
+        {
+          "bindings": [
+            "name"
+          ],
+          "control": "text",
+          "key": "name",
+          "label": "Name",
+          "required": true,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "ruleset"
+          ],
+          "choices": [
+            {
+              "label": "The pack's edition",
+              "value": ""
+            },
+            {
+              "label": "2014",
+              "value": "dnd2014"
+            },
+            {
+              "label": "2024",
+              "value": "dnd2024"
+            },
+            {
+              "label": "Either edition",
+              "value": "any"
+            }
+          ],
+          "control": "combo",
+          "key": "edition",
+          "label": "Edition",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "source"
+          ],
+          "control": "text",
+          "expert": true,
+          "key": "source",
+          "label": "Source",
+          "readOnly": true,
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:standard",
+            "setter:exotic",
+            "setter:secret",
+            "supports:Standard|Exotic|Secret",
+            "data.rarity"
+          ],
+          "choices": [
+            {
+              "label": "Standard",
+              "value": "standard"
+            },
+            {
+              "label": "Exotic",
+              "value": "exotic"
+            },
+            {
+              "label": "Secret",
+              "value": "secret"
+            }
+          ],
+          "control": "combo",
+          "key": "rarity",
+          "label": "Rarity",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:script"
+          ],
+          "control": "text",
+          "key": "script",
+          "label": "Script",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:speakers"
+          ],
+          "control": "text",
+          "key": "speakers",
+          "label": "Typical speakers",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "supports"
+          ],
+          "control": "tags",
+          "key": "tags",
+          "label": "Tags",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:short"
+          ],
+          "control": "text",
+          "help": "Shown in the second column of pickers.",
+          "key": "summary",
+          "label": "Summary line",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "requirements"
+          ],
+          "control": "condition",
+          "key": "requirements",
+          "label": "Prerequisite",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "prerequisite"
+          ],
+          "control": "text",
+          "key": "prerequisiteText",
+          "label": "Prerequisite as shown",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:allow duplicate"
+          ],
+          "control": "check",
+          "key": "allowDuplicate",
+          "label": "Can be taken more than once",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:keywords"
+          ],
+          "control": "chips",
+          "key": "keywords",
+          "label": "Keywords",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "rules"
+          ],
+          "control": "blocks",
+          "key": "rules",
+          "label": "Rules",
+          "required": false,
+          "tab": "rules"
+        },
+        {
+          "bindings": [
+            "description"
+          ],
+          "control": "richText",
+          "key": "description",
+          "label": "Description",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "sheet"
+          ],
+          "control": "sheet",
+          "key": "sheet",
+          "label": "On the character sheet",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "compendium.display"
+          ],
+          "control": "check",
+          "key": "compendium",
+          "label": "Show in Compendium",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "maps_to"
+          ],
+          "control": "mapsTo",
+          "expert": true,
+          "key": "mapsTo",
+          "label": "2014/2024 counterpart",
+          "required": false,
+          "tab": "description"
+        }
+      ],
+      "group": "small",
+      "id": "language",
+      "label": "Language",
+      "parentKinds": [],
+      "pluralLabel": "Languages",
+      "tabs": [
+        {
+          "id": "general",
+          "label": "General"
+        },
+        {
+          "id": "rules",
+          "label": "Rules"
+        },
+        {
+          "id": "description",
+          "label": "Description"
+        }
+      ]
+    },
+    {
+      "description": "Any other kind of element, with the parts every form shares (expert).",
+      "editions": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "elementTypes": [],
+      "fields": [
+        {
+          "bindings": [
+            "name"
+          ],
+          "control": "text",
+          "key": "name",
+          "label": "Name",
+          "required": true,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "ruleset"
+          ],
+          "choices": [
+            {
+              "label": "The pack's edition",
+              "value": ""
+            },
+            {
+              "label": "2014",
+              "value": "dnd2014"
+            },
+            {
+              "label": "2024",
+              "value": "dnd2024"
+            },
+            {
+              "label": "Either edition",
+              "value": "any"
+            }
+          ],
+          "control": "combo",
+          "key": "edition",
+          "label": "Edition",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "source"
+          ],
+          "control": "text",
+          "expert": true,
+          "key": "source",
+          "label": "Source",
+          "readOnly": true,
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "allowCustom": true,
+          "bindings": [
+            "type"
+          ],
+          "control": "combo",
+          "key": "type",
+          "label": "Type",
+          "required": true,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setters"
+          ],
+          "control": "setters",
+          "expert": true,
+          "key": "setters",
+          "label": "Other properties",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "supports"
+          ],
+          "control": "tags",
+          "key": "tags",
+          "label": "Tags",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:short"
+          ],
+          "control": "text",
+          "help": "Shown in the second column of pickers.",
+          "key": "summary",
+          "label": "Summary line",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "requirements"
+          ],
+          "control": "condition",
+          "key": "requirements",
+          "label": "Prerequisite",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "prerequisite"
+          ],
+          "control": "text",
+          "key": "prerequisiteText",
+          "label": "Prerequisite as shown",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:allow duplicate"
+          ],
+          "control": "check",
+          "key": "allowDuplicate",
+          "label": "Can be taken more than once",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:keywords"
+          ],
+          "control": "chips",
+          "key": "keywords",
+          "label": "Keywords",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "rules"
+          ],
+          "control": "blocks",
+          "key": "rules",
+          "label": "Rules",
+          "required": false,
+          "tab": "rules"
+        },
+        {
+          "bindings": [
+            "description"
+          ],
+          "control": "richText",
+          "key": "description",
+          "label": "Description",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "sheet"
+          ],
+          "control": "sheet",
+          "key": "sheet",
+          "label": "On the character sheet",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "compendium.display"
+          ],
+          "control": "check",
+          "key": "compendium",
+          "label": "Show in Compendium",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "maps_to"
+          ],
+          "control": "mapsTo",
+          "expert": true,
+          "key": "mapsTo",
+          "label": "2014/2024 counterpart",
+          "required": false,
+          "tab": "description"
+        }
+      ],
+      "group": "expert",
+      "id": "other",
+      "label": "Other element",
+      "parentKinds": [],
+      "pluralLabel": "Other elements",
+      "tabs": [
+        {
+          "id": "general",
+          "label": "General"
+        },
+        {
+          "id": "rules",
+          "label": "Rules"
+        },
+        {
+          "id": "description",
+          "label": "Description"
+        }
+      ]
+    },
+    {
+      "description": "Adds tags, properties or rules to an element of another pack.",
+      "editions": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "elementTypes": [],
+      "fields": [
+        {
+          "bindings": [
+            "id"
+          ],
+          "control": "reference",
+          "key": "target",
+          "label": "Adds to",
+          "required": true,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "type"
+          ],
+          "control": "text",
+          "expert": true,
+          "key": "type",
+          "label": "Type",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "supports"
+          ],
+          "control": "tags",
+          "key": "tags",
+          "label": "Tags it adds",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setters"
+          ],
+          "control": "setters",
+          "expert": true,
+          "help": "A property is added only when the element has none with that name.",
+          "key": "setters",
+          "label": "Properties it adds",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "rules"
+          ],
+          "control": "blocks",
+          "key": "rules",
+          "label": "Rules it adds",
+          "required": false,
+          "tab": "rules"
+        }
+      ],
+      "group": "expert",
+      "id": "append",
+      "label": "Addition to an element",
+      "parentKinds": [],
+      "pluralLabel": "Additions to elements",
+      "tabs": [
+        {
+          "id": "general",
+          "label": "General"
+        },
+        {
+          "id": "rules",
+          "label": "Rules"
+        }
+      ]
+    }
+  ]
+}

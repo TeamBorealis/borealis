@@ -456,6 +456,16 @@ forms) and answers the same error for bulk edit, reference options, spell lists,
 - **Statistic catalog (WB-05).** `homebrew_stat_catalog` groups every statistic name the bundled packs use, in plain words;
   `classScoped` entries are patterns (`{class}:spellcasting:slots:{n}`) written from a class picker and a number. Names
   the loaded packs use that the catalog doesn't know come last, in the group `yourContent`.
+- **Form values (WB-04).** Rust `borealis_authoring::form` reads an element into a form and writes it back (an unchanged
+  form writes the element byte for byte). A field's value has the shape of its control: `text`/`multiline`/`combo` a
+  string (`""` = not set), `check` a boolean, `tags`/`chips` a string list, `reference` a `HomebrewRef` or null,
+  `condition` a `HomebrewExprValue`, `richText` the description tree (`DocJson`), `sheet` a `HomebrewSheetValue`,
+  `setters` `HomebrewSetterRow[]` (expert rows), `mapsTo` a `HomebrewMapsToValue` (sample: `api/__fixtures__/homebrew-form.json`,
+  written by `crates/borealis-authoring/tests/form_dto.rs`). `HomebrewForm.key` identifies a form inside the draft
+  (children are matched by it; a new child gets a new key). `preserved` (on the form and on each block) lists the
+  parts kept from the original as `{key, label}`: the UI may only remove entries; the backend keeps the bytes and the
+  element id. `HomebrewFieldSpec.readOnly` marks a shown-only field (Source); the `blocks` control marks where the
+  block list goes.
 - **Problems** are plain sentences with a form `path` (`fields.level`, `blocks.2.fields.number`, `children.0.fields.name`)
   and a `code` (an `IssueCode`, a rule problem, `sweep`, `engine`, `lint.*`, `balance.*`); errors block Save.
 - **Events:** saves end with the existing `borealis://content-reloaded`.
