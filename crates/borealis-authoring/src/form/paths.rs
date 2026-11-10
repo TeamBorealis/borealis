@@ -2,7 +2,7 @@
 //! `setter:school` for a missing required setter) to the form path of the field that edits it (`fields.requirements`,
 //! `blocks.2`, `fields.script`, `preserved.data.tag`).
 
-use super::codec::Codec;
+use super::codec::{ClassField, Codec};
 use super::kinds::{kind, Control};
 use super::{FormContext, FormProblem, FormState};
 use crate::expr_build::condition::{Condition, ConditionLanguage};
@@ -83,6 +83,22 @@ pub fn form_path_for_location(
         "sheet" => Codec::Sheet,
         "compendium" => Codec::Compendium,
         "maps_to" => Codec::MapsTo,
+        "multiclass" => {
+            let part = location
+                .strip_prefix("multiclass")
+                .and_then(|l| l.trim_start_matches('.').split(['.', '[']).next())
+                .unwrap_or_default();
+            let f = match part {
+                "requirements" => ClassField::McRequirements,
+                "prerequisite" => ClassField::McPrerequisite,
+                "rules" => ClassField::McProficiencies,
+                "setters" => ClassField::McProficiencyText,
+                _ => ClassField::Multiclass,
+            };
+            return field_with(form, |c| c == Codec::Class(f))
+                .or_else(|| field_with(form, |c| c == Codec::Class(ClassField::Multiclass)))
+                .or_else(|| preserved(form, top));
+        }
         other => return preserved(form, other),
     };
     field_with(form, |c| c == codec).or_else(|| preserved(form, top))

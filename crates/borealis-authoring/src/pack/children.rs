@@ -1,6 +1,6 @@
 //! Child elements (spec 3.1): features, traits and sub-features are separate elements of the pack, edited inside
 //! their parent's form and listed under it. A child is an element of one of the parent type's child types that the
-//! parent grants.
+//! parent grants (a class's starting-equipment package is its `equipment_package` choice's).
 
 use borealis_content::{Element, Rule};
 
@@ -8,7 +8,7 @@ use borealis_content::{Element, Rule};
 #[must_use]
 pub fn child_types(ty: &str) -> &'static [&'static str] {
     match ty {
-        "Class" => &["Class Feature"],
+        "Class" => &["Class Feature", "Equipment Package"],
         "Archetype" => &["Archetype Feature"],
         "Feat" => &["Feat Feature"],
         "Background" => &["Background Feature"],
@@ -17,9 +17,13 @@ pub fn child_types(ty: &str) -> &'static [&'static str] {
     }
 }
 
+/// The elements a parent gives: its grants, and the package of its starting-equipment choice.
 fn granted_ids(parent: &Element) -> impl Iterator<Item = &str> {
     parent.rules.iter().filter_map(|r| match r {
         Rule::Grant(g) => Some(g.id.as_str()),
+        Rule::Custom(c) if c.kind == "equipment_package" => {
+            c.fields.get("ref").and_then(serde_json::Value::as_str)
+        }
         _ => None,
     })
 }

@@ -4,7 +4,11 @@ import type {
   HomebrewTagFilter,
 } from "../../api/contract";
 import { CheckBox, ComboBox, EditableComboBox, Icon, NumericUpDown, TextBox, ToggleSwitch } from "../../components";
-import { BlockList } from "./blocks/BlockList";
+import { BlockList, REPEAT_KINDS } from "./blocks/BlockList";
+import { NumbersControl } from "./blocks/valueControls";
+import type { ChildEditing } from "./class/ChildDialog";
+import { ChildrenField, PackageField, SkillChoiceField } from "./class/ClassParts";
+import { LevelsGrid } from "./class/LevelsGrid";
 import { ConditionBuilder } from "./builders/ConditionBuilder";
 import { EquippedBuilder } from "./builders/EquippedBuilder";
 import { FormulaBuilder } from "./builders/FormulaBuilder";
@@ -30,6 +34,10 @@ export interface FieldViewProps {
   onChange: (value: unknown, typing: boolean) => void;
   /** The form's kind, for the description toolbar's extras (spell, class). */
   kindId?: string;
+  /** Prefix of the field's DOM ids (a child's fields in its dialog over the parent's form, WB-16). */
+  idPrefix?: string;
+  /** The form and its edits, for fields that hold children (the class LEVELS grid, a package, sub-features; WB-16). */
+  childEditing?: ChildEditing;
 }
 
 const text = (v: unknown): string => (typeof v === "string" ? v : v === null || v === undefined ? "" : String(v));
@@ -38,7 +46,7 @@ const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is
 /** Builder controls show their row problems on the rows; under the field only the field's own sentences. */
 const BUILDERS: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "blocks"]);
 /** Controls that take the whole row of the form grid. */
-const WIDE: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "richText", "sheet", "setters", "mapsTo", "blocks", "references", "contents", "packageOptions", "spellLists"]);
+const WIDE: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "richText", "sheet", "setters", "mapsTo", "blocks", "references", "contents", "packageOptions", "spellLists", "levels", "package", "children", "skillChoice", "numbers"]);
 
 /** A closed combo's choices, with the stored value kept as a choice when content holds one the list doesn't (a homebrew
  * school), and a blank first choice while nothing is chosen (a new spell's school). */
@@ -54,16 +62,17 @@ function withCurrent(choices: readonly { value: string; label: string }[], curre
  * control. A field with problems turns its label warning orange or danger red with an icon, and its sentences sit under it,
  * linked with `aria-describedby` (8.3). Read-only fields (the Source label) are shown, not edited.
  */
-export function FieldView({ field, value, problems, onChange, kindId }: FieldViewProps) {
+export function FieldView({ field, value, problems, onChange, kindId, idPrefix = "", childEditing }: FieldViewProps) {
   const own = problemsFor(field, problems);
   const severity = fieldSeverity(own);
   const shown = BUILDERS.has(field.control) ? own.filter((p) => p.path === `fields.${field.key}`) : own;
-  const inputId = `${fieldDomId(field.key)}-input`;
-  const msgId = shown.length > 0 ? `${fieldDomId(field.key)}-msg` : undefined;
+  const domId = fieldDomId(`${idPrefix}${field.key}`);
+  const inputId = `${domId}-input`;
+  const msgId = shown.length > 0 ? `${domId}-msg` : undefined;
   const wide = WIDE.has(field.control);
   if (field.control === "check" && !field.readOnly) {
     return (
-      <div className={`mg-f hb-field ${severity ? `hb-${severity}` : ""}`} id={fieldDomId(field.key)} data-field={field.key}>
+      <div className={`mg-f hb-field ${severity ? `hb-${severity}` : ""}`} id={domId} data-field={field.key}>
         <label htmlFor={inputId}>{severity && <Icon name={severity === "error" ? "x" : "alert"} />}{field.label}</label>
         <span className="hb-check"><CheckBox id={inputId} checked={value === true} aria-describedby={msgId} onChange={(e) => onChange(e.target.checked, false)} /></span>
         {msgId && <div id={msgId} className="hb-field-msg">{shown.map((p, i) => <p key={i}>{p.message}</p>)}</div>}
@@ -72,14 +81,14 @@ export function FieldView({ field, value, problems, onChange, kindId }: FieldVie
     );
   }
   return (
-    <div className={`mg-f hb-field ${wide ? "hb-wide" : ""} ${severity ? `hb-${severity}` : ""}`} id={fieldDomId(field.key)} data-field={field.key}>
+    <div className={`mg-f hb-field ${wide ? "hb-wide" : ""} ${severity ? `hb-${severity}` : ""}`} id={domId} data-field={field.key}>
       <label htmlFor={inputId}>
         {severity && <Icon name={severity === "error" ? "x" : "alert"} />}
         {field.label}{field.required ? <span className="hb-req" aria-hidden="true"> *</span> : null}
       </label>
       {field.readOnly
         ? <p id={inputId} className="hb-readonly" tabIndex={-1}>{text(value) || "-"}</p>
-        : <Control field={field} value={value} onChange={onChange} id={inputId} describedBy={msgId} invalid={severity === "error"} problems={problems} kindId={kindId} />}
+        : <Control field={field} value={value} onChange={onChange} id={inputId} describedBy={msgId} invalid={severity === "error"} problems={problems} kindId={kindId} childEditing={childEditing} />}
       {msgId && <div id={msgId} className="hb-field-msg">{shown.map((p, i) => <p key={i}>{p.message}</p>)}</div>}
       {!msgId && field.help && <p className="hb-field-help">{field.help}</p>}
     </div>
@@ -88,10 +97,10 @@ export function FieldView({ field, value, problems, onChange, kindId }: FieldVie
 
 interface ControlProps {
   field: HomebrewFieldSpec; value: unknown; onChange: FieldViewProps["onChange"]; id: string; describedBy: string | undefined; invalid: boolean;
-  problems: readonly HomebrewProblem[]; kindId?: string;
+  problems: readonly HomebrewProblem[]; kindId?: string; childEditing?: ChildEditing;
 }
 
-function Control({ field, value, onChange, id, describedBy, invalid, problems, kindId }: ControlProps): ReactNode {
+function Control({ field, value, onChange, id, describedBy, invalid, problems, kindId, childEditing }: ControlProps): ReactNode {
   const env = useCreatorEnv();
   const label = field.label;
   const builderProblems = relativeProblems(problems, `fields.${field.key}`);
@@ -147,9 +156,24 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
     case "packageOptions":
       return <PackageOptionsField id={id} label={label} value={optionsOf(value)} onChange={(options, typing) => onChange(options, typing)} />;
     case "blocks":
-      return <div id={id}><BlockList label={label} blocks={Array.isArray(value) ? value as HomebrewBlock[] : []} onChange={(b) => onChange(b, false)} problems={problems} answer={env.answer} /></div>;
+      return <div id={id}><BlockList label={label} blocks={Array.isArray(value) ? value as HomebrewBlock[] : []} onChange={(b) => onChange(b, false)} problems={problems} answer={env.answer}
+        repeat={kindId !== undefined && REPEAT_KINDS.includes(kindId)} /></div>;
+    case "numbers":
+      return <span id={id}><NumbersControl label={label} value={Array.isArray(value) ? value as number[] : []} min={field.min ?? 1} max={field.max ?? 20} onChange={(v) => onChange(v ?? [], false)} /></span>;
+    case "skillChoice":
+      return <SkillChoiceField id={id} label={label} value={value} onChange={(v) => onChange(v, false)} />;
+    case "levels":
+      if (childEditing) return <div id={id}><LevelsGrid editing={childEditing} /></div>;
+      break;
+    case "package":
+      if (childEditing) return <div id={id}><PackageField editing={childEditing} field={field.key} label={label} /></div>;
+      break;
+    case "children":
+      if (childEditing) return <div id={id}><ChildrenField editing={childEditing} field={field.key} label={label} type={field.picker?.types[0]} /></div>;
+      break;
     default:
-      // The class LEVELS grid (WB-16) and child elements (the per-kind forms) are not part of these controls.
-      return <p id={id} className="hb-pending" tabIndex={-1}>This part comes with its own form.</p>;
+      break;
   }
+  // The class table is a part of the LEVELS grid; child lists need the form (a child's own dialog has none).
+  return <p id={id} className="hb-pending" tabIndex={-1}>This part is edited with the {field.control === "classTable" ? "LEVELS grid" : "element it belongs to"}.</p>;
 }

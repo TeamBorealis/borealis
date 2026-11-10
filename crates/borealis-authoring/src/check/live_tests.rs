@@ -191,17 +191,17 @@ fn a_missing_required_setter_points_at_the_field_that_holds_it() {
         ],
         "{got:?}"
     );
-    // a class (still the generic form): the missing hit die points at the expert setter rows
+    // a class (its own form since WB-16): the missing hit die points at the Hit die field
     let class = element(
         json!({"id": "ID_T_CLASS_NEW", "name": "New", "type": "Class", "source": "T", "description": "<p>x</p>"}),
     );
     let got = run(&class, &[]);
     let missing: Vec<_> = got
         .iter()
-        .filter(|p| p.1 == "missing_required_setter")
+        .filter(|p| p.0.as_deref() == Some("fields.hitDie"))
         .collect();
     assert_eq!(missing.len(), 1, "{got:?}");
-    assert_eq!(missing[0].0.as_deref(), Some("fields.setters"));
+    assert_eq!(missing[0].2, "A class needs a hit die.");
     assert_eq!(missing[0].3, ProblemSeverity::Error);
 }
 

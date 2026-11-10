@@ -20,6 +20,7 @@
 mod append;
 pub mod block;
 mod block_codec;
+mod child_refs;
 mod codec;
 pub mod descriptor;
 mod item_codec;
@@ -29,6 +30,7 @@ pub mod kinds;
 mod paths;
 pub mod preserved;
 mod read;
+mod repeat;
 mod ui;
 pub mod value;
 mod write;
@@ -37,13 +39,18 @@ pub use append::{append_to_form, form_to_append, APPEND_KIND};
 pub use block::{Block, BlockCodec, BlockMemo};
 pub use block_codec::CatalogBlockCodec;
 pub(crate) use block_codec::INCOMPLETE;
+pub use child_refs::{add_child, new_child_key, ChildEntry, ParentInfo};
+pub use codec::{ClassField, FeatureField, ProficiencyGroup, SkillChoice, TableColumn};
 pub use descriptor::descriptors;
+pub use kinds::new_class_form;
 pub use kinds::{
-    append_kind, kind, kind_for_type, kinds, Control, FieldDef, KindDef, KindGroup, OTHER_KIND,
+    append_kind, kind, kind_for_type, kinds, Control, FieldDef, KindDef, KindGroup,
+    CLASS_FEATURE_KIND, CLASS_KIND, OTHER_KIND,
 };
 pub use paths::{check_fields, form_path_for_issue, form_path_for_location};
 pub use preserved::{KeptPart, PreservedPart};
 pub use read::{element_group_to_form, element_to_form};
+pub use repeat::AGAIN_AT;
 pub use ui::{assign_ids, merge_ui, refresh_blocks, to_ui};
 pub use write::{form_to_element, form_to_elements};
 
@@ -140,13 +147,17 @@ pub struct Memo {
     /// Per field: the value read and the stored bytes of its locations.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub fields: BTreeMap<String, FieldMemo>,
+    /// A class's multiclass section id (spec 5.3: `ID_<CODE>_MULTICLASS_<CLASS>`), read from the element or given
+    /// with the class id; `None` for a new class (and a copy) until its first save.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub multiclass_id: Option<String>,
 }
 
 impl Memo {
     /// True when nothing is remembered.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.id.is_none() && self.fields.is_empty()
+        self.id.is_none() && self.fields.is_empty() && self.multiclass_id.is_none()
     }
 }
 

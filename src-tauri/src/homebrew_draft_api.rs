@@ -19,14 +19,14 @@ use crate::ids::rfc3339;
 use crate::state::{AppState, ContentHub, BUNDLED_PACKS};
 use borealis_authoring::check::{issue_problems, Problem};
 use borealis_authoring::form::{
-    assign_ids, element_group_to_form, element_to_form, kind, merge_ui, refresh_blocks, to_ui,
-    CatalogBlockCodec, FormContext, FormState,
+    add_child, assign_ids, element_group_to_form, element_to_form, kind, merge_ui, new_child_key,
+    new_class_form, refresh_blocks, to_ui, CatalogBlockCodec, FormContext, FormState, CLASS_KIND,
 };
 use borealis_authoring::pack::{
-    bump_patch, child_types, digest, granted_children, source_name, with_elements,
+    bump_patch, child_types, digest, granted_children, pack_edition, source_name, with_elements,
     without_elements, CopiedFrom, CreatorElement, SOURCE_TYPE,
 };
-use borealis_content::Element;
+use borealis_content::{Element, Ruleset};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::time::SystemTime;
@@ -61,10 +61,12 @@ pub(crate) fn saved_ids(draft: &DraftFile) -> HashSet<&str> {
         .collect()
 }
 
-/// A copy of `form` with no ids (a new element), named "<name> (copy)".
+/// A copy of `form` with no ids (a new element), named "<name> (copy)". A copied class gets its own multiclass id
+/// on its first save too (spec 5.3: the original's would collide with it).
 fn as_copy(form: &FormState) -> FormState {
     let mut copy = form.clone();
     copy.memo.id = None;
+    copy.memo.multiclass_id = None;
     copy.children.clear();
     let name = form
         .fields
@@ -160,8 +162,8 @@ impl AppState {
     ///
     /// # Errors
     /// As `hb_pack`; `invalid_argument` for an unknown kind or a copy of a book element; `not_found` for an unknown
-    /// copy; `requirement_failed` (not implemented) for a new child (`parentId`, WB-16/WB-18) and a deep copy of an
-    /// element with features (WB-22).
+    /// copy; `requirement_failed` (not implemented) for a deep copy of an element with features (WB-22). With
+    /// `parent_id` (a draft of the pack, or a saved element of it) it makes a child: [`Self::hb_new_child`].
     pub fn homebrew_new_draft(
         &self,
         pack_id: &str,
@@ -170,10 +172,8 @@ impl AppState {
         parent_id: Option<&str>,
         deep_copy: Option<bool>,
     ) -> ApiResult<HomebrewDraftView> {
-        if parent_id.is_some() {
-            return Err(crate::homebrew_creator::not_implemented(
-                "homebrew_new_draft (parentId)",
-            ));
+        if let Some(parent) = parent_id {
+            return self.hb_new_child(pack_id, kind_id, parent, copy_from);
         }
         let pack = self.hb_pack(pack_id)?;
         let hub = self.hub()?;
@@ -217,10 +217,17 @@ impl AppState {
                 let k = kind(kind_id).ok_or_else(|| {
                     ApiError::invalid(format!("There is no form called {kind_id:?}."))
                 })?;
-                let mut form = k.new_form("e");
-                if k.field("source").is_some() {
-                    form.fields.insert("source".into(), json!(source));
-                }
+                let mut form = if k.id == CLASS_KIND {
+                    // a class is of one edition (R4) and starts with its generated features (spec 4.5)
+                    let edition = match pack_edition(&pack.disk.manifest, &pack.disk.content) {
+                        Ruleset::Dnd2014 => Ruleset::Dnd2014,
+                        _ => Ruleset::Dnd2024,
+                    };
+                    new_class_form(edition)
+                } else {
+                    k.new_form("e")
+                };
+                with_source(&mut form, &source);
                 (form, None)
             }
         };
@@ -480,6 +487,86 @@ impl AppState {
         let draft = Self::hb_new_draft_file(&pack, as_copy(&element_to_form(el, &cx)), None);
         self.hb_drafts.hold(draft.clone())?;
         self.hb_view(&draft, &pack)
+    }
+}
+
+/// The form and its children name the pack's book as their source.
+fn with_source(form: &mut FormState, source: &str) {
+    if kind(&form.kind).is_some_and(|k| k.field("source").is_some()) {
+        form.fields.insert("source".into(), json!(source));
+    }
+    for c in &mut form.children {
+        with_source(c, source);
+    }
+}
+
+impl AppState {
+    /// A new child (spec 3.1, `homebrew_new_draft {parentId}`): a new element of `kind_id` (or a copy of a loaded
+    /// one) inside its parent, given by the parent's field for it (a class feature on the LEVELS grid at level 1,
+    /// the class's starting-equipment package). The parent is a draft of the pack (`parent_id` = its draft id) or a
+    /// saved element of it (its draft is opened or resumed). The parent's draft is written and its view returned;
+    /// the child is its last child.
+    ///
+    /// # Errors
+    /// As `hb_pack`; `not_found` for an unknown parent or copy; `invalid_argument` when the parent's form has no
+    /// place for a child of that kind.
+    fn hb_new_child(
+        &self,
+        pack_id: &str,
+        kind_id: &str,
+        parent_id: &str,
+        copy_from: Option<&str>,
+    ) -> ApiResult<HomebrewDraftView> {
+        let pack = self.hb_pack(pack_id)?;
+        let draft = match self.hb_drafts.get(&self.paths.data, parent_id) {
+            Ok(d) if d.pack_id == pack_id => d,
+            _ => {
+                let view = self.homebrew_open_draft(pack_id, Some(parent_id), None)?;
+                self.hb_drafts.get(&self.paths.data, &view.draft_id)?
+            }
+        };
+        let k = kind(kind_id)
+            .ok_or_else(|| ApiError::invalid(format!("There is no form called {kind_id:?}.")))?;
+        let hub = self.hub()?;
+        let key = new_child_key(&draft.form);
+        let mut child = match copy_from {
+            Some(id) => {
+                let el = hub
+                    .store
+                    .element(id)
+                    .ok_or_else(|| ApiError::not_found("That element isn't loaded any more."))?;
+                if !k.element_types.contains(&el.ty.as_str()) {
+                    return Err(ApiError::invalid(format!(
+                        "A {} can't be copied into this form.",
+                        el.ty.to_lowercase()
+                    )));
+                }
+                let codec = CatalogBlockCodec;
+                let cx = Self::hb_context(&hub, &codec);
+                FormState {
+                    key: key.clone(),
+                    ..as_copy(&element_to_form(el, &cx))
+                }
+            }
+            None => k.new_form(key),
+        };
+        with_source(
+            &mut child,
+            &source_name(&pack.disk.manifest, &pack.disk.content),
+        );
+        let form = add_child(&draft.form, child, None).ok_or_else(|| {
+            ApiError::invalid(format!(
+                "A {} can't be made inside this element.",
+                k.label.to_lowercase()
+            ))
+        })?;
+        let next = DraftFile {
+            form,
+            updated_at: now(),
+            ..draft
+        };
+        self.hb_drafts.put(&self.paths.data, next.clone())?;
+        self.hb_view(&next, &pack)
     }
 }
 

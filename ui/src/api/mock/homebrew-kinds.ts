@@ -840,6 +840,23 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "maps_to"
         ],
         "expert": true
+      },
+      {
+        "key": "subFeatures",
+        "label": "Sub-features",
+        "tab": "rules",
+        "control": "children",
+        "required": false,
+        "bindings": [
+          "rules:grant Feat Feature"
+        ],
+        "help": "Parts of the feat edited inside it; the feat gives each one.",
+        "picker": {
+          "types": [
+            "Feat Feature"
+          ]
+        },
+        "default": []
       }
     ]
   },
@@ -923,6 +940,746 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "expert": true,
         "readOnly": true
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers."
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ]
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ]
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ]
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ]
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "class",
+    "label": "Class",
+    "pluralLabel": "Classes",
+    "description": "A class with its 20 levels of features, proficiencies, multiclassing and starting equipment.",
+    "group": "main",
+    "elementTypes": [
+      "Class"
+    ],
+    "parentKinds": [],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "proficiencies",
+        "label": "PROFICIENCIES"
+      },
+      {
+        "id": "levels",
+        "label": "LEVELS"
+      },
+      {
+        "id": "spellcasting",
+        "label": "SPELLCASTING"
+      },
+      {
+        "id": "multiclass",
+        "label": "MULTICLASS"
+      },
+      {
+        "id": "equipment",
+        "label": "EQUIPMENT"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "hitDie",
+        "label": "Hit die",
+        "tab": "general",
+        "control": "combo",
+        "required": true,
+        "choices": [
+          {
+            "value": "d6",
+            "label": "d6"
+          },
+          {
+            "value": "d8",
+            "label": "d8"
+          },
+          {
+            "value": "d10",
+            "label": "d10"
+          },
+          {
+            "value": "d12",
+            "label": "d12"
+          }
+        ],
+        "bindings": [
+          "setter:hd",
+          "data.hit_die",
+          "data.fixed_hp_per_level"
+        ],
+        "section": "Class"
+      },
+      {
+        "key": "primaryAbilities",
+        "label": "Primary abilities",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "choices": [
+          {
+            "value": "Strength",
+            "label": "Strength"
+          },
+          {
+            "value": "Dexterity",
+            "label": "Dexterity"
+          },
+          {
+            "value": "Constitution",
+            "label": "Constitution"
+          },
+          {
+            "value": "Intelligence",
+            "label": "Intelligence"
+          },
+          {
+            "value": "Wisdom",
+            "label": "Wisdom"
+          },
+          {
+            "value": "Charisma",
+            "label": "Charisma"
+          }
+        ],
+        "bindings": [
+          "data.primary_abilities"
+        ],
+        "section": "Class",
+        "default": []
+      },
+      {
+        "key": "savingThrows",
+        "label": "Saving throws",
+        "tab": "proficiencies",
+        "control": "chips",
+        "required": false,
+        "choices": [
+          {
+            "value": "Strength",
+            "label": "Strength"
+          },
+          {
+            "value": "Dexterity",
+            "label": "Dexterity"
+          },
+          {
+            "value": "Constitution",
+            "label": "Constitution"
+          },
+          {
+            "value": "Intelligence",
+            "label": "Intelligence"
+          },
+          {
+            "value": "Wisdom",
+            "label": "Wisdom"
+          },
+          {
+            "value": "Charisma",
+            "label": "Charisma"
+          }
+        ],
+        "bindings": [
+          "rules:grant ID_PROFICIENCY_SAVINGTHROW_*",
+          "data.saving_throws"
+        ],
+        "help": "Only a character who starts in this class gets what this section lists.",
+        "section": "First class only",
+        "default": []
+      },
+      {
+        "key": "armor",
+        "label": "Armor training",
+        "tab": "proficiencies",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rules:grant ID_PROFICIENCY_ARMOR_*"
+        ],
+        "section": "First class only",
+        "picker": {
+          "types": [
+            "Proficiency"
+          ],
+          "multiple": true
+        },
+        "default": []
+      },
+      {
+        "key": "weapons",
+        "label": "Weapon proficiencies",
+        "tab": "proficiencies",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rules:grant ID_PROFICIENCY_WEAPON_*"
+        ],
+        "section": "First class only",
+        "picker": {
+          "types": [
+            "Proficiency"
+          ],
+          "multiple": true
+        },
+        "default": []
+      },
+      {
+        "key": "tools",
+        "label": "Tool and other proficiencies",
+        "tab": "proficiencies",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rules:grant Proficiency"
+        ],
+        "section": "First class only",
+        "picker": {
+          "types": [
+            "Proficiency"
+          ],
+          "multiple": true
+        },
+        "default": []
+      },
+      {
+        "key": "skills",
+        "label": "Skills",
+        "tab": "proficiencies",
+        "control": "skillChoice",
+        "required": false,
+        "bindings": [
+          "rules:select Proficiency (Skill Proficiency)"
+        ],
+        "section": "First class only",
+        "picker": {
+          "types": [
+            "Proficiency"
+          ]
+        },
+        "default": {
+          "count": 2,
+          "skills": []
+        }
+      },
+      {
+        "key": "levels",
+        "label": "Features by level",
+        "tab": "levels",
+        "control": "levels",
+        "required": false,
+        "bindings": [
+          "rules:grant Class Feature (level)"
+        ],
+        "picker": {
+          "types": [
+            "Class Feature"
+          ]
+        },
+        "default": []
+      },
+      {
+        "key": "table",
+        "label": "Class table",
+        "tab": "levels",
+        "control": "classTable",
+        "required": false,
+        "bindings": [
+          "data.progression"
+        ],
+        "help": "Counters per level (uses, dice); a rule's maximum can read a column.",
+        "default": []
+      },
+      {
+        "key": "multiclass",
+        "label": "Can be taken as a second class",
+        "tab": "multiclass",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "multiclass"
+        ],
+        "default": true
+      },
+      {
+        "key": "mcRequirements",
+        "label": "Prerequisite",
+        "tab": "multiclass",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "multiclass.requirements",
+          "data.multiclass.requirements"
+        ],
+        "help": "The ability scores a character needs to take this class as a second class (and to leave it)."
+      },
+      {
+        "key": "mcPrerequisite",
+        "label": "Prerequisite as shown",
+        "tab": "multiclass",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "multiclass.prerequisite",
+          "data.multiclass.prerequisite"
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
+        "default": ""
+      },
+      {
+        "key": "mcProficiencies",
+        "label": "Proficiencies gained",
+        "tab": "multiclass",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "multiclass.rules"
+        ],
+        "picker": {
+          "types": [
+            "Proficiency"
+          ],
+          "multiple": true
+        },
+        "default": []
+      },
+      {
+        "key": "mcProficiencyText",
+        "label": "Proficiencies as shown",
+        "tab": "multiclass",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "multiclass.setters:multiclass proficiencies"
+        ],
+        "help": "Written from the proficiencies while left empty or as written; type to reword it.",
+        "default": ""
+      },
+      {
+        "key": "equipment",
+        "label": "Starting equipment",
+        "tab": "equipment",
+        "control": "package",
+        "required": false,
+        "bindings": [
+          "rules:equipment_package"
+        ],
+        "help": "The lettered options a character who starts in this class chooses from.",
+        "picker": {
+          "types": [
+            "Equipment Package"
+          ]
+        },
+        "default": []
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers.",
+        "section": "Details"
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "rules",
+        "label": "Other rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ],
+        "help": "Rules of the class that no field above holds."
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "classFeature",
+    "label": "Class feature",
+    "pluralLabel": "Class features",
+    "description": "A feature a class gives at a level, edited inside the class.",
+    "group": "child",
+    "elementTypes": [
+      "Class Feature"
+    ],
+    "parentKinds": [
+      "class"
+    ],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "asiLevels",
+        "label": "Ability score improvements at levels",
+        "tab": "general",
+        "control": "numbers",
+        "required": false,
+        "bindings": [
+          "rules:select_feat Ability Score Improvement (<Class> N)",
+          "rules:select Improvement Option (<Class> N)"
+        ],
+        "section": "Made by the class",
+        "min": 1,
+        "max": 20,
+        "default": []
+      },
+      {
+        "key": "subclassLabel",
+        "label": "Subclass choice",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "rules:select Archetype"
+        ],
+        "help": "The name of the choice (Sacred Oath, Martial Archetype); subclasses of this class are offered there.",
+        "section": "Made by the class",
+        "default": ""
+      },
+      {
+        "key": "epicBoon",
+        "label": "Epic boon choice",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "rules:select_feat Epic Boon (<Class>)"
+        ],
+        "section": "Made by the class",
+        "default": false,
+        "editions": [
+          "dnd2024"
+        ]
       },
       {
         "key": "tags",
@@ -7189,7 +7946,9 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
     "elementTypes": [
       "Equipment Package"
     ],
-    "parentKinds": [],
+    "parentKinds": [
+      "class"
+    ],
     "editions": [
       "dnd2024"
     ],

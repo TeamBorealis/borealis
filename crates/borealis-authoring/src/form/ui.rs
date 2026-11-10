@@ -125,6 +125,9 @@ fn reserve_all(form: &FormState, ids: &mut IdGenerator) {
     if let Some(id) = form.id() {
         ids.reserve(id);
     }
+    if let Some(id) = &form.memo.multiclass_id {
+        ids.reserve(id);
+    }
     for c in &form.children {
         reserve_all(c, ids);
     }
@@ -146,9 +149,16 @@ fn assign(form: &FormState, parent: Option<&str>, ids: &mut IdGenerator) -> Form
         },
         str::to_string,
     );
+    // a class's multiclass section gets its own id (spec 5.3), a copy's too: never the original's
+    let multiclass_id = match &form.memo.multiclass_id {
+        Some(id) => Some(id.clone()),
+        None if form.kind == super::kinds::CLASS_KIND => Some(ids.multiclass_id(&name)),
+        None => None,
+    };
     FormState {
         memo: Memo {
             id: Some(id),
+            multiclass_id,
             ..form.memo.clone()
         },
         children: form

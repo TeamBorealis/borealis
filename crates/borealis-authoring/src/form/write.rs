@@ -1,8 +1,9 @@
 //! Form to elements.
 
+use super::child_refs::{self, ChildInfo, ParentInfo};
 use super::codec::{self, Codec};
 use super::kinds::{kind, KindDef};
-use super::preserved;
+use super::{preserved, repeat};
 use super::{FormContext, FormProblem, FormState};
 use borealis_content::{Element, Rule, Setter};
 
@@ -19,7 +20,18 @@ pub(crate) struct Out {
     block_rules: Vec<(String, Rule)>,
     /// Rules written by fields: stored position (`None` = new), rank among new ones, origin (`fields.<key>`).
     field_rules: Vec<FieldRule>,
+    /// The parent, when this is a child written with it (a class feature knows its class).
+    pub(crate) parent: Option<ParentInfo>,
+    /// The form's children (for the fields that give them).
+    pub(crate) children: Vec<ChildInfo>,
+    /// A class's multiclass section id (`Memo::multiclass_id`).
+    pub(crate) multiclass_id: Option<String>,
+    /// A class's "first class only" requirement (`!<multiclass id>`), when it has a multiclass section.
+    pub(crate) first_class_only: Option<String>,
 }
+
+/// New field rules of this rank or more go after every other rule (a block's copies at other levels).
+pub(crate) const RANK_LAST: u8 = 200;
 
 /// A rule a field writes (an armor's base AC, its stealth disadvantage).
 struct FieldRule {
@@ -41,6 +53,10 @@ impl Out {
             seq: 0,
             block_rules: Vec::new(),
             field_rules: Vec::new(),
+            parent: None,
+            children: Vec::new(),
+            multiclass_id: None,
+            first_class_only: None,
         }
     }
 
@@ -117,14 +133,21 @@ impl Out {
 }
 
 /// The element's rules: field rules back at their stored positions, blocks in order in the positions left, then the
-/// new field rules in front (by rank). Unchanged, this is the stored order.
+/// new field rules: after the last stored rule of the same field (a class feature added to the LEVELS grid goes
+/// with the others), else in front by rank; rank [`RANK_LAST`] and more go last. Unchanged, this is the stored order.
 fn merge_rules(
     blocks: Vec<(String, Rule)>,
     fields: Vec<FieldRule>,
 ) -> (Vec<Rule>, Vec<RuleOrigin>) {
-    let (mut fixed, mut fresh): (Vec<FieldRule>, Vec<FieldRule>) =
+    let (mut fixed, fresh): (Vec<FieldRule>, Vec<FieldRule>) =
         fields.into_iter().partition(|f| f.slot.is_some());
     fixed.sort_by_key(|f| f.slot);
+    let anchored: Vec<String> = fixed.iter().map(|f| f.origin.clone()).collect();
+    let (follow, fresh): (Vec<FieldRule>, Vec<FieldRule>) = fresh
+        .into_iter()
+        .partition(|f| anchored.contains(&f.origin));
+    let (last, mut fresh): (Vec<FieldRule>, Vec<FieldRule>) =
+        fresh.into_iter().partition(|f| f.rank >= RANK_LAST);
     fresh.sort_by_key(|f| f.rank);
     let mut out: Vec<(String, Rule)> = Vec::new();
     let mut fixed = fixed.into_iter().peekable();
@@ -141,10 +164,18 @@ fn merge_rules(
             break;
         }
     }
+    for f in follow {
+        let at = out
+            .iter()
+            .rposition(|(o, _)| *o == f.origin)
+            .map_or(out.len(), |i| i + 1);
+        out.insert(at, (f.origin, f.rule));
+    }
     let all: Vec<(String, Rule)> = fresh
         .into_iter()
         .map(|f| (f.origin, f.rule))
         .chain(out)
+        .chain(last.into_iter().map(|f| (f.origin, f.rule)))
         .collect();
     all.into_iter().map(|(o, r)| (r, o)).unzip()
 }
@@ -183,20 +214,38 @@ pub(crate) fn write_as(
     form: &FormState,
     cx: &FormContext<'_>,
 ) -> Result<Element, Vec<FormProblem>> {
-    write_traced(kind, form, cx).map(|(e, _)| e)
+    write_traced(kind, form, None, cx).map(|(e, _)| e)
 }
 
 /// Where each rule of the element a form writes comes from (`blocks.<i>`, `fields.<key>`); `None` when the form
 /// doesn't write.
 pub(crate) fn rule_origins(form: &FormState, cx: &FormContext<'_>) -> Option<Vec<RuleOrigin>> {
-    write_traced(kind(&form.kind)?, form, cx)
+    write_traced(kind(&form.kind)?, form, None, cx)
         .ok()
         .map(|(_, o)| o)
+}
+
+/// What a class knows before its fields write: its multiclass id and "first class only" (`!<id>`, only with a
+/// multiclass section).
+fn prepare_class(form: &FormState, out: &mut Out) {
+    out.multiclass_id.clone_from(&form.memo.multiclass_id);
+    let on = form
+        .fields
+        .get("multiclass")
+        .or_else(|| form.memo.fields.get("multiclass").map(|m| &m.value))
+        .and_then(serde_json::Value::as_bool)
+        == Some(true);
+    out.first_class_only = if on {
+        out.multiclass_id.as_ref().map(|id| format!("!{id}"))
+    } else {
+        None
+    };
 }
 
 fn write_traced(
     kind: &KindDef,
     form: &FormState,
+    parent: Option<&ParentInfo>,
     cx: &FormContext<'_>,
 ) -> Result<(Element, Vec<RuleOrigin>), Vec<FormProblem>> {
     let mut problems = Vec::new();
@@ -208,6 +257,18 @@ fn write_traced(
     }
     base.ty = kind.new_element_type().unwrap_or_default().to_string();
     let mut out = Out::new(base);
+    out.parent = parent.cloned();
+    out.children = form
+        .children
+        .iter()
+        .map(|c| ChildInfo {
+            key: c.key.clone(),
+            id: c.id().map(str::to_string),
+        })
+        .collect();
+    if kind.id == super::kinds::CLASS_KIND {
+        prepare_class(form, &mut out);
+    }
     for f in kind.fields.iter().filter(|f| f.codec != Codec::Blocks) {
         let path = format!("fields.{}", f.key);
         let memo = form.memo.fields.get(f.key);
@@ -218,9 +279,26 @@ fn write_traced(
             problems.push(p);
         }
     }
+    let repeats = repeat::repeats(kind.id);
     for (i, b) in form.blocks.iter().enumerate() {
+        let origin = format!("blocks.{i}");
         match cx.blocks.write(b, cx) {
-            Ok(Some(rule)) => out.block_rules.push((format!("blocks.{i}"), rule)),
+            Ok(Some(rule)) => {
+                let (copies, slots) = if repeats {
+                    repeat::copies(b, &rule)
+                } else {
+                    (Vec::new(), None)
+                };
+                out.block_rules.push((origin.clone(), rule));
+                match slots {
+                    Some(slots) => {
+                        out.field_rules(copies.into_iter().map(|r| (0, r)), &slots, &origin)
+                    }
+                    None => out
+                        .block_rules
+                        .extend(copies.into_iter().map(|r| (origin.clone(), r))),
+                }
+            }
             Ok(None) => {}
             Err(p) => problems.push(prefixed(&format!("blocks.{i}."), p)),
         }
@@ -228,11 +306,18 @@ fn write_traced(
     if let Err(p) = preserved::restore(&form.preserved, &mut out) {
         problems.push(p);
     }
-    if problems.is_empty() {
-        Ok(out.finish())
-    } else {
-        Err(problems)
+    problems.extend(child_refs::orphans(form));
+    if !problems.is_empty() {
+        return Err(problems);
     }
+    let (mut element, origins) = out.finish();
+    if let Some((old, new)) = codec::class_renamed(form) {
+        codec::rename_requirement_ids(&mut element, &old, &new);
+    }
+    if let Some(p) = parent {
+        child_refs::patch_child(&mut element, form, p);
+    }
+    Ok((element, origins))
 }
 
 /// Every element a form writes: the element, then each child's (depth first). Problems carry form paths
@@ -246,7 +331,7 @@ pub fn form_to_elements(
 ) -> Result<Vec<Element>, Vec<FormProblem>> {
     let mut elements = Vec::new();
     let mut problems = Vec::new();
-    collect(form, "", cx, &mut elements, &mut problems);
+    collect(form, None, "", cx, &mut elements, &mut problems);
     if problems.is_empty() {
         Ok(elements)
     } else {
@@ -256,16 +341,29 @@ pub fn form_to_elements(
 
 fn collect(
     form: &FormState,
+    parent: Option<&ParentInfo>,
     prefix: &str,
     cx: &FormContext<'_>,
     elements: &mut Vec<Element>,
     problems: &mut Vec<FormProblem>,
 ) {
-    match form_to_element(form, cx) {
+    let written = match kind(&form.kind) {
+        Some(k) => write_traced(k, form, parent, cx).map(|(e, _)| e),
+        None => form_to_element(form, cx),
+    };
+    match written {
         Ok(e) => elements.push(e),
         Err(ps) => problems.extend(ps.into_iter().map(|p| prefixed(prefix, p))),
     }
     for (i, c) in form.children.iter().enumerate() {
-        collect(c, &format!("{prefix}children.{i}."), cx, elements, problems);
+        let info = child_refs::parent_info(form, c);
+        collect(
+            c,
+            Some(&info),
+            &format!("{prefix}children.{i}."),
+            cx,
+            elements,
+            problems,
+        );
     }
 }

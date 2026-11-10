@@ -77,6 +77,23 @@ fn own_fields() -> Vec<FieldDef> {
     ]
 }
 
+/// A feat's sub-features (spec 4.2): Feat Features it gives, edited inside it (WB-16's children list).
+fn sub_features() -> FieldDef {
+    field(
+        "subFeatures",
+        "Sub-features",
+        super::RULES,
+        Control::Children,
+        Codec::Children {
+            ty: "Feat Feature",
+            levelled: false,
+        },
+    )
+    .picker(&["Feat Feature"])
+    .default("[]")
+    .help("Parts of the feat edited inside it; the feat gives each one.")
+}
+
 /// The feat form.
 pub(super) fn feat_kind() -> KindDef {
     let shared = tail()
@@ -103,6 +120,7 @@ pub(super) fn feat_kind() -> KindDef {
             .into_iter()
             .chain(own_fields())
             .chain(shared)
+            .chain([sub_features()])
             .collect(),
     }
 }

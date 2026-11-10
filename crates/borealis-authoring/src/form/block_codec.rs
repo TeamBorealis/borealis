@@ -540,7 +540,8 @@ impl BlockCodec for CatalogBlockCodec {
         let memo = block.memo.as_ref().filter(|m| m.kind == block.kind);
         let mut map = Map::new();
         for (k, v) in &block.fields {
-            if v.is_null() {
+            // the levels a block is gained again at are the form's (`repeat.rs`), not the rule's
+            if v.is_null() || k == super::AGAIN_AT {
                 continue;
             }
             let path = format!("fields.{k}");

@@ -2,6 +2,7 @@ import { type ReactNode, useState } from "react";
 import type { HomebrewFieldSpec, HomebrewForm, HomebrewKindDescriptor, HomebrewProblem, HomebrewTab, Ruleset } from "../../api/contract";
 import { Icon, TabControl, ToggleSwitch } from "../../components";
 import { PreservedList } from "./blocks/BlockDialog";
+import type { ChildEditing } from "./class/ChildDialog";
 import { CreatorEnvProvider } from "./env";
 import { Band } from "../spells/TwoPane";
 import "../equipment/equipment.css";
@@ -28,7 +29,12 @@ export interface EditorActions {
   onTryItClose: () => void;
   onDuplicate: () => void;
   onJump: (problem: HomebrewProblem) => void;
+  /** Makes a child of the open element through the backend (`homebrew_new_draft {parentId}`, WB-16): see `ChildEditing`. */
+  onNewChild?: ChildEditing["newChild"];
 }
+
+/** A field shown for the form's edition (`HomebrewFieldSpec.editions`; no edition = the pack's, every field shows). */
+const forEdition = (f: HomebrewFieldSpec, edition: Ruleset | null): boolean => !f.editions || !edition || f.editions.includes(edition);
 
 /** Fields of one sub-tab, grouped under their SectionSecondary headings (spec 13.4) in field order. */
 function sections(fields: readonly HomebrewFieldSpec[]): [string, HomebrewFieldSpec[]][] {
@@ -60,8 +66,10 @@ export function editorTabs(kind: HomebrewKindDescriptor, narrow: boolean): Homeb
  * The element editor (spec 13.2-13.4): the title band, the command row (undo, redo, save, try it, duplicate), PROBLEMS (n),
  * the 30 px sub-tab band, then the current sub-tab's form in the Manage > Character form layout.
  */
-export function Editor({ kind, draft, tab, onTab, narrow, preview, actions, tryItOpen = false }: {
+export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, preview, actions, tryItOpen = false }: {
   kind: HomebrewKindDescriptor; draft: DraftController; tab: string; onTab: (id: string) => void; narrow: boolean; preview: ReactNode; actions: EditorActions;
+  /** Every kind (a child's form inside this one, WB-16). */
+  kinds?: readonly HomebrewKindDescriptor[];
   /** Try it is open (spec 9, 13.9: a flyout over the editor). */
   tryItOpen?: boolean;
 }) {
@@ -71,13 +79,20 @@ export function Editor({ kind, draft, tab, onTab, narrow, preview, actions, tryI
   const name = typeof form.fields.name === "string" && form.fields.name.trim() ? form.fields.name.trim() : `New ${kind.label.toLowerCase()}`;
   const tabs = editorTabs(kind, narrow);
   const current = tabs.some((t) => t.id === tab) ? tab : tabs[0]?.id ?? "";
-  const fields = kind.fields.filter((f) => f.tab === current && (expert || !f.expert));
+  const edition = editionOf(form);
+  // the class table is a part of the LEVELS grid (WB-16)
+  const fields = kind.fields.filter((f) => f.tab === current && (expert || !f.expert) && f.control !== "classTable" && forEdition(f, edition));
   const hasExpert = kind.fields.some((f) => f.expert);
   const setValue = (f: HomebrewFieldSpec, v: unknown, typing: boolean) => {
     if (f.control === "blocks") draft.edit((cur) => ({ ...cur, blocks: v as HomebrewForm["blocks"] }));
     else draft.setField(f.key, v, typing);
   };
   const expertSwitch = <span className="hb-expert"><ToggleSwitch label="Expert fields" checked={expert} onChange={setExpert} onLabel="Expert" offLabel="Expert" /></span>;
+  const childEditing: ChildEditing = {
+    form, kinds, problems: draft.problems, edition,
+    edit: (next, group) => draft.edit(next, group ?? null),
+    newChild: actions.onNewChild ?? (async () => null),
+  };
   const removePreserved = (key: string) => draft.edit((cur) => ({ ...cur, preserved: cur.preserved.filter((p) => p.key !== key) }));
   // Spec 16 / PH2: on phones the same row is pinned above the bottom tabs, so it follows the form (a sticky row sticks
   // only below its own content). Order as spec 16 lists it: Undo, Redo, Try it, Save.
@@ -91,7 +106,7 @@ export function Editor({ kind, draft, tab, onTab, narrow, preview, actions, tryI
     </div>
   );
   return (
-    <CreatorEnvProvider draftId={draft.view?.draftId ?? null} edition={editionOf(form)} form={form} answer={draft.view?.form ?? null} problems={draft.problems} expert={expert}>
+    <CreatorEnvProvider draftId={draft.view?.draftId ?? null} edition={edition} form={form} answer={draft.view?.form ?? null} problems={draft.problems} expert={expert}>
       <section className="hb-editor" aria-label="Element editor">
         <Band title={name}><span className={`hb-autosave hb-${draft.autosave}`} role="status">{AUTOSAVE_TEXT[draft.autosave]}</span></Band>
         {!narrow && commands}
@@ -110,7 +125,7 @@ export function Editor({ kind, draft, tab, onTab, narrow, preview, actions, tryI
                 {title && <h3 className="hb-section-title">{title}</h3>}
                 <div className="mg-grid two">
                   {list.map((f) => (
-                    <FieldView key={f.key} field={f} value={valueOf(f, form)} problems={draft.problems} kindId={kind.id}
+                    <FieldView key={f.key} field={f} value={valueOf(f, form)} problems={draft.problems} kindId={kind.id} childEditing={childEditing}
                       onChange={(v, typing) => setValue(f, v, typing)} />
                   ))}
                 </div>

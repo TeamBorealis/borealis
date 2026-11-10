@@ -12,6 +12,8 @@ export function tabOf(problem: HomebrewProblem, kind: HomebrewKindDescriptor | n
   const key = fieldKeyOf(problem.path);
   if (key) return kind.fields.find((f) => f.key === key)?.tab ?? null;
   if (problem.path?.startsWith("blocks")) return kind.tabs.find((t) => t.id === "rules")?.id ?? null;
+  // a child's problem: the tab of the field that holds the children (the class LEVELS grid, WB-16)
+  if (problem.path?.startsWith("children.")) return kind.fields.find((f) => f.control === "levels" || f.control === "children")?.tab ?? null;
   return null;
 }
 
