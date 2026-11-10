@@ -460,6 +460,8 @@ pub struct AppState {
     pub vault: crate::vault::VaultService,
     /// Homebrew creator drafts (memory cache over `<data>/homebrew-drafts/`, spec 10.1).
     pub(crate) hb_drafts: crate::homebrew_drafts::CreatorDrafts,
+    /// Try it's test characters (memory only, spec 9).
+    pub(crate) hb_trials: crate::homebrew_trial::CreatorTrials,
 }
 
 impl AppState {
@@ -543,6 +545,7 @@ impl AppState {
             content_update: Mutex::new(crate::settings_dto::ContentUpdateStatus::default()),
             vault: crate::vault::VaultService::default(),
             hb_drafts: crate::homebrew_drafts::CreatorDrafts::default(),
+            hb_trials: crate::homebrew_trial::CreatorTrials::default(),
         }
     }
 

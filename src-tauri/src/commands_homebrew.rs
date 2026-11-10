@@ -1,6 +1,6 @@
 //! `#[tauri::command]` wrappers of the homebrew creator (1.5.0; `specs/homebrew-creator-spec.md` section 15.2,
 //! `docs/ui-api-contract.md` "Homebrew creator"). Each delegates to an `AppState` method (`homebrew_packs`,
-//! `homebrew_draft_api`, `homebrew_refs`) or [`crate::homebrew_creator`]; until its work item lands a command answers
+//! `homebrew_draft_api`, `homebrew_refs`, `homebrew_trial`) or [`crate::homebrew_creator`]; until its work item lands a command answers
 //! `not_implemented`. Work that writes packs runs off the main thread (`commands_content::blocking`). The UI reaches
 //! them only with `AppSettings::creator_enabled` on (HC3).
 
@@ -213,44 +213,43 @@ pub fn homebrew_set_spell_list(
     Err(not_implemented("homebrew_set_spell_list"))
 }
 
-/// Try it (spec 9).
-#[tauri::command]
+/// Try it (spec 9): a test character that takes the draft (`homebrew_trial.rs`).
+#[tauri::command(async)]
 pub fn homebrew_trial_start(
+    state: State<'_, AppState>,
     draft_id: String,
     setup: HomebrewTrialSetup,
 ) -> ApiResult<HomebrewTrialView> {
-    let _ = (draft_id, setup);
-    Err(not_implemented("homebrew_trial_start"))
+    state.homebrew_trial_start(&draft_id, &setup)
 }
 
-/// Change the trial character (spec 9).
-#[tauri::command]
+/// Change the trial character (spec 9): level, setup, or one choice.
+#[tauri::command(async)]
 pub fn homebrew_trial_update(
+    state: State<'_, AppState>,
     trial_id: String,
     change: HomebrewTrialChange,
 ) -> ApiResult<HomebrewTrialView> {
-    let _ = (trial_id, change);
-    Err(not_implemented("homebrew_trial_update"))
+    state.homebrew_trial_update(&trial_id, &change)
 }
 
 /// Drop the trial character (spec 9).
-#[tauri::command]
-pub fn homebrew_trial_end(trial_id: String) -> ApiResult<()> {
-    let _ = trial_id;
-    Err(not_implemented("homebrew_trial_end"))
+#[tauri::command(async)]
+pub fn homebrew_trial_end(state: State<'_, AppState>, trial_id: String) -> ApiResult<()> {
+    state.homebrew_trial_end(&trial_id)
 }
 
 /// The options of one of the trial character's choices (spec 9 "Choices"), as `get_slot_options` answers them.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn homebrew_trial_options(
+    state: State<'_, AppState>,
     trial_id: String,
     slot_id: String,
     query: Option<String>,
     limit: Option<usize>,
     offset: Option<usize>,
 ) -> ApiResult<Page<SlotOption>> {
-    let _ = (trial_id, slot_id, query, limit, offset);
-    Err(not_implemented("homebrew_trial_options"))
+    state.homebrew_trial_options(&trial_id, &slot_id, query.as_deref(), limit, offset)
 }
 
 /// Export a pack file (spec 14.2).

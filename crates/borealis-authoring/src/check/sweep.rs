@@ -62,7 +62,7 @@ pub fn engine_sweep(
         .clone()
         .add_file(pack_name, PackOrigin::Custom, file)
         .build();
-    let mut issues: Vec<SweepIssue> = store
+    let issues: Vec<SweepIssue> = store
         .validate()
         .into_iter()
         .filter(|i| i.severity == ContentSeverity::Error)
@@ -74,11 +74,21 @@ pub fn engine_sweep(
     if !issues.is_empty() {
         return issues;
     }
-    let engine = Engine::new(&store);
-    for t in targets {
-        issues.extend(sweep_one(&engine, ruleset, ids, t));
-    }
-    // A problem that persists is reported once, at the first level it shows.
+    sweep_engine(&Engine::new(&store), ruleset, ids, targets)
+}
+
+/// The level sweep of [`engine_sweep`] on an engine that already holds the draft (Try it's private engine, spec 9):
+/// every target swept 1-20, a problem that persists reported once, at the first level it shows.
+pub fn sweep_engine(
+    engine: &Engine,
+    ruleset: Ruleset,
+    ids: &HashSet<String>,
+    targets: &[SweepTarget],
+) -> Vec<SweepIssue> {
+    let mut issues: Vec<SweepIssue> = targets
+        .iter()
+        .flat_map(|t| sweep_one(engine, ruleset, ids, t))
+        .collect();
     let mut seen = HashSet::new();
     issues.retain(|i| seen.insert((i.element_id.clone(), i.message.clone())));
     issues

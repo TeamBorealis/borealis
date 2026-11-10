@@ -7,4 +7,4 @@ pub mod sweep;
 
 pub use balance::{balance_report, BalanceFlag, BalanceReport, Baselines, Severity};
 pub use engine::{load_into_engine, CharacterCheck, EngineCheck};
-pub use sweep::{engine_sweep, SweepIssue, SweepTarget};
+pub use sweep::{engine_sweep, sweep_engine, SweepIssue, SweepTarget};
