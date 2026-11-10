@@ -11,7 +11,7 @@ const STORAGE_KEY = "lk.currentCharacter";
 /** Autosave waits this long after the last change (characters and notes alike). */
 export const AUTOSAVE_MS = 1500;
 
-interface CharacterCtx {
+export interface CharacterCtx {
   snapshot: CharacterSnapshot | null;
   /**
    * Goes up whenever the open character's build may have changed (opened, adopted, mutated, re-read); a save does not move
@@ -173,6 +173,14 @@ export function CharacterProvider({ children, restore = true }: { children: Reac
   }, [api, settings.autosave, snapshot]);
 
   const value = useMemo(() => ({ snapshot, revision, busy, open, adopt, mutate, save, saveOpen, closeSave, commitSave, savedByUser, close }), [snapshot, revision, busy, open, adopt, mutate, save, saveOpen, closeSave, commitSave, savedByUser, close]);
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+/**
+ * Gives the components inside another character than the open one (homebrew Try it, spec 9: its throwaway test character),
+ * so the Build pickers run unchanged against it. The open character is not touched.
+ */
+export function CharacterScope({ value, children }: { value: CharacterCtx; children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

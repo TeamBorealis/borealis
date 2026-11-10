@@ -7,6 +7,7 @@ import { Band } from "../spells/TwoPane";
 import "../equipment/equipment.css";
 import { FieldView } from "./FieldView";
 import { ProblemsPanel } from "./ProblemsPanel";
+import { TryIt } from "./TryIt";
 import type { DraftController } from "./useDraft";
 import type { AutosaveState } from "./draftSession";
 
@@ -22,7 +23,9 @@ const AUTOSAVE_TEXT: Record<AutosaveState, string> = {
 
 export interface EditorActions {
   onSave: () => void;
+  /** Opens Try it (spec 9); `onTryItClose` closes it. */
   onTryIt: () => void;
+  onTryItClose: () => void;
   onDuplicate: () => void;
   onJump: (problem: HomebrewProblem) => void;
 }
@@ -57,8 +60,10 @@ export function editorTabs(kind: HomebrewKindDescriptor, narrow: boolean): Homeb
  * The element editor (spec 13.2-13.4): the title band, the command row (undo, redo, save, try it, duplicate), PROBLEMS (n),
  * the 30 px sub-tab band, then the current sub-tab's form in the Manage > Character form layout.
  */
-export function Editor({ kind, draft, tab, onTab, narrow, preview, actions }: {
+export function Editor({ kind, draft, tab, onTab, narrow, preview, actions, tryItOpen = false }: {
   kind: HomebrewKindDescriptor; draft: DraftController; tab: string; onTab: (id: string) => void; narrow: boolean; preview: ReactNode; actions: EditorActions;
+  /** Try it is open (spec 9, 13.9: a flyout over the editor). */
+  tryItOpen?: boolean;
 }) {
   const [expert, setExpert] = useState(false);
   const form = draft.form;
@@ -68,7 +73,6 @@ export function Editor({ kind, draft, tab, onTab, narrow, preview, actions }: {
   const current = tabs.some((t) => t.id === tab) ? tab : tabs[0]?.id ?? "";
   const fields = kind.fields.filter((f) => f.tab === current && (expert || !f.expert));
   const hasExpert = kind.fields.some((f) => f.expert);
-  const hasTryIt = kind.tabs.some((t) => t.id === "tryIt");
   const setValue = (f: HomebrewFieldSpec, v: unknown, typing: boolean) => {
     if (f.control === "blocks") draft.edit((cur) => ({ ...cur, blocks: v as HomebrewForm["blocks"] }));
     else draft.setField(f.key, v, typing);
@@ -81,7 +85,7 @@ export function Editor({ kind, draft, tab, onTab, narrow, preview, actions }: {
     <div className={narrow ? "eq-inv-actions hb-commands eq-pin" : "eq-inv-actions hb-commands"} role="toolbar" aria-label="Element commands">
       <button type="button" aria-label="Undo" title="Undo (Ctrl+Z)" disabled={!draft.canUndo} onClick={draft.undo}><Icon name="undo" />Undo</button>
       <button type="button" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" disabled={!draft.canRedo} onClick={draft.redo}><Icon name="redo" />Redo</button>
-      <button type="button" aria-label="Try it" title="Try it (Ctrl+T)" disabled={!hasTryIt} onClick={actions.onTryIt}><Icon name="dice" />Try it</button>
+      <button type="button" aria-label="Try it" title="Try it (Ctrl+T)" disabled={!draft.view} onClick={actions.onTryIt}><Icon name="dice" />Try it</button>
       <button type="button" aria-label="Save" title="Save (Ctrl+S)" disabled={draft.saving} onClick={actions.onSave}><Icon name="save" />Save</button>
       {!narrow && <button type="button" aria-label="Duplicate" title="Duplicate (Ctrl+D)" disabled={!draft.view?.elementId} onClick={actions.onDuplicate}><Icon name="copy" />Duplicate</button>}
     </div>
@@ -116,6 +120,7 @@ export function Editor({ kind, draft, tab, onTab, narrow, preview, actions }: {
         </div>
         {narrow && commands}
       </section>
+      {tryItOpen && <TryIt kind={kind} draft={draft} onClose={actions.onTryItClose} onJump={actions.onJump} />}
     </CreatorEnvProvider>
   );
 }

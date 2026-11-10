@@ -855,6 +855,20 @@
     "k": "nil"
    }
   },
+  "homebrew_trial_options": {
+   "args": {
+    "limit": true,
+    "offset": true,
+    "query": true,
+    "slotId": false,
+    "trialId": false
+   },
+   "method": "homebrewTrialOptions",
+   "response": {
+    "k": "ref",
+    "name": "Page<SlotOption>"
+   }
+  },
   "homebrew_trial_start": {
    "args": {
     "draftId": false,

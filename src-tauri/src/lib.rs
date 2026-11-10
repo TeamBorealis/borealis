@@ -588,6 +588,7 @@ pub fn run() {
             commands_homebrew::homebrew_trial_start,
             commands_homebrew::homebrew_trial_update,
             commands_homebrew::homebrew_trial_end,
+            commands_homebrew::homebrew_trial_options,
             commands_homebrew::homebrew_export_pack,
             commands_play::preview_convert_to_2024,
             commands_play::apply_convert_to_2024,

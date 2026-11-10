@@ -5,6 +5,7 @@ import type {
 import { apiError } from "./errors";
 import { descriptionHtml, formProblems } from "./homebrew-check";
 import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
+import type { TrialDraft } from "./homebrew-trial";
 
 /** The backend's answer for a creator command whose work item has not landed (contract: `details.notImplemented`). */
 export function notImplemented(command: string): ApiError {
@@ -196,6 +197,14 @@ export class MockHomebrew {
     const drafts = [...this.drafts.values()].filter((d) => d.packId === draftPack && d.elementId === null && d.draftId !== draftId && String(d.form.fields.name ?? "").trim())
       .map((d): HomebrewPickerRow => ({ id: `draft:${d.draftId}`, name: String(d.form.fields.name).trim(), type: KINDS.find((k) => k.id === d.form.kind)?.elementTypes[0] ?? "", summary: "", prerequisites: null, sourceName: this.packs.get(d.packId)?.pack.name ?? "", edition: null, draft: true }));
     return [...saved, ...drafts];
+  }
+
+  /** A draft for Try it (spec 9): its last view, its kind and its pack's editions. */
+  trialDraft(draftId: string): TrialDraft {
+    const view = this.draft(draftId);
+    const kind = KINDS.find((k) => k.id === view.form.kind);
+    if (!kind) throw apiError("invalid_argument", `Unknown kind ${view.form.kind}.`);
+    return { view, kind, rulesets: this.own(view.packId).pack.rulesets };
   }
 
   private own(packId: string): OwnPack {

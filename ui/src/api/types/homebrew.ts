@@ -627,6 +627,12 @@ export interface HomebrewTrialView {
   snapshot: CharacterSnapshot;
   ladder: HomebrewLadderRow[];
   problems: HomebrewProblem[];
-  /** Snapshot fields whose values changed because of the draft (`stats.ac`, `abilities.final.2`...). */
+  /**
+   * What the draft changed: the snapshot compared with the same trial character without the draft. A value is its path
+   * (`stats.armorClass`, `stats.speed`, `stats.hpMax`, `abilities.final.dex`, `abilities.save.dex`,
+   * `spellcasting.slots.3`); an entry of a list is `<list path>:<entry name>` (`stats.skills:Stealth`,
+   * `stats.proficiencies:Light Armor`, `stats.languages:Elvish`, `play.features:Lucky`, `spellcasting.spells:Fireball`,
+   * `attacks:Longsword`, `play.resources:Luck Points`, `companions:Wolf`).
+   */
   changed: string[];
 }

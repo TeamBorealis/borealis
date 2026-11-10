@@ -431,6 +431,7 @@ forms) and answers the same error for bulk edit, reference options, spell lists,
 | `homebrew_trial_start` | `{ draftId, setup: HomebrewTrialSetup }` | `HomebrewTrialView` (`{ trialId, snapshot, ladder, problems, changed }`) |
 | `homebrew_trial_update` | `{ trialId, change: HomebrewTrialChange }` | `HomebrewTrialView` |
 | `homebrew_trial_end` | `{ trialId }` | `void` |
+| `homebrew_trial_options` | `{ trialId, slotId, query?, limit?, offset? }` | `Page<SlotOption>` (a trial choice's options, as `get_slot_options`) |
 | `homebrew_export_pack` | `{ packId, leaveOutCopiedText }` | `ExportResult` (desktop `path`, phones `dataBase64` for the share sheet) |
 
 - **Ids never reach the screen.** They travel in `HomebrewRef`, picker rows and summaries; the UI shows names.

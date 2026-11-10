@@ -669,6 +669,11 @@ export interface ApiMethods {
   homebrewTrialStart(args: { draftId: string; setup: HomebrewTrialSetup }): Promise<HomebrewTrialView>;
   homebrewTrialUpdate(args: { trialId: string; change: HomebrewTrialChange }): Promise<HomebrewTrialView>;
   homebrewTrialEnd(args: { trialId: string }): Promise<void>;
+  /**
+   * The options of one of the trial character's choices (spec 9 "Choices"): the same rows `getSlotOptions` answers for a
+   * character, so Try it lists them with the Build pickers. `slotId` is a `SelectionSlot.id` of the trial's snapshot.
+   */
+  homebrewTrialOptions(args: { trialId: string; slotId: string; query?: string; limit?: number; offset?: number }): Promise<Page<SlotOption>>;
   /** `.borealis-pack.zip`: desktop save dialog (`path`), phones the share sheet (`dataBase64`). */
   homebrewExportPack(args: { packId: string; leaveOutCopiedText: boolean }): Promise<ExportResult>;
 }
@@ -923,6 +928,7 @@ export const COMMANDS = {
   homebrewTrialStart: "homebrew_trial_start",
   homebrewTrialUpdate: "homebrew_trial_update",
   homebrewTrialEnd: "homebrew_trial_end",
+  homebrewTrialOptions: "homebrew_trial_options",
   homebrewExportPack: "homebrew_export_pack",
 } as const satisfies Record<CommandName, string>;
 

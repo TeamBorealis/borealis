@@ -46,6 +46,7 @@ import { type MockCharacter, type RuleSettings, levelOf } from "./state";
 import { findByWireId, toWireSlotId } from "./slot-ids";
 import { MOCK_INDEX_STATUS, mockPassage, mockSearch } from "./search";
 import { MockHomebrew, notImplemented } from "./homebrew";
+import { MockTrials } from "./homebrew-trial";
 import { MOCK_BLOCK_CATALOG, MOCK_STAT_CATALOG } from "./homebrew-catalog";
 import { referenceRows } from "./homebrew-check";
 
@@ -116,6 +117,7 @@ export class MockApi implements Api {
   private setup: MockAiSetup;
   private imp: MockImport;
   private homebrew: MockHomebrew;
+  private trials: MockTrials;
   /** Mock native dialogs (`pickPath`); tests may set `picks.next`. */
   readonly picks = new MockPicks();
   readonly fivetoolsUrls = new MockFiveToolsUrls();
@@ -153,6 +155,7 @@ export class MockApi implements Api {
     this.ai = new MockAi((e) => this.emit("ai:event", e), { chunkDelayMs: opts.aiChunkDelayMs ?? 25, available: opts.aiAvailable ?? true });
     this.setup = new MockAiSetup((e) => this.emit("aisetup:event", e), opts.aiSetup);
     this.homebrew = new MockHomebrew((pack) => this.content.putOwnPack(pack));
+    this.trials = new MockTrials({ rules: () => this.rules, draft: (id) => this.homebrew.trialDraft(id) });
     this.imp = new MockImport((e) => this.emit("import:event", e), opts.importStepMs ?? 300);
     this.link = new MockDeviceLink((st) => this.emit("link:status", st), {
       mobile: this.mobile, peerAfterMs: opts.linkPeerAfterMs ?? null, devices: opts.linkDevices,
@@ -324,7 +327,11 @@ export class MockApi implements Api {
 
   async getSlotOptions(a: SlotOptionsArgs): Promise<Page<SlotOption>> {
     await this.tick();
-    const c = this.snapshotChar(a.characterId);
+    return this.slotOptionsOf(this.snapshotChar(a.characterId), a);
+  }
+
+  /** A slot's option rows for a mock character (the Build pickers, and Try it's choices). */
+  private slotOptionsOf(c: MockCharacter, a: Omit<SlotOptionsArgs, "characterId">): Page<SlotOption> {
     const def = findByWireId(buildSlotDefs(c), a.slotId);
     if (!def) throw apiError("not_found", `Unknown slot ${a.slotId}`);
     const { snapshot } = buildSnapshot(c, this.rules);
@@ -981,8 +988,9 @@ export class MockApi implements Api {
   async homebrewWhereUsed(_: { elementId: string }) { await this.tick(); return []; }
   async homebrewSpellList(_: { packId: string; listTag: string }): Promise<never> { await this.tick(); throw notImplemented("homebrew_spell_list"); }
   async homebrewSetSpellList(_: Parameters<Api["homebrewSetSpellList"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_set_spell_list"); }
-  async homebrewTrialStart(_: Parameters<Api["homebrewTrialStart"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_trial_start"); }
-  async homebrewTrialUpdate(_: Parameters<Api["homebrewTrialUpdate"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_trial_update"); }
-  async homebrewTrialEnd(_: { trialId: string }): Promise<never> { await this.tick(); throw notImplemented("homebrew_trial_end"); }
+  async homebrewTrialStart({ draftId, setup }: Parameters<Api["homebrewTrialStart"]>[0]) { await this.tick(); return this.trials.start(draftId, setup); }
+  async homebrewTrialUpdate({ trialId, change }: Parameters<Api["homebrewTrialUpdate"]>[0]) { await this.tick(); return this.trials.update(trialId, change); }
+  async homebrewTrialEnd({ trialId }: { trialId: string }) { await this.tick(); this.trials.end(trialId); }
+  async homebrewTrialOptions({ trialId, ...rest }: Parameters<Api["homebrewTrialOptions"]>[0]) { await this.tick(); return this.slotOptionsOf(this.trials.character(trialId), rest); }
   async homebrewExportPack(_: Parameters<Api["homebrewExportPack"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_export_pack"); }
 }
