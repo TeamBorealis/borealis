@@ -191,7 +191,7 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 
 ### 2024 play state and Convert to 2024
 
-Every command returns the full `CharacterSnapshot`; the new blocks live in `snapshot.play` (`PlayState`, camelCase) and on `attacks[]` (`mastery`, `critRange`, `dieFloor`, `offhandDamage`).
+Every command returns the full `CharacterSnapshot`; the new blocks live in `snapshot.play` (`PlayState`, camelCase) and on `attacks[]` (`masteries`, `critRange`, `dieFloor`, `offhandDamage`). A weapon may have several mastery properties (RL10): `attacks[].masteries` is `[{name, text, mastered}]` (one entry per property, omitted when none) and each `play.masteries[]` pick is `{weapon, name, properties: [{name, text}]}`.
 
 | Command | Args (camelCase keys) | Returns |
 |---|---|---|
@@ -503,7 +503,7 @@ All additive; read from content setters (`armorClass`, `strength`, `stealth`, `a
 
 - `ElementSummary` (so `ItemSummary`, compendium rows, slot options and `ElementDetail`) gains optional `spell: SpellFacts`, `armor: ArmorFacts`, `weapon: WeaponFacts`, each omitted when it does not apply. Weight and cost stay on `ItemSummary` (`weight`, `costCp`).
   - `ArmorFacts`: `group`, `acText`, `acBase`, `addsDex`, `dexCap | null`, `strength | null`, `stealthDisadvantage`.
-  - `WeaponFacts`: `damage`, `damageType`, `properties[]`, `mastery | null`, `range | null`, `proficiency` (Simple/Martial), `kind` (Melee/Ranged).
+  - `WeaponFacts`: `damage`, `damageType`, `properties[]`, `mastery | null` (every property name, comma-joined: `Topple, Push`), `range | null`, `proficiency` (Simple/Martial), `kind` (Melee/Ranged).
   - `SpellFacts`: `castingTime`, `range`, `duration`, `verbal`, `somatic`, `material`, `materialText`, `concentration`, `ritual`.
 - `SpellEntry.casting: SpellFacts | null` (spellcasting rows).
 - `InventoryItem.weapon` gains `mastery | null`, `range | null`; new `InventoryItem.armor: ArmorFacts | null`.

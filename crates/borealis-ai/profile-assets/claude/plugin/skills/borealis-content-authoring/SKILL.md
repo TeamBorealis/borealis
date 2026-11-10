@@ -77,6 +77,16 @@ Class tables live in `data.progression` as arrays of 20 numbers, index 0 = level
 and make them agree with the `stat` rules that realise them. A feature's `resource.max` can point at a column:
 `{"type":"table","key":"second_wind"}`.
 
+## Weapon mastery (2024)
+A weapon names its mastery property by the property element's id. One property: `"data": {"mastery_id": "ID_2024_MASTERY_TOPPLE"}`.
+Several (homebrew): list them all in order in `data.mastery_ids` and keep the first in `mastery_id` too, so older readers see one:
+`"data": {"mastery_id": "ID_2024_MASTERY_TOPPLE", "mastery_ids": ["ID_2024_MASTERY_TOPPLE", "ID_2024_MASTERY_PUSH"]}`.
+Add a `mastery` setter with the names for display (`{"name": "mastery", "value": "Topple, Push"}`). A new property is its own
+`Mastery Property` element (`ID_HB_MASTERY_<NAME>`, description = its rule). The engine also reads Aurora XML forms: a `supports`
+entry naming a `Mastery Property` element (one per property), or `<set name="mastery">Topple, Push</set>` (names matched to
+property elements). Every property is shown on the Weapon Mastery pick, the attack row and the sheet. Give a kind of weapon
+`data.weapon_category` (`Simple Melee`, `Martial Ranged`, ...) and `data.melee` so Weapon Mastery slots can offer it.
+
 ## Description HTML subset
 Use only `<p>`, `<b>`, `<i>`/`<em>`, `<ul><li>`, and simple `<table><tr><th>/<td>`. Start named sub-features with `<p><b>Name.</b> text</p>`.
 No scripts, styles, classes or links. Use `<div element="ID_X"/>` only to transclude another element. Write descriptions in your own words;
