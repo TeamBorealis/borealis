@@ -595,6 +595,450 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
     ]
   },
   {
+    "id": "feat",
+    "label": "Feat",
+    "pluralLabel": "Feats",
+    "description": "A feat, 2014 or 2024, with its prerequisite and what it gives.",
+    "group": "main",
+    "elementTypes": [
+      "Feat"
+    ],
+    "parentKinds": [],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "category",
+        "label": "Category",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "Origin",
+            "label": "Origin"
+          },
+          {
+            "value": "General",
+            "label": "General"
+          },
+          {
+            "value": "Fighting Style",
+            "label": "Fighting Style"
+          },
+          {
+            "value": "Epic Boon",
+            "label": "Epic Boon"
+          }
+        ],
+        "allowCustom": true,
+        "bindings": [
+          "setter:category",
+          "supports:<Category> Feat|Feat",
+          "data.category"
+        ],
+        "help": "2024 feats: the feat choices of this category offer it. Leave it empty for a 2014 feat.",
+        "section": "Feat"
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements",
+          "data.prerequisite"
+        ],
+        "section": "Prerequisite"
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
+        "section": "Prerequisite",
+        "default": ""
+      },
+      {
+        "key": "repeatable",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate",
+          "data.repeatable.allowed"
+        ],
+        "section": "Taking it again",
+        "default": false
+      },
+      {
+        "key": "repeatDistinct",
+        "label": "Each time with a different",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "data.repeatable.distinct_param"
+        ],
+        "help": "The choice that must differ each time, such as Spell List. Leave it empty when any choice may repeat.",
+        "section": "Taking it again"
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers.",
+        "section": "Details"
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "featFeature",
+    "label": "Feat feature",
+    "pluralLabel": "Feat features",
+    "description": "An option or part of a feat, edited inside the feat.",
+    "group": "child",
+    "elementTypes": [
+      "Feat Feature"
+    ],
+    "parentKinds": [
+      "feat"
+    ],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers."
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ]
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ]
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ]
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ]
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
     "id": "language",
     "label": "Language",
     "pluralLabel": "Languages",

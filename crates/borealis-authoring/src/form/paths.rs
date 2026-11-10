@@ -73,8 +73,12 @@ pub fn form_path_for_location(
         "supports" => {
             return field_with(form, Codec::edits_supports).or_else(|| preserved(form, top))
         }
-        "requirements" => Codec::Requirements,
-        "prerequisite" => Codec::PrerequisiteText,
+        "requirements" => {
+            return field_with(form, Codec::is_condition).or_else(|| preserved(form, top))
+        }
+        "prerequisite" => {
+            return field_with(form, Codec::is_prerequisite_text).or_else(|| preserved(form, top))
+        }
         "description" => Codec::Description,
         "sheet" => Codec::Sheet,
         "compendium" => Codec::Compendium,
@@ -154,7 +158,7 @@ fn builder_problems(
                 ));
             }
         }
-        for def in k.fields.iter().filter(|d| d.codec == Codec::Requirements) {
+        for def in k.fields.iter().filter(|d| d.codec.is_condition()) {
             let Some(v) = form.fields.get(def.key) else {
                 continue;
             };
