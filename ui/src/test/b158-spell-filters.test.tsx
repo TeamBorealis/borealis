@@ -47,12 +47,13 @@ describe("Spell filters on the SPELLCASTING tab (GitHub #21)", () => {
     const all = names(table);
     expect(all).toContain("Magic Missile");
     expect(all.length).toBeGreaterThan(3);
+    // The grid reports its counts to the bar from an effect, so the badge follows the rows by one render.
     const badge = screen.getByLabelText("Filtered spells");
-    expect(badge.textContent).toBe(`${all.length} / ${all.length}`);
+    await waitFor(() => expect(badge.textContent).toBe(`${all.length} / ${all.length}`));
 
     await user.type(screen.getByRole("textbox", { name: "Filter spells" }), "magic missile");
     expect(names(table)).toEqual(["Magic Missile"]);
-    expect(badge.textContent).toBe(`1 / ${all.length}`);
+    await waitFor(() => expect(badge.textContent).toBe(`1 / ${all.length}`));
     await user.click(screen.getByRole("button", { name: "Clear filter text" }));
     expect(names(table)).toEqual(all);
 
