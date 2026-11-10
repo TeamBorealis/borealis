@@ -89,6 +89,25 @@ pub fn ios_location(dest: &Path) -> String {
         })
 }
 
+/// iOS: what the Save toast names for the picker's answer `dest` when the sheet was offered as
+/// `name`. A new file or Replace answers the file, so the toast names it ("On My iPhone/Brannoc.pdf").
+/// Keep Both (a file of that name was there) answers only the folder: the Files app then names the
+/// new copy itself ("Brannoc 2.pdf" on a device, the same name on the simulator), and the app
+/// cannot read that folder to learn it. The toast then names the folder and says why the file may
+/// not be called `name`, rather than guess a name.
+#[must_use]
+pub fn ios_saved_location(dest: &Path, name: &str) -> String {
+    let place = ios_location(dest);
+    let names_a_file = dest
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("pdf"));
+    if names_a_file {
+        place
+    } else {
+        format!("{place} (Files may have renamed it, as {name} was already there)")
+    }
+}
+
 /// Android: the "Save to" picker, then the PDF viewer (see the module docs).
 ///
 /// # Errors
@@ -143,7 +162,7 @@ pub fn save<R: tauri::Runtime>(
     }
     let location = picked
         .and_then(|p| p.into_path().ok())
-        .map(|p| ios_location(&p));
+        .map(|p| ios_saved_location(&p, name));
     Ok(saved_result(file, location))
 }
 
@@ -200,6 +219,39 @@ mod tests {
         assert_eq!(
             ios_location(Path::new("/var/elsewhere/Drive/Brannoc.pdf")),
             "Drive/Brannoc.pdf"
+        );
+    }
+
+    #[test]
+    fn an_ios_save_names_the_file_only_when_the_picker_answers_one() {
+        let local = "/private/var/mobile/Containers/Shared/AppGroup/X/File Provider Storage";
+        // a new file, or Replace: the picker answers the file
+        let file = format!("{local}/Brannoc.pdf");
+        assert_eq!(
+            ios_saved_location(Path::new(&file), "Brannoc.pdf"),
+            "On My iPhone/Brannoc.pdf"
+        );
+        let upper = format!("{local}/Sheets/Brannoc.PDF");
+        assert_eq!(
+            ios_saved_location(Path::new(&upper), "Brannoc.pdf"),
+            "On My iPhone/Sheets/Brannoc.PDF"
+        );
+        // Keep Both: the picker answers the folder (with or without a trailing slash), and the
+        // Files app may name the copy "Brannoc 2.pdf", so no file name is claimed
+        let keep_both =
+            "On My iPhone (Files may have renamed it, as Brannoc.pdf was already there)";
+        assert_eq!(
+            ios_saved_location(Path::new(local), "Brannoc.pdf"),
+            keep_both
+        );
+        assert_eq!(
+            ios_saved_location(Path::new(&format!("{local}/")), "Brannoc.pdf"),
+            keep_both
+        );
+        let icloud = "/private/var/mobile/Library/Mobile Documents/com~apple~CloudDocs/Sheets/";
+        assert_eq!(
+            ios_saved_location(Path::new(icloud), "Brannoc.pdf"),
+            "iCloud Drive/Sheets (Files may have renamed it, as Brannoc.pdf was already there)"
         );
     }
 }
