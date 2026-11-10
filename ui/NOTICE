@@ -30,4 +30,8 @@ Notes view libraries (src/pages/notes/, loaded with the Notes section only)
   DOMPurify, Copyright Cure53 and other contributors, Apache License 2.0 (or MPL 2.0). https://github.com/cure53/DOMPurify
   js-yaml, Copyright (C) 2011-2015 by Vitaly Puzrin, MIT License. https://github.com/nodeca/js-yaml
 
+Homebrew creator rich-text editor (src/pages/homebrew/rich/)
+  prosemirror-model, Copyright (C) 2015-2017 by Marijn Haverbeke and others, MIT License. https://github.com/ProseMirror/prosemirror-model
+  orderedmap, Copyright (C) 2016 by Marijn Haverbeke and others, MIT License. https://github.com/marijnh/orderedmap
+
 Borealis is not affiliated with Aurora Builder or with Obsidian. The Borealis mark (src/components/shell/BrandMark.tsx) is original artwork.
