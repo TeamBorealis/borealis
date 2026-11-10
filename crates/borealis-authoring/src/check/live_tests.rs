@@ -218,3 +218,45 @@ fn schema_locations_are_read_from_pointers() {
     assert_eq!(schema_location("/elements/3"), Some((3, None)));
     assert_eq!(schema_location("/format"), None);
 }
+
+#[test]
+fn a_subrace_no_race_offers_is_told_at_its_parent_race() {
+    let race = element(
+        json!({"id": "ID_T_RACE_DWARF", "name": "Dwarf", "type": "Race", "source": "T", "description": "<p>D.</p>",
+        "rules": [{"kind": "select", "type": "Sub Race", "name": "Dwarven Subrace", "supports": "Dwarf"}]}),
+    );
+    let store = ContentStoreBuilder::new()
+        .add_file("t.json", PackOrigin::Custom, ContentFile::new(vec![race]))
+        .build();
+    let codec = CatalogBlockCodec;
+    let cx = FormContext::from_store(&store, &codec);
+    let hidden = HashSet::new();
+    let lints_of = |parent: &str| {
+        let sub = element(
+            json!({"id": "ID_T_SUBRACE_ASH", "name": "Ash Dwarf", "type": "Sub Race",
+            "source": "T", "description": "<p>Ash.</p>", "supports": [parent]}),
+        );
+        let form = element_to_form(&sub, &cx);
+        live_problems(&LiveInput {
+            form: &form,
+            cx: &cx,
+            store: &store,
+            file: "mine/content.json",
+            hidden: &hidden,
+            pack: &[],
+        })
+        .into_iter()
+        .map(|p| (p.path.unwrap_or_default(), p.code, p.message))
+        .collect::<Vec<_>>()
+    };
+    assert_eq!(lints_of("Dwarf"), vec![]);
+    assert_eq!(
+        lints_of("Dwarrf"),
+        vec![(
+            "fields.parent".to_string(),
+            "lint.not_offered".to_string(),
+            "No loaded race's subrace choice offers it. Check the parent race: it is the tag that choice offers, usually the race's name."
+                .to_string()
+        )]
+    );
+}

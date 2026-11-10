@@ -1039,6 +1039,2375 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
     ]
   },
   {
+    "id": "species",
+    "label": "Species",
+    "pluralLabel": "Species",
+    "description": "A 2024 species: size, speed, senses and traits.",
+    "group": "main",
+    "elementTypes": [
+      "Species"
+    ],
+    "parentKinds": [],
+    "editions": [
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "creatureType",
+        "label": "Creature type",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "Aberration",
+            "label": "Aberration"
+          },
+          {
+            "value": "Beast",
+            "label": "Beast"
+          },
+          {
+            "value": "Celestial",
+            "label": "Celestial"
+          },
+          {
+            "value": "Construct",
+            "label": "Construct"
+          },
+          {
+            "value": "Dragon",
+            "label": "Dragon"
+          },
+          {
+            "value": "Elemental",
+            "label": "Elemental"
+          },
+          {
+            "value": "Fey",
+            "label": "Fey"
+          },
+          {
+            "value": "Fiend",
+            "label": "Fiend"
+          },
+          {
+            "value": "Giant",
+            "label": "Giant"
+          },
+          {
+            "value": "Humanoid",
+            "label": "Humanoid"
+          },
+          {
+            "value": "Monstrosity",
+            "label": "Monstrosity"
+          },
+          {
+            "value": "Ooze",
+            "label": "Ooze"
+          },
+          {
+            "value": "Plant",
+            "label": "Plant"
+          },
+          {
+            "value": "Undead",
+            "label": "Undead"
+          }
+        ],
+        "allowCustom": true,
+        "bindings": [
+          "data.creature_type"
+        ],
+        "section": "Species",
+        "default": "Humanoid"
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "choices": [
+          {
+            "value": "Tiny",
+            "label": "Tiny"
+          },
+          {
+            "value": "Small",
+            "label": "Small"
+          },
+          {
+            "value": "Medium",
+            "label": "Medium"
+          },
+          {
+            "value": "Large",
+            "label": "Large"
+          },
+          {
+            "value": "Huge",
+            "label": "Huge"
+          },
+          {
+            "value": "Gargantuan",
+            "label": "Gargantuan"
+          }
+        ],
+        "bindings": [
+          "rule:grant Size",
+          "rule:select_size",
+          "data.size"
+        ],
+        "help": "Two or more: the player chooses one.",
+        "section": "Species",
+        "default": [
+          "Medium"
+        ]
+      },
+      {
+        "key": "speed",
+        "label": "Speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed",
+          "data.speed"
+        ],
+        "help": "Walking speed in feet. Other speeds: 0 for none.",
+        "section": "Speed",
+        "min": 0,
+        "max": 1000,
+        "default": 30
+      },
+      {
+        "key": "flySpeed",
+        "label": "Fly speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:fly"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "swimSpeed",
+        "label": "Swim speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:swim"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "climbSpeed",
+        "label": "Climb speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:climb"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "burrowSpeed",
+        "label": "Burrow speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:burrow"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "darkvision",
+        "label": "Darkvision",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:grant ID_VISION_DARKVISION",
+          "rule:stat darkvision:range"
+        ],
+        "help": "Range in feet; 0 for none.",
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "blindsight",
+        "label": "Blindsight",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense blindsight"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "tremorsense",
+        "label": "Tremorsense",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense tremorsense"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "truesight",
+        "label": "Truesight",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense truesight"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "traits",
+        "label": "Traits",
+        "tab": "general",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rule:grant Racial Trait",
+          "data.traits"
+        ],
+        "help": "Each is given at level 1. A trait from a later level, or one with a condition, is a block on RULES.",
+        "section": "Traits",
+        "picker": {
+          "types": [
+            "Racial Trait"
+          ],
+          "multiple": true
+        }
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers.",
+        "section": "Details"
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "race",
+    "label": "Race",
+    "pluralLabel": "Races",
+    "description": "A 2014 race: ability score increases, size, speed, senses, languages and traits.",
+    "group": "main",
+    "elementTypes": [
+      "Race"
+    ],
+    "parentKinds": [],
+    "editions": [
+      "dnd2014"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "creatureType",
+        "label": "Creature type",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "Aberration",
+            "label": "Aberration"
+          },
+          {
+            "value": "Beast",
+            "label": "Beast"
+          },
+          {
+            "value": "Celestial",
+            "label": "Celestial"
+          },
+          {
+            "value": "Construct",
+            "label": "Construct"
+          },
+          {
+            "value": "Dragon",
+            "label": "Dragon"
+          },
+          {
+            "value": "Elemental",
+            "label": "Elemental"
+          },
+          {
+            "value": "Fey",
+            "label": "Fey"
+          },
+          {
+            "value": "Fiend",
+            "label": "Fiend"
+          },
+          {
+            "value": "Giant",
+            "label": "Giant"
+          },
+          {
+            "value": "Humanoid",
+            "label": "Humanoid"
+          },
+          {
+            "value": "Monstrosity",
+            "label": "Monstrosity"
+          },
+          {
+            "value": "Ooze",
+            "label": "Ooze"
+          },
+          {
+            "value": "Plant",
+            "label": "Plant"
+          },
+          {
+            "value": "Undead",
+            "label": "Undead"
+          }
+        ],
+        "allowCustom": true,
+        "bindings": [
+          "data.creature_type"
+        ],
+        "section": "Race",
+        "default": "Humanoid"
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "choices": [
+          {
+            "value": "Tiny",
+            "label": "Tiny"
+          },
+          {
+            "value": "Small",
+            "label": "Small"
+          },
+          {
+            "value": "Medium",
+            "label": "Medium"
+          },
+          {
+            "value": "Large",
+            "label": "Large"
+          },
+          {
+            "value": "Huge",
+            "label": "Huge"
+          },
+          {
+            "value": "Gargantuan",
+            "label": "Gargantuan"
+          }
+        ],
+        "bindings": [
+          "rule:grant Size",
+          "rule:select_size",
+          "data.size"
+        ],
+        "help": "Two or more: the player chooses one.",
+        "section": "Race",
+        "default": [
+          "Medium"
+        ]
+      },
+      {
+        "key": "strength",
+        "label": "Strength",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat strength"
+        ],
+        "help": "Fixed increases. A choice the player makes is an Ability score increase block on RULES.",
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "dexterity",
+        "label": "Dexterity",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat dexterity"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "constitution",
+        "label": "Constitution",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat constitution"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "intelligence",
+        "label": "Intelligence",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat intelligence"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "wisdom",
+        "label": "Wisdom",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat wisdom"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "charisma",
+        "label": "Charisma",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat charisma"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "speed",
+        "label": "Speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed",
+          "data.speed"
+        ],
+        "help": "Walking speed in feet. Other speeds: 0 for none.",
+        "section": "Speed",
+        "min": 0,
+        "max": 1000,
+        "default": 30
+      },
+      {
+        "key": "flySpeed",
+        "label": "Fly speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:fly"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "swimSpeed",
+        "label": "Swim speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:swim"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "climbSpeed",
+        "label": "Climb speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:climb"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "burrowSpeed",
+        "label": "Burrow speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:burrow"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "darkvision",
+        "label": "Darkvision",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:grant ID_VISION_DARKVISION",
+          "rule:stat darkvision:range"
+        ],
+        "help": "Range in feet; 0 for none.",
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "blindsight",
+        "label": "Blindsight",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense blindsight"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "tremorsense",
+        "label": "Tremorsense",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense tremorsense"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "truesight",
+        "label": "Truesight",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense truesight"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "languages",
+        "label": "Languages",
+        "tab": "general",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rule:grant Language"
+        ],
+        "section": "Languages",
+        "picker": {
+          "types": [
+            "Language"
+          ],
+          "multiple": true
+        },
+        "default": [
+          {
+            "id": "ID_LANGUAGE_COMMON",
+            "name": "Common",
+            "type": "Language"
+          }
+        ]
+      },
+      {
+        "key": "languageChoice",
+        "label": "Languages of the player's choice",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:select Language"
+        ],
+        "help": "How many standard or exotic languages the player picks.",
+        "section": "Languages",
+        "min": 0,
+        "max": 10
+      },
+      {
+        "key": "traits",
+        "label": "Traits",
+        "tab": "general",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rule:grant Racial Trait",
+          "data.traits"
+        ],
+        "help": "Each is given at level 1. A trait from a later level, or one with a condition, is a block on RULES.",
+        "section": "Traits",
+        "picker": {
+          "types": [
+            "Racial Trait"
+          ],
+          "multiple": true
+        }
+      },
+      {
+        "key": "maleNames",
+        "label": "Male names",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:names type=male"
+        ],
+        "section": "Random names"
+      },
+      {
+        "key": "femaleNames",
+        "label": "Female names",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:names type=female"
+        ],
+        "section": "Random names"
+      },
+      {
+        "key": "familyNames",
+        "label": "Family or clan names",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:names type=family"
+        ],
+        "section": "Random names"
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers.",
+        "section": "Details"
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "subRace",
+    "label": "Subrace",
+    "pluralLabel": "Subraces",
+    "description": "A 2014 subrace, offered by its race's subrace choice.",
+    "group": "main",
+    "elementTypes": [
+      "Sub Race"
+    ],
+    "parentKinds": [],
+    "editions": [
+      "dnd2014"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "parent",
+        "label": "Parent race",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "supports:<parent>"
+        ],
+        "help": "The tag the race's subrace choice offers, usually the race's name (Dwarf).",
+        "section": "Subrace"
+      },
+      {
+        "key": "strength",
+        "label": "Strength",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat strength"
+        ],
+        "help": "Fixed increases. A choice the player makes is an Ability score increase block on RULES.",
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "dexterity",
+        "label": "Dexterity",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat dexterity"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "constitution",
+        "label": "Constitution",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat constitution"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "intelligence",
+        "label": "Intelligence",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat intelligence"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "wisdom",
+        "label": "Wisdom",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat wisdom"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "charisma",
+        "label": "Charisma",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat charisma"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "speed",
+        "label": "Speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed",
+          "data.speed"
+        ],
+        "help": "Walking speed in feet. Other speeds: 0 for none.",
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "flySpeed",
+        "label": "Fly speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:fly"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "swimSpeed",
+        "label": "Swim speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:swim"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "climbSpeed",
+        "label": "Climb speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:climb"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "burrowSpeed",
+        "label": "Burrow speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:burrow"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "darkvision",
+        "label": "Darkvision",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:grant ID_VISION_DARKVISION",
+          "rule:stat darkvision:range"
+        ],
+        "help": "Range in feet; 0 for none.",
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "blindsight",
+        "label": "Blindsight",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense blindsight"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "tremorsense",
+        "label": "Tremorsense",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense tremorsense"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "truesight",
+        "label": "Truesight",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense truesight"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "languages",
+        "label": "Languages",
+        "tab": "general",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rule:grant Language"
+        ],
+        "section": "Languages",
+        "picker": {
+          "types": [
+            "Language"
+          ],
+          "multiple": true
+        }
+      },
+      {
+        "key": "languageChoice",
+        "label": "Languages of the player's choice",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:select Language"
+        ],
+        "help": "How many standard or exotic languages the player picks.",
+        "section": "Languages",
+        "min": 0,
+        "max": 10
+      },
+      {
+        "key": "traits",
+        "label": "Traits",
+        "tab": "general",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rule:grant Racial Trait",
+          "data.traits"
+        ],
+        "help": "Each is given at level 1. A trait from a later level, or one with a condition, is a block on RULES.",
+        "section": "Traits",
+        "picker": {
+          "types": [
+            "Racial Trait"
+          ],
+          "multiple": true
+        }
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers.",
+        "section": "Details"
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "raceVariant",
+    "label": "Race variant",
+    "pluralLabel": "Race variants",
+    "description": "A 2014 race variant, offered by its race's variant choice.",
+    "group": "main",
+    "elementTypes": [
+      "Race Variant"
+    ],
+    "parentKinds": [],
+    "editions": [
+      "dnd2014"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "parent",
+        "label": "Parent race",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "supports:<parent>"
+        ],
+        "help": "The tag the race's variant choice offers, such as Human.",
+        "section": "Variant"
+      },
+      {
+        "key": "strength",
+        "label": "Strength",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat strength"
+        ],
+        "help": "Fixed increases. A choice the player makes is an Ability score increase block on RULES.",
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "dexterity",
+        "label": "Dexterity",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat dexterity"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "constitution",
+        "label": "Constitution",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat constitution"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "intelligence",
+        "label": "Intelligence",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat intelligence"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "wisdom",
+        "label": "Wisdom",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat wisdom"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "charisma",
+        "label": "Charisma",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat charisma"
+        ],
+        "section": "Ability score increases",
+        "min": -10,
+        "max": 10
+      },
+      {
+        "key": "speed",
+        "label": "Speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed",
+          "data.speed"
+        ],
+        "help": "Walking speed in feet. Other speeds: 0 for none.",
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "flySpeed",
+        "label": "Fly speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:fly"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "swimSpeed",
+        "label": "Swim speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:swim"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "climbSpeed",
+        "label": "Climb speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:climb"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "burrowSpeed",
+        "label": "Burrow speed",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:stat innate speed:burrow"
+        ],
+        "section": "Speed",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "darkvision",
+        "label": "Darkvision",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:grant ID_VISION_DARKVISION",
+          "rule:stat darkvision:range"
+        ],
+        "help": "Range in feet; 0 for none.",
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "blindsight",
+        "label": "Blindsight",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense blindsight"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "tremorsense",
+        "label": "Tremorsense",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense tremorsense"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "truesight",
+        "label": "Truesight",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:sense truesight"
+        ],
+        "section": "Senses",
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "languages",
+        "label": "Languages",
+        "tab": "general",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rule:grant Language"
+        ],
+        "section": "Languages",
+        "picker": {
+          "types": [
+            "Language"
+          ],
+          "multiple": true
+        }
+      },
+      {
+        "key": "languageChoice",
+        "label": "Languages of the player's choice",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "rule:select Language"
+        ],
+        "help": "How many standard or exotic languages the player picks.",
+        "section": "Languages",
+        "min": 0,
+        "max": 10
+      },
+      {
+        "key": "traits",
+        "label": "Traits",
+        "tab": "general",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rule:grant Racial Trait",
+          "data.traits"
+        ],
+        "help": "Each is given at level 1. A trait from a later level, or one with a condition, is a block on RULES.",
+        "section": "Traits",
+        "picker": {
+          "types": [
+            "Racial Trait"
+          ],
+          "multiple": true
+        }
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers.",
+        "section": "Details"
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "racialTrait",
+    "label": "Racial trait",
+    "pluralLabel": "Racial traits",
+    "description": "A trait of a species or race, edited inside it.",
+    "group": "child",
+    "elementTypes": [
+      "Racial Trait"
+    ],
+    "parentKinds": [
+      "species",
+      "race",
+      "subRace",
+      "raceVariant"
+    ],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers."
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ]
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ]
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ]
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ]
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "speciesTraitOption",
+    "label": "Species trait option",
+    "pluralLabel": "Species trait options",
+    "description": "One option of a species' lineage or ancestry choice, edited inside the species.",
+    "group": "child",
+    "elementTypes": [
+      "Species Trait Option"
+    ],
+    "parentKinds": [
+      "species",
+      "racialTrait"
+    ],
+    "editions": [
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers."
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ]
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ]
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ]
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ]
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
     "id": "language",
     "label": "Language",
     "pluralLabel": "Languages",

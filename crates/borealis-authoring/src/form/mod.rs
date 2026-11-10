@@ -140,13 +140,19 @@ pub struct Memo {
     /// Per field: the value read and the stored bytes of its locations.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub fields: BTreeMap<String, FieldMemo>,
+    /// The places of the element's stored rules, when fields took some of them (a species' size and speed, an
+    /// armor's AC): one entry per stored rule, the key of the field that took it (its [`Slots::rules`]) or `""` for a
+    /// block's. Empty when every rule is a block. Writing reads it only for a field whose memo is gone, so the stored
+    /// order survives a canonical write.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub layout: Vec<String>,
 }
 
 impl Memo {
     /// True when nothing is remembered.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.id.is_none() && self.fields.is_empty()
+        self.id.is_none() && self.fields.is_empty() && self.layout.is_empty()
     }
 }
 

@@ -64,9 +64,11 @@ export function RefField({ id, label, target, value, onChange, describedBy, inva
   const multiple = !!target.multiple;
   const missing = value.some((r) => r.missing);
   const choose = (picks: HomebrewRef[]) => {
-    rememberRefs(picks);
+    // a pick carried into the picker by id keeps the name it had here when its row wasn't loaded there
+    const named = picks.map((p) => (p.name ? p : value.find((v) => sameId(v.id, p.id)) ?? p));
+    rememberRefs(named);
     setOpen(false);
-    onChange(multiple ? picks : picks.slice(0, 1));
+    onChange(multiple ? named : named.slice(0, 1));
   };
   return (
     <div className={`hb-ref ${invalid ? "hb-invalid" : ""}`} id={id} aria-describedby={describedBy}>

@@ -518,8 +518,8 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   `elementId` of a saved element (null for one not saved yet) and a `code`: an `IssueCode` (`dangling_reference`), a rule
   problem (`content.unknown_rule_kind`, `content.unknown_rule_field`), or the creator's own (`form.required`, `form`,
   `block.required`, `block.range`, `block.dice`, `block.choice`, `block.shape`, `lint.duplicate_name`,
-  `lint.empty_description`, `lint.escape`, `lint.unknown_pool`, `lint.select_empty`, `lint.spell_list_empty`,
-  `engine.refused`, `sweep.<finding>`, `balance.<metric>`); sentences per code: `borealis_authoring::check::messages`.
+  `lint.empty_description`, `lint.escape`, `lint.unknown_pool`, `lint.not_offered`, `lint.select_empty`,
+  `lint.spell_list_empty`, `engine.refused`, `sweep.<finding>`, `balance.<metric>`); sentences per code: `borealis_authoring::check::messages`.
   `homebrew_update_draft` sends the live pipeline's problems (spec 8.1 steps 1-5: form, schema, the content validator over
   the loaded content plus the draft, rule problems, lints); `homebrew_check_draft` the engine checks (steps 6-7), all
   warnings or info. Errors block Save (`homebrew_save_draft` runs the live pipeline, then the validator on the saved
@@ -561,6 +561,22 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   gets `{allowed: true}`); `repeatDistinct` ("Spell List") is `data.repeatable.distinct_param` (`spell_list`). The feat
   form has no `allowDuplicate` field. Kind `featFeature` (element type `Feat Feature`, group `child`, `parentKinds:
   ["feat"]`) has the shared parts only; it is not offered by New element.
+- **Species forms (WB-15).** Kinds `species` (element type `Species`, 2024), `race` (`Race`), `subRace` (`Sub Race`)
+  and `raceVariant` (`Race Variant`, all 2014), spec 4.4. Fields that hold rules: `size` (chips of Tiny..Gargantuan: one
+  is a `grant` of `ID_SIZE_<SIZE>`, two or more a `select_size`), `speed`, `flySpeed`, `swimSpeed`, `climbSpeed`,
+  `burrowSpeed` (control `number`, feet, 0 = none: `stat innate speed[:mode]` `bonus base`), `darkvision` (the grant of
+  `ID_VISION_DARKVISION`, plus `stat darkvision:range` when not 60), `blindsight`, `tremorsense`, `truesight` (`sense`
+  rules), `traits` (control `references`, `picker.types ["Racial Trait"]`: a `grant` each); 2014 kinds also
+  `strength`..`charisma` (number -10..10: `stat <ability>`), `languages` (references of `Language`: grants) and
+  `languageChoice` (number: a `select` of `Standard||Exotic` languages; its stored label is kept). `creatureType` is
+  `data.creature_type`; `data.size`, `data.speed` and `data.traits` are written when the element has them. `subRace`
+  and `raceVariant` have `parent` (required text): the tag the race's choice offers it by, its first support tag; a
+  `parent` no loaded race's choice offers is the warning `lint.not_offered` at `fields.parent`. `race` has
+  `maleNames`, `femaleNames`, `familyNames` (chips: `names` setters with `type`). A rule a field doesn't write exactly
+  (a trait from level 5, an increase with a condition) stays a block; the rules come back in their stored order. Child
+  kinds `racialTrait` (`parentKinds ["species","race","subRace","raceVariant"]`) and `speciesTraitOption`
+  (`["species","racialTrait"]`, 2024) have the shared parts only and are not offered by New element. `min`/`max` and
+  `picker` are the field spec parts the item forms use (above).
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

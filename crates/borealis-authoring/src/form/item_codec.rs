@@ -101,6 +101,16 @@ const RANK_STEALTH: u8 = 0;
 const RANK_AC: u8 = 1;
 const RANK_ENHANCEMENT: u8 = 2;
 
+/// The rank of the rules `f` writes (an unchanged rule keeps it too: new rules are placed by their neighbours' ranks).
+fn rule_rank(f: ItemField) -> u8 {
+    match f {
+        ItemField::Stealth => RANK_STEALTH,
+        ItemField::BaseAc => RANK_AC,
+        ItemField::Enhancement => RANK_ENHANCEMENT,
+        _ => 0,
+    }
+}
+
 /// Tagged references: the element type and the id prefix used when the tag isn't loaded.
 #[derive(Clone, Copy)]
 struct TagKind {
@@ -598,18 +608,18 @@ pub(crate) fn write_raw(
             return write(f, &m.value, Some(m), path, out, cx);
         }
     }
-    put_back(&raw, &m.slots, out, path);
+    put_back(&raw, &m.slots, out, path, rule_rank(f));
     Ok(())
 }
 
-fn put_back(raw: &Raw, slots: &Slots, out: &mut Out, path: &str) {
+fn put_back(raw: &Raw, slots: &Slots, out: &mut Out, path: &str, rank: u8) {
     out.setters(raw.setters.iter().cloned(), &slots.setters);
     out.supports(raw.tags.iter().cloned(), &slots.supports);
     for (k, v) in &raw.data {
         out.element.data.insert(k.clone(), v.clone());
     }
     out.field_rules(
-        raw.rules.iter().cloned().map(|x| (0, x)),
+        raw.rules.iter().cloned().map(|x| (rank, x)),
         &slots.rules,
         path,
     );

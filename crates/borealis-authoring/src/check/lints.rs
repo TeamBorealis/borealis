@@ -84,6 +84,16 @@ pub fn lints(
                 out.push((at, id.clone(), Finding::Escape));
             }
         }
+        if let Some(noun) = choice_noun(&e.ty) {
+            let draft: Vec<&Element> = pairs.iter().map(|(_, _, d)| *d).collect();
+            if has("parent") && !e.supports.is_empty() && !offered(e, store, &draft) {
+                out.push((
+                    format!("{prefix}fields.parent"),
+                    id.clone(),
+                    Finding::NotOffered { noun: noun.into() },
+                ));
+            }
+        }
         for (i, rule) in e.rules.iter().enumerate() {
             let Some(pool) = cost_pool(rule) else {
                 continue;
@@ -98,6 +108,31 @@ pub fn lints(
         }
     }
     out
+}
+
+/// What a race's choice of this type is called ("subrace"), for the types a race offers by tag.
+fn choice_noun(ty: &str) -> Option<&'static str> {
+    match ty {
+        "Sub Race" => Some("subrace"),
+        "Race Variant" => Some("variant"),
+        _ => None,
+    }
+}
+
+/// A choice of `e`'s type somewhere in the loaded content or the draft names one of its tags or its id.
+fn offered(e: &Element, store: &ContentStore, draft: &[&Element]) -> bool {
+    let loaded = store.iter().map(|s| &s.element);
+    loaded
+        .chain(draft.iter().copied())
+        .flat_map(Element::all_rules)
+        .any(|r| match r {
+            Rule::Select(s) if s.ty == e.ty => s.parse_supports().ok().flatten().is_some_and(|x| {
+                x.tags()
+                    .iter()
+                    .any(|t| *t == e.id || e.supports.iter().any(|own| own == t))
+            }),
+            _ => false,
+        })
 }
 
 /// The pool a `resource_cost` rule spends.

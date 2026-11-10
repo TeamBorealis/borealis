@@ -51,6 +51,7 @@ pub(crate) fn read_as(kind: &KindDef, e: &Element, key: String, cx: &FormContext
     let mut memo = Memo {
         id: (!e.id.is_empty()).then(|| e.id.clone()),
         fields: BTreeMap::new(),
+        layout: Vec::new(),
     };
     let mut fields = BTreeMap::new();
     let ordered = kind
@@ -64,6 +65,7 @@ pub(crate) fn read_as(kind: &KindDef, e: &Element, key: String, cx: &FormContext
             memo.fields.insert(f.key.to_string(), m);
         }
     }
+    memo.layout = layout(&memo, e.rules.len());
     let residue = Residue {
         e,
         setters: untaken(&r.setters_taken),
@@ -90,6 +92,24 @@ pub(crate) fn read_as(kind: &KindDef, e: &Element, key: String, cx: &FormContext
         fields,
         children: Vec::new(),
         memo,
+    }
+}
+
+/// [`Memo::layout`]: per stored rule, the field whose [`super::Slots::rules`] hold it, `""` for a block; empty when no
+/// field took a rule.
+fn layout(memo: &Memo, rules: usize) -> Vec<String> {
+    let mut out = vec![String::new(); rules];
+    for (key, m) in &memo.fields {
+        for &i in &m.slots.rules {
+            if let Some(place) = out.get_mut(i) {
+                place.clone_from(key);
+            }
+        }
+    }
+    if out.iter().all(String::is_empty) {
+        Vec::new()
+    } else {
+        out
     }
 }
 

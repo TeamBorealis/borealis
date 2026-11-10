@@ -19,6 +19,8 @@ pub(crate) struct Out {
     block_rules: Vec<(String, Rule)>,
     /// Rules written by fields: stored position (`None` = new), rank among new ones, origin (`fields.<key>`).
     field_rules: Vec<FieldRule>,
+    /// The form's [`super::Memo::layout`]: the stored places of fields whose memo is gone.
+    layout: Vec<String>,
 }
 
 /// A rule a field writes (an armor's base AC, its stealth disadvantage).
@@ -41,11 +43,13 @@ impl Out {
             seq: 0,
             block_rules: Vec::new(),
             field_rules: Vec::new(),
+            layout: Vec::new(),
         }
     }
 
-    /// Add rules a field writes: the `i`-th goes back to the stored position `slots[i]`; new ones go before every
-    /// other rule, ordered by `rank` (the order the creator writes them in, so a canonical write keeps the order).
+    /// Add rules a field writes: the `i`-th goes back to the stored position `slots[i]`; new ones are placed by
+    /// [`merge_rules`] (with no field rule stored, before every other rule, ordered by `rank`: the order the creator
+    /// writes them in, so a canonical write keeps the order). Fields are written in form order, so equal ranks keep it.
     pub(crate) fn field_rules(
         &mut self,
         items: impl IntoIterator<Item = (u8, Rule)>,
@@ -110,43 +114,121 @@ impl Out {
         self.supports.sort_by_key(|(k, _)| *k);
         self.element.setters = self.setters.into_iter().map(|(_, s)| s).collect();
         self.element.supports = self.supports.into_iter().map(|(_, t)| t).collect();
-        let (rules, origins) = merge_rules(self.block_rules, self.field_rules);
+        let (rules, origins) = merge_rules(self.block_rules, self.field_rules, &self.layout);
         self.element.rules = rules;
         (self.element, origins)
     }
 }
 
-/// The element's rules: field rules back at their stored positions, blocks in order in the positions left, then the
-/// new field rules in front (by rank). Unchanged, this is the stored order.
+/// A rule of the element being merged: its origin and, for a field's, its order among new rules (rank, then the
+/// order written).
+struct Placed {
+    origin: String,
+    order: Option<(u8, usize)>,
+    rule: Rule,
+}
+
+/// The element's rules. Field rules go back to their stored positions and blocks, in order, to the positions `layout`
+/// gives blocks (without a layout, the positions no field rule holds); more blocks go last. Unchanged, this is the
+/// stored order, and a field that writes fewer rules than it read leaves the others in their stored order. A field
+/// whose memo is gone (its stored text forgotten) takes its places from `layout`. Then each new field rule, by rank:
+///
+/// * a field that has rules placed already: after its last one (a darkvision range after its Vision grant);
+/// * else, before the first rule of the placed field next after it in rank and form order;
+/// * else, after the last rule of the placed field before it;
+/// * with no field rule placed at all, in front (so a new element's field rules lead, by rank).
 fn merge_rules(
     blocks: Vec<(String, Rule)>,
     fields: Vec<FieldRule>,
+    layout: &[String],
 ) -> (Vec<Rule>, Vec<RuleOrigin>) {
-    let (mut fixed, mut fresh): (Vec<FieldRule>, Vec<FieldRule>) =
-        fields.into_iter().partition(|f| f.slot.is_some());
-    fixed.sort_by_key(|f| f.slot);
-    fresh.sort_by_key(|f| f.rank);
-    let mut out: Vec<(String, Rule)> = Vec::new();
-    let mut fixed = fixed.into_iter().peekable();
-    let mut blocks = blocks.into_iter();
-    loop {
-        if fixed.peek().is_some_and(|f| f.slot <= Some(out.len())) {
-            let f = fixed.next().expect("peeked");
-            out.push((f.origin, f.rule));
-        } else if let Some(b) = blocks.next() {
-            out.push(b);
-        } else if let Some(f) = fixed.next() {
-            out.push((f.origin, f.rule));
-        } else {
-            break;
+    let fields = with_layout_slots(fields, layout);
+    let (mut stored, mut fresh): (Vec<_>, Vec<_>) = fields
+        .into_iter()
+        .enumerate()
+        .map(|(seq, f)| {
+            let p = Placed {
+                origin: f.origin,
+                order: Some((f.rank, seq)),
+                rule: f.rule,
+            };
+            (f.slot.map(|s| (s, 0)), p)
+        })
+        .partition(|(slot, _)| slot.is_some());
+    let places = block_places(layout, &stored);
+    stored.extend(blocks.into_iter().enumerate().map(|(j, (origin, rule))| {
+        // more blocks than places go last, in order
+        let place = places.get(j).map_or((usize::MAX, j), |&p| (p, 0));
+        let p = Placed {
+            origin,
+            order: None,
+            rule,
+        };
+        (Some(place), p)
+    }));
+    stored.sort_by_key(|(place, _)| *place);
+    fresh.sort_by_key(|(_, p)| p.order);
+    let mut out: Vec<Placed> = stored.into_iter().map(|(_, p)| p).collect();
+    for (_, p) in fresh {
+        let at = new_rule_position(&out, &p);
+        out.insert(at, p);
+    }
+    out.into_iter().map(|p| (p.rule, p.origin)).unzip()
+}
+
+/// The stored positions of block rules, in order: the `""` places of `layout`, or without one the positions no stored
+/// field rule holds (up to the last of them).
+fn block_places(layout: &[String], fields: &[(Option<(usize, usize)>, Placed)]) -> Vec<usize> {
+    if !layout.is_empty() {
+        return (0..layout.len())
+            .filter(|p| layout[*p].is_empty())
+            .collect();
+    }
+    let held: Vec<usize> = fields
+        .iter()
+        .filter_map(|(slot, _)| slot.map(|s| s.0))
+        .collect();
+    let end = held.iter().max().map_or(0, |m| m + 1);
+    (0..end).filter(|p| !held.contains(p)).collect()
+}
+
+/// Field rules with no slot take the stored places `layout` gives their field, when no rule holds them.
+fn with_layout_slots(mut fields: Vec<FieldRule>, layout: &[String]) -> Vec<FieldRule> {
+    if layout.is_empty() {
+        return fields;
+    }
+    let mut used: Vec<usize> = fields.iter().filter_map(|f| f.slot).collect();
+    for f in fields.iter_mut().filter(|f| f.slot.is_none()) {
+        let key = f.origin.strip_prefix("fields.").unwrap_or(&f.origin);
+        let place = (0..layout.len()).find(|p| layout[*p] == key && !used.contains(p));
+        if let Some(p) = place {
+            used.push(p);
+            f.slot = Some(p);
         }
     }
-    let all: Vec<(String, Rule)> = fresh
-        .into_iter()
-        .map(|f| (f.origin, f.rule))
-        .chain(out)
-        .collect();
-    all.into_iter().map(|(o, r)| (r, o)).unzip()
+    fields
+}
+
+/// Where a new field rule goes among the rules placed so far (see [`merge_rules`]).
+fn new_rule_position(out: &[Placed], p: &Placed) -> usize {
+    let last_of = |origin: &str| out.iter().rposition(|q| q.origin == origin);
+    if let Some(i) = last_of(&p.origin) {
+        return i + 1;
+    }
+    let placed = || out.iter().filter(|q| q.order.is_some());
+    if let Some(next) = placed()
+        .filter(|q| q.order > p.order)
+        .min_by_key(|q| q.order)
+    {
+        return out
+            .iter()
+            .position(|q| q.origin == next.origin)
+            .unwrap_or(0);
+    }
+    placed()
+        .max_by_key(|q| q.order)
+        .and_then(|prev| last_of(&prev.origin))
+        .map_or(0, |i| i + 1)
 }
 
 fn prefixed(prefix: &str, mut p: FormProblem) -> FormProblem {
@@ -208,6 +290,7 @@ fn write_traced(
     }
     base.ty = kind.new_element_type().unwrap_or_default().to_string();
     let mut out = Out::new(base);
+    out.layout.clone_from(&form.memo.layout);
     for f in kind.fields.iter().filter(|f| f.codec != Codec::Blocks) {
         let path = format!("fields.{}", f.key);
         let memo = form.memo.fields.get(f.key);

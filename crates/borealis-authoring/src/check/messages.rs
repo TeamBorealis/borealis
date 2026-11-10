@@ -541,6 +541,11 @@ pub enum Finding {
         /// The pool's name.
         pool: String,
     },
+    /// A subrace or race variant no loaded race's choice offers.
+    NotOffered {
+        /// "subrace", "variant".
+        noun: String,
+    },
 }
 
 impl Finding {
@@ -560,6 +565,7 @@ impl Finding {
             Self::SelectOffersNothing => "lint.select_empty",
             Self::SpellListEmpty => "lint.spell_list_empty",
             Self::UnknownPool { .. } => "lint.unknown_pool",
+            Self::NotOffered { .. } => "lint.not_offered",
         }
     }
 
@@ -579,7 +585,8 @@ impl Finding {
             | Self::Escape
             | Self::SelectOffersNothing
             | Self::SpellListEmpty
-            | Self::UnknownPool { .. } => Warning,
+            | Self::UnknownPool { .. }
+            | Self::NotOffered { .. } => Warning,
             Self::EmptyDescription => Info,
         }
     }
@@ -631,6 +638,9 @@ impl Finding {
             }
             Self::UnknownPool { pool } => format!(
                 "Nothing defines the points \"{pool}\" this costs. Add the pool, or pick one that exists."
+            ),
+            Self::NotOffered { noun } => format!(
+                "No loaded race's {noun} choice offers it. Check the parent race: it is the tag that choice offers, usually the race's name."
             ),
         }
     }

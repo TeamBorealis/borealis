@@ -12,6 +12,7 @@ use serde_json::{json, Value};
 use std::sync::OnceLock;
 
 mod feat;
+mod species;
 mod spell;
 
 /// The generic form (spec 4.12), also the form of every type no other kind writes.
@@ -734,6 +735,7 @@ pub fn kinds() -> &'static [KindDef] {
             feat::feat_kind(),
             feat::feat_feature_kind(),
         ];
+        all.extend(species::species_kinds());
         all.extend(small_kinds());
         all.extend(super::item_kinds::item_kinds());
         all.push(other_kind());

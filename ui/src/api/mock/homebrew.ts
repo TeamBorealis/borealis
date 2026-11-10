@@ -49,14 +49,14 @@ const kind = (id: string, label: string, pluralLabel: string, elementType: strin
 });
 
 /** Kinds whose own form has landed in `borealis-authoring`: the mock serves their real descriptors (generated). */
-const REAL_KINDS = ["spell", "feat", "featFeature"];
+const REAL_KINDS = ["spell", "feat", "featFeature", "species", "race", "subRace", "raceVariant", "racialTrait", "speciesTraitOption"];
 const realKinds = (): HomebrewKindDescriptor[] => REAL_KINDS.map((id) => {
   const k = MOCK_KIND_DESCRIPTORS.find((d) => d.id === id);
   if (!k) throw new Error(`homebrew-kinds.ts has no ${id} form`);
   return k;
 });
 
-/** The forms of the web mock: the real ones (WB-11 spell, WB-13 feat), then samples for kinds whose form is still to come. */
+/** The forms of the web mock: the real ones (WB-11 spell, WB-13 feat, WB-15 species), then samples for kinds whose form is still to come. */
 const KINDS: HomebrewKindDescriptor[] = [
   ...realKinds(),
   kind("language", "Language", "Languages", "Language", "A language characters can learn."),
@@ -72,9 +72,13 @@ const KINDS: HomebrewKindDescriptor[] = [
   },
 ];
 
-const TYPE_TOKENS: Record<string, string> = { Spell: "SPELL", Feat: "FEAT", "Feat Feature": "FEAT_FEATURE", Language: "LANGUAGE", Companion: "COMPANION" };
+const TYPE_TOKENS: Record<string, string> = {
+  Spell: "SPELL", Feat: "FEAT", "Feat Feature": "FEAT_FEATURE", Species: "SPECIES", Race: "RACE", "Sub Race": "SUBRACE", "Race Variant": "RACE_VARIANT",
+  "Racial Trait": "TRAIT", "Species Trait Option": "TRAIT_OPTION", Language: "LANGUAGE", Companion: "COMPANION",
+};
 const PREVIEW_TYPES: Record<string, ElementType> = {
-  spell: "spell", feat: "feat", language: "language",
+  spell: "spell", feat: "feat", language: "language", species: "race", race: "race", subRace: "subrace", raceVariant: "subrace", racialTrait: "racial-trait",
+  speciesTraitOption: "racial-trait",
   item: "item", weapon: "weapon", armor: "armor", magicItem: "magic-item", itemPack: "item", equipmentPackage: "option",
 };
 /** Item facts the description pane lists (WB-12): field key and label. */
