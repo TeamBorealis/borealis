@@ -15,6 +15,14 @@ pub struct ChoiceSpec {
     pub label: String,
 }
 
+/// What a reference field's picker offers (`HomebrewPickerTarget`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PickerSpec {
+    /// Element types offered.
+    pub types: Vec<String>,
+}
+
 /// One sub-tab.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -62,6 +70,15 @@ pub struct FieldSpec {
     /// The value a new element starts with.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<Value>,
+    /// A number field's lowest value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min: Option<i32>,
+    /// A number field's highest value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max: Option<i32>,
+    /// A reference field's picker.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub picker: Option<PickerSpec>,
 }
 
 /// One kind (`HomebrewKindDescriptor`).
@@ -117,6 +134,11 @@ fn field_spec(f: &FieldDef) -> FieldSpec {
         read_only: f.read_only.then_some(true),
         section: f.section.map(str::to_string),
         default: f.default_value(),
+        min: f.range.map(|r| r.0),
+        max: f.range.map(|r| r.1),
+        picker: (!f.picker.is_empty()).then(|| PickerSpec {
+            types: strings(f.picker),
+        }),
     }
 }
 

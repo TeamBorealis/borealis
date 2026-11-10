@@ -12,6 +12,7 @@ use serde_json::{json, Value};
 use std::sync::OnceLock;
 
 mod feat;
+mod species;
 mod spell;
 
 /// The generic form (spec 4.12), also the form of every type no other kind writes.
@@ -48,6 +49,10 @@ pub enum Control {
     MapsTo,
     /// A spell's lists: one check box per spell list loaded classes declare, plus new list names.
     SpellLists,
+    /// A whole number (`FieldDef::min`/`max`).
+    Number,
+    /// Several element pickers (`FieldDef::picker` types).
+    References,
 }
 
 impl Control {
@@ -69,6 +74,8 @@ impl Control {
             Self::Reference => "reference",
             Self::MapsTo => "mapsTo",
             Self::SpellLists => "spellLists",
+            Self::Number => "number",
+            Self::References => "references",
         }
     }
 }
@@ -128,6 +135,10 @@ pub struct FieldDef {
     pub section: Option<&'static str>,
     /// The value a new element starts with, as JSON text.
     pub default: Option<&'static str>,
+    /// A number field's range.
+    pub range: Option<(i32, i32)>,
+    /// The element types a reference field offers.
+    pub picker: &'static [&'static str],
 }
 
 const fn field(
@@ -151,6 +162,8 @@ const fn field(
         help: None,
         section: None,
         default: None,
+        range: None,
+        picker: &[],
     }
 }
 
@@ -189,6 +202,18 @@ impl FieldDef {
     const fn section(self, section: &'static str) -> Self {
         Self {
             section: Some(section),
+            ..self
+        }
+    }
+    const fn range(self, min: i32, max: i32) -> Self {
+        Self {
+            range: Some((min, max)),
+            ..self
+        }
+    }
+    const fn picker(self, types: &'static [&'static str]) -> Self {
+        Self {
+            picker: types,
             ..self
         }
     }
@@ -693,6 +718,7 @@ pub fn kinds() -> &'static [KindDef] {
             feat::feat_kind(),
             feat::feat_feature_kind(),
         ];
+        all.extend(species::species_kinds());
         all.extend(small_kinds());
         all.push(other_kind());
         all

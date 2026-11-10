@@ -59,7 +59,15 @@ pub fn form_path_for_location(
 ) -> Option<String> {
     let top = location.split(['.', '[']).next().unwrap_or(location);
     if let Some(i) = index(location, "rules[") {
-        return block_of_rule(form, i, cx).map(|b| format!("blocks.{b}"));
+        let owners = kind(&form.kind)
+            .map(|k| super::read::rule_owners(k, element, cx))
+            .unwrap_or_default();
+        if let Some(Some(field)) = owners.get(i) {
+            return Some(format!("fields.{field}"));
+        }
+        let nth = owners.iter().take(i).filter(|o| o.is_none()).count();
+        let nth = if owners.is_empty() { i } else { nth };
+        return block_of_rule(form, nth, cx).map(|b| format!("blocks.{b}"));
     }
     if let Some(i) = index(location, "setters[") {
         let s = element.setters.get(i)?;

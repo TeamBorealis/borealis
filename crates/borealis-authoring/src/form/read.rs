@@ -47,22 +47,18 @@ pub(crate) fn read_one(e: &Element, key: String, cx: &FormContext<'_>) -> FormSt
 }
 
 pub(crate) fn read_as(kind: &KindDef, e: &Element, key: String, cx: &FormContext<'_>) -> FormState {
-    let mut r = Reader::new(e, owned_tags(kind));
+    let (r, fields, field_memos) = read_fields(kind, e, cx);
     let mut memo = Memo {
         id: (!e.id.is_empty()).then(|| e.id.clone()),
-        fields: BTreeMap::new(),
+        fields: field_memos,
+        layout: Vec::new(),
     };
-    let mut fields = BTreeMap::new();
-    let ordered = kind
-        .fields
-        .iter()
-        .filter(|f| !reads_leftovers(f.codec))
-        .chain(kind.fields.iter().filter(|f| reads_leftovers(f.codec)));
-    for f in ordered {
-        if let Some(m) = codec::read(f.codec, &mut r, cx) {
-            fields.insert(f.key.to_string(), m.value.clone());
-            memo.fields.insert(f.key.to_string(), m);
-        }
+    if r.rule_owner.iter().any(Option::is_some) {
+        memo.layout = r
+            .rule_owner
+            .iter()
+            .map(|o| o.unwrap_or_default().to_string())
+            .collect();
     }
     let residue = Residue {
         e,
@@ -76,10 +72,8 @@ pub(crate) fn read_as(kind: &KindDef, e: &Element, key: String, cx: &FormContext
             .collect(),
     };
     FormState {
-        blocks: e
-            .rules
-            .iter()
-            .enumerate()
+        blocks: r
+            .free_rules()
             .map(|(i, rule)| cx.blocks.read(rule, format!("b{i}"), cx))
             .collect(),
         preserved: preserved::collect(&residue),
@@ -89,6 +83,41 @@ pub(crate) fn read_as(kind: &KindDef, e: &Element, key: String, cx: &FormContext
         children: Vec::new(),
         memo,
     }
+}
+
+type ReadFields<'e> = (
+    Reader<'e>,
+    BTreeMap<String, serde_json::Value>,
+    BTreeMap<String, super::FieldMemo>,
+);
+
+/// Every field of `kind` read from `e`, with what the fields took.
+fn read_fields<'e>(kind: &KindDef, e: &'e Element, cx: &FormContext<'_>) -> ReadFields<'e> {
+    let mut r = Reader::new(e, owned_tags(kind));
+    let mut fields = BTreeMap::new();
+    let mut memos = BTreeMap::new();
+    let ordered = kind
+        .fields
+        .iter()
+        .filter(|f| !reads_leftovers(f.codec))
+        .chain(kind.fields.iter().filter(|f| reads_leftovers(f.codec)));
+    for f in ordered {
+        r.current = f.key;
+        if let Some(m) = codec::read(f.codec, &mut r, cx) {
+            fields.insert(f.key.to_string(), m.value.clone());
+            memos.insert(f.key.to_string(), m);
+        }
+    }
+    (r, fields, memos)
+}
+
+/// Per rule of `e` read in the form of `kind`: the key of the field that holds it, `None` for a block's.
+pub(crate) fn rule_owners(
+    kind: &KindDef,
+    e: &Element,
+    cx: &FormContext<'_>,
+) -> Vec<Option<&'static str>> {
+    read_fields(kind, e, cx).0.rule_owner
 }
 
 fn untaken(taken: &[bool]) -> Vec<usize> {

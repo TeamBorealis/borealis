@@ -10,15 +10,17 @@ use super::{FieldMemo, FormContext, FormProblem, Slots};
 use crate::expr_build::condition::{Condition, ConditionLanguage};
 use crate::expr_build::ExprValue;
 use borealis_content::rich::{self, normalize_plain_text, Doc};
-use borealis_content::{Compendium, Element, Ruleset, Setter, Sheet};
+use borealis_content::{Compendium, Element, Rule, Ruleset, Setter, Sheet};
 use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 
 mod feat;
 mod feat_prereq;
+mod species;
 mod spell;
 pub use feat::FeatField;
+pub use species::{Movement, NameKind, Sense, SpeciesField};
 pub use spell::{Component, SpellField};
 
 /// How one field maps to the element.
@@ -66,6 +68,8 @@ pub enum Codec {
     Spell(SpellField),
     /// A feat field (spec 4.2): category, prerequisite, repeatable, in both the 2014 and the 2024 shape.
     Feat(FeatField),
+    /// A species field (spec 4.4): size, speed, senses, traits, languages, ability increases, the parent race.
+    Species(SpeciesField),
 }
 
 const RARITIES: [&str; 3] = ["standard", "exotic", "secret"];
@@ -102,6 +106,7 @@ impl Codec {
             Self::Target => s("id"),
             Self::Spell(f) => f.bindings(),
             Self::Feat(f) => f.bindings(),
+            Self::Species(f) => f.bindings(),
         }
     }
 
@@ -147,6 +152,7 @@ impl Codec {
             Self::LanguageRarity => RARITIES.to_vec(),
             Self::Spell(f) => f.setter_names(),
             Self::Feat(f) => f.setter_names(),
+            Self::Species(f) => f.setter_names(),
             _ => Vec::new(),
         }
     }
@@ -159,6 +165,7 @@ impl Codec {
             Self::LanguageRarity => vec!["rarity"],
             Self::Spell(f) => f.data_keys(),
             Self::Feat(f) => f.data_keys(),
+            Self::Species(f) => f.data_keys(),
             _ => Vec::new(),
         }
     }
@@ -171,6 +178,10 @@ pub(crate) struct Reader<'e> {
     pub(crate) supports_taken: Vec<bool>,
     pub(crate) data_taken: BTreeSet<String>,
     pub(crate) owned_tags: BTreeSet<&'static str>,
+    /// Per rule: the field that holds it (`None`: a block's).
+    pub(crate) rule_owner: Vec<Option<&'static str>>,
+    /// The field being read.
+    pub(crate) current: &'static str,
 }
 
 impl<'e> Reader<'e> {
@@ -181,7 +192,24 @@ impl<'e> Reader<'e> {
             supports_taken: vec![false; e.supports.len()],
             data_taken: BTreeSet::new(),
             owned_tags,
+            rule_owner: vec![None; e.rules.len()],
+            current: "",
         }
+    }
+
+    /// The rules no field holds yet, with their positions.
+    pub(crate) fn free_rules(&self) -> impl Iterator<Item = (usize, &'e Rule)> + '_ {
+        let e = self.e;
+        e.rules
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| self.rule_owner[*i].is_none())
+    }
+
+    /// The field being read holds the rule at `i`.
+    pub(crate) fn take_rule(&mut self, i: usize) -> &'e Rule {
+        self.rule_owner[i] = Some(self.current);
+        &self.e.rules[i]
     }
 
     /// Take the first untaken setter called `name` (any case).
@@ -354,6 +382,7 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
         ),
         Codec::Spell(f) => spell::read(f, r),
         Codec::Feat(f) => feat::read(f, r, cx),
+        Codec::Species(f) => species::read(f, r, cx),
         Codec::Blocks => return None,
     })
 }
@@ -534,6 +563,7 @@ pub(crate) fn write(
         Codec::LanguageRarity => write_rarity(&text()?, raw, &slots, out, path)?,
         Codec::Spell(f) => spell::write(f, value, memo, path, out)?,
         Codec::Feat(_) => unreachable!("feat fields are written above"),
+        Codec::Species(f) => species::write(f, value, memo, path, out)?,
         Codec::Target => {
             let target: Option<RefValue> = decode(value, path)?;
             match target.filter(|t| !t.id.trim().is_empty()) {
@@ -634,6 +664,7 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
         }
         Codec::Target => out.element.id = get(raw)?,
         Codec::Spell(f) => spell::write_raw(f, m, out),
+        Codec::Species(f) => species::write_raw(f, m, out),
         Codec::Feat(_) | Codec::Blocks => {}
     }
     Ok(())

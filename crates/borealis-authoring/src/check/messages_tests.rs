@@ -291,6 +291,9 @@ fn finding_samples() -> Vec<Finding> {
         Finding::UnknownPool {
             pool: "ember points".into(),
         },
+        Finding::NotOffered {
+            noun: "subrace".into(),
+        },
     ]
 }
 

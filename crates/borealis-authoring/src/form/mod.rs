@@ -137,13 +137,18 @@ pub struct Memo {
     /// Per field: the value read and the stored bytes of its locations.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub fields: BTreeMap<String, FieldMemo>,
+    /// The order the element's rules were stored in, when fields hold some of them (a species' size and speed): one
+    /// entry per stored rule, the key of the field that holds it or `""` for a block's. Empty when every rule is a
+    /// block. Writing puts the rules back in this order (blocks fill the `""` places in their current order).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub layout: Vec<String>,
 }
 
 impl Memo {
     /// True when nothing is remembered.
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.id.is_none() && self.fields.is_empty()
+        self.id.is_none() && self.fields.is_empty() && self.layout.is_empty()
     }
 }
 

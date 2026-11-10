@@ -102,7 +102,7 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
     case "number":
       return (
         <span id={id} className="hb-number" aria-describedby={describedBy}>
-          <NumericUpDown label={label} value={typeof value === "number" ? value : field.min ?? 0} min={field.min ?? 0} max={field.max ?? 999} onChange={(n) => onChange(n, false)} />
+          <NumericUpDown label={label} value={typeof value === "number" ? value : Math.min(Math.max(0, field.min ?? 0), field.max ?? 999)} min={field.min ?? 0} max={field.max ?? 999} onChange={(n) => onChange(n, false)} />
         </span>
       );
     case "combo":
