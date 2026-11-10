@@ -1,6 +1,6 @@
 import { describe, test } from '@e2e-dev/web';
 import { expect } from 'e2e';
-import { bootToHome, expectEqual } from '../support/index.js';
+import { bootToHome, expectEqual, settledBox } from '../support/index.js';
 import { clickCss, dblClickCss, textOf, waitFor, type Ctx } from '../support/flows-a.js';
 
 // Homebrew WB-21 (spec 9, 13.9, 16): Try it on the web mock with the creator switched on (`?creator=1`). A feat with a rule
@@ -19,13 +19,18 @@ async function waitValue(ctx: Ctx, css: string, want: string): Promise<void> {
 const autosaved = (ctx: Ctx): Promise<void> =>
   waitFor(ctx, (_: null) => /All changes kept/i.test(document.querySelector('.hb-autosave')?.textContent ?? ''), null, 'autosave');
 
-/** Brings an element of the flyout's scrolling body into view (the click helpers test what is under its centre). */
+/**
+ * Brings an element of the flyout's scrolling body into view and waits until it holds still: the click helpers test what
+ * is under its centre, and right after Try it opens the panel is still sliding in (the phone sheet rises for 300 ms) and
+ * the Choices lists above may still be loading.
+ */
 async function reveal(ctx: Ctx, css: string): Promise<void> {
   await ctx.browser.evaluate((sel: string) => {
     const el = document.querySelector(sel);
     el?.scrollIntoView({ block: 'center' });
     return el !== null;
   }, css);
+  await settledBox(ctx.browser.locator(css).first());
 }
 
 const trialLevel = (ctx: Ctx, n: number): Promise<void> =>

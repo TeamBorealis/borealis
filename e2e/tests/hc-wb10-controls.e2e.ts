@@ -20,6 +20,18 @@ async function waitValue(ctx: Ctx, css: string, want: string): Promise<void> {
 const autosaved = (ctx: Ctx): Promise<void> =>
   waitFor(ctx, (_: null) => /All changes kept/i.test(document.querySelector('.hb-autosave')?.textContent ?? ''), null, 'autosave');
 
+/**
+ * Types into the reference picker's search and waits for the list to show its answer: the query goes out once typing
+ * pauses (200 ms), so until then the unfiltered list is still on screen with the row in another place (or far below).
+ */
+async function searchPicker(ctx: Ctx, text: string): Promise<void> {
+  await ctx.browser.locator('.hb-picker .pick-fsearch').fill(text);
+  await waitFor(ctx, (want: string) => {
+    const rows = [...document.querySelectorAll('.hb-pick-list .pick-row')];
+    return rows.length > 0 && rows.every((r) => (r.textContent ?? '').toLowerCase().includes(want));
+  }, text.toLowerCase(), `picker rows matching "${text}"`);
+}
+
 /** START > HOMEBREW > NEW PACK "Ember Isles" > New element (a spell) "Ember Bolt". */
 async function newSpell(ctx: Ctx, phone: boolean): Promise<void> {
   await ctx.screen.getByRole('button', 'New pack').first().tap();
@@ -42,7 +54,7 @@ describe('hc-wb10 homebrew creator controls (web mock)', { tags: ['homebrew'] },
     await expect(ctx.screen.getByText('Pick the element this condition tests.')).toBeVisible();
     await clickCss(ctx, '[data-field="requirements"] .hb-pick-btn');
     await expect(ctx.screen.getByRole('dialog', /^Choose: Prerequisite/)).toBeVisible();
-    await ctx.browser.locator('.hb-picker .pick-fsearch').fill('wizard');
+    await searchPicker(ctx, 'wizard');
     await dblClickCss(ctx, '.hb-pick-list .pick-row[data-row="Wizard"] button.pick-main');
     await expect(ctx.screen.getByText('Pick the element this condition tests.')).toBeHidden();
     expectEqual('the row names the element', 'Wizard', await textOf(ctx, '[data-field="requirements"] .hb-ref-name'));
@@ -113,7 +125,7 @@ describe('hc-wb10 homebrew creator controls (web mock)', { tags: ['homebrew'] },
     await ctx.screen.getByRole('button', 'Add rule').tap();
     await ctx.screen.getByRole('button', 'Gives ...').tap();
     await ctx.screen.getByRole('button', 'Pick: What it gives').tap();
-    await ctx.browser.locator('.hb-picker .pick-fsearch').fill('stealth');
+    await searchPicker(ctx, 'stealth');
     await ctx.browser.locator('.hb-pick-list .pick-row[data-row="Stealth"] button.pick-main').click();
     await ctx.screen.getByRole('button', 'Choose Stealth').last().tap();
     await ctx.screen.getByRole('button', 'OK').tap();
