@@ -1,4 +1,14 @@
 //! Deterministic element ids: `ID_<PREFIX>_<TYPE>_<NAME>`.
+//!
+//! [`slug`], [`make_id`] and [`reassign_ids`] are the import pipeline's (unchanged); [`IdGenerator`] and the token
+//! functions are the homebrew creator's rule (spec 5.3, module `creator`).
+
+mod creator;
+
+pub use creator::{
+    is_pack_code, name_token, select_name, type_token, IdError, IdGenerator, PACK_CODE_MAX,
+    PACK_CODE_MIN,
+};
 
 use std::collections::HashSet;
 
