@@ -55,8 +55,10 @@ const RENAMED: &[(&str, &str)] = &[
 ];
 
 /// The SRD 5.2.1 id an Aurora PHB 2024 id may stand for (not checked against the store).
+/// Rules and requirements are rewritten when the store is built; `supports` tags are not, so
+/// a reader that treats a tag as an element id (a weapon's Mastery property) resolves it here.
 #[must_use]
-pub(crate) fn phb24_candidate(id: &str) -> Option<String> {
+pub fn phb24_candidate(id: &str) -> Option<String> {
     let rest = id.strip_prefix(PHB24_PREFIX)?;
     if let Some((_, to)) = RENAMED.iter().find(|(from, _)| *from == rest) {
         return Some(format!("{SRD521_PREFIX}{to}"));

@@ -5,8 +5,8 @@
 use crate::graph::{Graph, NodeId};
 use crate::profile::ExhaustionModel;
 use crate::snapshot::{
-    ExhaustionSnapshot, InspirationSource, MartialArtsSnapshot, MasteryPick, MasteryRef,
-    ResourceCostSnapshot, ResourceSnapshot, RolledMaxSnapshot, ToggleSnapshot,
+    ExhaustionSnapshot, InspirationSource, MartialArtsSnapshot, ResourceCostSnapshot,
+    ResourceSnapshot, RolledMaxSnapshot, ToggleSnapshot,
 };
 use crate::spell_rules::progression;
 use crate::stats::StatSet;
@@ -848,67 +848,6 @@ pub(crate) fn plain_text(html: &str) -> String {
     out.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Mastery property name and text of a weapon element.
-#[must_use]
-pub fn mastery_of(uni: &Universe, weapon: &Element) -> Option<(String, String)> {
-    let mid = weapon.data.get("mastery_id")?.as_str()?;
-    let m = uni.get(mid)?;
-    Some((m.el.name.clone(), plain_text(&m.el.description)))
-}
-
-/// The weapons chosen for Weapon Mastery slots.
-#[must_use]
-pub fn mastery_picks(graph: &Graph<'_>) -> Vec<MasteryPick> {
-    let mut out = Vec::new();
-    for id in graph.preorder() {
-        let n = &graph.nodes[id];
-        // `Origin::Selected` carries the parent's slot index, not its rule index.
-        let parent_is_mastery = n.parent.is_some_and(|p| {
-            let parent = &graph.nodes[p];
-            matches!(n.origin, crate::graph::Origin::Selected(si)
-                if parent.slots.get(si).is_some_and(|slot|
-                    matches!(parent.e.el.rules.get(slot.rule), Some(Rule::Select(s))
-                        if crate::custom_rules::kind_of(s) == Some("mastery"))))
-        });
-        if !parent_is_mastery || out.iter().any(|p: &MasteryPick| p.weapon == n.e.el.id) {
-            continue;
-        }
-        if let Some((property, text)) = mastery_of(graph.uni, &n.e.el) {
-            out.push(MasteryPick {
-                weapon: n.e.el.id.clone(),
-                name: n.e.el.name.clone(),
-                property,
-                text,
-            });
-        }
-    }
-    out
-}
-
-/// The attack line mastery of a weapon (informational unless chosen).
-#[must_use]
-pub fn attack_mastery(
-    uni: &Universe,
-    weapon: &Element,
-    picks: &[MasteryPick],
-) -> Option<MasteryRef> {
-    let (name, text) = mastery_of(uni, weapon)?;
-    // a magic weapon of a mastered kind (`+1 Longsword` with `data.base_weapon` = a Longsword)
-    // is mastered too, whichever pack the picked Longsword comes from
-    let base = weapon.data.get("base_weapon").and_then(Value::as_str);
-    let base_name = base.and_then(|b| uni.get(b)).map(|b| b.el.name.as_str());
-    let mastered = picks.iter().any(|p| {
-        p.weapon == weapon.id
-            || base == Some(p.weapon.as_str())
-            || base_name.is_some_and(|n| n.eq_ignore_ascii_case(&p.name))
-    });
-    Some(MasteryRef {
-        name,
-        text,
-        mastered,
-    })
-}
-
 /// Number of Weapon Mastery slots a rewritten select offers at a class level.
 #[must_use]
 pub fn mastery_slot_count(
@@ -958,21 +897,10 @@ pub fn mastery_allows(
         .get(crate::custom_rules::X_FILTER)
         .and_then(|t| serde_json::from_str(t).ok())
         .unwrap_or(Value::Null);
-    if !cand.el.data.contains_key("mastery_id") {
+    if !crate::mastery::has_mastery(graph.uni, &cand.el) {
         return false;
     }
-    let category = cand
-        .el
-        .data
-        .get("weapon_category")
-        .and_then(Value::as_str)
-        .unwrap_or("");
-    let melee = cand
-        .el
-        .data
-        .get("melee")
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
+    let (category, melee) = crate::mastery::weapon_kind(&cand.el);
     if filter.get("weapon_kind").and_then(Value::as_str) == Some("melee") && !melee {
         return false;
     }

@@ -74,7 +74,7 @@ fn row(name: &str, dc: i32, ability: String, dice: &str, ty: &str) -> AttackSnap
         damage: format!("{dice} {}", ty.to_lowercase()).trim().to_string(),
         ability: "constitution".into(),
         proficient: true,
-        mastery: None,
+        masteries: Vec::new(),
         crit_range: 20,
         die_floor: None,
         offhand_damage: None,

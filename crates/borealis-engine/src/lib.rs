@@ -31,6 +31,7 @@ pub mod item_prof;
 pub mod item_spells;
 pub mod legacy_subclass;
 pub mod levels;
+pub mod mastery;
 pub mod money;
 pub mod notes_d;
 pub mod options;

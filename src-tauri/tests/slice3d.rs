@@ -285,13 +285,12 @@ fn a_mastery_choice_shows_on_the_attack_and_features_carry_text() {
         .iter()
         .find(|a| a.name == "Greatsword")
         .unwrap();
-    assert_eq!(
-        sword
-            .mastery
-            .as_ref()
-            .map(|m| (m.name.as_str(), m.mastered)),
-        Some(("Graze", false))
-    );
+    let lines: Vec<(&str, bool)> = sword
+        .masteries
+        .iter()
+        .map(|m| (m.name.as_str(), m.mastered))
+        .collect();
+    assert_eq!(lines, [("Graze", false)]);
     assert_eq!(sword.crit_range, 20);
 
     let snap = app
@@ -302,8 +301,9 @@ fn a_mastery_choice_shows_on_the_attack_and_features_carry_text() {
         .iter()
         .find(|a| a.name == "Greatsword")
         .unwrap();
-    assert!(sword.mastery.as_ref().is_some_and(|m| m.mastered));
+    assert!(sword.masteries.len() == 1 && sword.masteries[0].mastered);
     assert_eq!(snap.play.masteries[0]["weapon"], GREATSWORD);
+    assert_eq!(snap.play.masteries[0]["properties"][0]["name"], "Graze");
 
     let dup = vec![GREATSWORD.to_string(), GREATSWORD.to_string()];
     assert_eq!(

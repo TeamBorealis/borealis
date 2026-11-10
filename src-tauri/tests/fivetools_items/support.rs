@@ -272,11 +272,18 @@ impl RawItem {
             })
             .collect()
     }
-    pub fn mastery(&self) -> Option<String> {
+    /// Every mastery property name of the entry (`"Topple|..."` or `{"uid": "Topple|..."}`).
+    pub fn masteries(&self) -> Vec<String> {
         self.list("mastery")
-            .first()
-            .and_then(Value::as_str)
+            .iter()
+            .filter_map(|v| v.as_str().or_else(|| v.get("uid").and_then(Value::as_str)))
             .map(|s| strip(s).to_string())
+            .fold(Vec::new(), |mut out, n| {
+                if !out.contains(&n) {
+                    out.push(n);
+                }
+                out
+            })
     }
     pub fn attunes(&self) -> bool {
         match self.0.get("reqAttune") {

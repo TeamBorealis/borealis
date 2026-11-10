@@ -189,7 +189,7 @@ impl AppState {
         Ok(ElementDetail {
             summary: summary(&hub.store, el),
             description_html: html,
-            facts: facts(el),
+            facts: facts(&hub.store, el),
             grants: crate::element_grants::grants(&hub.store, el),
         })
     }
@@ -239,38 +239,33 @@ fn description_html(el: &Element) -> String {
     html
 }
 
-/// Type of the eight 2024 weapon mastery property elements (`ID_2024_MASTERY_<NAME>`).
-const MASTERY_PROPERTY_TYPE: &str = "Mastery Property";
-
-/// A weapon's mastery property name (`Topple`), from its `mastery` setter.
-fn mastery_name(el: &Element) -> Option<String> {
-    el.setter_value("mastery")
-        .map(|m| title_case(m.trim()))
-        .filter(|m| !m.is_empty())
-}
-
-/// A7: the rule text of a weapon's mastery property, under a "Mastery: <name>" heading, so the
-/// card says what the Weapon Mastery pick gives. The property element is the one the weapon
-/// supports, else the one of that name; empty for an element with no mastery property.
+/// A7: the rule text of each of a weapon's mastery properties, under a "Mastery: <name>"
+/// heading, so the card says what the Weapon Mastery pick gives. A property is the element the
+/// weapon names (by id or `supports`), else the one of that name; empty for an element with no
+/// mastery property.
 fn mastery_html(store: &ContentStore, el: &Element) -> String {
-    let Some(name) = mastery_name(el) else {
-        return String::new();
+    use borealis_engine::mastery::{mastery_links, MASTERY_PROPERTY_TYPE};
+    let named = |name: &str| {
+        store
+            .iter()
+            .map(|s| &s.element)
+            .filter(|m| m.ty == MASTERY_PROPERTY_TYPE)
+            .find(|m| m.name.eq_ignore_ascii_case(name))
     };
-    let is_property = |m: &&Element| m.ty == MASTERY_PROPERTY_TYPE;
-    let property = el
-        .supports
-        .iter()
-        .filter_map(|id| store.element(id))
-        .find(is_property)
-        .or_else(|| {
-            store
-                .iter()
-                .map(|s| &s.element)
-                .filter(is_property)
-                .find(|m| m.name.eq_ignore_ascii_case(&name))
-        });
-    let rule = property.map_or("", |m| m.description.as_str());
-    sanitize_html(&format!("<h4>Mastery: {name}</h4>{rule}"))
+    let html: String = mastery_links(el, |id| store.element(id), named)
+        .into_iter()
+        .map(|l| {
+            let name = l
+                .element
+                .map_or_else(|| title_case(l.name), |m| m.name.clone());
+            let rule = l.element.map_or("", |m| m.description.as_str());
+            format!("<h4>Mastery: {name}</h4>{rule}")
+        })
+        .collect();
+    if html.is_empty() {
+        return html;
+    }
+    sanitize_html(&html)
 }
 
 fn fact(label: &str, value: impl Into<String>) -> Option<ElementFact> {
@@ -321,7 +316,7 @@ fn damage_text(el: &Element) -> String {
     })
 }
 
-pub(crate) fn facts(el: &Element) -> Vec<ElementFact> {
+pub(crate) fn facts(store: &ContentStore, el: &Element) -> Vec<ElementFact> {
     let mut out: Vec<ElementFact> = Vec::new();
     out.extend(fact("Type", type_label(ui_type(&el.ty))));
     out.extend(fact("Source", el.source.clone()));
@@ -352,7 +347,7 @@ pub(crate) fn facts(el: &Element) -> Vec<ElementFact> {
         }
         out.extend(fact("Damage", damage_text(el)));
         out.extend(fact("Properties", weapon_properties(el).join(", ")));
-        out.extend(mastery_name(el).and_then(|m| fact("Mastery", m)));
+        out.extend(crate::gear_facts::mastery_names(store, el).and_then(|m| fact("Mastery", m)));
         if let Some(w) = el.setter("weight").map(|w| w.value.clone()) {
             out.extend(fact("Weight", w));
         }

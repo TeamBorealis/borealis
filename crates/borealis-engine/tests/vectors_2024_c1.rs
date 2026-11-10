@@ -272,7 +272,7 @@ fn c1_level1_fighter_three_masteries_and_graze_on_a_greatsword() {
         .find(|a| a.name == "Greatsword")
         .expect("atk");
     assert_eq!(
-        a.mastery.as_ref().map(|m| (m.name.as_str(), m.mastered)),
+        a.masteries.first().map(|m| (m.name.as_str(), m.mastered)),
         Some(("Graze", false))
     );
     h.pick(
@@ -287,10 +287,10 @@ fn c1_level1_fighter_three_masteries_and_graze_on_a_greatsword() {
         .iter()
         .find(|a| a.name == "Greatsword")
         .expect("atk");
-    let m = a.mastery.as_ref().expect("mastery");
+    let m = a.masteries.first().expect("mastery");
     assert!(m.mastered && m.text.contains("misses"), "{m:?}");
     assert_eq!(snap.masteries.len(), 1);
-    assert_eq!(snap.masteries[0].property, "Graze");
+    assert_eq!(snap.masteries[0].properties[0].name, "Graze");
     // level 4 grows the table to 4 slots
     h.level_to(4);
     let n = h
@@ -324,7 +324,7 @@ fn c1_fighter_all_three_mastery_picks_are_listed() {
         .snap()
         .masteries
         .iter()
-        .map(|m| (m.weapon.clone(), m.property.clone()))
+        .map(|m| (m.weapon.clone(), m.properties[0].name.clone()))
         .collect();
     assert_eq!(
         props,

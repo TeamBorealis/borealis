@@ -62,11 +62,15 @@ fn auto_row(c: &Character, snap: &Engine, a: &AttackSnapshot, d20: i32) -> Attac
                     .find(|i| i.uid == a.uid)
                     .is_none_or(|i| i.show_card)
             }),
-        mastery: a.mastery.as_ref().map(|m| crate::play_dto::MasteryDto {
-            name: m.name.clone(),
-            text: m.text.clone(),
-            mastered: m.mastered,
-        }),
+        masteries: a
+            .masteries
+            .iter()
+            .map(|m| crate::play_dto::MasteryDto {
+                name: m.name.clone(),
+                text: m.text.clone(),
+                mastered: m.mastered,
+            })
+            .collect(),
         crit_range: a.crit_range,
         die_floor: a.die_floor,
         offhand_damage: a.offhand_damage.clone(),
@@ -107,7 +111,7 @@ fn manual_row(i: usize, a: &ManualAttack, d20: i32, (mods, proficiency): (&[i32]
         auto: false,
         show_in_combat: a.displayed,
         card: a.as_card.unwrap_or(false),
-        mastery: None,
+        masteries: Vec::new(),
         crit_range: 20,
         die_floor: None,
         offhand_damage: None,

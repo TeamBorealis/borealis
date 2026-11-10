@@ -22,7 +22,7 @@ fn with_sword() -> (
         damage: "1d8-1 slashing".into(),
         ability: "strength".into(),
         proficient: false,
-        mastery: None,
+        masteries: Vec::new(),
         crit_range: 20,
         die_floor: None,
         offhand_damage: None,
@@ -130,4 +130,28 @@ fn a_calculated_hand_made_row_prints_its_worked_out_bonus_and_damage() {
     let card = cards.iter().find(|k| k.title == "Bite").expect("card");
     assert!(card.facts.contains(&("Attack".into(), bonus)));
     assert!(card.facts.contains(&("Damage".into(), damage)));
+}
+
+#[test]
+fn a_weapon_with_two_mastered_properties_prints_both() {
+    // RL10: a homebrew weapon may have more than one mastery property
+    let (c, mut snap) = with_sword();
+    let property = |name: &str, mastered: bool| borealis_engine::snapshot::MasteryRef {
+        name: name.into(),
+        text: format!("{name} text"),
+        mastered,
+    };
+    let sword = snap.attacks.len() - 1;
+    snap.attacks[sword].masteries = vec![property("Topple", true), property("Push", true)];
+    let mastery = |snap: &borealis_engine::CharacterSnapshot| {
+        crate::sheet_data(&c, snap, &SpellFactsMap::new())
+            .combat
+            .attacks
+            .iter()
+            .find(|a| a.name == "Longsword")
+            .and_then(|a| a.mastery.clone())
+    };
+    assert_eq!(mastery(&snap).as_deref(), Some("Topple, Push"));
+    snap.attacks[sword].masteries = vec![property("Topple", false), property("Push", false)];
+    assert_eq!(mastery(&snap), None, "not mastered: nothing printed");
 }

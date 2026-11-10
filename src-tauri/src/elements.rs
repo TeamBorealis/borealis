@@ -76,7 +76,7 @@ fn truncate(text: &str, max: usize) -> String {
 
 /// Picker row for an element.
 #[must_use]
-pub fn summary(_store: &ContentStore, el: &Element) -> ElementSummary {
+pub fn summary(store: &ContentStore, el: &Element) -> ElementSummary {
     let r = element_ref(el);
     let prerequisites = Some(el.prerequisite.trim())
         .filter(|p| !p.is_empty())
@@ -104,7 +104,7 @@ pub fn summary(_store: &ContentStore, el: &Element) -> ElementSummary {
             .flatten(),
         spell: crate::gear_facts::spell_facts(el),
         armor: crate::gear_facts::armor_facts(el),
-        weapon: crate::gear_facts::weapon_facts(el),
+        weapon: crate::gear_facts::weapon_facts(store, el),
     }
 }
 

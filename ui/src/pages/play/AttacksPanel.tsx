@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { Attack, CharacterSnapshot } from "../../api/contract";
 import { EmptyState, signed } from "../../components";
 import { Expander } from "../../components/controls";
@@ -37,7 +38,7 @@ function AttackRow({ a, selected, onSelect }: { a: Attack; selected: boolean; on
     <li className={`v5-line pr-line pr-attack ${selected ? "is-selected" : ""}`}>
       <button type="button" className="v5-row grow pr-name" aria-current={selected} aria-label={`${a.name}, description`} onClick={() => onSelect(a.id)}>
         <span className="grow">{a.name}</span>
-        {a.mastery?.mastered && <Tag tone="ok">{a.mastery.name}</Tag>}
+        {(a.masteries ?? []).filter((m) => m.mastered).map((m) => <Tag key={m.name} tone="ok">{m.name}</Tag>)}
         <span className="meta">{a.range}</span>
       </button>
       <span className="v5-ctrls pr-rolls">
@@ -81,7 +82,7 @@ export function AttackDetail({ s, attack }: { s: CharacterSnapshot; attack: Atta
       <h1 className="v5-desc-title">{attack.name}</h1>
       <p className="v5-lead">{[attack.range, attack.auto ? "Computed from the character" : "Typed on Manage"].filter(Boolean).join(" · ")}</p>
       <ul className="pr-facts">{facts.map((f) => <li key={f}>{f}</li>)}</ul>
-      {attack.mastery && <><h2>Mastery: {attack.mastery.name}</h2><p>{attack.mastery.text}</p></>}
+      {(attack.masteries ?? []).map((m) => <Fragment key={m.name}><h2>Mastery: {m.name}</h2><p>{m.text}</p></Fragment>)}
       {attack.description && <p>{attack.description}</p>}
       {item && <><h2>{item.displayName}</h2><ElementDescription elementId={item.itemId} /></>}
     </>
