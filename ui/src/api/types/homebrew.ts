@@ -196,6 +196,116 @@ export interface HomebrewBlock {
   fields: Record<string, unknown>;
 }
 
+/* ----------------------------------------------------------------------------------------------------------------
+ * Expression builders (spec 6.3, 6.5; owned by WB-02, Rust `borealis_authoring::expr_build`). A form field or block
+ * field edited with the `condition`, `tagFilter`, `equipped` or `formula` control holds a `HomebrewExprValue`. Ids and
+ * the text travel but are never shown (spec 5.1); the UI edits `value.model` and sends it back with `original`
+ * unchanged, and the backend writes the original text while the model still means the same, else canonical text.
+ * `ui/src/api/__fixtures__/homebrew-expr-builders.json` (written by the Rust test `expr_dto.rs`) holds a sample of
+ * every variant.
+ * ------------------------------------------------------------------------------------------------------------- */
+
+/** A builder model, or text the builder cannot represent, shown as a read-only "kept as is" chip with Remove. */
+export type HomebrewBuilt<M> =
+  | { shape: "model"; model: M }
+  | { shape: "kept"; text: string; reason: string };
+
+/** One expression field: the builder state and the stored text it was read from (absent for a new value). */
+export interface HomebrewExprValue<M> {
+  value: HomebrewBuilt<M>;
+  original?: string;
+}
+
+/** A problem with a builder value (`path` inside the model, `items.1.min`; empty = the whole value). */
+export interface HomebrewBuilderProblem {
+  path: string;
+  message: string;
+}
+
+export type HomebrewGroupMode = "all" | "any" | "none";
+
+/** All of / Any of / None of tree of rows; an empty group writes nothing. A parsed root is always a group. */
+export type HomebrewExprNode<R> =
+  | { node: "row"; row: R }
+  | { node: "group"; mode: HomebrewGroupMode; items: HomebrewExprNode<R>[] };
+
+export type HomebrewAbility = "strength" | "dexterity" | "constitution" | "intelligence" | "wisdom" | "charisma";
+
+/** Condition builder rows (`requirements`). `class` and `stat` are lower case. */
+export type HomebrewConditionRow =
+  | { row: "has"; id: string }
+  | { row: "lacks"; id: string }
+  | { row: "ability"; ability: HomebrewAbility; min: number }
+  | { row: "characterLevel"; min: number }
+  | { row: "level"; min: number }
+  | { row: "classLevel"; class: string; min: number }
+  | { row: "feature"; name: string }
+  | { row: "spellcasting"; level: number }
+  | { row: "type"; value: string }
+  | { row: "statistic"; stat: string; min: number }
+  | { row: "kept"; text: string };
+
+export type HomebrewCondition = HomebrewExprNode<HomebrewConditionRow>;
+
+/** Tag filter rows (`supports`): a tag, an element, the class's spell list, a level the class can cast, the value of a
+ * named choice (`select_param`), or a placeholder kept as is. */
+export type HomebrewTagRow =
+  | { row: "tag"; tag: string }
+  | { row: "element"; id: string }
+  | { row: "classList" }
+  | { row: "castableLevel" }
+  | { row: "choice"; name: string }
+  | { row: "kept"; text: string };
+
+/** `specific`: Specific elements mode (single bars); it has a meaning only with an Any of group. */
+export interface HomebrewTagFilter {
+  specific: boolean;
+  root: HomebrewExprNode<HomebrewTagRow>;
+}
+
+export type HomebrewSlot = "armor" | "shield" | "mainHand" | "offHand";
+
+/** What a slot holds. Armor: any, none, light, medium, heavy, item; shield: any, none, item; main hand: any, none,
+ * weapon, versatile, item; off hand: any, none, weapon, item. `item` is an id or name in lower case. */
+export type HomebrewSlotTest =
+  | { kind: "any" }
+  | { kind: "none" }
+  | { kind: "light" }
+  | { kind: "medium" }
+  | { kind: "heavy" }
+  | { kind: "weapon" }
+  | { kind: "versatile" }
+  | { kind: "item"; item: string };
+
+/** "While wearing/holding" rows (`equipped`). */
+export type HomebrewEquippedRow =
+  | { row: "slot"; slot: HomebrewSlot; test: HomebrewSlotTest }
+  | { row: "attuned"; item: string }
+  | { row: "wearing"; item: string }
+  | { row: "kept"; text: string };
+
+export type HomebrewEquipped = HomebrewExprNode<HomebrewEquippedRow>;
+
+export type HomebrewFormulaOp = "add" | "sub" | "mul" | "div";
+
+/** A formula. `halfProficiency` is offered only in the `value` dialect, `classSaveDc` only in `saveDc`. */
+export type HomebrewFormulaNode =
+  | { term: "number"; value: number }
+  | { term: "proficiency" }
+  | { term: "halfProficiency" }
+  | { term: "ability"; ability: HomebrewAbility }
+  | { term: "classLevel"; class: string }
+  | { term: "classSaveDc"; class: string }
+  | { term: "binary"; op: HomebrewFormulaOp; left: HomebrewFormulaNode; right: HomebrewFormulaNode }
+  | { term: "max"; args: HomebrewFormulaNode[] }
+  | { term: "min"; args: HomebrewFormulaNode[] }
+  | { term: "floor"; arg: HomebrewFormulaNode }
+  | { term: "ceilDiv"; num: HomebrewFormulaNode; den: HomebrewFormulaNode };
+
+/** Which engine reader a formula field is read by, so which terms its builder offers (spec 6.3; the field table is
+ * `borealis_authoring::expr_build::formula::FORMULA_FIELDS`). */
+export type HomebrewFormulaDialect = "formula" | "saveDc" | "breathDc" | "noteDc" | "value" | "valueOrClassLevel";
+
 /** A part of the element the form does not edit, written back byte-for-byte (spec 3.4). */
 export interface HomebrewPreservedPart {
   /** Stable key (for Remove). */

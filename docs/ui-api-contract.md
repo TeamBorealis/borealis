@@ -438,6 +438,12 @@ forms) and answers the same error for bulk edit, reference options, spell lists,
   `HomebrewFieldSpec.key` of the kind; `blocks` are rule blocks (`{ key, kind, sentence, fields }`); `children` are the child
   elements edited inside (a class's features); `preserved` lists the parts kept byte-for-byte (spec 3.4). The value shapes of
   builders (WB-02), rich text (WB-03), blocks (WB-05) and per-kind fields (WB-04) are typed by those items.
+- **Expression builders (WB-02).** A field or block field with the `condition`, `tagFilter`, `equipped` or `formula`
+  control holds a `HomebrewExprValue<M>` `{ value: { shape: "model", model } | { shape: "kept", text, reason }, original? }`
+  (types in `types/homebrew.ts`; a sample of every variant in `api/__fixtures__/homebrew-expr-builders.json`, written by
+  `crates/borealis-authoring/tests/expr_dto.rs`). The UI edits `model` and sends `original` back unchanged: the backend
+  writes the original text while the model means the same, else canonical text. Kept text is read-only (Remove only).
+  Formula fields are read by different engine readers; `HomebrewFormulaDialect` says which terms a field offers.
 - **Problems** are plain sentences with a form `path` (`fields.level`, `blocks.2.fields.number`, `children.0.fields.name`)
   and a `code` (an `IssueCode`, a rule problem, `sweep`, `engine`, `lint.*`, `balance.*`); errors block Save.
 - **Events:** saves end with the existing `borealis://content-reloaded`.
