@@ -396,26 +396,31 @@ an expired preview `not_found`. Payloads over 1.4 MB are refused with `invalid_a
 
 The 1.5.0 creator (decisions HC1-HC4; `specs/homebrew-creator-spec.md` is the source of truth, section 15.2). Types:
 `ui/src/api/types/homebrew.ts` (TS) and `src-tauri/src/homebrew_dto.rs` (Rust, checked against the generated contract by
-`src-tauri/tests/contract_homebrew.rs`). Wrappers: `src-tauri/src/commands_homebrew.rs`, delegating to
-`src-tauri/src/homebrew_creator.rs` (the AI path keeps `homebrew_api.rs`). Long work runs through `commands_content.rs::blocking`.
+`src-tauri/tests/contract_homebrew.rs`; the form is `borealis_authoring::form::FormState`). Wrappers:
+`src-tauri/src/commands_homebrew.rs`, delegating to `homebrew_packs.rs` (packs, delete), `homebrew_draft_api.rs`
+(drafts), `homebrew_refs.rs` (picker rows) and `homebrew_creator.rs` (catalogs); the AI path keeps `homebrew_api.rs`.
+Commands that write packs run through `commands_content.rs::blocking`.
 
 **Feature switch (HC3).** `AppSettings.creatorEnabled` (default `false`, no settings control) shows START > HOMEBREW and the
 creator's entry points; until 1.5.0 the UI reaches these commands only with it on (dev builds and the web mock's `?creator=1`).
 
 **Not implemented yet.** Until a command's work item lands (spec section 21), it rejects with `requirement_failed` and
-`details: { notImplemented: "<command>" }`. The web mock implements packs, elements and drafts in memory (kinds are sample
-forms) and answers the same error for bulk edit, reference options, spell lists, Try it and export.
+`details: { notImplemented: "<command>" }`. Implemented in the backend: the catalogs and kinds, packs, the element list,
+drafts (new, open, update, save, discard, list), delete, duplicate and reference options (WB-04/05/06); `homebrew_check_draft`
+(WB-07), Try it (WB-08), bulk edit, where-used and spell lists (WB-23) and export (WB-24) still answer it, and so do
+`homebrew_new_draft` with `parentId` (WB-16/18) and a `deepCopy` of an element with features (WB-22). The web mock
+implements packs, elements and drafts in memory (kinds are sample forms).
 
 | Command | Args (camelCase keys) | Returns |
 |---|---|---|
-| `homebrew_kinds` | none | `HomebrewKindDescriptor[]` (fields, sub-tabs, bindings, editions) |
+| `homebrew_kinds` | none | `HomebrewKindDescriptor[]` (fields, sub-tabs, bindings, editions; implemented, WB-04 descriptors) |
 | `homebrew_block_catalog` | none | `HomebrewBlockSpec[]` (implemented, WB-05) |
 | `homebrew_stat_catalog` | none | `HomebrewStatGroup[]` (implemented, WB-05; plus a group `yourContent` for names loaded packs use) |
 | `homebrew_create_pack` | `{ request: HomebrewPackRequest }` (`name, code, edition: dnd2014\|dnd2024\|any, author?, description?, license?`) | `ContentPack` (`kind: "homebrew"`) |
 | `homebrew_update_pack` | `{ packId, patch: HomebrewPackPatch }` | `ContentPack` |
 | `homebrew_list_elements` | `{ packId }` | `HomebrewElementSummary[]` |
 | `homebrew_new_draft` | `{ packId, kind, copyFrom?, parentId?, deepCopy? }` | `HomebrewDraftView` |
-| `homebrew_open_draft` | `{ packId, elementId }` | `HomebrewDraftView` (resumes an existing draft) |
+| `homebrew_open_draft` | `{ packId, elementId?, draftId? }` | `HomebrewDraftView` (resumes the element's edited draft; `draftId` resumes a never-saved element's draft) |
 | `homebrew_update_draft` | `{ draftId, form: HomebrewForm }` | `HomebrewDraftView` (autosaved; preview, problems, generated data) |
 | `homebrew_check_draft` | `{ draftId }` | `HomebrewProblem[]` (engine checks and the 1-20 sweep) |
 | `homebrew_save_draft` | `{ draftId }` | `HomebrewSaveResult` (`{ pack, elementIds }`); `invalid_argument` with `details` = the problems when errors exist |
@@ -477,6 +482,23 @@ forms) and answers the same error for bulk edit, reference options, spell lists,
   stored JSON back; an edited one is written canonically. The backend rewrites each block's `sentence` from its values
   after every update. A new block, or a block whose kind changes, needs a new `key` (a changed kind drops the old kept
   parts).
+- **Storage (WB-06).** A creator pack is `<data>/library/homebrew-<code>/`: `pack.json`, `content.json` (the pack's
+  `Source` element first, then the elements in creation order), `pack-meta.json` (`kind: homebrew`) and `creator.json`
+  (`{ format: "borealis-creator/1", code, createdWith, elements: { <id>: { kind, createdAt, copiedFrom?, nonSrdText } },
+  retiredIds }`). Packs made elsewhere (`ai_add_homebrew_to_pack`, "Import anything") get a `creator.json` on their first
+  save; other packs are copy-only (`requirement_failed`, HC5). Every file is replaced atomically, in the order
+  `creator.json`, `content.json`, `pack.json`; each save bumps the patch version. A save re-adds only its pack to the loaded
+  content (`content-reloaded` reason `homebrew-saved`; a turned-off pack reloads everything, `homebrew-saved-full-reload`).
+  Drafts are `<data>/homebrew-drafts/<draftId>.json` (`{ format: "borealis-hb-draft/1", draftId, packId, elementId, kind,
+  form, baseIds, baseDigest, updatedAt, copiedFrom? }`, the full form with its memo), written by the first
+  `homebrew_update_draft` (opening writes none), never synced or bundled (HC7, `is_excluded`). A draft or `creator.json`
+  that can't be read is set aside as `.bad`, never deleted. `baseChanged` is true when the saved elements the draft started
+  from changed since (another device, an edit outside the app). Ids are given on the first save and never change; deleted
+  ids go to `retiredIds` and a copy of the deleted elements to the pack's `.trash/`. Delete without `confirm` first scans
+  the characters folder and the open characters: when any uses an element, nothing is deleted and `usedBy` lists them.
+  `homebrew_update_draft` ignores what the UI sends for read-only fields (Source). Picker rows are the loaded elements plus,
+  with `draftId`, the pack's never-saved elements (`draft: true`, with the id they would get now); spells carry `level`,
+  `school` and `spell`.
 - **Problems** are plain sentences with a form `path` (`fields.level`, `blocks.2.fields.number`, `children.0.fields.name`)
   and a `code` (an `IssueCode`, a rule problem, `sweep`, `engine`, `lint.*`, `balance.*`); errors block Save.
 - **Events:** saves end with the existing `borealis://content-reloaded`.

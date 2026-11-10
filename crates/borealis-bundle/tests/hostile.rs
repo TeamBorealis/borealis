@@ -135,6 +135,7 @@ fn excluded_content_in_a_bundle_is_refused() {
         "models/m.bin",
         "settings.json",
         "import-drafts/d.json",
+        "homebrew-drafts/hb-1.json",
         "ai-profile/p.json",
     ] {
         let m = manifest_of(vec![pack(rel)]);

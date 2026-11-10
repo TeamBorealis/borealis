@@ -76,7 +76,24 @@ fn kind_of(pack: &InstalledPack) -> (PackKind, Option<bool>) {
         "homebrew" => PackKind::Homebrew,
         _ => PackKind::Imported,
     };
-    (kind, user_import)
+    // CS1/HC8: a homebrew pack holding text copied from the user's non-SRD imports is not redistributable
+    let copied_text = kind == PackKind::Homebrew
+        && read_json(&pack.dir.join(borealis_authoring::pack::CREATOR_FILE))
+            .and_then(|v| v.get("elements").and_then(Value::as_object).cloned())
+            .is_some_and(|els| els.values().any(|e| e["nonSrdText"] == true));
+    (kind, user_import.or(copied_text.then_some(false)))
+}
+
+/// The homebrew creator edits a pack in place (spec 10.3, HC5) when it is the user's own: a homebrew pack
+/// (`pack-meta.json` kind `homebrew`, the creator's and `ai_add_homebrew_to_pack`'s) or the user's own conversion
+/// ("Import anything", `import.json` origin `user-import`). Bundled, downloaded and imported packs have an upstream
+/// that would overwrite edits: they are copy-only.
+#[must_use]
+pub(crate) fn creator_editable(pack: &InstalledPack) -> bool {
+    !pack.bundled
+        && (kind_of(pack).0 == PackKind::Homebrew
+            || read_json(&pack.dir.join(IMPORT_META_FILE))
+                .is_some_and(|v| v["origin"] == "user-import"))
 }
 
 /// Counts and sources of a pack that is not loaded (read from its files).

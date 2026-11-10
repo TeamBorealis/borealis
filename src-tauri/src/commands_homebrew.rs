@@ -1,6 +1,8 @@
 //! `#[tauri::command]` wrappers of the homebrew creator (1.5.0; `specs/homebrew-creator-spec.md` section 15.2,
-//! `docs/ui-api-contract.md` "Homebrew creator"). Each delegates to [`crate::homebrew_creator`]; until its work item
-//! lands it answers `not_implemented`. The UI reaches them only with `AppSettings::creator_enabled` on (HC3).
+//! `docs/ui-api-contract.md` "Homebrew creator"). Each delegates to an `AppState` method (`homebrew_packs`,
+//! `homebrew_draft_api`, `homebrew_refs`) or [`crate::homebrew_creator`]; until its work item lands a command answers
+//! `not_implemented`. Work that writes packs runs off the main thread (`commands_content::blocking`). The UI reaches
+//! them only with `AppSettings::creator_enabled` on (HC3).
 
 use crate::content_dto::ContentPack;
 use crate::dto::{ExportResult, Page, SlotOption};
@@ -8,19 +10,19 @@ use crate::error::ApiResult;
 use crate::homebrew_creator::{self, not_implemented};
 use crate::homebrew_dto::{
     HomebrewBlockSpec, HomebrewBulkPatch, HomebrewDeleteResult, HomebrewDraftSummary,
-    HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary, HomebrewForm,
-    HomebrewKindDescriptor, HomebrewPackPatch, HomebrewPackRequest, HomebrewPageRequest,
-    HomebrewPickerFilters, HomebrewPickerRow, HomebrewPickerTarget, HomebrewProblem,
-    HomebrewSaveResult, HomebrewSpellListView, HomebrewStatGroup, HomebrewTrialChange,
-    HomebrewTrialSetup, HomebrewTrialView,
+    HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary, HomebrewForm, HomebrewPackPatch,
+    HomebrewPackRequest, HomebrewPageRequest, HomebrewPickerFilters, HomebrewPickerRow,
+    HomebrewPickerTarget, HomebrewProblem, HomebrewSaveResult, HomebrewSpellListView,
+    HomebrewStatGroup, HomebrewTrialChange, HomebrewTrialSetup, HomebrewTrialView,
 };
 use crate::state::AppState;
 use tauri::State;
 
-/// Every creator form (spec 3-4).
+/// Every creator form (spec 3-4): `borealis_authoring::form::descriptors()`, the same JSON as
+/// [`crate::homebrew_dto::HomebrewKindDescriptor`].
 #[tauri::command]
-pub fn homebrew_kinds() -> ApiResult<Vec<HomebrewKindDescriptor>> {
-    Err(not_implemented("homebrew_kinds"))
+pub fn homebrew_kinds() -> ApiResult<Vec<borealis_authoring::form::descriptor::KindDescriptor>> {
+    Ok(borealis_authoring::form::descriptors())
 }
 
 /// The rule block catalog (spec 6).
@@ -38,50 +40,74 @@ pub fn homebrew_stat_catalog(state: State<'_, AppState>) -> ApiResult<Vec<Homebr
 
 /// NEW PACK (spec 14.1).
 #[tauri::command]
-pub fn homebrew_create_pack(request: HomebrewPackRequest) -> ApiResult<ContentPack> {
-    let _ = request;
-    Err(not_implemented("homebrew_create_pack"))
+pub async fn homebrew_create_pack(
+    app: tauri::AppHandle,
+    request: HomebrewPackRequest,
+) -> ApiResult<ContentPack> {
+    crate::commands_content::blocking(app, move |s, sink| s.homebrew_create_pack(&request, sink))
+        .await
 }
 
 /// Pack settings (spec 13.10).
 #[tauri::command]
-pub fn homebrew_update_pack(pack_id: String, patch: HomebrewPackPatch) -> ApiResult<ContentPack> {
-    let _ = (pack_id, patch);
-    Err(not_implemented("homebrew_update_pack"))
+pub async fn homebrew_update_pack(
+    app: tauri::AppHandle,
+    pack_id: String,
+    patch: HomebrewPackPatch,
+) -> ApiResult<ContentPack> {
+    crate::commands_content::blocking(app, move |s, sink| {
+        s.homebrew_update_pack(&pack_id, &patch, sink)
+    })
+    .await
 }
 
 /// The element list of a pack (spec 13.2).
-#[tauri::command]
-pub fn homebrew_list_elements(pack_id: String) -> ApiResult<Vec<HomebrewElementSummary>> {
-    let _ = pack_id;
-    Err(not_implemented("homebrew_list_elements"))
+#[tauri::command(async)]
+pub fn homebrew_list_elements(
+    state: State<'_, AppState>,
+    pack_id: String,
+) -> ApiResult<Vec<HomebrewElementSummary>> {
+    state.homebrew_list_elements(&pack_id)
 }
 
 /// A new element, blank or from a copy (spec 10.1, 11).
-#[tauri::command]
+#[tauri::command(async)]
 pub fn homebrew_new_draft(
+    state: State<'_, AppState>,
     pack_id: String,
     kind: String,
     copy_from: Option<String>,
     parent_id: Option<String>,
     deep_copy: Option<bool>,
 ) -> ApiResult<HomebrewDraftView> {
-    let _ = (pack_id, kind, copy_from, parent_id, deep_copy);
-    Err(not_implemented("homebrew_new_draft"))
+    state.homebrew_new_draft(
+        &pack_id,
+        &kind,
+        copy_from.as_deref(),
+        parent_id.as_deref(),
+        deep_copy,
+    )
 }
 
-/// Open a saved element, resuming its draft (spec 10.1).
-#[tauri::command]
-pub fn homebrew_open_draft(pack_id: String, element_id: String) -> ApiResult<HomebrewDraftView> {
-    let _ = (pack_id, element_id);
-    Err(not_implemented("homebrew_open_draft"))
+/// Open a saved element, resuming its draft, or resume a draft by id (spec 10.1).
+#[tauri::command(async)]
+pub fn homebrew_open_draft(
+    state: State<'_, AppState>,
+    pack_id: String,
+    element_id: Option<String>,
+    draft_id: Option<String>,
+) -> ApiResult<HomebrewDraftView> {
+    state.homebrew_open_draft(&pack_id, element_id.as_deref(), draft_id.as_deref())
 }
 
 /// Every edit: autosave and live validation (spec 8.1, 10.1).
-#[tauri::command]
-pub fn homebrew_update_draft(draft_id: String, form: HomebrewForm) -> ApiResult<HomebrewDraftView> {
-    let _ = (draft_id, form);
-    Err(not_implemented("homebrew_update_draft"))
+#[tauri::command(async)]
+pub fn homebrew_update_draft(
+    state: State<'_, AppState>,
+    draft_id: String,
+    form: HomebrewForm,
+) -> ApiResult<HomebrewDraftView> {
+    state.homebrew_update_draft(&draft_id, &form)
 }
 
 /// Engine checks and the level sweep (spec 8.1 step 6).
@@ -93,43 +119,48 @@ pub fn homebrew_check_draft(draft_id: String) -> ApiResult<Vec<HomebrewProblem>>
 
 /// Validate, write the pack, hot-reload (spec 10.1).
 #[tauri::command]
-pub fn homebrew_save_draft(draft_id: String) -> ApiResult<HomebrewSaveResult> {
-    let _ = draft_id;
-    Err(not_implemented("homebrew_save_draft"))
+pub async fn homebrew_save_draft(
+    app: tauri::AppHandle,
+    draft_id: String,
+) -> ApiResult<HomebrewSaveResult> {
+    crate::commands_content::blocking(app, move |s, sink| s.homebrew_save_draft(&draft_id, sink))
+        .await
 }
 
 /// Drop a draft.
-#[tauri::command]
-pub fn homebrew_discard_draft(draft_id: String) -> ApiResult<()> {
-    let _ = draft_id;
-    Err(not_implemented("homebrew_discard_draft"))
+#[tauri::command(async)]
+pub fn homebrew_discard_draft(state: State<'_, AppState>, draft_id: String) -> ApiResult<()> {
+    state.homebrew_discard_draft(&draft_id)
 }
 
 /// Drafts on this device.
-#[tauri::command]
-pub fn homebrew_list_drafts() -> ApiResult<Vec<HomebrewDraftSummary>> {
-    Err(not_implemented("homebrew_list_drafts"))
+#[tauri::command(async)]
+pub fn homebrew_list_drafts(state: State<'_, AppState>) -> ApiResult<Vec<HomebrewDraftSummary>> {
+    state.homebrew_list_drafts()
 }
 
 /// Delete scan, then delete (spec 10.3).
 #[tauri::command]
-pub fn homebrew_delete_elements(
+pub async fn homebrew_delete_elements(
+    app: tauri::AppHandle,
     pack_id: String,
     element_ids: Vec<String>,
     confirm: bool,
 ) -> ApiResult<HomebrewDeleteResult> {
-    let _ = (pack_id, element_ids, confirm);
-    Err(not_implemented("homebrew_delete_elements"))
+    crate::commands_content::blocking(app, move |s, sink| {
+        s.homebrew_delete_elements(&pack_id, &element_ids, confirm, sink)
+    })
+    .await
 }
 
 /// Duplicate inside the pack (spec 12.3).
-#[tauri::command]
+#[tauri::command(async)]
 pub fn homebrew_duplicate_element(
+    state: State<'_, AppState>,
     pack_id: String,
     element_id: String,
 ) -> ApiResult<HomebrewDraftView> {
-    let _ = (pack_id, element_id);
-    Err(not_implemented("homebrew_duplicate_element"))
+    state.homebrew_duplicate_element(&pack_id, &element_id)
 }
 
 /// Multi-select edits (spec 12.5).
@@ -144,16 +175,16 @@ pub fn homebrew_bulk_edit(
 }
 
 /// Picker rows (spec 5.1).
-#[tauri::command]
+#[tauri::command(async)]
 pub fn homebrew_reference_options(
+    state: State<'_, AppState>,
     target: HomebrewPickerTarget,
     query: String,
     filters: HomebrewPickerFilters,
     page: HomebrewPageRequest,
     draft_id: Option<String>,
 ) -> ApiResult<Page<HomebrewPickerRow>> {
-    let _ = (target, query, filters, page, draft_id);
-    Err(not_implemented("homebrew_reference_options"))
+    state.homebrew_reference_options(&target, &query, &filters, page, draft_id.as_deref())
 }
 
 /// Where used (spec 12.3).

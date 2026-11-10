@@ -778,7 +778,8 @@
   },
   "homebrew_open_draft": {
    "args": {
-    "elementId": false,
+    "draftId": true,
+    "elementId": true,
     "packId": false
    },
    "method": "homebrewOpenDraft",

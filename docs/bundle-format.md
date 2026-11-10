@@ -59,11 +59,14 @@ listed in the manifest and every listed file must exist (no stray or missing ent
 
 ## What never travels (enforced in code, writer and reader)
 
-`is_excluded(path)` refuses any path with a segment `search`, `models`, `import-drafts`, `ai-profile`, `sync`,
-`logs`, `extracted`; any segment starting `ai-` or `.tmp-`; the files `ai-host-cert.der`, `ai-host-key.der`,
+`is_excluded(path)` refuses any path with a segment `search`, `models`, `import-drafts`, `homebrew-drafts` (the
+homebrew creator's drafts stay on the device, HC7), `ai-profile`, `sync`, `logs`, `extracted`, `link`; any segment
+starting `ai-` or `.tmp-`; the files `ai-host-cert.der`, `ai-host-key.der`,
 `ai-host.json`, `ai-setup.json`, `settings.json`, `content-prefs.json`, `state.json`; and extensions `.der .pem
 .key .p12 .pfx .pk8 .keystore`. The directory builder skips such files inside pack folders (reported in
-`BuildReport.skipped_pack_files`); `BundleWriter` and `Bundle::open` refuse them outright.
+`BuildReport.skipped_pack_files`); `BundleWriter` and `Bundle::open` refuse them outright. Names starting with a dot
+are unsafe segments, so a homebrew pack's `.trash/` (copies of deleted elements) and the dot-named temporary files of
+an interrupted save never travel either; its `creator.json` (spec 14.3) does.
 Bundled packs and 5etools source folders are never included (only `<data>/library/<pack>/` folders that have
 a `pack.json`). Settings are an allow-list (`PORTABLE_SETTINGS_KEYS`): `playerName`, `defaultRuleset`,
 `abilityMethod`, `pointBuyBudget`, `abilityMinBase`, `abilityMaxBase`, `abilityCapEnabled`,

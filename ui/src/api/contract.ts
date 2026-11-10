@@ -644,8 +644,9 @@ export interface ApiMethods {
   homebrewListElements(args: { packId: string }): Promise<HomebrewElementSummary[]>;
   /** A new element of `kind` (from a copy of `copyFrom`, as a child of `parentId`; `deepCopy` copies a class's features and subclasses too). */
   homebrewNewDraft(args: { packId: string; kind: HomebrewKindId; copyFrom?: string; parentId?: string; deepCopy?: boolean }): Promise<HomebrewDraftView>;
-  /** Open a saved element; resumes its draft when one exists. */
-  homebrewOpenDraft(args: { packId: string; elementId: string }): Promise<HomebrewDraftView>;
+  /** Open a saved element; resumes its draft when one exists. With `draftId` (and no `elementId`), resumes that draft:
+   * a new element that was never saved has no element to open it by (`homebrewListDrafts` lists it, `elementId: null`). */
+  homebrewOpenDraft(args: { packId: string; elementId?: string; draftId?: string }): Promise<HomebrewDraftView>;
   /** Every edit (UI debounce 300 ms): autosaves the draft and returns the live preview, problems and generated data. */
   homebrewUpdateDraft(args: { draftId: string; form: HomebrewForm }): Promise<HomebrewDraftView>;
   /** The heavier engine checks and the 1-20 level sweep (spec 8.1 step 6). */

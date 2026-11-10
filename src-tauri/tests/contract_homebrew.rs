@@ -3,6 +3,7 @@
 //! documented "not implemented" error until its work item lands.
 
 mod contract_support;
+use borealis_authoring::form::Memo;
 use borealis_lib::content_dto::{ContentPack, PackKind};
 use borealis_lib::dto::Ruleset;
 use borealis_lib::error::ErrorCode;
@@ -87,7 +88,9 @@ fn form() -> HomebrewForm {
             preserved: vec![HomebrewPreservedPart {
                 key: "setters".into(),
                 label: "Values set under this rule".into(),
+                kept: None,
             }],
+            memo: None,
         }],
         children: vec![HomebrewForm {
             key: "e/0".into(),
@@ -96,17 +99,26 @@ fn form() -> HomebrewForm {
             blocks: vec![],
             children: vec![],
             preserved: vec![],
+            memo: Memo::default(),
         }],
         preserved: vec![HomebrewPreservedPart {
             key: "extra.foo".into(),
             label: "An unknown attribute".into(),
+            kept: None,
         }],
+        memo: Memo::default(),
     }
 }
 
 #[test]
 fn catalog_types_match_the_ts_contract() {
     let c = Contract::load();
+    // the real kinds (WB-04 descriptors) as `homebrew_kinds` answers them (WB-06)
+    let kinds = borealis_lib::commands_homebrew::homebrew_kinds().expect("kinds");
+    assert!(kinds.len() > 10);
+    for k in &kinds {
+        check(&c, "HomebrewKindDescriptor", k);
+    }
     check(
         &c,
         "HomebrewKindDescriptor",
@@ -258,6 +270,9 @@ fn picker_list_and_trial_types_match_the_ts_contract() {
             source_name: "SRD 5.2.1".into(),
             edition: Some(Ruleset::Dnd2024),
             draft: false,
+            level: Some(3),
+            school: Some("Evocation".into()),
+            spell: None,
         },
     );
     check(
@@ -348,9 +363,8 @@ fn request_types_read_what_the_ui_sends() {
 fn creator_commands_answer_not_implemented_until_their_item_lands() {
     use borealis_lib::commands_homebrew as hb;
     let errs = [
-        hb::homebrew_kinds().unwrap_err(),
-        hb::homebrew_list_drafts().unwrap_err(),
-        hb::homebrew_save_draft("d1".into()).unwrap_err(),
+        hb::homebrew_check_draft("d1".into()).unwrap_err(),
+        hb::homebrew_where_used("ID_X".into()).unwrap_err(),
         hb::homebrew_export_pack("p".into(), true).unwrap_err(),
     ];
     for e in errs {

@@ -497,14 +497,7 @@ pub fn validate_store(store: &ContentStore) -> Vec<Issue> {
         if !seen_ids.insert(stored.element.id.as_str()) {
             continue;
         }
-        let mut ctx = Ctx {
-            store,
-            stored,
-            books: &books,
-            issues: Vec::new(),
-        };
-        ctx.check_element(&stored.element);
-        issues.extend(ctx.issues);
+        issues.extend(check_one(store, stored, &books));
     }
     for name in store.undefined_sources() {
         issues.push(Issue::info(
@@ -513,6 +506,36 @@ pub fn validate_store(store: &ContentStore) -> Vec<Issue> {
         ));
     }
     issues
+}
+
+/// [`validate_store`] for some elements only: the load diagnostics and the element checks concerning these ids
+/// (the homebrew creator checks the elements it is about to save without checking the whole library).
+#[must_use]
+pub fn validate_elements(store: &ContentStore, ids: &HashSet<&str>) -> Vec<Issue> {
+    let mut issues: Vec<Issue> = store
+        .diagnostics()
+        .iter()
+        .filter(|i| i.element.as_deref().is_some_and(|e| ids.contains(e)))
+        .cloned()
+        .collect();
+    let books = book_abbreviations(store);
+    let mut sorted: Vec<&str> = ids.iter().copied().collect();
+    sorted.sort_unstable();
+    for stored in sorted.into_iter().filter_map(|id| store.get(id)) {
+        issues.extend(check_one(store, stored, &books));
+    }
+    issues
+}
+
+fn check_one(store: &ContentStore, stored: &StoredElement, books: &HashSet<String>) -> Vec<Issue> {
+    let mut ctx = Ctx {
+        store,
+        stored,
+        books,
+        issues: Vec::new(),
+    };
+    ctx.check_element(&stored.element);
+    ctx.issues
 }
 
 #[cfg(test)]

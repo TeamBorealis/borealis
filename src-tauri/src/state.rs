@@ -284,6 +284,55 @@ impl ContentHub {
         }
     }
 
+    /// The builder of this hub with the custom pack `pack.info().id` replaced in its load position (the homebrew
+    /// creator's fast reload, spec 14.1): no other pack is read again. `None` when the hub does not hold that pack
+    /// (it is turned off, or failed to load): the caller reloads everything instead.
+    #[must_use]
+    pub fn builder_with_pack(&self, pack: ParsedPack) -> Option<ContentStoreBuilder> {
+        self.builder.as_ref().clone().replace_pack(pack)
+    }
+
+    /// A hub over a builder and the store already built from it ([`ContentHub::builder_with_pack`], then
+    /// `builder.clone().build()`): the engine is prepared for it, the load warnings are kept.
+    #[must_use]
+    pub fn from_built(
+        builder: ContentStoreBuilder,
+        store: ContentStore,
+        load_warnings: Vec<String>,
+        settings: &AppSettings,
+    ) -> Self {
+        let engine = Engine::with_settings(&store, settings.engine_settings());
+        Self {
+            store: Arc::new(store),
+            engine,
+            builder: Arc::new(builder),
+            load_warnings,
+            derived: DeriveCache::default(),
+            cache_write: Mutex::new(None),
+        }
+    }
+
+    /// Write this hub's content cache in the background for the pack folders as they are now (after a fast reload,
+    /// so the next start reads the cache instead of every pack).
+    pub fn save_cache(&self, paths: &AppPaths, prefs: &ContentPrefs) {
+        let (bundled, custom) = pack_dirs(paths, prefs);
+        let key = CacheKey::new(
+            &folders(&bundled),
+            &folders(&custom),
+            &prefs.disabled_packs,
+            &prefs.source_editions(),
+        );
+        let write = content_cache::save_in_background(
+            content_cache::cache_file(&paths.data),
+            key,
+            Arc::clone(&self.builder),
+            self.load_warnings.clone(),
+        );
+        if let Ok(mut slot) = self.cache_write.lock() {
+            *slot = write;
+        }
+    }
+
     /// Rebuild the engine for new settings, sharing the store and the builder.
     #[must_use]
     pub fn with_settings(&self, settings: &AppSettings) -> Self {
@@ -409,6 +458,8 @@ pub struct AppState {
     pub vectors: crate::vector_service::VectorService,
     /// The Obsidian vault's link and tag cache and folder watcher (GitHub #15).
     pub vault: crate::vault::VaultService,
+    /// Homebrew creator drafts (memory cache over `<data>/homebrew-drafts/`, spec 10.1).
+    pub(crate) hb_drafts: crate::homebrew_drafts::CreatorDrafts,
 }
 
 impl AppState {
@@ -491,6 +542,7 @@ impl AppState {
             picked: crate::picked_paths::PickedPaths::default(),
             content_update: Mutex::new(crate::settings_dto::ContentUpdateStatus::default()),
             vault: crate::vault::VaultService::default(),
+            hb_drafts: crate::homebrew_drafts::CreatorDrafts::default(),
         }
     }
 
