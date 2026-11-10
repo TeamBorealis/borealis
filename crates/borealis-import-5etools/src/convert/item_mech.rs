@@ -59,13 +59,15 @@ fn mastery_ref(v: &Value) -> Option<(&str, &str)> {
     (!name.is_empty()).then_some((name, source))
 }
 
-/// Mastery names of a weapon entry.
+/// Mastery names of a weapon entry, in order, each once.
 pub fn mastery_names(it: &Item) -> Vec<String> {
-    it.mastery
-        .iter()
-        .filter_map(mastery_ref)
-        .map(|(n, _)| n.to_string())
-        .collect()
+    let mut out: Vec<String> = Vec::new();
+    for (name, _) in it.mastery.iter().filter_map(mastery_ref) {
+        if !out.iter().any(|n| n.eq_ignore_ascii_case(name)) {
+            out.push(name.to_string());
+        }
+    }
+    out
 }
 
 /// The element id of a mastery property: the bundled 2024 element for the eight core
@@ -84,14 +86,25 @@ fn mastery_id(ids: &mut crate::ids::IdAlloc, name: &str, source: &str) -> String
 }
 
 /// `data.mastery_id` (the attack line's mastery) and, on a kind of weapon, `data.weapon_category`
-/// and `data.melee` (what the Weapon Mastery choice offers). A weapon made from a base item (a
-/// `+1 Longsword`) is not a kind of weapon of its own and is not offered, as in the bundled SRD.
+/// and `data.melee` (what the Weapon Mastery choice offers). A weapon with several mastery
+/// properties also gets all of them, in order, in `data.mastery_ids` (`mastery_id` stays the
+/// first). A weapon made from a base item (a `+1 Longsword`) is not a kind of weapon of its own
+/// and is not offered, as in the bundled SRD.
 pub fn mastery_data(ids: &mut crate::ids::IdAlloc, it: &Item, code: &str, el: &mut Element) {
-    let Some((name, source)) = it.mastery.iter().find_map(mastery_ref) else {
+    let mut all: Vec<String> = Vec::new();
+    for (name, source) in it.mastery.iter().filter_map(mastery_ref) {
+        let id = mastery_id(ids, name, source);
+        if !all.contains(&id) {
+            all.push(id);
+        }
+    }
+    let Some(first) = all.first() else {
         return;
     };
-    el.data
-        .insert("mastery_id".into(), json!(mastery_id(ids, name, source)));
+    el.data.insert("mastery_id".into(), json!(first));
+    if all.len() > 1 {
+        el.data.insert("mastery_ids".into(), json!(all));
+    }
     if it.extra.contains_key("baseItem") {
         return;
     }
@@ -427,6 +440,34 @@ mod tests {
             &mut el,
         );
         assert!(el.data.is_empty());
+    }
+
+    #[test]
+    fn mastery_data_keeps_every_property_of_a_weapon_with_several() {
+        let mut ids = crate::ids::IdAlloc::default();
+        let mut el = Element::default();
+        let it = item(json!({"name": "Thornglaive", "source": "HB", "type": "M",
+            "weaponCategory": "martial", "mastery": ["Topple|HB", {"uid": "Ricochet|HB"}, "Push|HB"]}));
+        mastery_data(&mut ids, &it, "M", &mut el);
+        // the first stays the single id older readers know
+        assert_eq!(el.data["mastery_id"], "ID_2024_MASTERY_TOPPLE");
+        assert_eq!(
+            el.data["mastery_ids"],
+            json!([
+                "ID_2024_MASTERY_TOPPLE",
+                "ID_5ET_HB_ITEMPROP_MASTERY_RICOCHET",
+                "ID_2024_MASTERY_PUSH"
+            ])
+        );
+        assert_eq!(mastery_names(&it), ["Topple", "Ricochet", "Push"]);
+        // one property: no list, the element is as before
+        let mut el = Element::default();
+        let it = item(json!({"name": "Briar Pick", "source": "HB", "type": "M",
+            "weaponCategory": "martial", "mastery": ["Sap|HB", "Sap|HB"]}));
+        mastery_data(&mut ids, &it, "M", &mut el);
+        assert_eq!(el.data["mastery_id"], "ID_2024_MASTERY_SAP");
+        assert!(!el.data.contains_key("mastery_ids"));
+        assert_eq!(mastery_names(&it), ["Sap"]);
     }
 
     #[test]
