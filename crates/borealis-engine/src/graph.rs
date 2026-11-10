@@ -10,7 +10,7 @@ use crate::eval::{
 use crate::ids;
 use crate::state::{CharacterState, Choice, ClassSlot, SlotKey};
 use crate::universe::{Cond, EditionStatus, UElem, URule, UStat, Universe};
-use borealis_content::expr::{Dynamic, SupportsExpr};
+use borealis_content::expr::{BoolExpr, Dynamic, SupportsExpr, SupportsLeaf};
 use borealis_content::{Rule, SourceRestriction};
 use std::cell::{OnceCell, RefCell};
 use std::collections::{HashMap, HashSet};
@@ -1783,23 +1783,32 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
 }
 
 /// `$(spellcasting:list),1` / `$(spellcasting:list),(1||2)`: a class list and leveled spell
-/// levels only (no cantrips, no other terms).
+/// levels only (no cantrips, no other terms). Read from the parsed expression, so the spelling
+/// (`,` or `&&`, spaces, parentheses, term order) never changes the answer.
 fn literal_level_spell_select(supports: &str) -> bool {
-    let mut parts = supports.split(',');
-    if parts.next().map(str::trim) != Some("$(spellcasting:list)") {
-        return false;
+    fn leveled(e: &BoolExpr<SupportsLeaf>) -> bool {
+        match e {
+            BoolExpr::Leaf(SupportsLeaf::Tag(t)) => {
+                t.parse::<u32>().is_ok_and(|n| (1..=9).contains(&n))
+            }
+            BoolExpr::Or(items) => items.iter().all(leveled),
+            _ => false,
+        }
     }
-    let rest: Vec<&str> = parts.collect();
-    !rest.is_empty()
-        && rest.iter().all(|p| {
-            let levels: Vec<&str> = p
-                .split("||")
-                .map(|t| t.trim().trim_matches(|c| c == '(' || c == ')').trim())
-                .collect();
-            levels
-                .iter()
-                .all(|t| t.parse::<u32>().is_ok_and(|n| (1..=9).contains(&n)))
-        })
+    let is_list = |e: &BoolExpr<SupportsLeaf>| {
+        matches!(
+            e,
+            BoolExpr::Leaf(SupportsLeaf::Dynamic(Dynamic::SpellcastingList))
+        )
+    };
+    let Ok(Some(expr)) = SupportsExpr::parse(supports) else {
+        return false;
+    };
+    let BoolExpr::And(items) = expr.root() else {
+        return false;
+    };
+    items.iter().filter(|e| is_list(e)).count() == 1
+        && items.iter().all(|e| is_list(e) || leveled(e))
 }
 
 impl DynamicSupports for SpellDynamics<'_, '_> {
@@ -1842,6 +1851,15 @@ mod tests {
         ));
         assert!(!literal_level_spell_select("$(spellcasting:list)"));
         assert!(!literal_level_spell_select("Warlock,1"));
+        // the spelling never matters (the homebrew creator writes `&&`)
+        assert!(literal_level_spell_select("$(spellcasting:list)&&1"));
+        assert!(literal_level_spell_select(
+            "(1||2||3)&&$(spellcasting:list)"
+        ));
+        assert!(literal_level_spell_select("$(spellcasting:list), 1, 2"));
+        assert!(!literal_level_spell_select("$(spellcasting:list)&&0"));
+        assert!(!literal_level_spell_select("$(spellcasting:list)||1"));
+        assert!(!literal_level_spell_select("$(spellcasting:list),1,Wizard"));
     }
 
     #[test]

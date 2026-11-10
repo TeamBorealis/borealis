@@ -58,19 +58,27 @@ impl Cx<'_, '_> {
 
     /// Value of a save DC formula such as `8+dexterity+proficiency`.
     fn dc(&self, formula: &str) -> Option<i32> {
-        let mut total = 0;
-        for part in formula.split('+') {
-            let p = part.trim().to_lowercase();
-            total += if let Ok(n) = p.parse::<i32>() {
-                n
-            } else if p == "proficiency" {
-                self.prof
-            } else {
-                self.mods[crate::ids::ability_index(&p)?]
-            };
-        }
-        Some(total)
+        eval_note_dc(formula, self.mods, self.prof)
     }
+}
+
+/// Value of a save DC formula shown in a note (`cunning_strike.save_dc`, `8+dexterity+proficiency`):
+/// `+`-separated numbers, `proficiency` and bare ability names. The homebrew creator writes these
+/// formulas and checks its text against this reader.
+#[must_use]
+pub fn eval_note_dc(formula: &str, mods: &[i32; 6], prof: i32) -> Option<i32> {
+    let mut total = 0;
+    for part in formula.split('+') {
+        let p = part.trim().to_lowercase();
+        total += if let Ok(n) = p.parse::<i32>() {
+            n
+        } else if p == "proficiency" {
+            prof
+        } else {
+            mods[crate::ids::ability_index(&p)?]
+        };
+    }
+    Some(total)
 }
 
 fn s<'a>(l: &'a Live<'_>, k: &str) -> &'a str {

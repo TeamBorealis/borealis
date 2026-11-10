@@ -49,8 +49,10 @@ fn save_ability(text: &str) -> Option<String> {
 }
 
 /// `8+constitution+proficiency` -> `8+constitution:modifier+proficiency` (a bare ability in
-/// a save DC formula is its modifier).
-fn modifier_terms(formula: &str) -> String {
+/// a save DC formula is its modifier): the text of a breath weapon's `data.dc` that the shared
+/// formula grammar then reads. The homebrew creator checks its DC text against this reader.
+#[must_use]
+pub fn dc_formula_text(formula: &str) -> String {
     formula
         .split('+')
         .map(|t| {
@@ -116,7 +118,7 @@ fn scaling_rows(graph: &Graph<'_>, stats: &StatSet, mods: &[i32; 6]) -> Vec<Atta
             let save = l.el.data.get("save").and_then(Value::as_str)?;
             let dc_formula = l.el.data.get("dc").and_then(Value::as_str)?;
             let dc =
-                crate::play_rules::eval_formula(graph, stats, mods, &modifier_terms(dc_formula))?;
+                crate::play_rules::eval_formula(graph, stats, mods, &dc_formula_text(dc_formula))?;
             let ability =
                 crate::ids::ability_index(save).map(|i| crate::ids::ABILITIES[i].to_string())?;
             let dice =
@@ -152,7 +154,7 @@ mod tests {
     #[test]
     fn bare_abilities_in_a_dc_formula_are_modifiers() {
         assert_eq!(
-            super::modifier_terms("8+constitution+proficiency"),
+            super::dc_formula_text("8+constitution+proficiency"),
             "8+constitution:modifier+proficiency"
         );
     }
