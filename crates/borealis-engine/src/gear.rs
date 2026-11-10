@@ -319,7 +319,7 @@ pub fn attacks_with(
             damage: damage_with(ability),
             ability: ids::ABILITIES[ability].to_string(),
             proficient,
-            mastery: crate::play_rules::attack_mastery(uni, &e.el, cx.masteries),
+            masteries: crate::mastery::attack_masteries(uni, &e.el, cx.masteries),
             ammunition: loaded.map(|l| l.name),
             save: None,
             ability_lines: (0..ids::ABILITIES.len())
@@ -406,7 +406,7 @@ fn unarmed_strike(
         damage: damage_with(ability),
         ability: ids::ABILITIES[ability].to_string(),
         proficient: true,
-        mastery: None,
+        masteries: Vec::new(),
         ammunition: None,
         save: None,
         ability_lines: (0..ids::ABILITIES.len())

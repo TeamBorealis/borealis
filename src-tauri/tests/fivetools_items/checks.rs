@@ -310,12 +310,13 @@ impl Check<'_> {
                 },
             );
         }
-        if let Some(m) = self.raw.mastery().filter(|_| self.rs == Ruleset::Dnd2024) {
-            let got = atk.mastery.as_ref().map(|r| r.name.as_str());
+        let want = self.raw.masteries();
+        if !want.is_empty() && self.rs == Ruleset::Dnd2024 {
+            let got: Vec<&str> = atk.masteries.iter().map(|r| r.name.as_str()).collect();
             t.record(
                 "weapon mastery (2024)",
                 id,
-                verdict(got == Some(m.as_str()), || format!("{got:?} want {m}")),
+                verdict(got == want, || format!("{got:?} want {want:?}")),
             );
         }
     }

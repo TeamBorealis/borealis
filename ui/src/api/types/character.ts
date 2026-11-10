@@ -457,8 +457,8 @@ export interface Attack {
   auto: boolean;
   showInCombat: boolean;
   card: boolean;
-  /** Computed (auto) attacks only: 2024 weapon mastery property; `mastered` once chosen. */
-  mastery?: AttackMastery | null;
+  /** Computed (auto) attacks only: the weapon's 2024 mastery properties (usually one); `mastered` once chosen. */
+  masteries?: AttackMastery[];
   /** Lowest d20 roll that is a critical hit (20 unless a feature lowers it). */
   critRange?: number;
   /** Damage dice never roll below this (Great Weapon Fighting). */

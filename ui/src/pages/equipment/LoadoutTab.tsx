@@ -45,10 +45,12 @@ export function MasteryChooser({ capacity, play, weapons }: { capacity: number; 
           const m = textFor(w);
           // A saved choice the slots no longer offer can only be dropped.
           if (w.stale && !on) return null;
-          const detail = w.stale ? "No longer available for Weapon Mastery; unmaster it to choose another weapon." : m ? `${m.property}: ${m.text}` : w.shortDescription;
+          // A chosen weapon lists each of its mastery properties with its text, one per line.
+          const details = w.stale ? ["No longer available for Weapon Mastery; unmaster it to choose another weapon."]
+            : m ? m.properties.map((p) => `${p.name}: ${p.text}`) : [w.shortDescription];
           return (
             <li key={w.id} className="resource-row">
-              <span className="grow"><strong>{w.name}</strong> {w.sourceName && <span className="mastery-src muted small">{w.sourceName}</span>}<span className="muted small" style={{ display: "block" }}>{detail}</span></span>
+              <span className="grow"><strong>{w.name}</strong> {w.sourceName && <span className="mastery-src muted small">{w.sourceName}</span>}{details.map((d, i) => <span key={i} className="muted small" style={{ display: "block" }}>{d}</span>)}</span>
               <Button small variant={on ? "primary" : "default"} aria-pressed={on} disabled={!on && full} aria-label={`${on ? "Unmaster" : "Master"} ${w.name}`} onClick={() => toggle(w)}>{on ? "Mastered" : "Master"}</Button>
             </li>
           );

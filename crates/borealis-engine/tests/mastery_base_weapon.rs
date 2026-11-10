@@ -74,7 +74,7 @@ fn a_magic_weapon_of_the_mastered_kind_is_mastered() {
             .attacks
             .iter()
             .find(|a| a.name == name)
-            .and_then(|a| a.mastery.as_ref())
+            .and_then(|a| a.masteries.first())
             .map(|m| m.mastered)
     };
     // two-handed: each equip replaces the weapon in hand

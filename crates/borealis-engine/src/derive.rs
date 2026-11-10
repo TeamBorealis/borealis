@@ -614,7 +614,7 @@ impl<'u> Evaluation<'u> {
             scores[0],
             &mut diags,
         );
-        let masteries = crate::play_rules::mastery_picks(&self.graph);
+        let masteries = crate::mastery::mastery_picks(&self.graph);
         let martial_arts = crate::play_rules::martial_arts(&self.graph);
         let attacks = gear::attacks_with(
             &gear::AttackCtx {

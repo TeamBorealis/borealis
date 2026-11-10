@@ -316,11 +316,7 @@ fn attacks(
             bonus: typed(&edit_of(&a.uid).attack, &signed_text(a.attack)),
             damage: typed(&edit_of(&a.uid).damage, &a.damage),
             range: typed(&edit_of(&a.uid).range, &a.range),
-            mastery: a
-                .mastery
-                .as_ref()
-                .filter(|m| m.mastered)
-                .map(|m| m.name.clone()),
+            mastery: mastered_names(a),
             notes: a
                 .offhand_damage
                 .as_ref()
@@ -388,6 +384,17 @@ fn attacks(
 }
 
 /// The engine lists damaging cantrips among `snap.attacks` with uid `spell:<casting name>:<id>`.
+/// The mastered properties of an attack, joined (`Topple, Push`); `None` when not mastered.
+fn mastered_names(a: &borealis_engine::snapshot::AttackSnapshot) -> Option<String> {
+    let names: Vec<&str> = a
+        .masteries
+        .iter()
+        .filter(|m| m.mastered)
+        .map(|m| m.name.as_str())
+        .collect();
+    (!names.is_empty()).then(|| names.join(", "))
+}
+
 fn is_spell_row(uid: &str) -> bool {
     uid.starts_with("spell:")
 }

@@ -18,7 +18,7 @@ mixes, on each element. Search with `ruleset: "2014"` or `"2024"` so you study t
 | Background | Skills, tools, feature | Skills, tool, 3-ability bonus pool, an origin feat (`grant_feat`), equipment package |
 | Origin feats | Do not exist | `Feat` with `category: "Origin"` (`supports` `["Origin Feat","Feat"]`), no prerequisite |
 | Feat categories | One list | Origin, General (level 4+), Fighting Style, Epic Boon (level 19+) in `data.category` and a `category` setter |
-| Weapon mastery | None | Weapons carry a mastery property id; classes grant `weapon_mastery` slots (`count`, `filter`) |
+| Weapon mastery | None | Weapons carry a mastery property id (`data.mastery_id`; several in `data.mastery_ids`); classes grant `weapon_mastery` slots (`count`, `filter`) |
 | Spell preparation | Mixed: known casters, prepared by level+modifier | Fixed per-class prepared count from a table column; `wizard:spellcasting:prepare` is a table value, not level + modifier |
 | Ritual casting | Needs a class feature | Any prepared ritual spell can be cast as a ritual |
 | Half-casters rounding | Down | Up for multiclass slot level |

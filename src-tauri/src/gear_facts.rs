@@ -1,7 +1,7 @@
 //! Armor, weapon and spell columns read from content setters, for the Equipment and Magic grids.
 
 use crate::gear_info::weapon_properties;
-use borealis_content::Element;
+use borealis_content::{ContentStore, Element};
 use serde::Serialize;
 
 const FLAG_TRUE: &str = "true";
@@ -70,6 +70,21 @@ pub struct SpellFacts {
     pub ritual: bool,
 }
 
+/// A weapon's Mastery property names joined (`Topple, Push`), or `None` without any. Every form
+/// the engine reads counts (`borealis_engine::mastery`); written names are title-cased.
+#[must_use]
+pub fn mastery_names(store: &ContentStore, el: &Element) -> Option<String> {
+    let links = borealis_engine::mastery::mastery_links(el, |id| store.element(id), |_| None);
+    let names: Vec<String> = links
+        .iter()
+        .map(|l| {
+            l.element
+                .map_or_else(|| crate::ids::title_case(l.name), |m| m.name.clone())
+        })
+        .collect();
+    (!names.is_empty()).then(|| names.join(", "))
+}
+
 fn text(el: &Element, name: &str) -> String {
     el.setter_value(name).unwrap_or_default().trim().to_string()
 }
@@ -117,7 +132,7 @@ pub fn armor_facts(el: &Element) -> Option<ArmorFacts> {
 
 /// Weapon columns, for `Weapon` elements.
 #[must_use]
-pub fn weapon_facts(el: &Element) -> Option<WeaponFacts> {
+pub fn weapon_facts(store: &ContentStore, el: &Element) -> Option<WeaponFacts> {
     if el.ty != "Weapon" {
         return None;
     }
@@ -138,9 +153,7 @@ pub fn weapon_facts(el: &Element) -> Option<WeaponFacts> {
             .unwrap_or_default()
             .to_string(),
         properties: weapon_properties(el),
-        mastery: Some(text(el, "mastery"))
-            .filter(|m| !m.is_empty())
-            .map(|m| crate::ids::title_case(&m)),
+        mastery: mastery_names(store, el),
         range: Some(text(el, "range")).filter(|r| !r.is_empty()),
         proficiency: crate::ids::title_case(proficiency),
         kind: crate::ids::title_case(kind),

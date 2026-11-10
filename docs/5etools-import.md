@@ -89,7 +89,7 @@ A class element embeds its synthetic multiclass id, which counts as defined.
 | `spell` | `Spell` | level, school, time, range, duration, components in setters; `supports` = class list from the spell lookup; `data.damage_inflict`, `saving_throw`, `scalingLevelDice`, `areaTags`, ... |
 | `baseitem`, `item`, generated variants, generic variants | `Weapon` / `Armor` / `Item` / `Magic Item` | cost, weight, damage, properties, AC, rarity, attunement, charges, `data.mastery`, `data.tier`, `data.lootTables` |
 | `itemGroup` | `Item` | group members linked |
-| `itemMastery` | `Mastery Property` | |
+| `itemMastery` | `Mastery Property` | a weapon's `mastery` list keeps every entry: `data.mastery_id` is the first, `data.mastery_ids` all of them when there are several, one `mastery` setter each |
 | `language` | `Language` | languages the core pack defines are skipped; others get `ID_5ET_LANGUAGE_*` |
 | `condition`, `disease`, `status` | `Condition` | |
 | source / `books.json` | `Source` element per pack | name from `books.json`, then a built-in table, then the abbreviation |

@@ -351,7 +351,11 @@ fn equip_name(e: EquipSlot, both_hands: bool) -> &'static str {
 }
 
 /// Weapon facts for the attack flow, read from the weapon's setters and tags.
-fn weapon_info(el: Option<&borealis_content::Element>, snap: &Engine) -> WeaponInfo {
+fn weapon_info(
+    store: &borealis_content::ContentStore,
+    el: Option<&borealis_content::Element>,
+    snap: &Engine,
+) -> WeaponInfo {
     let Some(el) = el else {
         return WeaponInfo::default();
     };
@@ -378,10 +382,7 @@ fn weapon_info(el: Option<&borealis_content::Element>, snap: &Engine) -> WeaponI
             .to_string(),
         properties: gear_info::weapon_properties(el).join(", "),
         ability: ability.into(),
-        mastery: el
-            .setter_value("mastery")
-            .map(|m| crate::ids::title_case(m.trim()))
-            .filter(|m| !m.is_empty()),
+        mastery: crate::gear_facts::mastery_names(store, el),
         range: el
             .setter_value("range")
             .map(|r| r.trim().to_string())
@@ -459,7 +460,7 @@ pub fn inventory(input: &MapInput<'_>, snap: &Engine) -> InventoryState {
                 pack_contents: contents,
                 is_weapon,
                 equippable: i.equippable,
-                weapon: is_weapon.then(|| weapon_info(el, snap)),
+                weapon: is_weapon.then(|| weapon_info(store, el, snap)),
                 armor: el.and_then(crate::gear_facts::armor_facts),
                 rolled_charges: rolled_charges(snap, &i.uid),
                 override_requirements: i.override_requirements,

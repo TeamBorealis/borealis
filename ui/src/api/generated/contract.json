@@ -3977,11 +3977,14 @@
       "k": "prim"
      }
     },
-    "mastery": {
+    "masteries": {
      "opt": true,
      "t": {
-      "k": "ref",
-      "name": "AttackMastery"
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "AttackMastery"
+      }
      }
     },
     "name": {
@@ -9247,6 +9250,23 @@
     }
    }
   },
+  "MasteryProperty": {
+   "k": "object",
+   "props": {
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "text": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "MigrationIssue": {
    "k": "object",
    "props": {
@@ -10105,16 +10125,14 @@
       "k": "prim"
      }
     },
-    "property": {
+    "properties": {
      "opt": false,
      "t": {
-      "k": "prim"
-     }
-    },
-    "text": {
-     "opt": false,
-     "t": {
-      "k": "prim"
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "MasteryProperty"
+      }
      }
     },
     "weapon": {

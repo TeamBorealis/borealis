@@ -7,6 +7,7 @@ mod merge;
 mod restriction;
 mod snapshot;
 
+pub use alias::phb24_candidate;
 pub use builder::{ContentStoreBuilder, PackInfo, ParsedPack};
 pub use merge::apply_append;
 pub use restriction::{

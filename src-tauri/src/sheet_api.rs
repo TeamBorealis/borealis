@@ -66,9 +66,9 @@ pub fn with_default_paper(s: &SheetSettings, options: &SheetOptionsDto) -> Sheet
 
 const FACT_SKIP: [&str; 3] = ["Type", "Source", "Category"];
 
-fn card_text(el: &borealis_content::Element) -> CardText {
+fn card_text(store: &borealis_content::ContentStore, el: &borealis_content::Element) -> CardText {
     let level_school = ["Level", "School", "Category"];
-    let all = facts(el);
+    let all = facts(store, el);
     let pick = |labels: &[&str]| -> Vec<String> {
         all.iter()
             .filter(|f| labels.contains(&f.label.as_str()))
@@ -112,7 +112,7 @@ fn sheet_content(
     let mut seen = HashSet::new();
     for sp in snap.spellcasting.iter().flat_map(|c| &c.spells) {
         if let (true, Some(el)) = (seen.insert(sp.id.clone()), store.element(&sp.id)) {
-            out.spells.insert(sp.id.clone(), card_text(el));
+            out.spells.insert(sp.id.clone(), card_text(store, el));
             out.spell_facts
                 .insert(sp.id.clone(), borealis_sheet::spell_facts(el));
         }
@@ -122,7 +122,7 @@ fn sheet_content(
             seen.insert(item.item.id.clone()),
             store.element(&item.item.id),
         ) {
-            out.items.insert(item.item.id.clone(), card_text(el));
+            out.items.insert(item.item.id.clone(), card_text(store, el));
         }
     }
     out

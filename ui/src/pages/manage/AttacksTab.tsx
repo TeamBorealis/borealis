@@ -18,7 +18,7 @@ export function AttackTags({ attack: a }: { attack: Attack }) {
   return (
     <span className="ap-tags">
       {(a.auto || a.calculated) && <span className="ap-tag">Auto</span>}
-      {a.mastery && <span className={`ap-tag ${a.mastery.mastered ? "" : "warn"}`} title={a.mastery.text}>{a.mastery.name}{a.mastery.mastered ? "" : " (not mastered)"}</span>}
+      {(a.masteries ?? []).map((m) => <span key={m.name} className={`ap-tag ${m.mastered ? "" : "warn"}`} title={m.text}>{m.name}{m.mastered ? "" : " (not mastered)"}</span>)}
       {a.critRange !== undefined && a.critRange < 20 && <span className="ap-tag" title="Critical hit range">Crit {a.critRange}-20</span>}
       {a.dieFloor ? <span className="ap-tag" title="Minimum on each damage die">Die min {a.dieFloor}</span> : null}
       {a.offhandDamage && <span className="ap-tag" title="Damage when used off-hand">Off-hand {a.offhandDamage}</span>}

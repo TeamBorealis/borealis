@@ -145,7 +145,7 @@ pub fn cantrip_attacks(
                 damage: crate::gear::dice_with_bonus(&dice, extra, &ty),
                 ability: sc.ability.to_lowercase(),
                 proficient: true,
-                mastery: None,
+                masteries: Vec::new(),
                 crit_range: 20,
                 die_floor: None,
                 offhand_damage: None,

@@ -759,8 +759,8 @@ pub struct Attack {
     pub auto: bool,
     pub show_in_combat: bool,
     pub card: bool,
-    /// The weapon's mastery property (2024), with `mastered` when chosen.
-    pub mastery: Option<crate::play_dto::MasteryDto>,
+    /// The weapon's mastery properties (2024), usually one, each `mastered` when chosen.
+    pub masteries: Vec<crate::play_dto::MasteryDto>,
     /// Lowest d20 roll that is a critical hit.
     pub crit_range: u8,
     /// Damage dice never roll below this (Great Weapon Fighting).
@@ -955,7 +955,7 @@ mod gear_dto_tests {
             auto: true,
             show_in_combat: true,
             card: true,
-            mastery: None,
+            masteries: Vec::new(),
             crit_range: 20,
             die_floor: None,
             offhand_damage: None,

@@ -18,6 +18,8 @@ serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+# Rich text (homebrew creator, spec 7.2): NFC for text the editor sends; already in the tree via the engine.
+unicode-normalization = "0.1.25"
 
 [dev-dependencies]
 tempfile = "3.27.0"

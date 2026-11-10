@@ -25,6 +25,10 @@ export interface MockPlay {
 export const emptyPlay = (): MockPlay => ({ used: {}, toggles: [], exhaustion: 0, inspiration: false, masteries: [], forms: [], packages: {} });
 const playOf = (c: MockCharacter): MockPlay => c.play ?? emptyPlay();
 const MAX_EXHAUSTION = 6;
+/** The mastery properties of a mock weapon (its `mastery` text, a comma list), each with a short text. */
+const masteryProperties = (weapon: string) =>
+  (getItem(weapon)?.weapon?.mastery ?? "Graze").split(",").map((n) => n.trim()).filter(Boolean)
+    .map((name) => ({ name, text: name === "Graze" ? "Deal ability-modifier damage on a miss." : `The ${name} mastery property.` }));
 /** Weapon Mastery picks the classes of a 2024 character allow. */
 const masteryCapacity = (c: MockCharacter): number =>
   c.ruleset === "dnd2024" ? c.classes.reduce((n, cs) => n + (getClass(classIdOf(c, cs.slotId))?.masteries ?? 0), 0) : 0;
@@ -77,8 +81,8 @@ export function buildPlay(c: MockCharacter, sc: SpellcastingState, conMod = 0, h
     resources, resourceCosts: [], toggles,
     exhaustion: { linear: c.ruleset === "dnd2024", level: p.exhaustion, maxLevels: MAX_EXHAUSTION, d20Penalty: -2 * p.exhaustion, speedPenalty: -5 * p.exhaustion, dead: p.exhaustion >= MAX_EXHAUSTION },
     inspiration: p.inspiration, inspirationSources: [], martialArts: null,
-    // As the host: `weapon` is the element id, `name` the weapon's name.
-    masteries: p.masteries.map((w) => ({ weapon: w, name: getElement(w)?.name ?? w, property: "Graze", text: "Deal ability-modifier damage on a miss." })),
+    // As the host: `weapon` is the element id, `name` the weapon's name, then each mastery property.
+    masteries: p.masteries.map((w) => ({ weapon: w, name: getElement(w)?.name ?? w, properties: masteryProperties(w) })),
     defenses: {
       resistances: ["bludgeoning", "piercing", "slashing"].map((name) => ({ name, source: "Rage", active: raging, whileToggle: "rage" })),
       immunities: [], vulnerabilities: [], conditionImmunities: [],
