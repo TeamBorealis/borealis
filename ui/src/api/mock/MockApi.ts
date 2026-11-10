@@ -47,6 +47,7 @@ import { findByWireId, toWireSlotId } from "./slot-ids";
 import { MOCK_INDEX_STATUS, mockPassage, mockSearch } from "./search";
 import { MockHomebrew, notImplemented } from "./homebrew";
 import { MOCK_BLOCK_CATALOG, MOCK_STAT_CATALOG } from "./homebrew-catalog";
+import { referenceRows } from "./homebrew-check";
 
 export interface MockApiOptions {
   /** Artificial latency per call in ms (default 0). */
@@ -972,7 +973,11 @@ export class MockApi implements Api {
   async homebrewDeleteElements({ packId, elementIds }: Parameters<Api["homebrewDeleteElements"]>[0]) { await this.tick(); return this.homebrew.deleteElements(packId, elementIds); }
   async homebrewDuplicateElement({ packId, elementId }: { packId: string; elementId: string }) { await this.tick(); return this.homebrew.duplicateElement(packId, elementId); }
   async homebrewBulkEdit(_: Parameters<Api["homebrewBulkEdit"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_bulk_edit"); }
-  async homebrewReferenceOptions(_: Parameters<Api["homebrewReferenceOptions"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_reference_options"); }
+  async homebrewReferenceOptions({ target, query, page, draftId }: Parameters<Api["homebrewReferenceOptions"]>[0]) {
+    await this.tick();
+    const loaded = this.content.search({ query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items;
+    return referenceRows(loaded, this.homebrew.pickerRows(draftId), target, query, page);
+  }
   async homebrewWhereUsed(_: { elementId: string }) { await this.tick(); return []; }
   async homebrewSpellList(_: { packId: string; listTag: string }): Promise<never> { await this.tick(); throw notImplemented("homebrew_spell_list"); }
   async homebrewSetSpellList(_: Parameters<Api["homebrewSetSpellList"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_set_spell_list"); }

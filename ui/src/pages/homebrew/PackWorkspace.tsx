@@ -10,6 +10,7 @@ import { ElementDetailView } from "../builder/DescriptionPane";
 import { Editor, editorTabs } from "./Editor";
 import { Categories, ElementList, KindChips } from "./ElementList";
 import { useCreatorKeys } from "./keymap";
+import { ADD_BLOCK_EVENT } from "./blocks/BlockList";
 import { NewElementFlyout, creatableKinds } from "./NewElementFlyout";
 import { rememberPack } from "./packs";
 import { countProblems, fieldDomId, fieldKeyOf, problemsLine, tabOf } from "./problems";
@@ -161,6 +162,8 @@ export function PackWorkspace() {
     if (t) setTab(t);
     const key = fieldKeyOf(p.path);
     if (key) setTimeout(() => focusField(key), 0);
+    const block = p.path ? /^blocks\.(\d+)/.exec(p.path) : null;
+    if (block) setTimeout(() => document.querySelector<HTMLElement>(`.hb-block-list [data-block="${block[1]}"]`)?.focus(), 0);
   };
 
   const tryIt = () => { if (openKind?.tabs.some((t) => t.id === "tryIt")) setTab("tryIt"); };
@@ -175,6 +178,12 @@ export function PackWorkspace() {
     tryIt,
     tab: (a) => { const t = openKind ? editorTabs(openKind, narrow)[a.index ?? 0] : undefined; if (t) setTab(t.id); },
     rename: () => focusField("name", true),
+    addBlock: () => {
+      const rules = openKind?.fields.find((f) => f.control === "blocks");
+      if (!rules || !draft.form) return;
+      setTab(rules.tab);
+      setTimeout(() => window.dispatchEvent(new Event(ADD_BLOCK_EVENT)), 0);
+    },
   });
 
   const preview = draft.view?.preview

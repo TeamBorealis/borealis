@@ -6849,6 +6849,12 @@
       "name": "HomebrewPickerTarget"
      }
     },
+    "readOnly": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "required": {
      "opt": false,
      "t": {
@@ -7607,6 +7613,12 @@
       "k": "prim"
      }
     },
+    "level": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "name": {
      "opt": false,
      "t": {
@@ -7619,10 +7631,23 @@
       "k": "prim"
      }
     },
+    "school": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "sourceName": {
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "spell": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "SpellFacts"
      }
     },
     "summary": {
