@@ -7,6 +7,10 @@ import {
   mdiUpload, mdiWeb, mdiCheckboxMarkedOutline, mdiDotsVertical, mdiTagMultiple, mdiImageMultipleOutline, mdiMicrophone,
   mdiFolderSearchOutline, mdiFolderRemoveOutline, mdiBackupRestore, mdiChevronDoubleDown, mdiQrcode, mdiQrcodeScan, mdiKeyboardOutline, mdiDevices, mdiMenuDown, mdiHelpCircleOutline, mdiUndo, mdiRedo,
 } from "@mdi/js";
+import {
+  mdiFormatBold, mdiFormatItalic, mdiFormatHeader3, mdiFormatHeader4, mdiFormatListBulleted, mdiFormatListNumbered, mdiTable,
+  mdiTableRowPlusAfter, mdiTableColumnPlusAfter, mdiTableRemove, mdiTableLarge, mdiChevronDoubleUp,
+} from "@mdi/js";
 
 /** Icon set: Material Design Icons (Apache-2.0) via @mdi/js. */
 const PATHS = {
@@ -73,6 +77,19 @@ const PATHS = {
   help: mdiHelpCircleOutline,
   /** Small solid down arrow (version column, source filter). */
   caret: mdiMenuDown,
+  /** Rich-text toolbar (homebrew creator descriptions). */
+  bold: mdiFormatBold,
+  italic: mdiFormatItalic,
+  "heading-3": mdiFormatHeader3,
+  "heading-4": mdiFormatHeader4,
+  "list-bulleted": mdiFormatListBulleted,
+  "list-numbered": mdiFormatListNumbered,
+  table: mdiTable,
+  "table-row-add": mdiTableRowPlusAfter,
+  "table-column-add": mdiTableColumnPlusAfter,
+  "table-remove": mdiTableRemove,
+  "table-large": mdiTableLarge,
+  "level-up": mdiChevronDoubleUp,
 } as const;
 
 export type IconName = keyof typeof PATHS;

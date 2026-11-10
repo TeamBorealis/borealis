@@ -10,6 +10,7 @@ import { ElementDetailView } from "../builder/DescriptionPane";
 import { Editor, editorTabs } from "./Editor";
 import { Categories, ElementList, KindChips } from "./ElementList";
 import { useCreatorKeys } from "./keymap";
+import { ADD_BLOCK_EVENT } from "./blocks/BlockList";
 import { NewElementFlyout, creatableKinds } from "./NewElementFlyout";
 import { rememberPack } from "./packs";
 import { countProblems, fieldDomId, fieldKeyOf, problemsLine, tabOf } from "./problems";
@@ -52,6 +53,7 @@ export function PackWorkspace() {
   const [tab, setTab] = useState("general");
   const [filter, setFilter] = useState("");
   const [newOpen, setNewOpen] = useState(false);
+  const [tryItOpen, setTryItOpen] = useState(false);
   const [mobileView, setMobileView] = useState<"list" | "editor">("list");
   const filterRef = useRef<HTMLInputElement>(null);
   const pack = (packs.data ?? []).find((p) => p.id === packId) ?? null;
@@ -90,6 +92,7 @@ export function PackWorkspace() {
   }, [hasForm, draft.checking, counted.errors, counted.warnings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const show = async (view: HomebrewDraftView) => {
+    setTryItOpen(false);
     await draft.open(view);
     setKindPick(view.form.kind);
     setTab(kindOf(view.form.kind)?.tabs[0]?.id ?? "general");
@@ -161,9 +164,11 @@ export function PackWorkspace() {
     if (t) setTab(t);
     const key = fieldKeyOf(p.path);
     if (key) setTimeout(() => focusField(key), 0);
+    const block = p.path ? /^blocks\.(\d+)/.exec(p.path) : null;
+    if (block) setTimeout(() => document.querySelector<HTMLElement>(`.hb-block-list [data-block="${block[1]}"]`)?.focus(), 0);
   };
 
-  const tryIt = () => { if (openKind?.tabs.some((t) => t.id === "tryIt")) setTab("tryIt"); };
+  const tryIt = () => { if (draft.view) setTryItOpen(true); };
 
   useCreatorKeys({
     save: () => void save(),
@@ -175,13 +180,20 @@ export function PackWorkspace() {
     tryIt,
     tab: (a) => { const t = openKind ? editorTabs(openKind, narrow)[a.index ?? 0] : undefined; if (t) setTab(t.id); },
     rename: () => focusField("name", true),
+    addBlock: () => {
+      const rules = openKind?.fields.find((f) => f.control === "blocks");
+      if (!rules || !draft.form) return;
+      setTab(rules.tab);
+      setTimeout(() => window.dispatchEvent(new Event(ADD_BLOCK_EVENT)), 0);
+    },
   });
 
   const preview = draft.view?.preview
     ? <ElementDetailView d={draft.view.preview} />
     : <aside className="desc-pane" aria-label="Description" />;
   const editor = openKind && draft.form
-    ? <Editor kind={openKind} draft={draft} tab={tab} onTab={setTab} narrow={narrow} preview={preview} actions={{ onSave: () => void save(), onTryIt: tryIt, onDuplicate: () => void duplicate(), onJump: jump }} />
+    ? <Editor kind={openKind} draft={draft} tab={tab} onTab={setTab} narrow={narrow} preview={preview} tryItOpen={tryItOpen}
+      actions={{ onSave: () => void save(), onTryIt: tryIt, onTryItClose: () => setTryItOpen(false), onDuplicate: () => void duplicate(), onJump: jump }} />
     : <div className="hb-empty"><p>Choose an element in the list, or make a new one.</p><Button onClick={() => setNewOpen(true)} disabled={offered.length === 0}>New element</Button></div>;
   const list = (
     <ElementList kind={listKind} rows={listRows} unsaved={unsaved} openId={openId} filter={filter} filterRef={filterRef} onFilter={setFilter}

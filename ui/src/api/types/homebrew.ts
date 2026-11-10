@@ -1,4 +1,4 @@
-import type { BookRuleset, ElementDetail, Ruleset } from "./core";
+import type { BookRuleset, ElementDetail, Ruleset, SpellFacts } from "./core";
 import type { CharacterSnapshot } from "./character";
 import type { ContentPack } from "./content";
 
@@ -618,6 +618,10 @@ export interface HomebrewPickerRow {
   edition: Ruleset | null;
   /** An unsaved draft of the current pack. */
   draft: boolean;
+  /** Spells only (WB-10, the spell picker's Magic grid, spec 13.7): level 0-9, school and casting facts. */
+  level?: number;
+  school?: string;
+  spell?: SpellFacts;
 }
 
 /** Where-used (spec 12.3). */
@@ -697,6 +701,12 @@ export interface HomebrewTrialView {
   snapshot: CharacterSnapshot;
   ladder: HomebrewLadderRow[];
   problems: HomebrewProblem[];
-  /** Snapshot fields whose values changed because of the draft (`stats.ac`, `abilities.final.2`...). */
+  /**
+   * What the draft changed: the snapshot compared with the same trial character without the draft. A value is its path
+   * (`stats.armorClass`, `stats.speed`, `stats.hpMax`, `abilities.final.dex`, `abilities.save.dex`,
+   * `spellcasting.slots.3`); an entry of a list is `<list path>:<entry name>` (`stats.skills:Stealth`,
+   * `stats.proficiencies:Light Armor`, `stats.languages:Elvish`, `play.features:Lucky`, `spellcasting.spells:Fireball`,
+   * `attacks:Longsword`, `play.resources:Luck Points`, `companions:Wolf`).
+   */
   changed: string[];
 }

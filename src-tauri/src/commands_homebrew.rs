@@ -3,7 +3,7 @@
 //! lands it answers `not_implemented`. The UI reaches them only with `AppSettings::creator_enabled` on (HC3).
 
 use crate::content_dto::ContentPack;
-use crate::dto::{ExportResult, Page};
+use crate::dto::{ExportResult, Page, SlotOption};
 use crate::error::ApiResult;
 use crate::homebrew_creator::{self, not_implemented};
 use crate::homebrew_dto::{
@@ -207,6 +207,19 @@ pub fn homebrew_trial_update(
 pub fn homebrew_trial_end(trial_id: String) -> ApiResult<()> {
     let _ = trial_id;
     Err(not_implemented("homebrew_trial_end"))
+}
+
+/// The options of one of the trial character's choices (spec 9 "Choices"), as `get_slot_options` answers them.
+#[tauri::command]
+pub fn homebrew_trial_options(
+    trial_id: String,
+    slot_id: String,
+    query: Option<String>,
+    limit: Option<usize>,
+    offset: Option<usize>,
+) -> ApiResult<Page<SlotOption>> {
+    let _ = (trial_id, slot_id, query, limit, offset);
+    Err(not_implemented("homebrew_trial_options"))
 }
 
 /// Export a pack file (spec 14.2).

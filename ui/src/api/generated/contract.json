@@ -855,6 +855,20 @@
     "k": "nil"
    }
   },
+  "homebrew_trial_options": {
+   "args": {
+    "limit": true,
+    "offset": true,
+    "query": true,
+    "slotId": false,
+    "trialId": false
+   },
+   "method": "homebrewTrialOptions",
+   "response": {
+    "k": "ref",
+    "name": "Page<SlotOption>"
+   }
+  },
   "homebrew_trial_start": {
    "args": {
     "draftId": false,
@@ -7613,6 +7627,12 @@
       "k": "prim"
      }
     },
+    "level": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "name": {
      "opt": false,
      "t": {
@@ -7625,10 +7645,23 @@
       "k": "prim"
      }
     },
+    "school": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "sourceName": {
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "spell": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "SpellFacts"
      }
     },
     "summary": {

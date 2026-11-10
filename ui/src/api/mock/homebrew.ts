@@ -1,8 +1,11 @@
 import type {
   ApiError, BookRuleset, ContentPack, ElementDetail, ElementType, HomebrewDeleteResult, HomebrewDraftSummary, HomebrewDraftView, HomebrewElementSummary, HomebrewFieldSpec,
-  HomebrewForm, HomebrewKindDescriptor, HomebrewKindId, HomebrewPackPatch, HomebrewPackRequest, HomebrewProblem, HomebrewSaveResult, Ruleset,
+  HomebrewForm, HomebrewKindDescriptor, HomebrewKindId, HomebrewPackPatch, HomebrewPackRequest, HomebrewPickerRow, HomebrewProblem, HomebrewSaveResult, Ruleset,
 } from "../types";
 import { apiError } from "./errors";
+import { descriptionHtml, formProblems } from "./homebrew-check";
+import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
+import type { TrialDraft } from "./homebrew-trial";
 
 /** The backend's answer for a creator command whose work item has not landed (contract: `details.notImplemented`). */
 export function notImplemented(command: string): ApiError {
@@ -18,11 +21,22 @@ const field = (key: string, label: string, control: HomebrewFieldSpec["control"]
 
 const choices = (...labels: string[]) => labels.map((label) => ({ value: label, label }));
 
+/** The parts every form shares (spec 3.2), as `borealis-authoring::form::kinds` describes them (WB-04). */
 const SHARED: HomebrewFieldSpec[] = [
   field("name", "Name", "text", "general", ["name"], true),
   { ...field("edition", "Edition", "combo", "general", ["ruleset"]), choices: [{ value: "", label: "Pack default" }, { value: "dnd2014", label: "2014" }, { value: "dnd2024", label: "2024" }] },
+  { ...field("source", "Source", "text", "general", ["source"]), expert: true, readOnly: true },
   field("tags", "Tags", "tags", "general", ["supports"]),
+  field("summary", "Summary line", "text", "general", ["setter:short"]),
+  field("requirements", "Prerequisite", "condition", "general", ["requirements"]),
+  field("prerequisiteText", "Prerequisite as shown", "text", "general", ["prerequisite"]),
+  field("allowDuplicate", "Can be taken more than once", "check", "general", ["setter:allow duplicate"]),
+  field("keywords", "Keywords", "chips", "general", ["setter:keywords"]),
+  field("rules", "Rules", "blocks", "rules", ["rules"]),
   field("description", "Description", "richText", "description", ["description"]),
+  field("sheet", "On the character sheet", "sheet", "description", ["sheet"]),
+  field("compendium", "Show in Compendium", "check", "description", ["compendium.display"]),
+  { ...field("mapsTo", "2014/2024 counterpart", "mapsTo", "description", ["maps_to"]), expert: true },
 ];
 
 const kind = (id: string, label: string, pluralLabel: string, elementType: string, description: string, extra: HomebrewFieldSpec[] = []): HomebrewKindDescriptor => ({
@@ -40,9 +54,17 @@ const KINDS: HomebrewKindDescriptor[] = [
     { ...field("category", "Category", "combo", "general", ["setter:category", "data.category"]), choices: choices("", "Origin", "General", "Fighting Style", "Epic Boon"), allowCustom: true },
   ]),
   kind("language", "Language", "Languages", "Language", "A language characters can learn."),
+  {
+    ...kind("other", "Other element", "Other elements", "Companion", "Any other kind of element, with the parts every form shares (expert).", [
+      { ...field("type", "Type", "combo", "general", ["type"], true), choices: choices("Companion", "Familiar", "Property"), allowCustom: true },
+      { ...field("setters", "Other properties", "setters", "general", ["setters"]), expert: true },
+    ]),
+    group: "expert",
+    elementTypes: [],
+  },
 ];
 
-const TYPE_TOKENS: Record<string, string> = { Spell: "SPELL", Feat: "FEAT", Language: "LANGUAGE" };
+const TYPE_TOKENS: Record<string, string> = { Spell: "SPELL", Feat: "FEAT", Language: "LANGUAGE", Companion: "COMPANION" };
 const PREVIEW_TYPES: Record<string, ElementType> = { spell: "spell", feat: "feat", language: "language" };
 const slug = (text: string): string => text.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "UNNAMED";
 const now = (): string => new Date().toISOString();
@@ -127,7 +149,7 @@ export class MockHomebrew {
     }
     const own = this.own(draft.packId);
     const k = KINDS.find((x) => x.id === draft.form.kind)!;
-    const type = k.elementTypes[0] ?? k.label;
+    const type = k.elementTypes[0] ?? (String(draft.form.fields.type ?? "").trim() || k.label);
     const name = String(draft.form.fields.name).trim();
     const id = draft.elementId ?? this.freeId(own, `ID_${own.code}_${TYPE_TOKENS[type] ?? slug(type)}_${slug(name)}`);
     const summary: HomebrewElementSummary = { id, name, kind: k.id, elementType: type, parentId: null, edition: null, problems: { errors: 0, warnings: 0 }, hasDraft: false };
@@ -164,6 +186,27 @@ export class MockHomebrew {
     return this.store(packId, null, form);
   }
 
+  /** Picker rows of every own pack's saved elements, and of the open drafts of `draftId`'s pack (spec 5.1: "plus the current
+   * pack's unsaved drafts"). */
+  pickerRows(draftId?: string): HomebrewPickerRow[] {
+    const draftPack = draftId ? this.drafts.get(draftId)?.packId : undefined;
+    const saved = [...this.packs.values()].flatMap((own) => [...own.elements.values()].map(({ summary, form }): HomebrewPickerRow => ({
+      id: summary.id, name: summary.name, type: summary.elementType, summary: String(form.fields.summary ?? ""), prerequisites: null,
+      sourceName: own.pack.name, edition: summary.edition, draft: false,
+    })));
+    const drafts = [...this.drafts.values()].filter((d) => d.packId === draftPack && d.elementId === null && d.draftId !== draftId && String(d.form.fields.name ?? "").trim())
+      .map((d): HomebrewPickerRow => ({ id: `draft:${d.draftId}`, name: String(d.form.fields.name).trim(), type: KINDS.find((k) => k.id === d.form.kind)?.elementTypes[0] ?? "", summary: "", prerequisites: null, sourceName: this.packs.get(d.packId)?.pack.name ?? "", edition: null, draft: true }));
+    return [...saved, ...drafts];
+  }
+
+  /** A draft for Try it (spec 9): its last view, its kind and its pack's editions. */
+  trialDraft(draftId: string): TrialDraft {
+    const view = this.draft(draftId);
+    const kind = KINDS.find((k) => k.id === view.form.kind);
+    if (!kind) throw apiError("invalid_argument", `Unknown kind ${view.form.kind}.`);
+    return { view, kind, rulesets: this.own(view.packId).pack.rulesets };
+  }
+
   private own(packId: string): OwnPack {
     const own = this.packs.get(packId);
     if (!own) throw apiError("not_found", "That homebrew pack isn't installed.");
@@ -186,11 +229,11 @@ export class MockHomebrew {
       ...(typeof level === "number" ? [{ label: "Level", value: level === 0 ? "Cantrip" : String(level) }] : []),
       ...["school", "category"].filter((key) => text(key)).map((key) => ({ label: key === "school" ? "School" : "Category", value: text(key) })),
     ];
-    const description = text("description");
+    const description = descriptionHtml(form.fields.description);
     return {
       id, name: text("name") || "Unnamed", type: PREVIEW_TYPES[form.kind] ?? "option", source: own.pack.sourceIds[0] ?? own.pack.id,
       sourceName: own.pack.name, shortDescription: "", prerequisites: null, rulesets: own.pack.rulesets,
-      descriptionHtml: description ? `<p>${escapeHtml(description)}</p>` : "", facts: k ? facts : [], grants: [],
+      descriptionHtml: description, facts: k ? facts : [], grants: [],
     };
   }
 
@@ -200,8 +243,7 @@ export class MockHomebrew {
   }
 
   private store(packId: string, elementId: string | null, form: HomebrewForm, draftId = `draft-${this.nextDraft++}`): HomebrewDraftView {
-    const named = String(form.fields.name ?? "").trim() !== "";
-    const problems: HomebrewProblem[] = named ? [] : [{ severity: "error", message: "Give it a name.", path: "fields.name", elementId, code: "form.required" }];
+    const problems = formProblems(form, MOCK_BLOCK_CATALOG, elementId);
     const view: HomebrewDraftView = {
       draftId, packId, elementId, form, preview: this.preview(packId, elementId ?? draftId, form), problems, updatedAt: now(), baseChanged: false,
       generated: { json: JSON.stringify({ name: form.fields.name ?? "" }, null, 2), tree: [] },
@@ -211,9 +253,6 @@ export class MockHomebrew {
   }
 }
 
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 
 function bumpPatch(version: string): string {
   const [major = "1", minor = "0", patch = "0"] = version.split(".");

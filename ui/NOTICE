@@ -33,5 +33,11 @@ Notes view libraries (src/pages/notes/, loaded with the Notes section only)
 Homebrew creator rich-text editor (src/pages/homebrew/rich/)
   prosemirror-model, Copyright (C) 2015-2017 by Marijn Haverbeke and others, MIT License. https://github.com/ProseMirror/prosemirror-model
   orderedmap, Copyright (C) 2016 by Marijn Haverbeke and others, MIT License. https://github.com/marijnh/orderedmap
+  prosemirror-state, Copyright (C) 2015-2017 by Marijn Haverbeke and others, MIT License. https://github.com/ProseMirror/prosemirror-state
+  prosemirror-view, Copyright (C) 2015-2017 by Marijn Haverbeke and others, MIT License. https://github.com/ProseMirror/prosemirror-view
+  prosemirror-transform, Copyright (C) 2015-2017 by Marijn Haverbeke and others, MIT License. https://github.com/ProseMirror/prosemirror-transform
+  prosemirror-commands, Copyright (C) 2015-2017 by Marijn Haverbeke and others, MIT License. https://github.com/ProseMirror/prosemirror-commands
+  prosemirror-keymap, Copyright (C) 2015-2017 by Marijn Haverbeke and others, MIT License. https://github.com/ProseMirror/prosemirror-keymap
+  w3c-keyname, Copyright (C) 2016 by Marijn Haverbeke and others, MIT License. https://github.com/marijnh/w3c-keyname
 
 Borealis is not affiliated with Aurora Builder or with Obsidian. The Borealis mark (src/components/shell/BrandMark.tsx) is original artwork.
