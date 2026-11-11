@@ -174,7 +174,7 @@ export function CharactersPage() {
         <p className="v4-lead">Open any saved hero here to play, advance, or adjust them.</p>
         <p className="v4-lead">Heroes may also be sorted into named groups, and the ones you star appear at the top of whichever group holds them.</p>
         <button type="button" className="v4-newbtn" onClick={() => setCreating(true)}><span className="t">New character</span><span className="d">Create a new character</span></button>
-        {mobile && <button type="button" className="v4-newbtn" onClick={() => fileRef.current?.click()}><span className="t">Import characters</span><span className="d">Load one or more .dnd5e files</span></button>}
+        {mobile && <button type="button" className="v4-newbtn" onClick={() => fileRef.current?.click()}><span className="t">Import characters</span><span className="d">Load one or more .dnd5e or Borealis files</span></button>}
         {waiting && <button type="button" className="v4-newbtn small" disabled={rechecking} onClick={() => void recheck()}><span className="t">Re-check missing content</span><span className="d">Use content you installed since importing</span></button>}
       </div>
       <div className="v4-start-right">
