@@ -21,8 +21,9 @@ use crate::ids::decode_slot;
 use crate::session::{Ctx, Draft};
 use crate::settings::AppSettings;
 use crate::state::{AppState, ContentHub};
+use borealis_authoring::check::messages::sweep_message;
 use borealis_authoring::check::{sweep_engine, SweepFinding, SweepIssue, SweepTarget};
-use borealis_authoring::form::{assign_ids, form_to_elements, CatalogBlockCodec, FormContext};
+use borealis_authoring::form::{assign_ids, write_copy, CatalogBlockCodec, FormContext};
 use borealis_authoring::pack::{pack_edition, with_elements, without_elements};
 use borealis_character::Character;
 use borealis_content::file::ContentFile;
@@ -268,6 +269,20 @@ fn sweep_targets(draft: &TrialDraft, class_id: Option<&str>) -> Vec<SweepTarget>
     }
 }
 
+/// A sweep finding in the creator's plain words (spec 8.2, WB-07's sentences), blamed on its element.
+fn plain_issue(f: &SweepFinding, draft: &TrialDraft, hub: &ContentHub) -> SweepIssue {
+    let ty = f
+        .element_id
+        .as_deref()
+        .and_then(|id| hub.store.element(id))
+        .map_or(draft.root.ty.as_str(), |e| e.ty.as_str());
+    SweepIssue {
+        level: f.level,
+        element_id: f.element_id.clone(),
+        message: sweep_message(f, ty, &*hub.store),
+    }
+}
+
 impl TrialSession {
     fn ctx<'a>(&'a self, settings: &'a AppSettings, app: &'a AppState) -> Ctx<'a> {
         Ctx {
@@ -313,7 +328,7 @@ impl TrialSession {
             } else {
                 sweep_engine(&hub.engine, edition, &self.content.draft.ids, &targets)
                     .iter()
-                    .map(SweepFinding::to_issue)
+                    .map(|f| plain_issue(f, &self.content.draft, hub))
                     .collect()
             };
             self.sweep = Some((edition, issues));
@@ -414,7 +429,8 @@ impl AppState {
         let cx = FormContext::from_store(&hub.store, &codec);
         let mut ids = self.hb_ids(&hub, &pack)?;
         let form = assign_ids(&file.form, &mut ids);
-        let elements = form_to_elements(&form, &cx).map_err(|ps| {
+        // as a save writes them: a copy's grants name its own copied features, not the originals (spec 11)
+        let written = write_copy(&form, &file.copy, &cx, &mut ids).map_err(|ps| {
             let problems: Vec<HomebrewProblem> = ps
                 .into_iter()
                 .map(|p| HomebrewProblem {
@@ -429,6 +445,7 @@ impl AppState {
             e.details = serde_json::to_value(&problems).ok();
             e
         })?;
+        let elements = written.into_iter().map(|w| w.element).collect();
         let elements = own_multiclass_ids(elements, &hub);
         let trial_hub = hub_with(
             &hub,
