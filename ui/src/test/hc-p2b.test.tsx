@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { HomebrewDraftView } from "../api/contract";
 import { MockApi } from "../api/mock/MockApi";
 import { renderApp } from "./utils";
@@ -98,5 +98,24 @@ describe("P2b creator previews (mock)", () => {
     const [mastery] = await within(dialog).findAllByRole("list", { name: "Weapon Mastery options" });
     if (!mastery) throw new Error("no Weapon Mastery picker");
     expect(await within(mastery).findByRole("button", { name: /^Twinblade/ })).toBeTruthy();
+  });
+
+  it("Edit on a loaded element in WHERE USED edits a deep copy of it in this pack (HC5)", async () => {
+    const user = userEvent.setup();
+    const api = new MockApi({ creatorEnabled: true });
+    const pack = await api.homebrewCreatePack({ request: { name: "Ember Isles", code: "EMB", edition: "dnd2024" } });
+    const newDraft = vi.spyOn(api, "homebrewNewDraft");
+    renderApp(`/homebrew/${pack.id}`, { api });
+    await user.click(await screen.findByRole("button", { name: "Spell Lists" }));
+    const view = await screen.findByRole("region", { name: "Spell lists" });
+    await user.selectOptions(within(view).getByRole("combobox", { name: "Spell list" }), "Wizard");
+    const grid = await within(view).findByRole("table", { name: "Spells" });
+    await user.click(within(grid).getByRole("button", { name: "Fireball" }));
+    const where = await screen.findByRole("region", { name: "Where used" });
+    await within(where).findByRole("button", { name: "Wizard" });
+    await user.click(within(where).getByRole("button", { name: "Edit Wizard" }));
+    await waitFor(() => expect(newDraft).toHaveBeenCalledWith({ packId: pack.id, kind: "other", copyFrom: "wizard", deepCopy: true }));
+    const editor = await screen.findByRole("region", { name: "Element editor" });
+    await waitFor(() => expect((within(editor).getByRole("textbox", { name: /^Name/ }) as HTMLInputElement).value).toBe("Wizard (copy)"));
   });
 });

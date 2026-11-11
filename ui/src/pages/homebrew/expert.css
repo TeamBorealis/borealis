@@ -15,7 +15,11 @@
 .hb-where { flex: none; max-height: 40%; overflow-y: auto; padding: 0 12px 12px; border-top: 2px solid #1a1c1d; }
 .hb-where .ap-band h2 { font-size: 12px; }
 .hb-where-list { list-style: none; margin: 4px 0 0; padding: 0; }
-.hb-where-list li { padding: 3px 0; border-bottom: 1px solid #1f1f1f; }
+.hb-where-list li { position: relative; padding: 3px 0; border-bottom: 1px solid #1f1f1f; }
+/* HC5: Edit (a copy) on a loaded element's row, at the row's right edge. */
+.hb-where-list li:has(.hb-where-edit) { padding-right: 56px; }
+html.phone .hb-where-list li:has(.hb-where-edit) { min-height: var(--ph-hit); padding-right: 84px; }
+.hb-where-edit { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
 .hb-where-list .ap-name { font-size: 12px; }
 .hb-where-what { display: block; font-size: 10px; color: var(--text-secondary); }
 .hb-row-kind { margin-left: 6px; font-size: 10px; color: var(--text-secondary); }

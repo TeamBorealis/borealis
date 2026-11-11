@@ -21,13 +21,16 @@ export interface WhereUsedProps {
   /** The user's homebrew packs: their elements open in the creator, every other one in the Compendium. */
   homebrewPackIds: ReadonlySet<string>;
   onOpen: (ref: HomebrewElementRef) => void;
+  /** Edit a loaded (bundled or imported) element: the creator makes a copy of it in this pack and opens it (HC5). */
+  onEdit?: (ref: HomebrewElementRef) => void;
 }
 
 /**
  * WHERE USED (spec 12.3, the DETAILS panel under the live description): the loaded elements, own and other, that give,
- * offer, need or list this one. Each opens: a homebrew element in the creator, any other in the Compendium.
+ * offer, need or list this one. Each opens: a homebrew element in the creator, any other in the Compendium. A loaded
+ * (bundled or imported) one also offers Edit, which edits a copy of it in this pack (HC5: imported packs are copy-only).
  */
-export function WhereUsed({ elementId, version, homebrewPackIds, onOpen }: WhereUsedProps) {
+export function WhereUsed({ elementId, version, homebrewPackIds, onOpen, onEdit }: WhereUsedProps) {
   const api = useApi();
   const { openCompendium } = useShell();
   const [refs, setRefs] = useState<HomebrewElementRef[] | null>(null);
@@ -46,6 +49,7 @@ export function WhereUsed({ elementId, version, homebrewPackIds, onOpen }: Where
     if (r.packId && homebrewPackIds.has(r.packId)) onOpen(r);
     else openCompendium({ elementId: r.id });
   };
+  const loaded = (r: HomebrewElementRef) => !(r.packId && homebrewPackIds.has(r.packId));
   return (
     <section className="hb-where" aria-label="Where used">
       <Band title={`Where used${refs ? ` (${refs.length})` : ""}`} />
@@ -58,6 +62,10 @@ export function WhereUsed({ elementId, version, homebrewPackIds, onOpen }: Where
                 <li key={`${r.relation}:${r.id}`}>
                   <button type="button" className="ap-name" onClick={() => open(r)}>{r.name}</button>
                   <span className="hb-where-what">{RELATION_WORDS[r.relation]} · {r.type}</span>
+                  {onEdit && loaded(r) && (
+                    <button type="button" className="hb-tool hb-where-edit" aria-label={`Edit ${r.name}`}
+                      title="Edit a copy of it in this pack. The original stays as it is." onClick={() => onEdit(r)}>Edit</button>
+                  )}
                 </li>
               ))}
             </ul>

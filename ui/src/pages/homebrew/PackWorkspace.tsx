@@ -172,17 +172,23 @@ export function PackWorkspace() {
     try { setPane("elements"); await show(await settleBase(await api.homebrewOpenDraft({ packId, elementId: id }))); } catch (e) { toast.push(errorMessage(e), "error"); }
   };
 
-  /** Leave SPELL LISTS for a kind: unsaved checks ask first. */
-  const pickKind = async (kindId: string) => {
+  /** Leave SPELL LISTS: unsaved checks ask first. False when the user stays. */
+  const leaveLists = async (): Promise<boolean> => {
     if (pane === "lists" && (lists.current?.pending() ?? 0) > 0) {
       const r = await ask({
         title: "Unsaved changes", cancelId: "cancel", message: "Changes to the spell list are not saved.",
         buttons: [{ id: "save", label: "Save" }, { id: "discard", label: "Discard" }, { id: "cancel", label: "Cancel" }],
       });
-      if (r === "cancel") return;
+      if (r === "cancel") return false;
       if (r === "save") await lists.current?.save();
     }
     setPane("elements");
+    return true;
+  };
+
+  /** Leave SPELL LISTS for a kind. */
+  const pickKind = async (kindId: string) => {
+    if (!(await leaveLists())) return;
     setKindPick(kindId);
     setSelected(new Set());
   };
@@ -329,7 +335,21 @@ export function PackWorkspace() {
     if (r.packId === packId) void openById(r.id);
     else nav(`/homebrew/${encodeURIComponent(r.packId ?? "")}?element=${encodeURIComponent(r.id)}`);
   };
-  const whereUsed = (id: string | null) => <WhereUsed elementId={id} version={written} homebrewPackIds={homebrewIds} onOpen={openRef} />;
+  // HC5: Edit on a loaded element makes a deep copy in this pack and opens it, as Copy to homebrew does
+  const editCopy = async (r: { id: string; name: string }) => {
+    try {
+      if (draft.form && !(await draft.flush())) return;
+      if (!(await leaveLists())) return;
+      const view = await api.homebrewNewDraft({ packId, kind: "other", copyFrom: r.id, deepCopy: true });
+      setStatus(`Made a copy of '${r.name}' to edit. The original stays as it is.`);
+      nav(`/homebrew/${encodeURIComponent(packId)}?draft=${encodeURIComponent(view.draftId)}`);
+    } catch (e) {
+      toast.push(errorMessage(e), "error");
+    }
+  };
+  const whereUsed = (id: string | null) => (
+    <WhereUsed elementId={id} version={written} homebrewPackIds={homebrewIds} onOpen={openRef} onEdit={(r) => void editCopy(r)} />
+  );
   const preview = (
     <>
       {draft.view?.preview ? <ElementDetailView d={draft.view.preview} /> : <aside className="desc-pane" aria-label="Description" />}
