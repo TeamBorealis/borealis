@@ -114,3 +114,13 @@ export function freshKey(form: HomebrewForm): string {
   walk(form);
   for (let n = 1; ; n += 1) if (!used.has(`u${n}`)) return `u${n}`;
 }
+
+/** The form with key `key` among `root` and its children's forms (a variant's feature inside its variant). */
+export function findForm(root: HomebrewForm, key: string): HomebrewForm | undefined {
+  if (root.key === key) return root;
+  for (const c of root.children) {
+    const found = findForm(c, key);
+    if (found) return found;
+  }
+  return undefined;
+}

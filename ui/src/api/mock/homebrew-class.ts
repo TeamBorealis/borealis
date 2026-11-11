@@ -55,3 +55,14 @@ export function addChild(parent: HomebrewForm, child: HomebrewForm, kinds: reado
   const entries = field.control === "package" ? [entry] : [...list, entry];
   return { ...parent, fields: { ...parent.fields, [field.key]: entries }, children: [...parent.children, child] };
 }
+
+/** `root` with `child` added inside its descendant form `parentKey` (`add_child_in`: a variant's own feature, a trait's lineage
+ * option); null when no form has that key or it has no place for the child. */
+export function addChildIn(root: HomebrewForm, parentKey: string, child: HomebrewForm, kinds: readonly HomebrewKindDescriptor[]): HomebrewForm | null {
+  if (root.key === parentKey) return addChild(root, child, kinds);
+  const has = (f: HomebrewForm): boolean => f.key === parentKey || f.children.some(has);
+  const i = root.children.findIndex(has);
+  if (i < 0) return null;
+  const inner = addChildIn(root.children[i]!, parentKey, child, kinds);
+  return inner ? { ...root, children: root.children.map((c, j) => (j === i ? inner : c)) } : null;
+}

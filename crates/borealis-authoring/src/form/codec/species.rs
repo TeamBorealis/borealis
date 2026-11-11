@@ -17,6 +17,7 @@
 //! 3.3); `data.creature_type` is the creature type's only location. The parent of a Sub Race or Race Variant is the
 //! tag its race's choice offers it by (its first support tag). Random names are `names` setters with a `type`.
 
+use super::super::child_refs::{self, ChildEntry};
 use super::super::value::RefValue;
 use super::super::write::Out;
 use super::super::{FieldMemo, FormContext, FormProblem, Slots};
@@ -318,6 +319,21 @@ fn one_rule_value(field: SpeciesField, r: &Rule) -> Option<Value> {
     }
 }
 
+/// Take every free plain `grant` of type `ty`: (position, id).
+fn granted(r: &mut Reader<'_>, ty: &str) -> Vec<(usize, String)> {
+    let found: Vec<(usize, String)> = r
+        .free_rules()
+        .filter_map(|(i, rule)| match rule {
+            Rule::Grant(g) if same(rule, &grant(&g.id, ty)) => Some((i, g.id.clone())),
+            _ => None,
+        })
+        .collect();
+    for (i, _) in &found {
+        r.take_rule(*i);
+    }
+    found
+}
+
 /// Take the first free rule `field` reads a value from, with its position.
 fn take_one(field: SpeciesField, r: &mut Reader<'_>) -> Option<(Value, usize)> {
     let (i, value) = r
@@ -370,7 +386,20 @@ pub(crate) fn read(field: SpeciesField, r: &mut Reader<'_>, cx: &FormContext<'_>
             Some((v, i)) => rules_memo(v, r, &[i], None),
             None => rules_memo(json!(0), r, &[], None),
         },
-        SpeciesField::Traits | SpeciesField::Languages => {
+        SpeciesField::Traits => {
+            let found = granted(r, granted_type(field));
+            let taken: Vec<usize> = found.iter().map(|(i, _)| *i).collect();
+            let entries: Vec<ChildEntry> = found
+                .iter()
+                .map(|(_, id)| ChildEntry {
+                    level: None,
+                    child: None,
+                    element: Some(RefValue::resolve(id, cx.lookup)),
+                })
+                .collect();
+            rules_memo(to_json(&entries), r, &taken, data)
+        }
+        SpeciesField::Languages => {
             let ty = granted_type(field);
             let found: Vec<(usize, String)> = r
                 .free_rules()
@@ -603,7 +632,37 @@ pub(crate) fn write(
                 rules(out, vec![language_choice(&name, n)]);
             }
         }
-        SpeciesField::Traits | SpeciesField::Languages => {
+        SpeciesField::Traits => {
+            let entries: Vec<ChildEntry> = decode(value, path)?;
+            let mut ids: Vec<String> = Vec::new();
+            for (i, e) in entries.iter().enumerate() {
+                let id = child_refs::entry_id(e, out, &format!("{path}.{i}"), "trait")?;
+                if !ids.contains(&id) {
+                    ids.push(id);
+                }
+            }
+            rules(
+                out,
+                ids.iter()
+                    .map(|id| grant(id, granted_type(field)))
+                    .collect(),
+            );
+            if has_mirror {
+                let stored_ids: Vec<String> = raw
+                    .and_then(|r| stored(&r["data"]))
+                    .and_then(decode_raw)
+                    .unwrap_or_default();
+                // the traits it gave when read (a child of this draft by its id, an element by its reference)
+                let before: Vec<String> = memo
+                    .and_then(|m| decode_raw::<Vec<ChildEntry>>(&m.value))
+                    .unwrap_or_default()
+                    .iter()
+                    .filter_map(|e| child_refs::entry_id(e, out, path, "trait").ok())
+                    .collect();
+                mirror(out, json!(traits_mirror(&stored_ids, &before, &ids)));
+            }
+        }
+        SpeciesField::Languages => {
             let refs: Vec<RefValue> = decode(value, path)?;
             let ids = ref_ids(&refs);
             let ty = granted_type(field);

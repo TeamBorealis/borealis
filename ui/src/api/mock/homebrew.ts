@@ -1,5 +1,5 @@
 import type {
-  ApiError, BookRuleset, ContentPack, ElementDetail, ElementSummary, ElementType, HomebrewBulkPatch, HomebrewBulkResult, HomebrewDeleteResult, HomebrewDraftSummary,
+  ApiError, BookRuleset, ContentPack, ElementDetail, ElementSummary, ElementType, HomebrewBulkPatch, HomebrewBulkResult, HomebrewCharacterRef, HomebrewDeleteResult, HomebrewDraftSummary,
   HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary, HomebrewForm, HomebrewKindDescriptor, HomebrewKindId, HomebrewPackPatch, HomebrewPackRequest,
   HomebrewPickerRow, HomebrewProblem, HomebrewSaveResult, HomebrewSpellListRow, HomebrewSpellListView, Ruleset,
   HomebrewExportResult, ImportFileInput, ImportPackResult, ImportPreview, TypeCount,
@@ -7,7 +7,7 @@ import type {
 import { formUse, generatedOf, hasTag, listingClasses, loadedListRow, tagsOf, textOf, withTags } from "./homebrew-expert";
 import { apiError } from "./errors";
 import { descriptionHtml, formProblems } from "./homebrew-check";
-import { addChild, newChildKey, newClassForm, newForm } from "./homebrew-class";
+import { addChild, addChildIn, newChildKey, newClassForm, newForm } from "./homebrew-class";
 import { backgroundProblems, FEAT_PARAMETER_PICKER, featParameterWords } from "./homebrew-background";
 import { creatureFacts, creatureHtml, creatureProblems } from "./homebrew-creature";
 import { featPrerequisite } from "./homebrew-feat";
@@ -131,13 +131,13 @@ export class MockHomebrew {
     return [...own.elements.values()].map(({ summary, form }) => ({ ...summary, hasDraft: drafted.has(summary.id), tags: tagsOf(form), text: textOf(form) }));
   }
 
-  newDraft(packId: string, kindId: HomebrewKindId, copyFrom?: string, parentId?: string, deepCopy?: boolean, loaded?: { name: string; type: ElementType }): HomebrewDraftView {
+  newDraft(packId: string, kindId: HomebrewKindId, copyFrom?: string, parentId?: string, deepCopy?: boolean, loaded?: { name: string; type: ElementType }, parentKey?: string): HomebrewDraftView {
     const own = this.own(packId);
     if (copyFrom && !parentId) return this.copy(own, copyFrom, deepCopy === true, loaded);
     if (copyFrom) throw notImplemented("homebrew_new_draft (copy into a parent)");
     const k = KINDS.find((x) => x.id === kindId);
     if (!k) throw apiError("invalid_argument", `Unknown kind ${kindId}.`);
-    if (parentId) return this.newChild(packId, k, parentId);
+    if (parentId) return this.newChild(packId, k, parentId, parentKey);
     // A class, a background and a creature are of one edition (a pack of both makes 2024 ones); a class starts with its generated
     // features (WB-16); every other kind is `KindDef::new_form`.
     const edition: Ruleset = own.pack.rulesets.length === 1 && own.pack.rulesets[0] === "dnd2014" ? "dnd2014" : "dnd2024";
@@ -174,12 +174,19 @@ export class MockHomebrew {
 
   /** `homebrew_new_draft {parentId}` (WB-16): a child inside its parent's draft (or a saved element's), given by the
    * parent's field for it; the answer is the parent's draft. */
-  private newChild(packId: string, kind: HomebrewKindDescriptor, parentId: string): HomebrewDraftView {
+  private newChild(packId: string, kind: HomebrewKindDescriptor, parentId: string, parentKey?: string): HomebrewDraftView {
     const draft = this.drafts.get(parentId) ?? this.openDraft(packId, parentId);
-    const next = addChild(draft.form, newForm(kind, newChildKey(draft.form)), KINDS);
+    const child = newForm(kind, newChildKey(draft.form));
+    const next = parentKey ? addChildIn(draft.form, parentKey, child, KINDS) : addChild(draft.form, child, KINDS);
     if (!next) throw apiError("invalid_argument", `A ${kind.label.toLowerCase()} can't be made inside this element.`);
     this.touched.add(draft.draftId);
     return this.store(packId, draft.elementId, next, draft.draftId);
+  }
+
+  /** `homebrew_child_use`: the web mock has no characters on disk, so no saved child is used by one. */
+  childUse(draftId: string, _childKey: string): HomebrewCharacterRef[] {
+    this.draft(draftId);
+    return [];
   }
 
   openDraft(packId: string, elementId?: string, draftId?: string): HomebrewDraftView {
@@ -359,16 +366,20 @@ export class MockHomebrew {
 
   /** Picker rows of every own pack's saved elements, and of the open drafts of `draftId`'s pack (spec 5.1: "plus the current
    * pack's unsaved drafts"). */
-  pickerRows(draftId?: string, copying?: "srd" | "any"): HomebrewPickerRow[] {
+  pickerRows(draftId?: string, copying?: "srd" | "any", tags: readonly string[] = []): HomebrewPickerRow[] {
     // the SRD copy sources are offered by the copy pickers only (the other pickers keep the sample content's rows)
     const srd = copying ? MOCK_COPY_SOURCES.map((c) => c.row) : [];
     if (copying === "srd") return srd;
     const draftPack = draftId ? this.drafts.get(draftId)?.packId : undefined;
-    const saved = [...this.packs.values()].flatMap((own) => [...own.elements.values()].map(({ summary, form }): HomebrewPickerRow => ({
+    // a tag filter (a class option's group, WB-18) keeps the elements carrying one of the tags
+    const wanted = tags.map((t) => t.toLowerCase());
+    const tagged = (form: HomebrewForm) => wanted.length === 0
+      || [...tagsOf(form), String(form.fields.group ?? "")].some((t) => wanted.includes(t.toLowerCase()));
+    const saved = [...this.packs.values()].flatMap((own) => [...own.elements.values()].filter(({ form }) => tagged(form)).map(({ summary, form }): HomebrewPickerRow => ({
       id: summary.id, name: summary.name, type: summary.elementType, summary: String(form.fields.summary ?? ""), prerequisites: featPrerequisite(form),
       sourceName: own.pack.name, edition: summary.edition, draft: false, ...spellRow(form),
     })));
-    const drafts = [...this.drafts.values()].filter((d) => d.packId === draftPack && d.elementId === null && d.draftId !== draftId && String(d.form.fields.name ?? "").trim())
+    const drafts = [...this.drafts.values()].filter((d) => d.packId === draftPack && d.elementId === null && d.draftId !== draftId && String(d.form.fields.name ?? "").trim() && tagged(d.form))
       .map((d): HomebrewPickerRow => ({ id: `draft:${d.draftId}`, name: String(d.form.fields.name).trim(), type: KINDS.find((k) => k.id === d.form.kind)?.elementTypes[0] ?? "", summary: "", prerequisites: null, sourceName: this.packs.get(d.packId)?.pack.name ?? "", edition: null, draft: true }));
     return [...saved, ...drafts, ...srd, ...CORE_PICKER_ROWS];
   }

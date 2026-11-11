@@ -54,6 +54,15 @@ fn rules(e: &Element) -> Value {
     serde_json::to_value(&e.rules).expect("rules")
 }
 
+/// A traits field's value: one entry per trait given from elsewhere (the traits field is a children list, P2a).
+fn trait_entries(ids: &[(&str, &str, &str)]) -> Value {
+    Value::Array(
+        ids.iter()
+            .map(|(id, name, ty)| json!({"element": {"id": id, "name": name, "type": ty}}))
+            .collect(),
+    )
+}
+
 fn refs(ids: &[(&str, &str, &str)]) -> Value {
     Value::Array(
         ids.iter()
@@ -166,10 +175,8 @@ fn species_types_open_in_their_forms_and_traits_are_child_kinds() {
         f("languages")["picker"],
         json!({"types": ["Language"], "multiple": true})
     );
-    assert_eq!(
-        f("traits")["picker"],
-        json!({"types": ["Racial Trait"], "multiple": true})
-    );
+    assert_eq!(f("traits")["control"], "children");
+    assert_eq!(f("traits")["picker"], json!({"types": ["Racial Trait"]}));
     assert_eq!(f("size")["choices"].as_array().map(Vec::len), Some(6));
     assert_eq!(f("size")["default"], json!(["Medium"]));
     assert_eq!(f("strength")["min"], -10);
@@ -196,7 +203,7 @@ fn a_2024_species_reads_its_rules_as_fields_and_writes_them_back() {
         assert_eq!(form.fields["darkvision"], json!(0));
         assert_eq!(
             form.fields["traits"],
-            refs(&[
+            trait_entries(&[
                 ("ID_X_TRAIT_KEEN", "Keen Senses", "Racial Trait"),
                 ("ID_X_TRAIT_TRANCE", "Trance", "Racial Trait")
             ])
@@ -386,7 +393,7 @@ fn the_traits_mirror_keeps_traits_other_blocks_give() {
         let form = element_to_form(&e, cx);
         let edited = form.with_field(
             "traits",
-            refs(&[
+            trait_entries(&[
                 ("ID_X_TRAIT_TRANCE", "Trance", "Racial Trait"),
                 ("ID_X_TRAIT_NEW", "Stone Skin", "Racial Trait"),
             ]),
@@ -426,7 +433,7 @@ fn a_new_species_and_race_are_written_from_their_fields() {
             .with_field("swimSpeed", json!(30))
             .with_field(
                 "traits",
-                refs(&[("ID_X_TRAIT_NEW", "Stone Skin", "Racial Trait")]),
+                trait_entries(&[("ID_X_TRAIT_NEW", "Stone Skin", "Racial Trait")]),
             );
         let e = one(&form, cx);
         assert_eq!(e.ty, "Species");

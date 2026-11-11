@@ -674,6 +674,20 @@
     }
    }
   },
+  "homebrew_child_use": {
+   "args": {
+    "childKey": false,
+    "draftId": false
+   },
+   "method": "homebrewChildUse",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "HomebrewCharacterRef"
+    }
+   }
+  },
   "homebrew_create_pack": {
    "args": {
     "request": false
@@ -768,7 +782,8 @@
     "deepCopy": true,
     "kind": false,
     "packId": false,
-    "parentId": true
+    "parentId": true,
+    "parentKey": true
    },
    "method": "homebrewNewDraft",
    "response": {

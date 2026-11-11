@@ -7,7 +7,8 @@ const PACK = { name: "Gloom", code: "GL", edition: "dnd2024" as const };
 describe("homebrew creator contract (WB-00)", () => {
   it("names every creator command after its method", () => {
     const creator = Object.entries(COMMANDS).filter(([m]) => m.startsWith("homebrew"));
-    expect(creator).toHaveLength(26);
+    // P2a added homebrew_child_use
+    expect(creator).toHaveLength(27);
     for (const [method, command] of creator) expect(command).toBe(method.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`));
   });
 

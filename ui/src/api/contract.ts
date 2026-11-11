@@ -128,6 +128,7 @@ import type {
   HomebrewBlockSpec,
   HomebrewBulkPatch,
   HomebrewBulkResult,
+  HomebrewCharacterRef,
   HomebrewDeleteResult,
   HomebrewDraftSummary,
   HomebrewDraftView,
@@ -643,8 +644,9 @@ export interface ApiMethods {
   homebrewCreatePack(args: { request: HomebrewPackRequest }): Promise<ContentPack>;
   homebrewUpdatePack(args: { packId: string; patch: HomebrewPackPatch }): Promise<ContentPack>;
   homebrewListElements(args: { packId: string }): Promise<HomebrewElementSummary[]>;
-  /** A new element of `kind` (from a copy of `copyFrom`, as a child of `parentId`; `deepCopy` copies a class's features and subclasses too). */
-  homebrewNewDraft(args: { packId: string; kind: HomebrewKindId; copyFrom?: string; parentId?: string; deepCopy?: boolean }): Promise<HomebrewDraftView>;
+  /** A new element of `kind` (from a copy of `copyFrom`, as a child of `parentId`; `deepCopy` copies a class's features and subclasses too).
+   * With `parentKey`, the child is made inside that child form of the parent's draft (a variant's own feature, a trait's lineage option). */
+  homebrewNewDraft(args: { packId: string; kind: HomebrewKindId; copyFrom?: string; parentId?: string; parentKey?: string; deepCopy?: boolean }): Promise<HomebrewDraftView>;
   /** Open a saved element; resumes its draft when one exists. With `draftId` (and no `elementId`), resumes that draft:
    * a new element that was never saved has no element to open it by (`homebrewListDrafts` lists it, `elementId: null`). */
   homebrewOpenDraft(args: { packId: string; elementId?: string; draftId?: string }): Promise<HomebrewDraftView>;
@@ -656,6 +658,9 @@ export interface ApiMethods {
   homebrewSaveDraft(args: { draftId: string }): Promise<HomebrewSaveResult>;
   homebrewDiscardDraft(args: { draftId: string }): Promise<void>;
   homebrewListDrafts(): Promise<HomebrewDraftSummary[]>;
+  /** The local characters that use a saved child of a draft (or the saved children inside it): asked before it is removed
+   * from its parent, since the save deletes it. A child the draft made is used by no one. */
+  homebrewChildUse(args: { draftId: string; childKey: string }): Promise<HomebrewCharacterRef[]>;
   /** Without `confirm`: lists the local characters that use the elements and deletes only when none does. */
   homebrewDeleteElements(args: { packId: string; elementIds: string[]; confirm: boolean }): Promise<HomebrewDeleteResult>;
   /** A copy inside the same pack with a new id (deep for classes). */
@@ -926,6 +931,7 @@ export const COMMANDS = {
   homebrewDiscardDraft: "homebrew_discard_draft",
   homebrewListDrafts: "homebrew_list_drafts",
   homebrewDeleteElements: "homebrew_delete_elements",
+  homebrewChildUse: "homebrew_child_use",
   homebrewDuplicateElement: "homebrew_duplicate_element",
   homebrewBulkEdit: "homebrew_bulk_edit",
   homebrewReferenceOptions: "homebrew_reference_options",

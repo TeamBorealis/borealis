@@ -592,6 +592,7 @@ pub fn run() {
             commands_homebrew::homebrew_discard_draft,
             commands_homebrew::homebrew_list_drafts,
             commands_homebrew::homebrew_delete_elements,
+            commands_homebrew::homebrew_child_use,
             commands_homebrew::homebrew_duplicate_element,
             commands_homebrew::homebrew_bulk_edit,
             commands_homebrew::homebrew_reference_options,

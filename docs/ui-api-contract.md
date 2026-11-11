@@ -420,7 +420,7 @@ implements packs, elements and drafts in memory (kinds are sample forms).
 | `homebrew_create_pack` | `{ request: HomebrewPackRequest }` (`name, code, edition: dnd2014\|dnd2024\|any, author?, description?, license?`) | `ContentPack` (`kind: "homebrew"`) |
 | `homebrew_update_pack` | `{ packId, patch: HomebrewPackPatch }` | `ContentPack` |
 | `homebrew_list_elements` | `{ packId }` | `HomebrewElementSummary[]` |
-| `homebrew_new_draft` | `{ packId, kind, copyFrom?, parentId?, deepCopy? }` | `HomebrewDraftView` |
+| `homebrew_new_draft` | `{ packId, kind, copyFrom?, parentId?, parentKey?, deepCopy? }` | `HomebrewDraftView` |
 | `homebrew_open_draft` | `{ packId, elementId?, draftId? }` | `HomebrewDraftView` (resumes the element's edited draft; `draftId` resumes a never-saved element's draft) |
 | `homebrew_update_draft` | `{ draftId, form: HomebrewForm }` | `HomebrewDraftView` (autosaved; preview, problems, generated data) |
 | `homebrew_check_draft` | `{ draftId }` | `HomebrewProblem[]` (engine checks, the 1-20 sweep, choices that offer nothing, balance hints; never errors; runs off the main thread) |
@@ -428,6 +428,7 @@ implements packs, elements and drafts in memory (kinds are sample forms).
 | `homebrew_discard_draft` | `{ draftId }` | `void` |
 | `homebrew_list_drafts` | none | `HomebrewDraftSummary[]` |
 | `homebrew_delete_elements` | `{ packId, elementIds, confirm }` | `HomebrewDeleteResult` (`{ deleted, usedBy, pack, undoId }`) |
+| `homebrew_child_use` | `{ draftId, childKey }` | `HomebrewCharacterRef[]`: the local characters that use the saved child `childKey` of the draft or a saved child inside it (asked before it is removed: the save deletes it); a child the draft made, or an unknown key, is used by no one |
 | `homebrew_duplicate_element` | `{ packId, elementId }` | `HomebrewDraftView` |
 | `homebrew_bulk_edit` | `{ packId, elementIds, patch: HomebrewBulkPatch }` (`edition?`, `addTags?`, `removeTags?` together; or `moveToPackId`; or `duplicate: true`) | `HomebrewBulkResult` (`{ pack, elementIds, undoId }`); `invalid_argument` with `details` = the problems when an element can't take the change (nothing changes) |
 | `homebrew_undo` | `{ undoId }` | `ContentPack` (a delete or bulk edit undone; `requirement_failed` when a pack changed since, `not_found` once used) |
@@ -600,7 +601,7 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   is a `grant` of `ID_SIZE_<SIZE>`, two or more a `select_size`), `speed`, `flySpeed`, `swimSpeed`, `climbSpeed`,
   `burrowSpeed` (control `number`, feet, 0 = none: `stat innate speed[:mode]` `bonus base`), `darkvision` (the grant of
   `ID_VISION_DARKVISION`, plus `stat darkvision:range` when not 60), `blindsight`, `tremorsense`, `truesight` (`sense`
-  rules), `traits` (control `references`, `picker.types ["Racial Trait"]`: a `grant` each); 2014 kinds also
+  rules), `traits` (control `children` since P2a, `picker.types ["Racial Trait"]`: a `grant` each); 2014 kinds also
   `strength`..`charisma` (number -10..10: `stat <ability>`), `languages` (references of `Language`: grants) and
   `languageChoice` (number: a `select` of `Standard||Exotic` languages; its stored label is kept). `creatureType` is
   `data.creature_type`; `data.size`, `data.speed` and `data.traits` are written when the element has them. `subRace`
@@ -618,7 +619,26 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   `HomebrewDraftView` (its draft is written); `invalid_argument` when the parent's form has no place for that kind. A
   children field (controls `children`, `levels`, `package`) holds `HomebrewChildEntry[]` `{ level?, child?, element? }`:
   `child` is the key of a child form of the draft, `element` a `HomebrewRef` to an element not edited here (a copied
-  class still gives the original's features). A child no children field lists is a problem at `children.<i>`.
+  class still gives the original's features). A child no children field lists and no rule of the parent gives (a trait
+  granted with a condition) is a problem at `children.<i>`.
+- **Children inside children (P2a).** A child form has children of its own: a background variant's `feature`
+  (`children` of `backgroundFeature`, granted by the variant) and a racial trait's `lineage` (`children` of
+  `speciesTraitOption`, 2024: one `select` of type `Species Trait Option` named after the trait, offering the options by
+  id `ID_A|ID_B`; the SRD's choices by tag stay blocks). `homebrew_new_draft {parentId, parentKey}` makes the child inside
+  the child form `parentKey` of the parent's draft (`not_found` for a key the draft has none of); the answer is the
+  parent's draft. A saved element opens with its children and theirs (keys `e`, `e/0`, `e/0/0`); a nested child takes
+  its edition from the element above when it has none. The species `traits` field is a `children` field too (P2a, was
+  `references`): traits made inside the species, or ones that exist given by reference (`element` entries); the
+  `data.traits` mirror is kept. A `children` field offers "Give one that exists" (the reference picker of its type).
+  A field limited to the other edition (`editions`) is shown while its value isn't empty nor its starting value, with a
+  note: it still writes its rules.
+- **Class option groups (P2a, spec 4.8).** The "Lets the player choose" block of type `Option` shows the group (its
+  `supports` as one tag), the options of that group (`homebrew_reference_options` with `tags: [group]`) and New option:
+  `homebrew_new_draft {kind: "classOption"}`, `homebrew_update_draft` (name, `group`, `className` = the class's name,
+  `edition`), `homebrew_save_draft` (the option is saved at once).
+- **Renamed class (P2a, spec 4.7).** Saving a class whose subclass choice's tag changed (renamed: "<Class> Subclass";
+  or a 2014 label changed) rewrites that tag on the pack's saved subclasses of it (`data.class` = the class, or the 2024
+  tag with no `data.class`), and their `data.class_name`, so the class keeps offering them.
 - **Class form (WB-16).** Kind `class` (element type `Class`, spec 4.5), tabs GENERAL, PROFICIENCIES, LEVELS,
   SPELLCASTING (WB-17), MULTICLASS, EQUIPMENT, RULES, DESCRIPTION. A new class (`homebrew_new_draft {kind: "class"}`) has
   the pack's edition (2024 for a Both-editions pack) and three generated children on the grid: Ability Score Improvement

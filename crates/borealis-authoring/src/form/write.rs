@@ -125,6 +125,24 @@ impl Out {
         }
     }
 
+    /// The ids every rule written so far gives (grants, a choice by id, a starting-equipment package), so a child a
+    /// block gives (a trait granted with a condition) is no orphan.
+    fn given_ids(&self) -> Vec<String> {
+        let probe = Element {
+            ty: self.element.ty.clone(),
+            rules: self
+                .block_rules
+                .iter()
+                .map(|(_, r)| r.clone())
+                .chain(self.field_rules.iter().map(|f| f.rule.clone()))
+                .collect(),
+            ..Element::default()
+        };
+        crate::pack::granted_ids(&probe)
+            .map(str::to_string)
+            .collect()
+    }
+
     fn finish(mut self) -> (Element, Vec<RuleOrigin>) {
         self.setters.sort_by_key(|(k, _)| *k);
         self.supports.sort_by_key(|(k, _)| *k);
@@ -384,7 +402,7 @@ fn write_traced(
     if let Err(p) = preserved::restore(&form.preserved, &mut out) {
         problems.push(p);
     }
-    problems.extend(child_refs::orphans(form));
+    problems.extend(child_refs::orphans(form, &out.given_ids()));
     if !problems.is_empty() {
         return Err(problems);
     }
@@ -437,7 +455,11 @@ fn collect(
         Err(ps) => problems.extend(ps.into_iter().map(|p| prefixed(prefix, p))),
     }
     for (i, c) in form.children.iter().enumerate() {
-        let info = child_refs::parent_info(form, c);
+        let mut info = child_refs::parent_info(form, c);
+        // a nested child (a variant's feature) takes the edition its parent takes from the element above
+        if info.edition.is_none() {
+            info.edition = parent.and_then(|p| p.edition);
+        }
         collect(
             c,
             Some(&info),

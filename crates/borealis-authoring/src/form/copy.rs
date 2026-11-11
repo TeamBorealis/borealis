@@ -14,6 +14,7 @@
 //!
 //! Without deep, the copy grants the originals' features. Deterministic, no AI (G7).
 
+use super::child_refs::ChildEntry;
 use super::read::{element_group_keyed, read_one};
 use super::subclass::{class_choice, refresh_subclass, PARENT, SUBCLASS_KIND};
 use super::ui::assign_ids;
@@ -51,6 +52,8 @@ const DROPPED_PARTS: &[&str] = &["renamed_from", "legacy_alias", "source_ref"];
 
 /// The lineage choice's element type (spec 4.4).
 const LINEAGE_OPTION: &str = "Species Trait Option";
+/// The racial trait's field that lists its lineage options.
+const LINEAGE_FIELD: &str = "lineage";
 
 /// One copied element: the form key of its copy and the original's id.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -181,14 +184,33 @@ fn loaded_children(el: &Element, lookup: &dyn Lookup) -> Vec<Element> {
     granted_children(el, &found).into_iter().cloned().collect()
 }
 
-/// `el` with its children as a form of key `key`, and a link for each.
+/// `el` with its children (and theirs: a variant's feature, a trait's lineage options) as a form of key `key`, and a
+/// link for each.
 fn group(el: &Element, key: &str, cx: &FormContext<'_>, links: &mut Vec<CopyLink>) -> FormState {
-    let children = loaded_children(el, cx.lookup);
+    group_at(el, key, cx, links, 0)
+}
+
+fn group_at(
+    el: &Element,
+    key: &str,
+    cx: &FormContext<'_>,
+    links: &mut Vec<CopyLink>,
+    depth: usize,
+) -> FormState {
+    let children = if depth < crate::pack::MAX_DEPTH {
+        loaded_children(el, cx.lookup)
+    } else {
+        Vec::new()
+    };
     let refs: Vec<&Element> = children.iter().collect();
-    let form = element_group_keyed(el, &refs, key, cx);
+    let mut form = element_group_keyed(el, &refs, key, cx);
     links.push(link(key, &el.id));
-    for (c, e) in form.children.iter().zip(&children) {
-        links.push(link(&c.key, &e.id));
+    for (c, e) in form.children.iter_mut().zip(&children) {
+        if child_types(&e.ty).is_empty() {
+            links.push(link(&c.key, &e.id));
+        } else {
+            *c = group_at(e, &c.key, cx, links, depth + 1);
+        }
     }
     form
 }
@@ -221,7 +243,7 @@ fn lineage_options(
     links: &mut Vec<CopyLink>,
     tags: &mut Vec<CopyTag>,
 ) {
-    for rule in &trait_el.rules {
+    for (at, rule) in trait_el.rules.iter().enumerate() {
         let Rule::Select(s) = rule else { continue };
         if s.ty != LINEAGE_OPTION {
             continue;
@@ -243,6 +265,20 @@ fn lineage_options(
             keys.push(key);
         }
         if !keys.is_empty() {
+            // the copy lists its options in its lineage field, which offers them by id; the choice by tag goes
+            let block = format!("b{at}");
+            trait_form.blocks.retain(|b| b.key != block);
+            let entries: Vec<ChildEntry> = keys
+                .iter()
+                .map(|k| ChildEntry {
+                    level: None,
+                    child: Some(k.clone()),
+                    element: None,
+                })
+                .collect();
+            trait_form
+                .fields
+                .insert(LINEAGE_FIELD.to_string(), json!(entries));
             tags.push(CopyTag {
                 key: trait_form.key.clone(),
                 ty: LINEAGE_OPTION.to_string(),

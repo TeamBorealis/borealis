@@ -6,6 +6,7 @@ import { asExprValue } from "../builders/words";
 import { useCreatorEnv, WithExpert } from "../env";
 import { FieldList } from "./BlockFieldControl";
 import { NumbersControl } from "./valueControls";
+import { OPTION_TYPE, OptionGroupPanel } from "./OptionGroupPanel";
 import { fallbackSentence } from "./sentence";
 import { type Fields, cleanFields, isEmptyValue, missingRequired, withAutoType } from "./values";
 
@@ -103,6 +104,8 @@ export function BlockDialog({ spec, block, isNew, problems, onOk, onCancel, repe
           )}
           {spec.fields.length === 0 && <p className="hb-field-help">This rule has nothing to fill in.</p>}
           <FieldList fields={spec.fields} values={fields} onValues={setValues} path="" problems={all} />
+          {/* a choice of class options makes its group and options in one flow (spec 4.8) */}
+          {spec.kind === "select" && fields.type === OPTION_TYPE && <OptionGroupPanel fields={fields} onFields={setFields} />}
           {spec.onlyIf && (
             <div className="mg-f hb-field hb-bf-wide" data-field="requirements">
               <label>Only if</label>

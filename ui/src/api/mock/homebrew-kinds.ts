@@ -4042,19 +4042,18 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "key": "traits",
         "label": "Traits",
         "tab": "general",
-        "control": "references",
+        "control": "children",
         "required": false,
         "bindings": [
           "rule:grant Racial Trait",
           "data.traits"
         ],
-        "help": "Each is given at level 1. A trait from a later level, or one with a condition, is a block on RULES.",
+        "help": "Each is given at level 1: make it here, or give one that exists. A trait from a later level, or one with a condition, is a block on RULES.",
         "section": "Traits",
         "picker": {
           "types": [
             "Racial Trait"
-          ],
-          "multiple": true
+          ]
         }
       },
       {
@@ -4612,19 +4611,18 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "key": "traits",
         "label": "Traits",
         "tab": "general",
-        "control": "references",
+        "control": "children",
         "required": false,
         "bindings": [
           "rule:grant Racial Trait",
           "data.traits"
         ],
-        "help": "Each is given at level 1. A trait from a later level, or one with a condition, is a block on RULES.",
+        "help": "Each is given at level 1: make it here, or give one that exists. A trait from a later level, or one with a condition, is a block on RULES.",
         "section": "Traits",
         "picker": {
           "types": [
             "Racial Trait"
-          ],
-          "multiple": true
+          ]
         }
       },
       {
@@ -5105,19 +5103,18 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "key": "traits",
         "label": "Traits",
         "tab": "general",
-        "control": "references",
+        "control": "children",
         "required": false,
         "bindings": [
           "rule:grant Racial Trait",
           "data.traits"
         ],
-        "help": "Each is given at level 1. A trait from a later level, or one with a condition, is a block on RULES.",
+        "help": "Each is given at level 1: make it here, or give one that exists. A trait from a later level, or one with a condition, is a block on RULES.",
         "section": "Traits",
         "picker": {
           "types": [
             "Racial Trait"
-          ],
-          "multiple": true
+          ]
         }
       },
       {
@@ -5565,19 +5562,18 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "key": "traits",
         "label": "Traits",
         "tab": "general",
-        "control": "references",
+        "control": "children",
         "required": false,
         "bindings": [
           "rule:grant Racial Trait",
           "data.traits"
         ],
-        "help": "Each is given at level 1. A trait from a later level, or one with a condition, is a block on RULES.",
+        "help": "Each is given at level 1: make it here, or give one that exists. A trait from a later level, or one with a condition, is a block on RULES.",
         "section": "Traits",
         "picker": {
           "types": [
             "Racial Trait"
-          ],
-          "multiple": true
+          ]
         }
       },
       {
@@ -5783,6 +5779,26 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "expert": true,
         "readOnly": true
+      },
+      {
+        "key": "lineage",
+        "label": "Lineage options",
+        "tab": "general",
+        "control": "children",
+        "required": false,
+        "bindings": [
+          "rules:select Species Trait Option"
+        ],
+        "help": "The player chooses one when the trait is gained (a lineage or an ancestry). Make each option here.",
+        "picker": {
+          "types": [
+            "Species Trait Option"
+          ]
+        },
+        "default": [],
+        "editions": [
+          "dnd2024"
+        ]
       },
       {
         "key": "tags",
@@ -6587,13 +6603,14 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
     "id": "backgroundFeature",
     "label": "Background feature",
     "pluralLabel": "Background features",
-    "description": "The feature a background gives, edited inside the background.",
+    "description": "The feature a background (or one of its variants) gives, edited inside it.",
     "group": "child",
     "elementTypes": [
       "Background Feature"
     ],
     "parentKinds": [
-      "background"
+      "background",
+      "backgroundVariant"
     ],
     "editions": [
       "dnd2014",
@@ -6858,6 +6875,23 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "expert": true,
         "readOnly": true
+      },
+      {
+        "key": "feature",
+        "label": "Its own feature",
+        "tab": "general",
+        "control": "children",
+        "required": false,
+        "bindings": [
+          "rules:grant Background Feature"
+        ],
+        "help": "A feature the variant gives (instead of the background's, when it replaces it); make it here.",
+        "picker": {
+          "types": [
+            "Background Feature"
+          ]
+        },
+        "default": []
       },
       {
         "key": "tags",

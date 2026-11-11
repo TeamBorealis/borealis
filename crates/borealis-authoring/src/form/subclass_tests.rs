@@ -377,3 +377,72 @@ fn a_new_option_writes_its_group_class_level_and_repeatable() {
         assert_eq!(problems[0].path, "fields.group");
     });
 }
+
+/// A class whose subclass choice is on the class itself.
+fn class_with_choice(name: &str, label: &str, tag: &str) -> Element {
+    el(
+        json!({"id": "ID_EI_CLASS_EMBER", "name": name, "type": "Class", "source": "EI", "ruleset": "dnd2024",
+        "rules": [{"kind": "select", "type": "Archetype", "name": label, "level": 3, "supports": tag}]}),
+    )
+}
+
+#[test]
+fn a_renamed_class_s_subclasses_take_its_new_tag() {
+    let before = [class_with_choice(
+        "Ember Knight",
+        "Subclass",
+        "Ember Knight Subclass",
+    )];
+    let after = [class_with_choice(
+        "Cinder Knight",
+        "Subclass",
+        "Cinder Knight Subclass",
+    )];
+    let sub = |id: &str, tag: &str, data: Value| {
+        el(
+            json!({"id": id, "name": id, "type": "Archetype", "source": "EI", "supports": [tag], "data": data}),
+        )
+    };
+    let pack = [
+        // names the class: follows
+        sub(
+            "ID_A",
+            "Ember Knight Subclass",
+            json!({"class": "ID_EI_CLASS_EMBER", "class_name": "Ember Knight"}),
+        ),
+        // no data.class, the 2024 tag the class wrote from its name: follows
+        sub("ID_B", "Ember Knight Subclass", json!({})),
+        // another class's subclass with the same tag: stays
+        sub(
+            "ID_C",
+            "Ember Knight Subclass",
+            json!({"class": "ID_OTHER"}),
+        ),
+        // another tag: stays
+        sub(
+            "ID_D",
+            "Fighter Subclass",
+            json!({"class": "ID_EI_CLASS_EMBER"}),
+        ),
+    ];
+    let followed = super::follow_class(&before, &after, &pack);
+    let ids: Vec<&str> = followed.iter().map(|e| e.id.as_str()).collect();
+    assert_eq!(ids, ["ID_A", "ID_B"]);
+    assert_eq!(followed[0].supports, ["Cinder Knight Subclass"]);
+    assert_eq!(followed[0].data["class_name"], "Cinder Knight");
+    assert!(!followed[1].data.contains_key("class_name"));
+    // unchanged: nothing follows; a 2014 label shared by another class without data.class stays
+    assert!(super::follow_class(&before, &before, &pack).is_empty());
+    let old = [class_with_choice(
+        "Ember Knight",
+        "Martial Archetype",
+        "Martial Archetype",
+    )];
+    let new = [class_with_choice(
+        "Ember Knight",
+        "Ember Order",
+        "Ember Order",
+    )];
+    let shared = [sub("ID_E", "Martial Archetype", json!({}))];
+    assert!(super::follow_class(&old, &new, &shared).is_empty());
+}

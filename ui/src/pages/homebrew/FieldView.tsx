@@ -42,6 +42,8 @@ export interface FieldViewProps {
   idPrefix?: string;
   /** The form and its edits, for fields that hold children (the class LEVELS grid, a package, sub-features; WB-16). */
   childEditing?: ChildEditing;
+  /** A note under the field (a field of the other edition shown because it holds a value). */
+  note?: string;
 }
 
 const text = (v: unknown): string => (typeof v === "string" ? v : v === null || v === undefined ? "" : String(v));
@@ -70,7 +72,7 @@ function withCurrent(choices: readonly { value: string; label: string }[], curre
  * control. A field with problems turns its label warning orange or danger red with an icon, and its sentences sit under it,
  * linked with `aria-describedby` (8.3). Read-only fields (the Source label) are shown, not edited.
  */
-export function FieldView({ field, value, problems, onChange, kindId, idPrefix = "", childEditing }: FieldViewProps) {
+export function FieldView({ field, value, problems, onChange, kindId, idPrefix = "", childEditing, note }: FieldViewProps) {
   const own = problemsFor(field, problems);
   const severity = fieldSeverity(own);
   const shown = BUILDERS.has(field.control) ? own.filter((p) => p.path === `fields.${field.key}`) : own;
@@ -85,6 +87,7 @@ export function FieldView({ field, value, problems, onChange, kindId, idPrefix =
         <span className="hb-check"><CheckBox id={inputId} checked={value === true} aria-describedby={msgId} onChange={(e) => onChange(e.target.checked, false)} /></span>
         {msgId && <div id={msgId} className="hb-field-msg">{shown.map((p, i) => <p key={i}>{p.message}</p>)}</div>}
         {!msgId && field.help && <p className="hb-field-help">{field.help}</p>}
+        {note && <p className="hb-field-help hb-edition-note" role="note">{note}</p>}
       </div>
     );
   }
@@ -99,6 +102,7 @@ export function FieldView({ field, value, problems, onChange, kindId, idPrefix =
         : <Control field={field} value={value} onChange={onChange} id={inputId} describedBy={msgId} invalid={severity === "error"} problems={problems} kindId={kindId} childEditing={childEditing} />}
       {msgId && <div id={msgId} className="hb-field-msg">{shown.map((p, i) => <p key={i}>{p.message}</p>)}</div>}
       {!msgId && field.help && <p className="hb-field-help">{field.help}</p>}
+      {note && <p className="hb-field-help hb-edition-note" role="note">{note}</p>}
     </div>
   );
 }

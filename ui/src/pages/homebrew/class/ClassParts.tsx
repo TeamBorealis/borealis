@@ -1,11 +1,12 @@
 import { useState } from "react";
-import type { HomebrewForm, HomebrewPickerTarget, HomebrewRef, HomebrewSkillChoice } from "../../../api/contract";
+import type { HomebrewPickerTarget, HomebrewRef, HomebrewSkillChoice } from "../../../api/contract";
 import { Icon, NumericUpDown, TextBox } from "../../../components";
 import { setStatus } from "../../../state/status";
 import { optionsOf, PackageOptionsField } from "../fields/ItemParts";
-import { RefField } from "../pickers/RefField";
-import { ChildDialog, type ChildEditing, childKind } from "./ChildDialog";
-import { childOf, entriesOf, entryName, nameOf, withChild, withoutChild, withoutEntry } from "./children";
+import { RefField, rememberRefs } from "../pickers/RefField";
+import { ReferencePicker } from "../pickers/ReferencePicker";
+import { ChildDialog, type ChildEditing, childKind, removeChecked } from "./ChildDialog";
+import { childOf, entriesOf, entryName, nameOf, withChild, withField, withoutChild, withoutEntry } from "./children";
 
 /** The skills a class offers: Proficiency elements tagged Skill. */
 const SKILLS: HomebrewPickerTarget = { types: ["Proficiency"], tags: ["Skill"], multiple: true };
@@ -78,7 +79,10 @@ export function PackageField({ editing, field, label }: { editing: ChildEditing;
         <TextBox id="hb-package-name" value={name} onChange={(e) => editing.edit((f) => withChild(f, child.key!, { ...child, fields: { ...child.fields, name: e.target.value } }), "packageName")} />
       </div>
       <PackageOptionsField label={label} value={optionsOf(child.fields.options)} onChange={setOptions} />
-      <button type="button" className="mg-tool wide" onClick={() => editing.edit((f) => withoutChild(f, child.key!, [field]))}><Icon name="minus" />No starting equipment</button>
+      <button type="button" className="mg-tool wide"
+        onClick={() => void removeChecked(editing, child.key!, `“${name || "the starting equipment"}”`, () => editing.edit((f) => withoutChild(f, child.key!, [field])))}>
+        <Icon name="minus" />No starting equipment
+      </button>
     </div>
   );
 }
@@ -90,6 +94,7 @@ export function PackageField({ editing, field, label }: { editing: ChildEditing;
 export function ChildrenField({ editing, field, label, type }: { editing: ChildEditing; field: string; label: string; type: string | undefined }) {
   const { form } = editing;
   const [open, setOpen] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
   const kind = childKind(editing, type);
   const entries = entriesOf(form, field);
   const add = async () => {
@@ -97,9 +102,22 @@ export function ChildrenField({ editing, field, label, type }: { editing: ChildE
     const key = await editing.newChild(kind.id);
     if (key) setOpen(key);
   };
-  const remove = (f: HomebrewForm, i: number): HomebrewForm => {
+  /** Gives elements that exist (a bundled trait, another pack's feature) by reference, each once. */
+  const giveExisting = (picks: HomebrewRef[]) => {
+    setPicking(false);
+    rememberRefs(picks);
+    editing.edit((f) => {
+      const now = entriesOf(f, field);
+      const fresh = picks.filter((p) => !now.some((e) => e.element?.id === p.id));
+      return withField(f, field, [...now, ...fresh.map((element) => ({ element }))]);
+    });
+  };
+  // a saved child is deleted on save: characters that use it are named first (spec 10.3)
+  const removeAt = (i: number) => {
     const e = entries[i];
-    return e?.child ? withoutChild(f, e.child, [field]) : withoutEntry(f, field, i);
+    if (!e?.child) { editing.edit((f) => withoutEntry(f, field, i)); return; }
+    const key = e.child;
+    void removeChecked(editing, key, `“${entryName(form, e)}”`, () => editing.edit((f) => withoutChild(f, key, [field])));
   };
   return (
     <div className="hb-children" role="group" aria-label={label}>
@@ -110,12 +128,23 @@ export function ChildrenField({ editing, field, label, type }: { editing: ChildE
             {e.child
               ? <button type="button" className="hb-feature-name" onClick={() => setOpen(e.child!)}>{entryName(form, e)}</button>
               : <span className="hb-ref-name">{entryName(form, e)}</span>}
-            <button type="button" className="hb-chip-x" aria-label={`Remove ${entryName(form, e)}`} onClick={() => editing.edit((f) => remove(f, i))}><Icon name="x" /></button>
+            <button type="button" className="hb-chip-x" aria-label={`Remove ${entryName(form, e)}`} onClick={() => removeAt(i)}><Icon name="x" /></button>
           </li>
         ))}
       </ul>
       {kind && <button type="button" className="hb-pick-btn" onClick={() => void add()}><Icon name="plus" />Add a {kind.label.toLowerCase()}</button>}
-      {open && <ChildDialog editing={editing} childKey={open} onRemove={() => { editing.edit((f) => withoutChild(f, open, [field])); setOpen(null); }} onClose={() => setOpen(null)} />}
+      {type && <button type="button" className="hb-pick-btn" aria-haspopup="dialog" onClick={() => setPicking(true)}><Icon name="search" />Give one that exists</button>}
+      {picking && type && (
+        <ReferencePicker title={label} target={{ types: [type], multiple: true }} chosen={entries.flatMap((e) => (e.element ? [e.element.id] : []))}
+          onChoose={giveExisting} onClose={() => setPicking(false)} />
+      )}
+      {open && (
+        <ChildDialog editing={editing} childKey={open} onClose={() => setOpen(null)}
+          onRemove={() => {
+            const key = open;
+            void removeChecked(editing, key, `“${entryName(form, { child: key })}”`, () => { editing.edit((f) => withoutChild(f, key, [field])); setOpen(null); });
+          }} />
+      )}
     </div>
   );
 }

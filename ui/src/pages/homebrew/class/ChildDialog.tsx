@@ -3,6 +3,7 @@ import type { HomebrewFieldSpec, HomebrewForm, HomebrewKindDescriptor, HomebrewP
 import { Button, Dialog, NumericUpDown } from "../../../components";
 import { PreservedList } from "../blocks/BlockDialog";
 import { FieldView } from "../FieldView";
+import { editionNote, holdsValue, otherEdition } from "../editions";
 import { childProblems, levelOfChild, nameOf, withChild, withChildLevel } from "./children";
 
 /** What the class (or any parent) form lends its child editors: the form, its edits and the backend's child maker. */
@@ -16,8 +17,42 @@ export interface ChildEditing {
   /** One undoable edit of the form; `group` merges typing (spec 10.2). */
   edit: (next: (form: HomebrewForm) => HomebrewForm, group?: string | null) => void;
   /** A new child through the backend (`homebrew_new_draft {parentId}`); `place` adjusts it and its entry in the same
-   * undo step. Resolves with the child's key, null when it could not be made. */
-  newChild: (kind: string, place?: (form: HomebrewForm, key: string) => HomebrewForm) => Promise<string | null>;
+   * undo step. `parentKey` makes it inside that child form of the draft (nested children: a variant's own feature).
+   * Resolves with the child's key, null when it could not be made. */
+  newChild: (kind: string, place?: (form: HomebrewForm, key: string) => HomebrewForm, parentKey?: string) => Promise<string | null>;
+  /** Asks before the child `key` is removed when local characters use its saved element (the save deletes it, spec
+   * 10.3); resolves true to go on. Absent: nothing to ask. */
+  confirmRemove?: (key: string, name: string) => Promise<boolean>;
+}
+
+/** The editing of the child `childKey` of `editing`'s form, for the children it has itself (a background variant's own
+ * feature, a racial trait's lineage options): its edits go into the parent's draft as one undo step each, its new
+ * children are made inside it by the backend (`parentKey`). */
+export function nestedEditing(editing: ChildEditing, childKey: string): ChildEditing | null {
+  const index = editing.form.children.findIndex((c) => c.key === childKey);
+  const child = editing.form.children[index];
+  if (!child) return null;
+  const inChild = (form: HomebrewForm, next: (c: HomebrewForm) => HomebrewForm): HomebrewForm => {
+    const c = form.children.find((x) => x.key === childKey);
+    return c ? withChild(form, childKey, next(c)) : form;
+  };
+  return {
+    form: child,
+    kinds: editing.kinds,
+    problems: childProblems(editing.problems, index),
+    edition: editing.edition,
+    edit: (next, group) => editing.edit((form) => inChild(form, next), group),
+    newChild: (kind, place, parentKey) =>
+      editing.newChild(kind, place ? (form, key) => inChild(form, (c) => place(c, key)) : undefined, parentKey ?? childKey),
+    ...(editing.confirmRemove ? { confirmRemove: editing.confirmRemove } : {}),
+  };
+}
+
+/** Removes the child `key` with `remove` after asking when characters use it (spec 10.3); resolves whether it went. */
+export async function removeChecked(editing: ChildEditing, key: string, name: string, remove: () => void): Promise<boolean> {
+  if (editing.confirmRemove && !(await editing.confirmRemove(key, name))) return false;
+  remove();
+  return true;
 }
 
 /** The kind of a parent's children of element type `type`. */
@@ -30,12 +65,13 @@ export function childKind(editing: ChildEditing, type: string | undefined): Home
  * description), with the summary line pickers show; a package's lettered options. */
 const CHILD_FIELDS: ReadonlySet<string> = new Set(["name", "summary", "rules", "description", "sheet", "options"]);
 
-/** Fields the child editor shows: the generated parts only on the feature that has them, edition-limited ones for their
- * edition. */
+/** Fields the child editor shows: its own children (a variant's feature, a trait's lineage options), the generated parts
+ * only on the feature that has them, edition-limited ones for their edition or while they hold a value (shown with a
+ * note, see `otherEdition`). */
 function shown(f: HomebrewFieldSpec, child: HomebrewForm, edition: string | null): boolean {
   if (f.expert || f.readOnly) return false;
-  if (!CHILD_FIELDS.has(f.key) && f.section !== "Made by the class") return false;
-  if (f.editions && edition && !f.editions.includes(edition as never)) return false;
+  if (!CHILD_FIELDS.has(f.key) && f.section !== "Made by the class" && f.control !== "children") return false;
+  if (otherEdition(f, edition) && !holdsValue(f, child.fields[f.key])) return false;
   if (f.section === "Made by the class") {
     const v = child.fields[f.key];
     return Array.isArray(v) ? v.length > 0 : v === true || (typeof v === "string" && v.trim() !== "");
@@ -68,6 +104,9 @@ export function ChildDialog({ editing, childKey, levelField, onRemove, onClose }
   }, typing ? `child:${childKey}:${f.key}` : null);
   const fields = (kind?.fields ?? []).filter((f) => shown(f, child, editing.edition));
   const label = kind?.label ?? "Feature";
+  // the child's own children (a variant's feature, a trait's lineage options) are made and edited inside it
+  const inner = nestedEditing(editing, childKey) ?? undefined;
+  const note = (f: HomebrewFieldSpec) => (otherEdition(f, editing.edition) ? editionNote(f) : undefined);
   return (
     <Dialog title={`${label}: ${nameOf(child, `New ${label.toLowerCase()}`)}`} onClose={onClose} className="hb-child-dialog" wide
       footer={<><Button variant="danger" onClick={onRemove}>Remove from {nameOf(editing.form, "the class")}</Button><Button variant="primary" onClick={onClose}>Done</Button></>}>
@@ -76,7 +115,7 @@ export function ChildDialog({ editing, childKey, levelField, onRemove, onClose }
           {fields.filter((f) => f.tab === "general").map((f, i) => (
             <FieldViewWithLevel key={f.key} first={i === 0} level={level} onLevel={(n) => editing.edit((form) => withChildLevel(form, levelField!, childKey, n))}>
               <FieldView field={f} value={f.control === "blocks" ? child.blocks : child.fields[f.key]} problems={problems} kindId={child.kind} idPrefix={`c-${childKey}-`}
-                onChange={(v, typing) => set(f, v, typing)} />
+                childEditing={inner} note={note(f)} onChange={(v, typing) => set(f, v, typing)} />
             </FieldViewWithLevel>
           ))}
         </div>
@@ -85,7 +124,7 @@ export function ChildDialog({ editing, childKey, levelField, onRemove, onClose }
             <div className="mg-grid two">
               {fields.filter((f) => f.tab === tab).map((f) => (
                 <FieldView key={f.key} field={f} value={f.control === "blocks" ? child.blocks : child.fields[f.key]} problems={problems} kindId={child.kind}
-                  idPrefix={`c-${childKey}-`} onChange={(v, typing) => set(f, v, typing)} />
+                  idPrefix={`c-${childKey}-`} childEditing={inner} note={note(f)} onChange={(v, typing) => set(f, v, typing)} />
               ))}
             </div>
           </div>

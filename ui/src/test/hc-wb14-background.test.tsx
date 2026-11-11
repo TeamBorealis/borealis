@@ -51,7 +51,9 @@ describe("WB-14 background form (mock)", () => {
     expect(f.get("personalityTraits")).toMatchObject({ control: "writtenList", tab: "characteristics", default: { count: 2, items: [] } });
     expect(f.get("equipment")).toMatchObject({ control: "package", tab: "equipment" });
     expect(f.has("allowDuplicate")).toBe(false);
-    for (const k of ["backgroundFeature", "backgroundVariant", "backgroundCharacteristics"]) expect(kindOf(k)).toMatchObject({ group: "child", parentKinds: ["background"] });
+    for (const k of ["backgroundVariant", "backgroundCharacteristics"]) expect(kindOf(k)).toMatchObject({ group: "child", parentKinds: ["background"] });
+    // a variant makes its own feature too (P2a)
+    expect(kindOf("backgroundFeature")).toMatchObject({ group: "child", parentKinds: ["background", "backgroundVariant"] });
     expect(kindOf("equipmentPackage").parentKinds).toContain("background");
     const offered = creatableKinds(MOCK_KIND_DESCRIPTORS).map((d) => d.id);
     expect(offered).toContain("background");

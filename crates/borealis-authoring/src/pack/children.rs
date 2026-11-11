@@ -1,6 +1,8 @@
 //! Child elements (spec 3.1): features, traits and sub-features are separate elements of the pack, edited inside
 //! their parent's form and listed under it. A child is an element of one of the parent type's child types that the
-//! parent grants (a class's starting-equipment package is its `equipment_package` choice's).
+//! parent grants (a class's starting-equipment package is its `equipment_package` choice's) or that a choice of it
+//! offers by id (a background's variants, a racial trait's lineage options). Children can have children of their
+//! own (a variant's feature, a trait's lineage options): [`descendants`].
 
 use borealis_content::{Element, Rule};
 
@@ -17,6 +19,8 @@ pub fn child_types(ty: &str) -> &'static [&'static str] {
             "Equipment Package",
         ],
         "Race" | "Sub Race" | "Species" => &["Racial Trait"],
+        "Racial Trait" => &["Species Trait Option"],
+        "Background Variant" => &["Background Feature"],
         _ => &[],
     }
 }
@@ -80,4 +84,37 @@ pub fn parent_of<'a>(child: &Element, pack: &'a [Element]) -> Option<&'a Element
             && child_types(&p.ty).contains(&child.ty.as_str())
             && granted_ids(p).any(|id| id == child.id)
     })
+}
+
+/// The deepest a parent's children nest (a background, its variant, the variant's feature): a guard against a cycle of
+/// grants, far above what any form makes.
+pub(crate) const MAX_DEPTH: usize = 8;
+
+/// Every child of `parent` among `pack` and their children, depth first, parent before its children (the order of
+/// `FormState::flatten` after the parent), each once.
+#[must_use]
+pub fn descendants<'a>(parent: &Element, pack: &'a [Element]) -> Vec<&'a Element> {
+    fn walk<'a>(
+        parent: &Element,
+        pack: &'a [Element],
+        depth: usize,
+        seen: &mut Vec<String>,
+        out: &mut Vec<&'a Element>,
+    ) {
+        if depth >= MAX_DEPTH {
+            return;
+        }
+        for child in granted_children(parent, pack) {
+            if seen.contains(&child.id) {
+                continue;
+            }
+            seen.push(child.id.clone());
+            out.push(child);
+            walk(child, pack, depth + 1, seen, out);
+        }
+    }
+    let mut seen = vec![parent.id.clone()];
+    let mut out = Vec::new();
+    walk(parent, pack, 0, &mut seen, &mut out);
+    out
 }

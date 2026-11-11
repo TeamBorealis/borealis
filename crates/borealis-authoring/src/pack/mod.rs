@@ -10,8 +10,8 @@ mod refs;
 mod spell_lists;
 mod transfer;
 
-pub(crate) use children::granted_ids;
-pub use children::{child_types, granted_children, parent_of};
+pub use children::{child_types, descendants, granted_children, parent_of};
+pub(crate) use children::{granted_ids, MAX_DEPTH};
 pub use creator::{
     CopiedFrom, CreatorElement, CreatorFile, CreatorFileError, CREATOR_FILE, CREATOR_FORMAT,
 };

@@ -15,6 +15,10 @@ const CLASS_PAGE = 500;
  */
 export interface CreatorEnv {
   draftId: string | null;
+  /** The open draft's pack (class options made from a choice block go there, spec 4.8). */
+  packId?: string | null;
+  /** Something wrote the pack outside the draft: the workspace's lists reload. */
+  onPackChanged?: () => void;
   /** The element's edition when set, else the pack's single edition, else null (both). */
   edition: Ruleset | null;
   blocks: readonly HomebrewBlockSpec[];
@@ -29,7 +33,7 @@ export interface CreatorEnv {
   expert: boolean;
 }
 
-const EMPTY_ENV: CreatorEnv = { draftId: null, edition: null, blocks: [], stats: [], classes: [], form: null, answer: null, problems: [], expert: false };
+const EMPTY_ENV: CreatorEnv = { draftId: null, packId: null, edition: null, blocks: [], stats: [], classes: [], form: null, answer: null, problems: [], expert: false };
 
 const Ctx = createContext<CreatorEnv>(EMPTY_ENV);
 
@@ -47,17 +51,18 @@ async function loadClasses(api: Api, draftId: string | null): Promise<HomebrewPi
 
 const ignoreFailure = <T,>(p: Promise<T[]>): Promise<T[]> => p.catch(() => []);
 
-export function CreatorEnvProvider({ draftId, edition, form, answer, problems, expert, children }: {
-  draftId: string | null; edition: Ruleset | null; form: HomebrewForm | null; answer: HomebrewForm | null; problems: readonly HomebrewProblem[]; expert: boolean; children: ReactNode;
+export function CreatorEnvProvider({ draftId, packId = null, onPackChanged, edition, form, answer, problems, expert, children }: {
+  draftId: string | null; packId?: string | null; onPackChanged?: () => void; edition: Ruleset | null; form: HomebrewForm | null; answer: HomebrewForm | null; problems: readonly HomebrewProblem[]; expert: boolean; children: ReactNode;
 }) {
   const api = useApi();
   const blocks = useAsync(() => ignoreFailure(api.homebrewBlockCatalog()), [api]);
   const stats = useAsync(() => ignoreFailure(api.homebrewStatCatalog()), [api]);
   const classes = useAsync(() => loadClasses(api, draftId), [api, draftId]);
   const value = useMemo<CreatorEnv>(() => ({
-    draftId, edition, form, answer, problems, expert,
+    draftId, packId, edition, form, answer, problems, expert,
+    ...(onPackChanged ? { onPackChanged } : {}),
     blocks: blocks.data ?? [], stats: stats.data ?? [], classes: classes.data ?? [],
-  }), [draftId, edition, form, answer, problems, expert, blocks.data, stats.data, classes.data]);
+  }), [draftId, packId, onPackChanged, edition, form, answer, problems, expert, blocks.data, stats.data, classes.data]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

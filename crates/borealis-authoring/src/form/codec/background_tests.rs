@@ -170,7 +170,13 @@ fn the_background_kinds_and_their_children() {
     ] {
         let k = kind_for_type(ty);
         assert_eq!(k.id, id);
-        assert_eq!(k.parent_kinds, ["background"]);
+        let parents: &[&str] = if id == "backgroundFeature" {
+            // a variant makes its own feature too (P2a)
+            &["background", "backgroundVariant"]
+        } else {
+            &["background"]
+        };
+        assert_eq!(k.parent_kinds, parents);
     }
     assert!(kind("equipmentPackage")
         .unwrap()

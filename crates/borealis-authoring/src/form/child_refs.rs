@@ -10,6 +10,13 @@
 //! for class-table counters) and level (`data.level`) and a package's owner (`data.owner`) follow the class. A child
 //! no field of its parent lists would be saved but never given: that is a problem at the child ([`orphans`]).
 //!
+//! An **offered** children field ([`Codec::Offered`]) gives its children through one `select` that offers them by id
+//! (`ID_A|ID_B`): a racial trait's lineage options (spec 4.4), the player picks one. A background's variants are the
+//! same shape ([`offer_rule`]).
+//!
+//! Children nest: a child form has children of its own (a background variant's feature, a trait's lineage options),
+//! read with [`super::element_tree_to_form`] and made with [`add_child_in`].
+//!
 //! Deterministic, no AI (G7).
 
 use super::codec::{decode, to_json, Codec, Reader};
@@ -17,7 +24,7 @@ use super::kinds::kind;
 use super::value::RefValue;
 use super::write::Out;
 use super::{FieldMemo, FormContext, FormProblem, FormState, Slots};
-use borealis_content::{Element, GrantRule, Rule, Ruleset};
+use borealis_content::{Element, GrantRule, Rule, Ruleset, SelectRule};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -134,6 +141,121 @@ pub(crate) fn entry_id(
         Some(e) => Ok(e.id.trim().to_string()),
         None => Err(FormProblem::new(path, format!("Choose the {what}."))),
     }
+}
+
+/// The `select` of type `ty` that offers the elements `ids` by id (`ID_A|ID_B`); `optional` for a choice the player may
+/// leave empty (a background's variants).
+pub(crate) fn offer_rule(ty: &str, name: &str, ids: &[String], optional: bool) -> Rule {
+    Rule::Select(SelectRule {
+        ty: ty.to_string(),
+        name: name.to_string(),
+        supports: Some(ids.join("|")),
+        optional: optional.then_some(true),
+        ..SelectRule::default()
+    })
+}
+
+/// The ids a `select` of type `ty` offers, when it is exactly [`offer_rule`]'s shape.
+pub(crate) fn offered_ids(s: &SelectRule, ty: &str, optional: bool) -> Option<Vec<String>> {
+    if s.ty != ty {
+        return None;
+    }
+    let ids: Vec<String> = s
+        .supports
+        .as_deref()?
+        .split('|')
+        .map(|t| t.trim().to_string())
+        .collect();
+    let all_ids = ids.iter().all(|t| t.starts_with("ID_"));
+    (all_ids && Rule::Select(s.clone()) == offer_rule(ty, &s.name, &ids, optional)).then_some(ids)
+}
+
+/// Read an offered children field: the first free `select` of `ty` in [`offer_rule`]'s shape.
+pub(crate) fn read_offered(
+    ty: &str,
+    optional: bool,
+    r: &mut Reader<'_>,
+    cx: &FormContext<'_>,
+) -> FieldMemo {
+    let e = r.e;
+    let found = e.rules.iter().enumerate().find_map(|(i, rule)| match rule {
+        Rule::Select(s) if !r.rules_taken[i] => offered_ids(s, ty, optional).map(|ids| (i, ids)),
+        _ => None,
+    });
+    let Some((i, ids)) = found else {
+        return FieldMemo {
+            value: json!([]),
+            raw: json!([]),
+            slots: Slots::default(),
+        };
+    };
+    r.rules_taken[i] = true;
+    let entries: Vec<ChildEntry> = ids
+        .iter()
+        .map(|id| ChildEntry {
+            level: None,
+            child: None,
+            element: Some(RefValue::resolve(id, cx.lookup)),
+        })
+        .collect();
+    FieldMemo {
+        value: to_json(&entries),
+        raw: json!([to_json(&e.rules[i])]),
+        slots: Slots {
+            rules: vec![i],
+            ..Slots::default()
+        },
+    }
+}
+
+/// Write an offered children field: one `select` offering every entry by id (none for no entry). Its name is the
+/// stored one (the choice's persistence key), else the element's own name (a trait "Elven Lineage" offers its options
+/// by a choice "Elven Lineage", as the SRD).
+pub(crate) fn write_offered(
+    ty: &str,
+    optional: bool,
+    value: &Value,
+    memo: Option<&FieldMemo>,
+    path: &str,
+    out: &mut Out,
+) -> Result<(), FormProblem> {
+    let slots = memo.map(|m| m.slots.rules.clone()).unwrap_or_default();
+    let stored: Vec<Rule> = memo
+        .and_then(|m| m.raw.as_array())
+        .into_iter()
+        .flatten()
+        .filter_map(|r| serde_json::from_value(r.clone()).ok())
+        .collect();
+    if memo.is_some_and(|m| m.value == *value) {
+        out.field_rules(stored.into_iter().map(|r| (RANK_CHILDREN, r)), &slots, path);
+        return Ok(());
+    }
+    let entries: Vec<ChildEntry> = decode(value, path)?;
+    let ids = entries
+        .iter()
+        .enumerate()
+        .map(|(i, e)| entry_id(e, out, &format!("{path}.{i}"), "option"))
+        .collect::<Result<Vec<_>, _>>()?;
+    if ids.is_empty() {
+        return Ok(());
+    }
+    let name = match stored.first() {
+        Some(Rule::Select(s)) => s.name.clone(),
+        _ => {
+            let own = borealis_content::rich::normalize_plain_text(&out.element.name);
+            if own.trim().is_empty() {
+                ty.to_string()
+            } else {
+                own.trim().to_string()
+            }
+        }
+    };
+    out.field_rules(
+        [(RANK_CHILDREN, offer_rule(ty, &name, &ids, optional))],
+        &slots,
+        path,
+    );
+    Ok(())
 }
 
 /// Write a children field: a grant per entry, a stored rule for an entry that has one (same element, same level).
@@ -284,8 +406,9 @@ pub(crate) fn parent_info(parent: &FormState, child: &FormState) -> ParentInfo {
     }
 }
 
-/// The children no children field of `parent` lists (they would be saved but never given), as problems at them.
-pub(crate) fn orphans(parent: &FormState) -> Vec<FormProblem> {
+/// The children no children field of `parent` lists and no rule of it gives (`given`: the ids its written rules give;
+/// they would be saved but never given), as problems at them.
+pub(crate) fn orphans(parent: &FormState, given: &[String]) -> Vec<FormProblem> {
     let fields = child_fields(parent);
     if fields.is_empty() {
         return Vec::new();
@@ -300,7 +423,9 @@ pub(crate) fn orphans(parent: &FormState) -> Vec<FormProblem> {
         .children
         .iter()
         .enumerate()
-        .filter(|(_, c)| !listed.contains(&c.key))
+        .filter(|(_, c)| {
+            !listed.contains(&c.key) && !c.id().is_some_and(|id| given.iter().any(|g| g == id))
+        })
         .map(|(i, c)| {
             let name = field_value(c, "name").and_then(Value::as_str).unwrap_or_default().trim().to_string();
             let name = if name.is_empty() { "This part".to_string() } else { format!("“{name}”") };
@@ -364,6 +489,7 @@ impl Codec {
     pub fn child_list(self) -> Option<bool> {
         match self {
             Self::Children { levelled, .. } => Some(levelled),
+            Self::Offered { .. } | Self::Species(super::codec::SpeciesField::Traits) => Some(false),
             Self::Class(f) => f.child_list(),
             Self::Background(f) => f.child_type().map(|_| false),
             _ => None,
@@ -374,7 +500,8 @@ impl Codec {
     #[must_use]
     pub fn child_type(self) -> Option<&'static str> {
         match self {
-            Self::Children { ty, .. } => Some(ty),
+            Self::Children { ty, .. } | Self::Offered { ty, .. } => Some(ty),
+            Self::Species(super::codec::SpeciesField::Traits) => Some("Racial Trait"),
             Self::Class(super::codec::ClassField::Equipment) => Some("Equipment Package"),
             Self::Background(f) => f.child_type(),
             _ => None,
@@ -420,5 +547,36 @@ pub fn add_child(parent: &FormState, child: FormState, level: Option<u32>) -> Op
     let mut next = parent.clone();
     next.fields.insert(def.key.to_string(), json!(list));
     next.children.push(child);
+    Some(next)
+}
+
+/// The form with key `key` among `root` and its descendants.
+#[must_use]
+pub fn child_form<'f>(root: &'f FormState, key: &str) -> Option<&'f FormState> {
+    if root.key == key {
+        return Some(root);
+    }
+    root.children.iter().find_map(|c| child_form(c, key))
+}
+
+/// `root` with `child` added to its descendant form `parent_key` ([`add_child`] there: a variant's own feature, a
+/// trait's lineage option). `None` when no form has that key or it has no place for the child.
+#[must_use]
+pub fn add_child_in(
+    root: &FormState,
+    parent_key: &str,
+    child: FormState,
+    level: Option<u32>,
+) -> Option<FormState> {
+    if root.key == parent_key {
+        return add_child(root, child, level);
+    }
+    let i = root
+        .children
+        .iter()
+        .position(|c| child_form(c, parent_key).is_some())?;
+    let inner = add_child_in(&root.children[i], parent_key, child, level)?;
+    let mut next = root.clone();
+    next.children[i] = inner;
     Some(next)
 }

@@ -5,11 +5,11 @@ import { Button, CheckBox, Dialog, Icon, NumericUpDown, TextBox } from "../../..
 import { usePhone } from "../../../lib/phone";
 import { setStatus } from "../../../state/status";
 import { NumbersControl } from "../blocks/valueControls";
-import { ChildDialog, type ChildEditing, childKind } from "./ChildDialog";
+import { ChildDialog, type ChildEditing, childKind, removeChecked } from "./ChildDialog";
 import "./class.css";
 import { isSpellcastingColumn } from "../caster/slots";
 import {
-  LEVELS, cellValue, childOf, columnsOf, counterColumns, entriesOf, entryName, fullColumn, generatedOf, proficiencyBonus,
+  LEVELS, cellValue, childOf, columnsOf, counterColumns, entriesOf, entryName, fullColumn, generatedOf, nameOf, proficiencyBonus,
   withChild, withChildLevel, withField, withoutChild, withoutEntry,
 } from "./children";
 
@@ -65,10 +65,14 @@ export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing
     setColumns([...columns, { key: "", label, values: LEVELS.map(() => 0) }]);
     setNewColumn("");
   };
+  // a saved feature is deleted on save: characters that use it are named first (spec 10.3)
   const remove = (key: string) => {
-    editing.edit((f) => withoutChild(f, key, CHILD_FIELDS));
-    setOpen(null);
-    setStatus("Feature removed. Undo brings it back.");
+    const name = entryName(form, { child: key });
+    void removeChecked(editing, key, `“${name}”`, () => {
+      editing.edit((f) => withoutChild(f, key, CHILD_FIELDS));
+      setOpen(null);
+      setStatus("Feature removed. Undo brings it back.");
+    });
   };
 
   /** The FEATURES cell of a level: the features at it (a chip opens one), and the Plus that adds one. */
@@ -198,7 +202,7 @@ function GeneratedFeatures({ editing }: { editing: ChildEditing }) {
   const asiLevels = (gen.asi?.fields.asiLevels as number[] | undefined) ?? [];
   const setAsi = (levels: number[]) => {
     if (!gen.asi) { if (levels.length) make("Ability Score Improvement", { asiLevels: levels }, levels[0]!); return; }
-    if (levels.length === 0) editing.edit((f) => withoutChild(f, gen.asi!.key!, CHILD_FIELDS));
+    if (levels.length === 0) void removeChecked(editing, gen.asi.key!, `“${nameOf(gen.asi)}”`, () => editing.edit((f) => withoutChild(f, gen.asi!.key!, CHILD_FIELDS)));
     else setChild(gen.asi, { asiLevels: levels }, levels[0]);
   };
   const subLabel = typeof gen.subclass?.fields.subclassLabel === "string" ? gen.subclass.fields.subclassLabel : "";
@@ -225,13 +229,15 @@ function GeneratedFeatures({ editing }: { editing: ChildEditing }) {
             <p className="hb-field-help">Sacred Oath, Martial Archetype: subclasses of this class are offered there.</p>
           </div>
         )}
-        {newer && (
+        {(newer || gen.epicBoon) && (
           <div className="mg-f hb-field" data-field="epicBoon">
             <label htmlFor="hb-epic-boon">Epic boon at level 19</label>
             <span className="hb-check"><CheckBox id="hb-epic-boon" checked={!!gen.epicBoon} onChange={(e) => {
               if (e.target.checked) make("Epic Boon", { epicBoon: true }, 19);
-              else if (gen.epicBoon) editing.edit((f) => withoutChild(f, gen.epicBoon!.key!, CHILD_FIELDS));
+              else if (gen.epicBoon) void removeChecked(editing, gen.epicBoon.key!, `“${nameOf(gen.epicBoon)}”`, () => editing.edit((f) => withoutChild(f, gen.epicBoon!.key!, CHILD_FIELDS)));
             }} /></span>
+            {/* a 2014 class has no epic boon: one read from content still gives its rules (P2a) */}
+            {!newer && <p className="hb-field-help hb-edition-note" role="note">This part belongs to the 2024 edition. It is shown because it still gives its rules: clear it to remove them.</p>}
           </div>
         )}
       </div>

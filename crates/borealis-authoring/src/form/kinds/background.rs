@@ -253,6 +253,37 @@ fn child(
     }
 }
 
+/// A background variant: the shared parts and its own feature (the 2014 shape of a variant that replaces the
+/// background's feature), made inside the variant.
+fn variant_kind() -> KindDef {
+    let mut k = child(
+        VARIANT_KIND,
+        "Background variant",
+        "Background variants",
+        "A version of a background a character may take instead, edited inside the background.",
+        &["Background Variant"],
+    );
+    let feature = field(
+        "feature",
+        "Its own feature",
+        GENERAL,
+        Control::Children,
+        Codec::Children {
+            ty: "Background Feature",
+            levelled: false,
+        },
+    )
+    .picker(&["Background Feature"])
+    .default("[]")
+    .help("A feature the variant gives (instead of the background's, when it replaces it); make it here.");
+    k.fields = head()
+        .into_iter()
+        .chain(std::iter::once(feature))
+        .chain(tail())
+        .collect();
+    k
+}
+
 /// The background kinds: the background, its feature, its variants and a stored characteristics element.
 pub(super) fn background_kinds() -> Vec<KindDef> {
     let mut characteristics_kind = child(
@@ -269,20 +300,17 @@ pub(super) fn background_kinds() -> Vec<KindDef> {
         .collect();
     vec![
         background_kind(),
-        child(
-            FEATURE_KIND,
-            "Background feature",
-            "Background features",
-            "The feature a background gives, edited inside the background.",
-            &["Background Feature"],
-        ),
-        child(
-            VARIANT_KIND,
-            "Background variant",
-            "Background variants",
-            "A version of a background a character may take instead, edited inside the background.",
-            &["Background Variant"],
-        ),
+        KindDef {
+            parent_kinds: &[BACKGROUND_KIND, VARIANT_KIND],
+            ..child(
+                FEATURE_KIND,
+                "Background feature",
+                "Background features",
+                "The feature a background (or one of its variants) gives, edited inside it.",
+                &["Background Feature"],
+            )
+        },
+        variant_kind(),
         characteristics_kind,
     ]
 }

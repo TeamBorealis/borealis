@@ -7,6 +7,7 @@ import { SpellcastingTab } from "./caster/SpellcastingTab";
 import type { ChildEditing } from "./class/ChildDialog";
 import { CreatorEnvProvider } from "./env";
 import { DataView } from "./DataView";
+import { editionNote, otherEdition, shownForEdition } from "./editions";
 import { Band } from "../spells/TwoPane";
 import "../equipment/equipment.css";
 import { FieldView } from "./FieldView";
@@ -36,10 +37,16 @@ export interface EditorActions {
   onJump: (problem: HomebrewProblem) => void;
   /** Makes a child of the open element through the backend (`homebrew_new_draft {parentId}`, WB-16): see `ChildEditing`. */
   onNewChild?: ChildEditing["newChild"];
+  /** Asks before a saved child is removed when characters use it (spec 10.3): see `ChildEditing`. */
+  onConfirmRemove?: ChildEditing["confirmRemove"];
+  /** Something wrote the pack outside this draft (class options made from a choice block, spec 4.8): lists reload. */
+  onPackChanged?: () => void;
 }
 
-/** A field shown for the form's edition (`HomebrewFieldSpec.editions`; no edition = the pack's, every field shows). */
-const forEdition = (f: HomebrewFieldSpec, edition: Ruleset | null): boolean => !f.editions || !edition || f.editions.includes(edition);
+/** A field shown for the form's edition (`HomebrewFieldSpec.editions`; no edition = the pack's, every field shows); a field
+ * of the other edition still shows while it holds a value, with a note (it still writes its rules, P2a). */
+const forEdition = (f: HomebrewFieldSpec, edition: Ruleset | null, form: HomebrewForm | null = null): boolean =>
+  shownForEdition(f, edition, form?.fields[f.key]);
 
 /** Fields of one sub-tab, grouped under their SectionSecondary headings (spec 13.4) in field order. */
 function sections(fields: readonly HomebrewFieldSpec[]): [string, HomebrewFieldSpec[]][] {
@@ -85,11 +92,12 @@ function useHeadHeight(head: RefObject<HTMLDivElement>, editor: RefObject<HTMLEl
 }
 
 /** The kind's sub-tabs as the band shows them; phones add PREVIEW after the kind's own. */
-export function editorTabs(kind: HomebrewKindDescriptor, narrow: boolean, edition: Ruleset | null = null): HomebrewTab[] {
-  // a tab whose fields are all of the other edition is not shown (a 2024 background has no CHARACTERISTICS, WB-14)
+export function editorTabs(kind: HomebrewKindDescriptor, narrow: boolean, edition: Ruleset | null = null, form: HomebrewForm | null = null): HomebrewTab[] {
+  // a tab whose fields are all of the other edition is not shown (a 2024 background has no CHARACTERISTICS, WB-14), unless
+  // one of them still holds a value
   const shown = kind.tabs.filter((t) => {
     const own = kind.fields.filter((f) => f.tab === t.id);
-    return own.length === 0 || own.some((f) => forEdition(f, edition));
+    return own.length === 0 || own.some((f) => forEdition(f, edition, form));
   });
   return narrow ? [...shown, DATA_TAB, PREVIEW_TAB] : [...shown, DATA_TAB];
 }
@@ -113,10 +121,10 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
   if (!form) return null;
   const name = typeof form.fields.name === "string" && form.fields.name.trim() ? form.fields.name.trim() : `New ${kind.label.toLowerCase()}`;
   const edition = editionOf(form);
-  const tabs = editorTabs(kind, narrow, edition);
+  const tabs = editorTabs(kind, narrow, edition, form);
   const current = tabs.some((t) => t.id === tab) ? tab : tabs[0]?.id ?? "";
   // the class table is a part of the LEVELS grid (WB-16)
-  const fields = kind.fields.filter((f) => f.tab === current && (expert || !f.expert) && f.control !== "classTable" && forEdition(f, edition));
+  const fields = kind.fields.filter((f) => f.tab === current && (expert || !f.expert) && f.control !== "classTable" && forEdition(f, edition, form));
   const hasExpert = kind.fields.some((f) => f.expert);
   const setValue = (f: HomebrewFieldSpec, v: unknown, typing: boolean) => {
     if (f.control === "blocks") draft.edit((cur) => ({ ...cur, blocks: v as HomebrewForm["blocks"] }));
@@ -127,6 +135,7 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
     form, kinds, problems: draft.problems, edition,
     edit: (next, group) => draft.edit(next, group ?? null),
     newChild: actions.onNewChild ?? (async () => null),
+    ...(actions.onConfirmRemove ? { confirmRemove: actions.onConfirmRemove } : {}),
   };
   const removePreserved = (key: string) => draft.edit((cur) => ({ ...cur, preserved: cur.preserved.filter((p) => p.key !== key) }));
   // Spec 16 / PH2: on phones the same row is pinned above the bottom tabs, so it follows the form (a sticky row sticks
@@ -150,7 +159,7 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
   const error = draft.error && <p className="hb-error-line" role="alert">{draft.error}</p>;
   const problemsPanel = <ProblemsPanel problems={draft.problems} checking={draft.checking} onJump={actions.onJump} onOpen={() => void draft.check()} />;
   return (
-    <CreatorEnvProvider draftId={draft.view?.draftId ?? null} edition={edition} form={form} answer={draft.view?.form ?? null} problems={draft.problems} expert={expert}>
+    <CreatorEnvProvider draftId={draft.view?.draftId ?? null} packId={draft.view?.packId ?? null} onPackChanged={actions.onPackChanged} edition={edition} form={form} answer={draft.view?.form ?? null} problems={draft.problems} expert={expert}>
       <section className="hb-editor" aria-label="Element editor" ref={editorRef}>
         {narrow ? (
           // Phones (spec 16): the element's name and the sub-tab strip stay at the top while the form scrolls under them;
@@ -179,7 +188,7 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
                 <div className="mg-grid two">
                   {list.map((f) => (
                     <FieldView key={f.key} field={f} value={valueOf(f, form, draft.view?.form)} problems={draft.problems} kindId={kind.id} childEditing={childEditing}
-                      onChange={(v, typing) => setValue(f, v, typing)} />
+                      note={otherEdition(f, edition) ? editionNote(f) : undefined} onChange={(v, typing) => setValue(f, v, typing)} />
                   ))}
                 </div>
               </div>

@@ -20,8 +20,8 @@ use borealis_authoring::form::{
     FormContext, FormProblem, WithElements,
 };
 use borealis_authoring::pack::{
-    bump_patch, granted_children, on_list, parent_of, removable, source_name, use_of,
-    with_elements, with_spell_list, without_elements, CreatorElement, SOURCE_TYPE,
+    bump_patch, descendants, on_list, parent_of, removable, source_name, use_of, with_elements,
+    with_spell_list, without_elements, CreatorElement, SOURCE_TYPE,
 };
 use borealis_content::{ContentFile, Element, Issue};
 use std::collections::HashSet;
@@ -396,7 +396,7 @@ impl AppState {
         let elements = &pack.disk.content.elements;
         let mut moving: Vec<&Element> = Vec::new();
         for el in chosen {
-            for e in std::iter::once(*el).chain(granted_children(el, elements)) {
+            for e in std::iter::once(*el).chain(descendants(el, elements)) {
                 if !moving.iter().any(|m| m.id == e.id) {
                     moving.push(e);
                 }

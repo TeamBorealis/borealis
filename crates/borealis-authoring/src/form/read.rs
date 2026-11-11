@@ -49,6 +49,41 @@ pub(crate) fn element_group_keyed(
     form
 }
 
+/// The form of a saved element with every child it has among `pack` (the elements of its pack) inside it, and their
+/// children inside them (a background's variant and the variant's feature, a trait's lineage options): the element
+/// group of the parent, each child read as its own group (keys `e`, `e/0`, `e/0/0`...). The children are
+/// [`crate::pack::descendants`], in that order.
+#[must_use]
+pub fn element_tree_to_form(parent: &Element, pack: &[Element], cx: &FormContext<'_>) -> FormState {
+    let mut seen = vec![parent.id.clone()];
+    read_tree(parent, pack, "e", 0, &mut seen, cx)
+}
+
+fn read_tree(
+    e: &Element,
+    pack: &[Element],
+    key: &str,
+    depth: usize,
+    seen: &mut Vec<String>,
+    cx: &FormContext<'_>,
+) -> FormState {
+    let mut form = read_one(e, key.to_string(), cx);
+    if depth < crate::pack::MAX_DEPTH {
+        for child in crate::pack::granted_children(e, pack) {
+            if seen.contains(&child.id) {
+                continue;
+            }
+            seen.push(child.id.clone());
+            let k = format!("{key}/{}", form.children.len());
+            form.children
+                .push(read_tree(child, pack, &k, depth + 1, seen, cx));
+        }
+    }
+    child_refs::link(&mut form);
+    codec::caster_cx::follow_parent(&mut form);
+    form
+}
+
 pub(crate) fn owned_tags(kind: &KindDef) -> BTreeSet<&'static str> {
     kind.fields
         .iter()

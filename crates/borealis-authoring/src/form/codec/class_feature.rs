@@ -70,7 +70,7 @@ fn asi_rule(shape: Shape, class: &str, level: u32) -> Rule {
 
 /// A class name as a tag word: without the characters a tag can't hold (a copy's "Wizard (copy)" offers
 /// "Wizard copy Subclass").
-fn tag_word(class: &str) -> String {
+pub(crate) fn tag_word(class: &str) -> String {
     class
         .chars()
         .filter(|c| !",|&!()[]{}$".contains(*c))

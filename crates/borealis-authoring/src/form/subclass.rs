@@ -187,6 +187,55 @@ pub(crate) fn stored_class(sub: &Element, lookup: &dyn Lookup) -> Option<ClassCh
     named.or_else(|| class_offering(sub, lookup))
 }
 
+/// The pack's saved subclasses of a class saved again with another subclass tag (renamed: a 2024 class offers
+/// "<Class> Subclass"; or a 2014 label changed), with the new tag, so the class keeps offering them (spec 4.7: a
+/// subclass carries the tag its class's choice offers, and follows its class).
+///
+/// `before` is the class and its children as stored, `after` as they are saved now, `pack` the pack's elements. A
+/// subclass follows when it names the class (`data.class`) or, with no `data.class`, carries the 2024 tag the class
+/// wrote from its own name (a 2014 label may be shared with another class). Its `data.class_name` follows the name.
+/// Each subclass returned replaces its stored copy.
+#[must_use]
+pub fn follow_class(before: &[Element], after: &[Element], pack: &[Element]) -> Vec<Element> {
+    let choice_of = |els: &[Element]| -> Option<ClassChoice> {
+        let lookup = super::WithElements {
+            base: &super::NoLookup,
+            extra: els,
+        };
+        els.iter()
+            .find(|e| e.ty == "Class")
+            .and_then(|c| class_choice(c, &lookup))
+    };
+    let (Some(old), Some(new)) = (choice_of(before), choice_of(after)) else {
+        return Vec::new();
+    };
+    if old.tag == new.tag && old.class_name == new.class_name {
+        return Vec::new();
+    }
+    let own_tag = old.tag == format!("{} Subclass", super::codec::tag_word(&old.class_name));
+    pack.iter()
+        .filter(|e| e.ty == "Archetype" && !after.iter().any(|a| a.id == e.id))
+        .filter(|e| e.supports.contains(&old.tag))
+        .filter(|e| match e.data.get("class").and_then(Value::as_str) {
+            Some(id) => id == old.class_id || id == new.class_id,
+            None => own_tag,
+        })
+        .map(|e| {
+            let mut sub = e.clone();
+            for t in &mut sub.supports {
+                if *t == old.tag {
+                    t.clone_from(&new.tag);
+                }
+            }
+            if sub.data.get("class_name").and_then(Value::as_str) == Some(old.class_name.as_str()) {
+                sub.data.insert("class_name".into(), json!(new.class_name));
+            }
+            sub
+        })
+        .filter(|sub| pack.iter().all(|e| e != sub))
+        .collect()
+}
+
 /// The class picked in a subclass form, as it is now.
 fn picked(form: &FormState) -> Option<RefValue> {
     form.fields

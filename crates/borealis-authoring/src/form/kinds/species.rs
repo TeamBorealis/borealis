@@ -259,12 +259,31 @@ fn traits() -> FieldDef {
         "traits",
         "Traits",
         GENERAL,
-        Control::References,
+        Control::Children,
         sp(SpeciesField::Traits),
     )
     .picker(&["Racial Trait"])
     .section(TRAITS)
-    .help("Each is given at level 1. A trait from a later level, or one with a condition, is a block on RULES.")
+    .help("Each is given at level 1: make it here, or give one that exists. A trait from a later level, or one with a condition, is a block on RULES.")
+}
+
+/// A racial trait's lineage (spec 4.4): the options the player chooses one of (Drow, High Elf, Wood Elf), made inside
+/// the trait and offered by one choice by id.
+fn lineage() -> FieldDef {
+    field(
+        "lineage",
+        "Lineage options",
+        GENERAL,
+        Control::Children,
+        Codec::Offered {
+            ty: "Species Trait Option",
+            optional: false,
+        },
+    )
+    .picker(&["Species Trait Option"])
+    .editions(ONLY_2024)
+    .default("[]")
+    .help("The player chooses one when the trait is gained (a lineage or an ancestry). Make each option here.")
 }
 
 fn names() -> Vec<FieldDef> {
@@ -427,15 +446,22 @@ pub(super) fn species_kinds() -> Vec<KindDef> {
                 ..SUB
             },
         ),
-        child_kind(
-            "racialTrait",
-            "Racial trait",
-            "Racial traits",
-            "A trait of a species or race, edited inside it.",
-            &["Racial Trait"],
-            &["species", "race", "subRace", "raceVariant"],
-            BOTH,
-        ),
+        KindDef {
+            fields: head()
+                .into_iter()
+                .chain(std::iter::once(lineage()))
+                .chain(tail())
+                .collect(),
+            ..child_kind(
+                "racialTrait",
+                "Racial trait",
+                "Racial traits",
+                "A trait of a species or race, edited inside it.",
+                &["Racial Trait"],
+                &["species", "race", "subRace", "raceVariant"],
+                BOTH,
+            )
+        },
         child_kind(
             "speciesTraitOption",
             "Species trait option",

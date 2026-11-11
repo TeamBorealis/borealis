@@ -170,6 +170,7 @@ const COMMANDS: &[&str] = &[
     "homebrew_discard_draft",
     "homebrew_list_drafts",
     "homebrew_delete_elements",
+    "homebrew_child_use",
     "homebrew_duplicate_element",
     "homebrew_bulk_edit",
     "homebrew_reference_options",

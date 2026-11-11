@@ -43,7 +43,8 @@ describe("WB-15 species forms (mock)", () => {
     expect(f.get("size")).toMatchObject({ control: "chips", default: ["Medium"], section: "Species", bindings: ["rule:grant Size", "rule:select_size", "data.size"] });
     expect(f.get("speed")).toMatchObject({ control: "number", min: 0, max: 1000, default: 30, section: "Speed" });
     expect(f.get("darkvision")).toMatchObject({ control: "number", section: "Senses" });
-    expect(f.get("traits")).toMatchObject({ control: "references", picker: { types: ["Racial Trait"] }, section: "Traits" });
+    // the traits are children made inside the species, or ones that exist given by reference (P2a)
+    expect(f.get("traits")).toMatchObject({ control: "children", picker: { types: ["Racial Trait"] }, section: "Traits" });
     expect(f.has("strength")).toBe(false);
     const race = new Map(kindOf("race").fields.map((x) => [x.key, x]));
     expect(race.get("strength")).toMatchObject({ control: "number", min: -10, max: 10, section: "Ability score increases" });

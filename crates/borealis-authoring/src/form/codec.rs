@@ -22,6 +22,7 @@ pub(crate) mod caster_cx;
 mod caster_read;
 mod class;
 mod class_feature;
+pub(crate) use class_feature::tag_word;
 mod class_mc;
 mod creature;
 mod creature_values;
@@ -105,6 +106,14 @@ pub enum Codec {
         /// The entries have class levels.
         levelled: bool,
     },
+    /// Children given by one `select` that offers them by id (spec 4.4: a racial trait's lineage options); `optional`
+    /// for a choice the player may leave empty.
+    Offered {
+        /// The child element type.
+        ty: &'static str,
+        /// The choice may stay empty.
+        optional: bool,
+    },
     /// A class field (spec 4.5).
     Class(ClassField),
     /// A generated class feature's field (spec 4.5: ability score improvements, subclass choice, epic boon).
@@ -162,6 +171,7 @@ impl Codec {
                 "rules:grant {ty}{}",
                 if levelled { " (level)" } else { "" }
             )],
+            Self::Offered { ty, .. } => vec![format!("rules:select {ty}")],
             Self::Class(f) => f.bindings(),
             Self::Feature(f) => f.bindings(),
             Self::Caster(f) => f.bindings(),
@@ -458,6 +468,7 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
         Codec::Feat(f) => feat::read(f, r, cx),
         Codec::Species(f) => species::read(f, r, cx),
         Codec::Children { ty, levelled } => super::child_refs::read(ty, levelled, r, cx),
+        Codec::Offered { ty, optional } => super::child_refs::read_offered(ty, optional, r, cx),
         Codec::Class(f) => class::read(f, r, cx),
         Codec::Feature(f) => class_feature::read(f, r),
         Codec::Caster(f) => caster::read(f, r),
@@ -542,6 +553,9 @@ pub(crate) fn write(
         Codec::Subclass(f) => return subclass::write(f, value, memo, path, out, cx),
         Codec::Background(f) => return background::write(f, value, memo, path, out, cx),
         Codec::Creature(f) => return creature::write(f, value, memo, path, out),
+        Codec::Offered { ty, optional } => {
+            return super::child_refs::write_offered(ty, optional, value, memo, path, out);
+        }
         Codec::Children { ty, levelled } => {
             if let Some(m) = memo.filter(|m| m.value == *value) {
                 let rules: Vec<borealis_content::Rule> = m
@@ -654,7 +668,8 @@ pub(crate) fn write(
         | Codec::Subclass(_)
         | Codec::Background(_)
         | Codec::Creature(_)
-        | Codec::Children { .. } => {
+        | Codec::Children { .. }
+        | Codec::Offered { .. } => {
             unreachable!("written above")
         }
         Codec::Target => {
@@ -734,6 +749,7 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
         | Codec::Background(_)
         | Codec::Creature(_)
         | Codec::Children { .. }
+        | Codec::Offered { .. }
         | Codec::Blocks => {}
     }
     Ok(())

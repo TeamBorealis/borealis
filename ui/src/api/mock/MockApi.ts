@@ -974,11 +974,12 @@ export class MockApi implements Api {
   async homebrewCreatePack({ request }: Parameters<Api["homebrewCreatePack"]>[0]) { await this.tick(); return this.homebrew.createPack(request); }
   async homebrewUpdatePack({ packId, patch }: Parameters<Api["homebrewUpdatePack"]>[0]) { await this.tick(); return this.homebrew.updatePack(packId, patch); }
   async homebrewListElements({ packId }: { packId: string }) { await this.tick(); return this.homebrew.listElements(packId); }
-  async homebrewNewDraft({ packId, kind, copyFrom, parentId, deepCopy }: Parameters<Api["homebrewNewDraft"]>[0]) {
+  async homebrewNewDraft({ packId, kind, copyFrom, parentId, parentKey, deepCopy }: Parameters<Api["homebrewNewDraft"]>[0]) {
     await this.tick();
     const loaded = copyFrom ? this.content.search({ query: "", limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items.find((e) => e.id === copyFrom) : undefined;
-    return this.homebrew.newDraft(packId, kind, copyFrom, parentId, deepCopy, loaded ? { name: loaded.name, type: loaded.type } : undefined);
+    return this.homebrew.newDraft(packId, kind, copyFrom, parentId, deepCopy, loaded ? { name: loaded.name, type: loaded.type } : undefined, parentKey);
   }
+  async homebrewChildUse({ draftId, childKey }: Parameters<Api["homebrewChildUse"]>[0]) { await this.tick(); return this.homebrew.childUse(draftId, childKey); }
   async homebrewOpenDraft({ packId, elementId, draftId }: Parameters<Api["homebrewOpenDraft"]>[0]) { await this.tick(); return this.homebrew.openDraft(packId, elementId, draftId); }
   async homebrewUpdateDraft({ draftId, form }: Parameters<Api["homebrewUpdateDraft"]>[0]) { await this.tick(); return this.homebrew.updateDraft(draftId, form); }
   async homebrewCheckDraft({ draftId }: { draftId: string }) { await this.tick(); return this.homebrew.checkDraft(draftId); }
@@ -996,7 +997,7 @@ export class MockApi implements Api {
     // adds them to the rest
     const copying = filters?.srdOnly === true ? "srd" : filters?.srdOnly === false ? "any" : undefined;
     const loaded = copying === "srd" ? [] : this.content.search({ query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items;
-    return referenceRows(loaded, this.homebrew.pickerRows(draftId, copying), target, query, page);
+    return referenceRows(loaded, this.homebrew.pickerRows(draftId, copying, target.tags ?? []), target, query, page);
   }
   async homebrewWhereUsed({ elementId }: { elementId: string }) { await this.tick(); return this.homebrew.whereUsed(elementId, this.loadedElements()); }
   async homebrewSpellList({ packId, listTag }: { packId: string; listTag: string }) { await this.tick(); return this.homebrew.spellList(packId, listTag, this.loadedElements()); }

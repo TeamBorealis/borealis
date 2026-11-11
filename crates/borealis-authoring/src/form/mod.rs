@@ -45,7 +45,7 @@ pub use block::{Block, BlockCodec, BlockMemo};
 pub use block_codec::CatalogBlockCodec;
 pub(crate) use block_codec::INCOMPLETE;
 pub use bulk::{bulk_patched, tag_field, with_tag, BulkChange};
-pub use child_refs::{add_child, new_child_key, ChildEntry, ParentInfo};
+pub use child_refs::{add_child, add_child_in, child_form, new_child_key, ChildEntry, ParentInfo};
 pub use codec::{
     feat_parameter_words, feat_params, param_key, ArmorClassValue, BackgroundField, CasterField,
     ChallengeValue, Characteristic, ChoiceRow, ClassField, CreatureField, FeatGrant, FeatureField,
@@ -71,9 +71,9 @@ pub use other::{
 };
 pub use paths::{check_fields, form_path_for_issue, form_path_for_location};
 pub use preserved::{KeptPart, PreservedPart};
-pub use read::{element_group_to_form, element_to_form};
+pub use read::{element_group_to_form, element_to_form, element_tree_to_form};
 pub use repeat::AGAIN_AT;
-pub use subclass::{refresh_subclass, SUBCLASS_FEATURE_KIND, SUBCLASS_KIND};
+pub use subclass::{follow_class, refresh_subclass, SUBCLASS_FEATURE_KIND, SUBCLASS_KIND};
 pub use ui::{assign_ids, merge_ui, refresh_blocks, to_ui};
 pub use write::{form_to_element, form_to_elements};
 

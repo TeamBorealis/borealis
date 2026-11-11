@@ -172,6 +172,7 @@
     "allow-homebrew-discard-draft",
     "allow-homebrew-list-drafts",
     "allow-homebrew-delete-elements",
+    "allow-homebrew-child-use",
     "allow-homebrew-duplicate-element",
     "allow-homebrew-bulk-edit",
     "allow-homebrew-reference-options",

@@ -8,12 +8,12 @@ use crate::dto::{Page, SlotOption};
 use crate::error::ApiResult;
 use crate::homebrew_creator;
 use crate::homebrew_dto::{
-    HomebrewBlockSpec, HomebrewBulkPatch, HomebrewBulkResult, HomebrewDeleteResult,
-    HomebrewDraftSummary, HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary,
-    HomebrewExportResult, HomebrewForm, HomebrewPackPatch, HomebrewPackRequest,
-    HomebrewPageRequest, HomebrewPickerFilters, HomebrewPickerRow, HomebrewPickerTarget,
-    HomebrewProblem, HomebrewSaveResult, HomebrewSpellListView, HomebrewStatGroup,
-    HomebrewTrialChange, HomebrewTrialSetup, HomebrewTrialView,
+    HomebrewBlockSpec, HomebrewBulkPatch, HomebrewBulkResult, HomebrewCharacterRef,
+    HomebrewDeleteResult, HomebrewDraftSummary, HomebrewDraftView, HomebrewElementRef,
+    HomebrewElementSummary, HomebrewExportResult, HomebrewForm, HomebrewPackPatch,
+    HomebrewPackRequest, HomebrewPageRequest, HomebrewPickerFilters, HomebrewPickerRow,
+    HomebrewPickerTarget, HomebrewProblem, HomebrewSaveResult, HomebrewSpellListView,
+    HomebrewStatGroup, HomebrewTrialChange, HomebrewTrialSetup, HomebrewTrialView,
 };
 use crate::state::AppState;
 use tauri::State;
@@ -78,15 +78,27 @@ pub fn homebrew_new_draft(
     kind: String,
     copy_from: Option<String>,
     parent_id: Option<String>,
+    parent_key: Option<String>,
     deep_copy: Option<bool>,
 ) -> ApiResult<HomebrewDraftView> {
-    state.homebrew_new_draft(
+    state.homebrew_new_draft_in(
         &pack_id,
         &kind,
         copy_from.as_deref(),
         parent_id.as_deref(),
+        parent_key.as_deref(),
         deep_copy,
     )
+}
+
+/// Local characters that use a saved child of a draft (asked before it is removed from its parent; spec 10.3).
+#[tauri::command(async)]
+pub fn homebrew_child_use(
+    state: State<'_, AppState>,
+    draft_id: String,
+    child_key: String,
+) -> ApiResult<Vec<HomebrewCharacterRef>> {
+    state.homebrew_child_use(&draft_id, &child_key)
 }
 
 /// Open a saved element, resuming its draft, or resume a draft by id (spec 10.1).

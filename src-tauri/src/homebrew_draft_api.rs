@@ -10,8 +10,8 @@ use crate::content_packs::EventSink;
 use crate::error::{ApiError, ApiResult};
 use crate::homebrew_drafts::{new_draft_id, DraftFile, HB_DRAFT_FORMAT};
 use crate::homebrew_dto::{
-    HomebrewDraftSummary, HomebrewDraftView, HomebrewGeneratedView, HomebrewProblem,
-    HomebrewSaveResult,
+    HomebrewCharacterRef, HomebrewDraftSummary, HomebrewDraftView, HomebrewGeneratedView,
+    HomebrewProblem, HomebrewSaveResult,
 };
 use crate::homebrew_files::PackWrite;
 use crate::homebrew_packs::{CommitError, CreatorPack};
@@ -19,14 +19,15 @@ use crate::ids::rfc3339;
 use crate::state::{AppState, ContentHub, BUNDLED_PACKS};
 use borealis_authoring::check::{issue_problems, Problem};
 use borealis_authoring::form::{
-    add_child, assign_ids, copy_child, copy_element, data_json, data_tree, element_group_to_form,
-    kind, merge_ui, new_background_form, new_child_key, new_class_form, new_creature_form,
-    refresh_blocks, to_ui, write_copy, CatalogBlockCodec, Copy, CopyExtras, FormContext, FormState,
-    WithElements, BACKGROUND_KIND, CLASS_KIND, CREATURE_KIND, SUBCLASS_KIND,
+    add_child_in, assign_ids, child_form, copy_child, copy_element, data_json, data_tree,
+    element_tree_to_form, follow_class, kind, merge_ui, new_background_form, new_child_key,
+    new_class_form, new_creature_form, refresh_blocks, to_ui, write_copy, CatalogBlockCodec, Copy,
+    CopyExtras, FormContext, FormState, WithElements, BACKGROUND_KIND, CLASS_KIND, CREATURE_KIND,
+    SUBCLASS_KIND,
 };
 use borealis_authoring::pack::{
-    bump_patch, digest, granted_children, pack_edition, source_name, with_elements,
-    without_elements, CopiedFrom, CreatorElement, SOURCE_TYPE,
+    bump_patch, descendants, digest, pack_edition, source_name, with_elements, without_elements,
+    CopiedFrom, CreatorElement, SOURCE_TYPE,
 };
 use borealis_content::{Element, Ruleset};
 use serde_json::{json, Value};
@@ -171,8 +172,25 @@ impl AppState {
         parent_id: Option<&str>,
         deep_copy: Option<bool>,
     ) -> ApiResult<HomebrewDraftView> {
+        self.homebrew_new_draft_in(pack_id, kind_id, copy_from, parent_id, None, deep_copy)
+    }
+
+    /// [`Self::homebrew_new_draft`] with `parent_key`: the child is made inside that child form of the parent's draft
+    /// (a background variant's own feature, a racial trait's lineage option; nested children).
+    ///
+    /// # Errors
+    /// As [`Self::homebrew_new_draft`]; `not_found` for a key no form of the parent's draft has.
+    pub fn homebrew_new_draft_in(
+        &self,
+        pack_id: &str,
+        kind_id: &str,
+        copy_from: Option<&str>,
+        parent_id: Option<&str>,
+        parent_key: Option<&str>,
+        deep_copy: Option<bool>,
+    ) -> ApiResult<HomebrewDraftView> {
         if let Some(parent) = parent_id {
-            return self.hb_new_child(pack_id, kind_id, parent, copy_from);
+            return self.hb_new_child(pack_id, kind_id, parent, parent_key, copy_from);
         }
         let pack = self.hb_pack(pack_id)?;
         let hub = self.hub()?;
@@ -262,11 +280,12 @@ impl AppState {
             .iter()
             .find(|e| e.id == element_id && e.ty != SOURCE_TYPE)
             .ok_or_else(|| ApiError::not_found("That element isn't in this pack any more."))?;
-        let children = granted_children(el, elements);
+        // its children, and theirs (a variant's feature, a trait's lineage options)
+        let children = descendants(el, elements);
         let hub = self.hub()?;
         let codec = CatalogBlockCodec;
         let cx = Self::hb_context(&hub, &codec);
-        let form = element_group_to_form(el, &children, &cx);
+        let form = element_tree_to_form(el, elements, &cx);
         let base: Vec<&Element> = std::iter::once(el)
             .chain(children.iter().copied())
             .collect();
@@ -393,6 +412,17 @@ impl AppState {
             .filter(|id| !saved.iter().any(|s| s == id))
             .collect();
         let (content, trashed) = without_elements(&pack.disk.content, &dropped);
+        // a renamed class keeps offering the pack's saved subclasses: they take its new tag (spec 4.7)
+        let followed: Vec<Element> = if form.kind == CLASS_KIND {
+            let before: Vec<Element> = Self::hb_base(&pack, &draft.base_ids)
+                .into_iter()
+                .flatten()
+                .cloned()
+                .collect();
+            follow_class(&before, &elements, &content.elements)
+        } else {
+            Vec::new()
+        };
         let at = now();
         let mut creator = pack.creator.with_retired(dropped.iter().copied());
         for w in &written {
@@ -418,11 +448,16 @@ impl AppState {
         manifest.version = bump_patch(&manifest.version);
         let next = PackWrite {
             manifest,
-            content: with_elements(&content, &elements),
+            content: with_elements(&content, &[elements.clone(), followed.clone()].concat()),
             creator,
             trashed,
         };
-        match self.hb_commit(&pack, &next, &saved, sink) {
+        let checked: Vec<String> = saved
+            .iter()
+            .cloned()
+            .chain(followed.iter().map(|e| e.id.clone()))
+            .collect();
+        match self.hb_commit(&pack, &next, &checked, sink) {
             Ok(()) => {}
             Err(CommitError::Api(e)) => return Err(e),
             Err(CommitError::Problems(issues)) => {
@@ -440,6 +475,33 @@ impl AppState {
             pack: self.hb_pack_dto(&draft.pack_id)?,
             element_ids: saved,
         })
+    }
+
+    /// Local characters that use a saved child of a draft, or the saved children inside it (spec 10.3's scan): asked
+    /// before a saved feature, trait or variant is removed from its parent, since the save deletes and retires it. A
+    /// child the draft made (no saved id) is used by no one.
+    ///
+    /// # Errors
+    /// `not_found` for an unknown draft.
+    pub fn homebrew_child_use(
+        &self,
+        draft_id: &str,
+        child_key: &str,
+    ) -> ApiResult<Vec<HomebrewCharacterRef>> {
+        let draft = self.hb_drafts.get(&self.paths.data, draft_id)?;
+        let Some(child) = child_form(&draft.form, child_key) else {
+            return Ok(Vec::new());
+        };
+        let ids: HashSet<&str> = child
+            .flatten()
+            .into_iter()
+            .filter_map(FormState::id)
+            .filter(|id| draft.base_ids.iter().any(|b| b == id))
+            .collect();
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        self.hb_characters_using(&ids)
     }
 
     /// Drop a draft (its file too).
@@ -549,6 +611,7 @@ impl AppState {
         pack_id: &str,
         kind_id: &str,
         parent_id: &str,
+        parent_key: Option<&str>,
         copy_from: Option<&str>,
     ) -> ApiResult<HomebrewDraftView> {
         let pack = self.hb_pack(pack_id)?;
@@ -585,7 +648,13 @@ impl AppState {
             &mut child,
             &source_name(&pack.disk.manifest, &pack.disk.content),
         );
-        let form = add_child(&draft.form, child, None).ok_or_else(|| {
+        let in_key = parent_key.unwrap_or(&draft.form.key);
+        if child_form(&draft.form, in_key).is_none() {
+            return Err(ApiError::not_found(
+                "That part isn't in this element any more.",
+            ));
+        }
+        let form = add_child_in(&draft.form, in_key, child, None).ok_or_else(|| {
             ApiError::invalid(format!(
                 "A {} can't be made inside this element.",
                 k.label.to_lowercase()

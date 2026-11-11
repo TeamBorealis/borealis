@@ -21,6 +21,7 @@ import { type CopyChoice, NewElementFlyout, creatableKinds } from "./NewElementF
 import { rememberPack } from "./packs";
 import { countProblems, fieldDomId, fieldKeyOf, problemsLine, tabOf } from "./problems";
 import { useDraft } from "./useDraft";
+import { findForm } from "./class/children";
 import { useMessageBox } from "./useMessageBox";
 import "../builder/builder.css";
 import "./homebrew.css";
@@ -265,19 +266,43 @@ export function PackWorkspace() {
 
   /** A child of the open element (WB-16): what is pending is sent first, then the backend makes the child inside the
    * draft (`homebrew_new_draft {parentId}`), and its answer is one undoable edit (with `place`'s changes). */
-  const newChild = async (kindId: string, place?: (form: HomebrewForm, key: string) => HomebrewForm): Promise<string | null> => {
+  const newChild = async (kindId: string, place?: (form: HomebrewForm, key: string) => HomebrewForm, parentKey?: string): Promise<string | null> => {
     const draftId = draft.view?.draftId;
     if (!draftId) return null;
     try {
       if (!(await draft.flush())) return null;
-      const view = await api.homebrewNewDraft({ packId, kind: kindId, parentId: draftId });
-      const key = view.form.children[view.form.children.length - 1]?.key;
+      // `parentKey`: inside that child of the draft (a variant's own feature, a trait's lineage option)
+      const view = await api.homebrewNewDraft({ packId, kind: kindId, parentId: draftId, ...(parentKey ? { parentKey } : {}) });
+      const holder = parentKey ? findForm(view.form, parentKey) : view.form;
+      const key = holder?.children[holder.children.length - 1]?.key;
       if (!key) return null;
       draft.edit(place ? place(view.form, key) : view.form);
       return key;
     } catch (e) {
       toast.push(errorMessage(e), "error");
       return null;
+    }
+  };
+
+  /** Before a saved child leaves its parent (it is deleted on save): the local characters that use it, and the question
+   * element delete asks (spec 10.3). */
+  const confirmRemove = async (childKey: string, name: string): Promise<boolean> => {
+    const draftId = draft.view?.draftId;
+    if (!draftId) return true;
+    try {
+      if (!(await draft.flush())) return false;
+      const used = await api.homebrewChildUse({ draftId, childKey });
+      if (used.length === 0) return true;
+      const who = `${used.length} character${used.length === 1 ? "" : "s"}`;
+      const r = await ask({
+        title: "Remove", cancelId: "cancel",
+        message: `${who} use ${name}: ${used.map((c) => c.name).join(", ")}. They will lose it when you save. Remove anyway?`,
+        buttons: [{ id: "remove", label: "Remove", variant: "danger" }, { id: "cancel", label: "Cancel" }],
+      });
+      return r === "remove";
+    } catch (e) {
+      toast.push(errorMessage(e), "error");
+      return false;
     }
   };
 
@@ -289,7 +314,7 @@ export function PackWorkspace() {
     duplicate: () => void duplicate(),
     focusFilter: () => { setPane("elements"); setMobileView("list"); setTimeout(() => filterRef.current?.focus(), 0); },
     tryIt,
-    tab: (a) => { const t = openKind ? editorTabs(openKind, narrow, editionOf(draft.form))[a.index ?? 0] : undefined; if (t) setTab(t.id); },
+    tab: (a) => { const t = openKind ? editorTabs(openKind, narrow, editionOf(draft.form), draft.form)[a.index ?? 0] : undefined; if (t) setTab(t.id); },
     rename: () => focusField("name", true),
     addBlock: () => {
       const rules = openKind?.fields.find((f) => f.control === "blocks");
@@ -320,7 +345,8 @@ export function PackWorkspace() {
   const spellLists = <SpellLists packId={packId} narrow={narrow} described={described} onDescribe={setDescribed} handle={lists} onSaved={() => setWritten((n) => n + 1)} />;
   const editor = openKind && draft.form
     ? <Editor kind={openKind} kinds={kinds.data ?? []} draft={draft} tab={tab} onTab={setTab} narrow={narrow} preview={preview} tryItOpen={tryItOpen}
-      actions={{ onSave: () => void save(), onTryIt: tryIt, onTryItClose: () => setTryItOpen(false), onDuplicate: () => void duplicate(), onJump: jump, onNewChild: newChild }} />
+      actions={{ onSave: () => void save(), onTryIt: tryIt, onTryItClose: () => setTryItOpen(false), onDuplicate: () => void duplicate(), onJump: jump, onNewChild: newChild, onConfirmRemove: confirmRemove,
+        onPackChanged: () => { elements.reload(); packs.reload(); setWritten((n) => n + 1); } }} />
     : <div className="hb-empty"><p>Choose an element in the list, or make a new one.</p><Button onClick={() => setNewOpen(true)} disabled={offered.length === 0}>New element</Button></div>;
   const chosen = rows.filter((r) => selected.has(r.id));
   const list = (
