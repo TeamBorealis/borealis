@@ -1,7 +1,9 @@
 import type {
-  ApiError, BookRuleset, ContentPack, ElementDetail, ElementType, HomebrewDeleteResult, HomebrewDraftSummary, HomebrewDraftView, HomebrewElementSummary,
-  HomebrewForm, HomebrewKindDescriptor, HomebrewKindId, HomebrewPackPatch, HomebrewPackRequest, HomebrewPickerRow, HomebrewProblem, HomebrewSaveResult, Ruleset,
+  ApiError, BookRuleset, ContentPack, ElementDetail, ElementSummary, ElementType, HomebrewBulkPatch, HomebrewBulkResult, HomebrewDeleteResult, HomebrewDraftSummary,
+  HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary, HomebrewForm, HomebrewKindDescriptor, HomebrewKindId, HomebrewPackPatch, HomebrewPackRequest,
+  HomebrewPickerRow, HomebrewProblem, HomebrewSaveResult, HomebrewSpellListRow, HomebrewSpellListView, Ruleset,
 } from "../types";
+import { formUse, generatedOf, hasTag, listingClasses, loadedListRow, tagsOf, textOf, withTags } from "./homebrew-expert";
 import { apiError } from "./errors";
 import { descriptionHtml, formProblems } from "./homebrew-check";
 import { addChild, newChildKey, newClassForm, newForm } from "./homebrew-class";
@@ -67,7 +69,12 @@ interface OwnPack {
   pack: ContentPack;
   code: string;
   elements: Map<string, { summary: HomebrewElementSummary; form: HomebrewForm }>;
+  /** "Add to this list" appends (HC5): a loaded spell's id and the list tags the pack adds to it. */
+  appends: Map<string, string[]>;
 }
+
+/** An undoable change (spec 10.2, 12.5): the packs it wrote as they were, and the version each change wrote. */
+interface UndoRecord { packs: { before: OwnPack; versionAfter: string }[] }
 
 const rulesetsOf = (edition: BookRuleset): Ruleset[] => (edition === "any" ? ["dnd2014", "dnd2024"] : [edition]);
 
@@ -95,7 +102,7 @@ export class MockHomebrew {
       id, name, version: "1.0.0", kind: "homebrew", rulesets: rulesetsOf(req.edition), elementCount: 0, enabled: true,
       license: req.license ?? "none", attribution: req.author ?? "", sourceIds: [`source-${id}`],
     };
-    this.packs.set(id, { pack, code: req.code, elements: new Map() });
+    this.packs.set(id, { pack, code: req.code, elements: new Map(), appends: new Map() });
     return this.putPack(pack);
   }
 
@@ -112,7 +119,7 @@ export class MockHomebrew {
   listElements(packId: string): HomebrewElementSummary[] {
     const own = this.own(packId);
     const drafted = new Set([...this.drafts.values()].filter((d) => this.touched.has(d.draftId)).map((d) => d.elementId));
-    return [...own.elements.values()].map(({ summary }) => ({ ...summary, hasDraft: drafted.has(summary.id) }));
+    return [...own.elements.values()].map(({ summary, form }) => ({ ...summary, hasDraft: drafted.has(summary.id), tags: tagsOf(form), text: textOf(form) }));
   }
 
   newDraft(packId: string, kindId: HomebrewKindId, copyFrom?: string, parentId?: string, deepCopy?: boolean, loaded?: { name: string; type: ElementType }): HomebrewDraftView {
@@ -198,7 +205,9 @@ export class MockHomebrew {
     const type = k.elementTypes[0] ?? (String(draft.form.fields.type ?? "").trim() || k.label);
     const name = String(draft.form.fields.name).trim();
     const id = draft.elementId ?? this.freeId(own, `ID_${own.code}_${TYPE_TOKENS[type] ?? slug(type)}_${slug(name)}`);
-    const summary: HomebrewElementSummary = { id, name, kind: k.id, elementType: type, parentId: null, edition: null, problems: { errors: 0, warnings: 0 }, hasDraft: false };
+    const summary: HomebrewElementSummary = {
+      id, name, kind: k.id, elementType: type, parentId: null, edition: listEdition(draft.form), problems: { errors: 0, warnings: 0 }, hasDraft: false, tags: [], text: "",
+    };
     const elements = new Map(own.elements).set(id, { summary, form: draft.form });
     const savedWith = (this.companions.get(draftId) ?? []).map((c) => {
       const ck = KINDS.find((x) => x.id === c.kind)!;
@@ -230,9 +239,103 @@ export class MockHomebrew {
   deleteElements(packId: string, elementIds: string[]): HomebrewDeleteResult {
     const own = this.own(packId);
     const elements = new Map([...own.elements].filter(([id]) => !elementIds.includes(id)));
-    const pack = { ...own.pack, elementCount: elements.size, version: bumpPatch(own.pack.version) };
-    this.packs.set(packId, { ...own, pack, elements });
-    return { deleted: true, usedBy: [], pack: this.putPack(pack) };
+    const next = this.write({ ...own, elements });
+    return { deleted: true, usedBy: [], pack: this.putPack(next.pack), undoId: this.record([[own, next]]) };
+  }
+
+  /** Multi-select edits (spec 12.5): edition and tags, a move, or duplicates; one step, undone as one. */
+  bulkEdit(packId: string, elementIds: string[], patch: HomebrewBulkPatch): HomebrewBulkResult {
+    const own = this.own(packId);
+    const chosen = elementIds.map((id) => own.elements.get(id) ?? (() => { throw apiError("not_found", "That element isn't in this pack any more."); })());
+    const fields = patch.edition !== undefined || (patch.addTags?.length ?? 0) > 0 || (patch.removeTags?.length ?? 0) > 0;
+    if (Number(fields) + Number(!!patch.moveToPackId) + Number(!!patch.duplicate) !== 1) throw apiError("invalid_argument", "Choose one change: the edition and tags, a move, or a duplicate.");
+    if (patch.moveToPackId) {
+      const target = this.own(patch.moveToPackId);
+      if (target.pack.id === packId) throw apiError("invalid_argument", "Those elements are in that pack already.");
+      const from = this.write({ ...own, elements: new Map([...own.elements].filter(([id]) => !elementIds.includes(id))) });
+      const moved = chosen.map((e) => [e.summary.id, { ...e, form: { ...e.form, fields: { ...e.form.fields, ...("source" in e.form.fields ? { source: target.pack.name } : {}) } } }] as const);
+      const to = this.write({ ...target, elements: new Map([...target.elements, ...moved]) });
+      return { pack: this.putPack(from.pack), elementIds, undoId: this.record([[own, from], [target, to]]) };
+    }
+    if (patch.duplicate) {
+      const elements = new Map(own.elements);
+      const made = chosen.map((e) => {
+        const name = `${e.summary.name} (copy)`;
+        const id = this.freeId({ ...own, elements }, `${e.summary.id.replace(/_\d+$/, "")}_COPY`);
+        elements.set(id, { summary: { ...e.summary, id, name }, form: { ...e.form, fields: { ...e.form.fields, name } } });
+        return id;
+      });
+      const next = this.write({ ...own, elements });
+      return { pack: this.putPack(next.pack), elementIds: made, undoId: this.record([[own, next]]) };
+    }
+    if (patch.edition !== undefined && patch.edition !== null && chosen.some((e) => e.form.kind === "class" && editionOf(e.form) !== patch.edition)) {
+      throw { ...apiError("invalid_argument", "Some elements can't take that change, so nothing was changed."), details: [{ severity: "error", message: "A class keeps its edition. Make a new class for the other edition.", path: "fields.edition", elementId: null, code: "form" }] };
+    }
+    const changed = chosen.flatMap((e) => {
+      let form = withTags(e.form, patch.addTags ?? [], patch.removeTags ?? []);
+      if (patch.edition !== undefined && editionOf(form) !== patch.edition) form = { ...form, fields: { ...form.fields, edition: patch.edition ?? "" } };
+      return form === e.form ? [] : [[e.summary.id, { summary: { ...e.summary, edition: listEdition(form) }, form }] as const];
+    });
+    if (changed.length === 0) return { pack: own.pack, elementIds: [], undoId: null };
+    const next = this.write({ ...own, elements: new Map([...own.elements, ...changed]) });
+    return { pack: this.putPack(next.pack), elementIds: changed.map(([id]) => id), undoId: this.record([[own, next]]) };
+  }
+
+  /** Undo a delete or a multi-select edit: every pack it wrote as it was, unless one changed since. */
+  undo(undoId: string): ContentPack {
+    const r = this.undos.get(undoId);
+    if (!r) throw apiError("not_found", "That change can't be undone any more.");
+    this.undos.delete(undoId);
+    if (r.packs.some((p) => this.own(p.before.pack.id).pack.version !== p.versionAfter)) throw apiError("requirement_failed", "The pack changed since, so nothing was undone.");
+    const packs = r.packs.map((p) => this.write({ ...p.before, pack: { ...p.before.pack, version: p.versionAfter } }));
+    packs.forEach((p) => this.putPack(p.pack));
+    return packs[0]!.pack;
+  }
+
+  /** Where used (spec 12.3): own elements whose forms name it, and the loaded classes whose list a spell is on. */
+  whereUsed(elementId: string, loaded: readonly ElementSummary[]): HomebrewElementRef[] {
+    const own = [...this.packs.values()].flatMap((p) => [...p.elements.values()].flatMap(({ summary, form }) => {
+      const relation = summary.id === elementId ? null : formUse(form, elementId);
+      return relation ? [{ id: summary.id, name: summary.name, type: summary.elementType, packId: p.pack.id, relation }] : [];
+    }));
+    const saved = [...this.packs.values()].map((p) => p.elements.get(elementId)).find((e) => e !== undefined);
+    const spellTags = saved?.form.kind === "spell" ? tagsOf(saved.form)
+      : [...(loaded.find((e) => e.id === elementId)?.tags ?? []), ...[...this.packs.values()].flatMap((p) => p.appends.get(elementId) ?? [])];
+    const order = ["grants", "selects", "requires", "lists"];
+    return [...own, ...listingClasses(loaded, spellTags)].sort((a, b) => order.indexOf(a.relation) - order.indexOf(b.relation) || a.name.localeCompare(b.name));
+  }
+
+  /** A SPELL LISTS view (spec 12.4): every loaded spell and the pack's own, on the list or not. */
+  spellList(packId: string, tag: string, loaded: readonly ElementSummary[]): HomebrewSpellListView {
+    const own = this.own(packId);
+    if (!tag.trim()) throw apiError("invalid_argument", "Choose a spell list first.");
+    const mine = [...own.elements.values()].filter((e) => e.form.kind === "spell").map(({ summary, form }): HomebrewSpellListRow => ({
+      id: summary.id, name: summary.name, type: "Spell", summary: "", prerequisites: null, sourceName: own.pack.name, edition: summary.edition, draft: false,
+      ...spellRow(form), onList: tagsOf(form).includes(tag), removable: tagsOf(form).includes(tag),
+    }));
+    const others = loaded.filter((e) => e.type === "spell").map((e) => loadedListRow(e, tag, own.appends.get(e.id) ?? []));
+    const rows = [...mine, ...others].sort((a, b) => a.name.localeCompare(b.name));
+    return { listTag: tag, own: false, count: rows.filter((r) => r.onList).length, rows };
+  }
+
+  /** Put spells on a list and take them off: own spells by their lists, loaded ones by the pack's append (HC5). */
+  setSpellList(packId: string, tag: string, add: string[], remove: string[], loaded: readonly ElementSummary[]): HomebrewSpellListView {
+    const own = this.own(packId);
+    const elements = new Map(own.elements);
+    const appends = new Map(own.appends);
+    for (const [id, on] of [...add.map((id) => [id, true] as const), ...remove.map((id) => [id, false] as const)]) {
+      const mine = elements.get(id);
+      if (mine) { elements.set(id, { ...mine, form: withTags(mine.form, on ? [tag] : [], on ? [] : [tag]) }); continue; }
+      const spell = loaded.find((e) => e.id === id);
+      if (!spell) throw apiError("not_found", "That spell isn't loaded any more.");
+      const now = appends.get(id) ?? [];
+      if (!on && hasTag(spell.tags ?? [], tag)) throw { ...apiError("invalid_argument", "Some spells can't be changed on this list."), details: [{ severity: "error", message: `${spell.name} is on the ${tag} list in its own pack. A homebrew pack can only add to that list.`, path: null, elementId: null, code: "form" }] };
+      const next = on ? [...new Set([...now, tag])] : now.filter((t) => t !== tag);
+      if (next.length) appends.set(id, next); else appends.delete(id);
+    }
+    const next = this.write({ ...own, elements, appends });
+    this.putPack(next.pack);
+    return this.spellList(packId, tag, loaded);
   }
 
   duplicateElement(packId: string, elementId: string): HomebrewDraftView {
@@ -315,6 +418,32 @@ export class MockHomebrew {
     };
   }
 
+  private undos = new Map<string, UndoRecord>();
+  private nextUndo = 1;
+
+  /** The pack with a new version (every write bumps its patch number), stored. */
+  private write(own: OwnPack): OwnPack {
+    const next = { ...own, pack: { ...own.pack, elementCount: own.elements.size, version: bumpPatch(own.pack.version) } };
+    this.packs.set(own.pack.id, next);
+    return next;
+  }
+
+  /** Keep an undoable change: each pack as it was, with the version the change wrote. */
+  private record(pairs: [OwnPack, OwnPack][]): string {
+    const id = `undo-${this.nextUndo++}`;
+    this.undos.set(id, { packs: pairs.map(([before, after]) => ({ before, versionAfter: after.pack.version })) });
+    return id;
+  }
+
+  /** The DATA view (spec 12.1) of a draft: the element the mock would store. */
+  private generated(packId: string, elementId: string | null, form: HomebrewForm): HomebrewDraftView["generated"] {
+    const own = this.own(packId);
+    const k = KINDS.find((x) => x.id === form.kind);
+    const type = k?.elementTypes[0] ?? (String(form.fields.type ?? "").trim() || "Element");
+    const id = elementId ?? `ID_${own.code}_${TYPE_TOKENS[type] ?? slug(type)}_${slug(String(form.fields.name ?? ""))}`;
+    return generatedOf(form, id, type, own.pack.name, descriptionHtml(form.fields.description));
+  }
+
   private freeId(own: OwnPack, base: string): string {
     if (!own.elements.has(base)) return base;
     for (let n = 2; ; n += 1) if (!own.elements.has(`${base}_${n}`)) return `${base}_${n}`;
@@ -332,13 +461,22 @@ export class MockHomebrew {
     ];
     const view: HomebrewDraftView = {
       draftId, packId, elementId, form, preview: this.preview(packId, elementId ?? draftId, form), problems, updatedAt: now(), baseChanged: false,
-      generated: { json: JSON.stringify({ name: form.fields.name ?? "" }, null, 2), tree: [] },
+      generated: this.generated(packId, elementId, form),
     };
     this.drafts.set(draftId, view);
     return view;
   }
 }
 
+
+/** A form's own edition, or null for the pack's. */
+function editionOf(form: HomebrewForm): BookRuleset | null {
+  const e = form.fields.edition;
+  return e === "dnd2014" || e === "dnd2024" || e === "any" ? e : null;
+}
+
+/** The element list's edition column: a single edition, else null (the pack's, or either). */
+const listEdition = (form: HomebrewForm): Ruleset | null => { const e = editionOf(form); return e === "any" ? null : e; };
 
 /** The form and its children name the pack's book as their source (the backend's `with_source`). */
 function withSource(form: HomebrewForm, source: string): HomebrewForm {

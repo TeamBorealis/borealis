@@ -254,6 +254,10 @@ export interface HomebrewElementSummary {
   problems: HomebrewProblemCounts;
   /** An unsaved draft of this element exists on this device. */
   hasDraft: boolean;
+  /** Its tags (a spell's lists), for the list filter (spec 12.3). */
+  tags: string[];
+  /** Its summary line and description as plain text (cut short), for the list filter's text search. */
+  text: string;
 }
 
 /** A reference held by a form field: the id travels, the name is shown (spec 5.1). */
@@ -648,12 +652,28 @@ export interface HomebrewProblem {
   code: string;
 }
 
-/** DATA sub-tab (spec 12.1): the stored element(s), read-only. Tree shape owned by WB-23. */
+/** What a DATA tree line holds (`borealis_authoring::form::DataKind`). */
+export type HomebrewDataKind = "object" | "list" | "text" | "html" | "expr" | "number" | "flag" | "empty";
+
+/** One line of the DATA tree (spec 12.1): `key: value`, or a key with lines below it. */
+export interface HomebrewDataNode {
+  /** The key: an object key, a list position from 1, or a setter's name. */
+  key: string;
+  kind: HomebrewDataKind;
+  /** The value as its characters (leaves only; never escaped). */
+  text?: string;
+  /** What it means in plain words: a rule's block sentence, a prerequisite's sentence. */
+  sentence?: string;
+  children?: HomebrewDataNode[];
+}
+
+/** DATA sub-tab (spec 12.1): the stored element(s), read-only. */
 export interface HomebrewGeneratedView {
-  /** The canonical element JSON, one per element of the draft, for "Copy as JSON". */
+  /** The elements as the content file writes them (`ContentFile::to_json_pretty`'s writer: one element as an object,
+   * several as a list), for "Copy as JSON". */
   json: string;
-  /** The indented `key: value` tree. */
-  tree: Record<string, unknown>[];
+  /** The indented `key: value` tree, one top line per element (named by the element's name). */
+  tree: HomebrewDataNode[];
 }
 
 /** An open draft (spec 10.1). */
@@ -702,15 +722,30 @@ export interface HomebrewDeleteResult {
   usedBy: HomebrewCharacterRef[];
   /** The pack after the delete; null when nothing was deleted. */
   pack: ContentPack | null;
+  /** The toast's Undo (`homebrewUndo`), when something was deleted. */
+  undoId: string | null;
 }
 
 /** Multi-select edits (spec 12.5): one undoable step, one save. */
 export interface HomebrewBulkPatch {
-  edition?: Ruleset | null;
+  /** The elements' own edition (`any`: either edition); null = the pack's. */
+  edition?: BookRuleset | null;
   addTags?: string[];
   removeTags?: string[];
-  /** Move the elements to another homebrew pack. */
+  /** Move the elements to another homebrew pack (ids, provenance and editions kept). */
   moveToPackId?: string;
+  /** Copies inside the same pack ("<Name> (copy)", new ids; a class with its features and subclasses). */
+  duplicate?: boolean;
+}
+
+/** A multi-select edit done (spec 12.5): one step, undone as one (`homebrewUndo`). */
+export interface HomebrewBulkResult {
+  /** The pack the elements were in, after the change. */
+  pack: ContentPack;
+  /** The elements changed, moved or made; empty when nothing needed a change. */
+  elementIds: string[];
+  /** The toast's Undo; null when nothing changed. */
+  undoId: string | null;
 }
 
 /** Filters of a reference picker (spec 5.1, `PickerFilterBar` + `EditionSegments`; spells add the Magic filter bar). */
@@ -760,16 +795,9 @@ export interface HomebrewElementRef {
   relation: HomebrewUseRelation;
 }
 
-/** One spell of a SPELL LISTS grid (spec 12.4). */
-export interface HomebrewSpellListRow {
-  id: string;
-  name: string;
-  level: number;
-  school: string;
-  verbal: boolean;
-  somatic: boolean;
-  material: boolean;
-  sourceName: string;
+/** One spell of a SPELL LISTS grid (spec 12.4): its picker row (the Magic grid's columns and filter facts) and its place
+ * on the list. */
+export interface HomebrewSpellListRow extends HomebrewPickerRow {
   /** On the list. */
   onList: boolean;
   /** The pack can remove it (an own spell or an own append). */

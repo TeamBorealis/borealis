@@ -6,6 +6,7 @@ import { CasterSection } from "./caster/CasterSection";
 import { SpellcastingTab } from "./caster/SpellcastingTab";
 import type { ChildEditing } from "./class/ChildDialog";
 import { CreatorEnvProvider } from "./env";
+import { DataView } from "./DataView";
 import { Band } from "../spells/TwoPane";
 import "../equipment/equipment.css";
 import { FieldView } from "./FieldView";
@@ -16,6 +17,8 @@ import type { AutosaveState } from "./draftSession";
 
 /** The phone's own sub-tab for the live description (spec 16: the description pane becomes PREVIEW). */
 export const PREVIEW_TAB: HomebrewTab = { id: "preview", label: "PREVIEW" };
+/** The read-only generated-data view every kind has (spec 12.1, 13.3: the last of the editor's sub-tabs). */
+export const DATA_TAB: HomebrewTab = { id: "data", label: "DATA" };
 
 const AUTOSAVE_TEXT: Record<AutosaveState, string> = {
   saved: "All changes kept on this device",
@@ -74,7 +77,7 @@ export function editorTabs(kind: HomebrewKindDescriptor, narrow: boolean, editio
     const own = kind.fields.filter((f) => f.tab === t.id);
     return own.length === 0 || own.some((f) => forEdition(f, edition));
   });
-  return narrow ? [...shown, PREVIEW_TAB] : shown;
+  return narrow ? [...shown, DATA_TAB, PREVIEW_TAB] : [...shown, DATA_TAB];
 }
 
 /**
@@ -133,7 +136,7 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
         </div>
         {hasExpert && narrow && <div className="hb-expert-row">{expertSwitch}</div>}
         <div role="tabpanel" id="hb-tab-panel" aria-labelledby={`hb-tab-${current}`} className="hb-tabpanel">
-          {current === PREVIEW_TAB.id ? preview : current === SPELLCASTING_TAB && (kind.id === "class" || kind.id === "subclass")
+          {current === PREVIEW_TAB.id ? preview : current === DATA_TAB.id ? <DataView generated={draft.view?.generated} /> : current === SPELLCASTING_TAB && (kind.id === "class" || kind.id === "subclass")
             ? <SpellcastingTab editing={childEditing} expert={expert} />
             : current === SPELLCASTING_TAB
               ? <CasterSection fields={fields} form={form} problems={draft.problems} edition={edition} expert={expert}
@@ -151,7 +154,7 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
                 </div>
               </div>
             ))}
-          {current === tabs[0]?.id && <PreservedList parts={form.preserved} onRemove={removePreserved} />}
+          {current === tabs[0]?.id && current !== DATA_TAB.id && <PreservedList parts={form.preserved} onRemove={removePreserved} />}
         </div>
         {narrow && commands}
       </section>

@@ -7,7 +7,6 @@ use crate::content_dto::ContentPack;
 use crate::dto::{CharacterSnapshot, Ruleset};
 use crate::dto_ext::ElementDetail;
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_json::Value;
 
 /// One editor sub-tab (`general`, `levels`, `rules`...).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -205,6 +204,10 @@ pub struct HomebrewElementSummary {
     pub edition: Option<Ruleset>,
     pub problems: HomebrewProblemCounts,
     pub has_draft: bool,
+    /// Its tags (a spell's lists), for the list filter (spec 12.3).
+    pub tags: Vec<String>,
+    /// Its summary line and description as plain text (cut short), for the list filter's text search.
+    pub text: String,
 }
 
 /// One rule block of a form: `borealis_authoring::form::Block` (its `memo` never travels: `to_ui` strips it).
@@ -231,12 +234,17 @@ pub struct HomebrewProblem {
     pub code: String,
 }
 
-/// DATA sub-tab content.
+/// One line of the DATA tree (spec 12.1): `borealis_authoring::form::DataNode`.
+pub type HomebrewDataNode = borealis_authoring::form::DataNode;
+
+/// DATA sub-tab content (spec 12.1).
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HomebrewGeneratedView {
+    /// The elements as the content file writes them ("Copy as JSON").
     pub json: String,
-    pub tree: Vec<Value>,
+    /// The indented `key: value` tree, one top line per element.
+    pub tree: Vec<HomebrewDataNode>,
 }
 
 /// An open draft.
@@ -289,6 +297,8 @@ pub struct HomebrewDeleteResult {
     pub deleted: bool,
     pub used_by: Vec<HomebrewCharacterRef>,
     pub pack: Option<ContentPack>,
+    /// The Undo of the toast (`homebrew_undo`), when something was deleted.
+    pub undo_id: Option<String>,
 }
 
 /// Multi-select edits. `edition: null` clears an element's own edition (the pack's applies).
@@ -300,6 +310,20 @@ pub struct HomebrewBulkPatch {
     pub add_tags: Option<Vec<String>>,
     pub remove_tags: Option<Vec<String>>,
     pub move_to_pack_id: Option<String>,
+    /// Copies inside the same pack ("<Name> (copy)", new ids; a class with its features and subclasses).
+    pub duplicate: Option<bool>,
+}
+
+/// A multi-select edit done (spec 12.5): one step, undone as one (`homebrew_undo`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomebrewBulkResult {
+    /// The pack the elements were in (after the change).
+    pub pack: ContentPack,
+    /// The elements changed, moved or made; empty when nothing needed a change.
+    pub element_ids: Vec<String>,
+    /// The Undo of the toast; `None` when nothing changed.
+    pub undo_id: Option<String>,
 }
 
 /// Picker filters.
@@ -358,19 +382,15 @@ pub struct HomebrewElementRef {
     pub relation: String,
 }
 
-/// One spell of a SPELL LISTS grid.
+/// One spell of a SPELL LISTS grid: its picker row (the Magic grid's columns and filter facts) and its place on the
+/// list.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HomebrewSpellListRow {
-    pub id: String,
-    pub name: String,
-    pub level: u32,
-    pub school: String,
-    pub verbal: bool,
-    pub somatic: bool,
-    pub material: bool,
-    pub source_name: String,
+    #[serde(flatten)]
+    pub row: HomebrewPickerRow,
     pub on_list: bool,
+    /// The pack can take it off (its own spell, or its own append put it there).
     pub removable: bool,
 }
 

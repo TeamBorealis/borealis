@@ -218,7 +218,7 @@ describe("WB-09 HOMEBREW pack list and workspace", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /Problems \(0\)/ })).toBeTruthy());
 
     // The sub-tab band shows the kind's tabs; the description pane shows the element live.
-    expect(within(editor()).getAllByRole("tab").map((t) => t.textContent)).toEqual(["GENERAL", "RULES", "DESCRIPTION"]);
+    expect(within(editor()).getAllByRole("tab").map((t) => t.textContent)).toEqual(["GENERAL", "RULES", "DESCRIPTION", "DATA"]);
     const pane = screen.getAllByRole("complementary", { name: "Description" }).at(-1)!;
     expect(within(pane).getByRole("heading", { name: "Ember Bolt" })).toBeTruthy();
 

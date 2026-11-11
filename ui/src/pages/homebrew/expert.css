@@ -1,0 +1,58 @@
+/* Homebrew creator expert features (spec 12, 13.7, 13.14): DATA view, WHERE USED, the list filter and multi-select bar,
+   SPELL LISTS, the keyboard map. Existing tokens only (U7, HC4). */
+
+/* Element list column: the list, then the multi-select bar */
+.hb-list-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.hb-list-col > .hb-elements { flex: 1 1 0; }
+.hb-problems-only { flex: none; }
+.hb-pick { width: 26px; }
+.hb-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; padding: 6px; background: var(--accent-40); border: 1px solid var(--accent-80); }
+.hb-bulk-count { flex: 1 1 100%; font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text); }
+.hb-tool.hb-danger { background: var(--aur-danger); color: var(--text); }
+.hb-keys-btn { margin-left: auto; height: 22px; min-height: 22px; }
+
+/* WHERE USED, under the live description */
+.hb-where { flex: none; max-height: 40%; overflow-y: auto; padding: 0 12px 12px; border-top: 2px solid #1a1c1d; }
+.hb-where .ap-band h2 { font-size: 12px; }
+.hb-where-list { list-style: none; margin: 4px 0 0; padding: 0; }
+.hb-where-list li { padding: 3px 0; border-bottom: 1px solid #1f1f1f; }
+.hb-where-list .ap-name { font-size: 12px; }
+.hb-where-what { display: block; font-size: 10px; color: var(--text-secondary); }
+.hb-row-kind { margin-left: 6px; font-size: 10px; color: var(--text-secondary); }
+
+/* DATA (13.14: the description pane's #101010, body ~12, read-only) */
+.hb-data { background: #101010; padding: 8px 10px; min-height: 0; }
+.hb-data-tools { margin-bottom: 4px; }
+.hb-data-tree, .hb-data-tree ul { list-style: none; margin: 0; padding: 0; }
+.hb-data-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; min-height: 18px; font-size: 12px; line-height: 18px; }
+.hb-data-key { color: var(--text-secondary); font-weight: 600; }
+.hb-data-val { color: var(--text-body); white-space: pre-wrap; word-break: break-word; }
+.hb-data-expr, .hb-data-number, .hb-data-flag { color: var(--gold); }
+.hb-data-empty { color: var(--gray-2); font-style: italic; }
+.hb-data-html { flex: 1 1 100%; padding-left: 14px; }
+.hb-data-html .rich p { margin: 0 0 4px; }
+.hb-data-sentence { color: var(--text-secondary); font-style: italic; }
+
+/* SPELL LISTS (13.7: the Magic filter bar and grid) */
+.hb-ws-left.hb-lists-view { grid-template-columns: 170px minmax(0, 1fr); }
+.hb-lists { display: flex; flex-direction: column; gap: 6px; min-height: 0; min-width: 0; }
+.hb-lists .ap-band h2 { font-size: 12px; }
+.hb-lists-count { margin-left: auto; font-size: 11px; color: var(--gold); }
+.hb-lists-head { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.hb-lists-pick { flex: 0 1 240px; }
+.hb-lists-other { display: flex; gap: 6px; align-items: center; flex: 0 1 300px; }
+.hb-lists .hb-spell-picker { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+.hb-filter-fold { align-self: flex-start; }
+
+/* Keyboard map */
+.hb-keys { border-collapse: collapse; margin-bottom: 12px; width: 100%; }
+.hb-keys th, .hb-keys td { text-align: left; padding: 3px 8px 3px 0; font-size: 12px; font-weight: 400; border-bottom: 1px solid #2a2a2a; }
+.hb-keys th { width: 40%; white-space: nowrap; }
+.hb-keys kbd { font: inherit; font-weight: 600; color: var(--text); }
+
+/* Phones (spec 16) */
+.hb-ws.narrow .hb-where { max-height: none; border-top: 0; padding: 0; }
+.hb-ws.narrow .hb-lists .hb-spell-picker { flex: none; }
+html.phone .hb-bulk { background: var(--ph-raised); border: 0; border-radius: var(--ph-r-md); }
+html.phone .hb-bulk-count { font: 600 var(--ph-t-foot)/1.2 var(--ph-font-ui); text-transform: none; color: var(--ph-text); }
+html.phone .hb-pick input { width: 24px; height: 24px; }

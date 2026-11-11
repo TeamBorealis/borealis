@@ -63,7 +63,7 @@ describe("WB-14 background form (mock)", () => {
     const api = new MockApi({ creatorEnabled: true });
     const { last } = await newBackground(user, api, "dnd2024", "Ember Warden");
     expect(sections()).toEqual(["Ability scores", "Origin feat", "Proficiencies", "Details"]);
-    expect(tabs()).toEqual(["GENERAL", "EQUIPMENT", "RULES", "DESCRIPTION"]);
+    expect(tabs()).toEqual(["GENERAL", "EQUIPMENT", "RULES", "DESCRIPTION", "DATA"]);
     for (const s of ["Pick three abilities.", "Choose the origin feat.", "Pick two skills."]) {
       await waitFor(() => expect(screen.getAllByText(s).length).toBeGreaterThan(0));
     }
@@ -91,7 +91,7 @@ describe("WB-14 background form (mock)", () => {
     const api = new MockApi({ creatorEnabled: true });
     const { last } = await newBackground(user, api, "dnd2014", "Hermit");
     expect(sections()).toEqual(["Proficiencies", "Feature", "Details"]);
-    expect(tabs()).toEqual(["GENERAL", "CHARACTERISTICS", "EQUIPMENT", "RULES", "DESCRIPTION"]);
+    expect(tabs()).toEqual(["GENERAL", "CHARACTERISTICS", "EQUIPMENT", "RULES", "DESCRIPTION", "DATA"]);
     await waitFor(() => expect(screen.getByRole("button", { name: /Problems \(0\)/ })).toBeTruthy());
 
     await user.click(within(editor()).getByRole("button", { name: "Add a choice" }));

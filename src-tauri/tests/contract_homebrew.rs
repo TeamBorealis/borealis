@@ -201,6 +201,8 @@ fn pack_element_and_draft_types_match_the_ts_contract() {
                 warnings: 0,
             },
             has_draft: true,
+            tags: vec!["Wizard".into()],
+            text: "A lance of fire.".into(),
         },
     );
     check(
@@ -215,7 +217,19 @@ fn pack_element_and_draft_types_match_the_ts_contract() {
             problems: vec![problem()],
             generated: HomebrewGeneratedView {
                 json: "{}".into(),
-                tree: vec![json!({"key": "name", "value": "Ember"})],
+                tree: vec![HomebrewDataNode {
+                    key: "Ember".into(),
+                    kind: borealis_authoring::form::DataKind::Object,
+                    text: None,
+                    sentence: None,
+                    children: vec![HomebrewDataNode {
+                        key: "requirements".into(),
+                        kind: borealis_authoring::form::DataKind::Expr,
+                        text: Some("[str:13]".into()),
+                        sentence: Some("Strength 13".into()),
+                        children: vec![],
+                    }],
+                }],
             },
             updated_at: "2026-11-10T10:00:00Z".into(),
             base_changed: false,
@@ -251,6 +265,16 @@ fn pack_element_and_draft_types_match_the_ts_contract() {
                 name: "Mira".into(),
             }],
             pack: Some(pack()),
+            undo_id: Some("undo-1".into()),
+        },
+    );
+    check(
+        &c,
+        "HomebrewBulkResult",
+        &HomebrewBulkResult {
+            pack: pack(),
+            element_ids: vec!["ID_GL_SPELL_EMBER".into()],
+            undo_id: None,
         },
     );
 }
@@ -294,14 +318,19 @@ fn picker_list_and_trial_types_match_the_ts_contract() {
             own: true,
             count: 1,
             rows: vec![HomebrewSpellListRow {
-                id: "ID_X".into(),
-                name: "Ember".into(),
-                level: 1,
-                school: "Evocation".into(),
-                verbal: true,
-                somatic: true,
-                material: false,
-                source_name: "Gloom".into(),
+                row: HomebrewPickerRow {
+                    id: "ID_X".into(),
+                    name: "Ember".into(),
+                    ty: "Spell".into(),
+                    summary: String::new(),
+                    prerequisites: None,
+                    source_name: "Gloom".into(),
+                    edition: None,
+                    draft: false,
+                    level: Some(1),
+                    school: Some("Evocation".into()),
+                    spell: None,
+                },
                 on_list: true,
                 removable: true,
             }],
@@ -340,6 +369,8 @@ fn request_types_read_what_the_ui_sends() {
     let bulk: HomebrewBulkPatch =
         serde_json::from_value(json!({"edition": null, "addTags": ["Fire"]})).expect("bulk");
     assert_eq!(bulk.edition, Some(None));
+    let dup: HomebrewBulkPatch = serde_json::from_value(json!({"duplicate": true})).expect("bulk");
+    assert_eq!(dup.duplicate, Some(true));
     let keep: HomebrewBulkPatch = serde_json::from_value(json!({"addTags": []})).expect("bulk");
     assert_eq!(keep.edition, None, "absent keeps, null clears");
     let filters: HomebrewPickerFilters =
@@ -362,10 +393,7 @@ fn request_types_read_what_the_ui_sends() {
 #[test]
 fn creator_commands_answer_not_implemented_until_their_item_lands() {
     use borealis_lib::commands_homebrew as hb;
-    let errs = [
-        hb::homebrew_where_used("ID_X".into()).unwrap_err(),
-        hb::homebrew_export_pack("p".into(), true).unwrap_err(),
-    ];
+    let errs = [hb::homebrew_export_pack("p".into(), true).unwrap_err()];
     for e in errs {
         assert_eq!(e.code, ErrorCode::RequirementFailed);
         let details: &Value = e.details.as_ref().expect("details");

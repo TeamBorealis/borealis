@@ -48,7 +48,7 @@ describe('hc-wb18 homebrew subclass form (web mock)', { tags: ['homebrew'] }, ()
     await ctx.screen.getByRole('button', 'Create').tap();
     await waitValue(ctx, NAME, 'Ember Guard');
     const tabs = await ctx.browser.evaluate((_: null) => [...document.querySelectorAll('.hb-band [role="tab"]')].map((t) => t.textContent ?? ''), null);
-    expectEqual('subclass tabs', 'GENERAL,LEVELS,SPELLCASTING,RULES,DESCRIPTION', tabs.join(','));
+    expectEqual('subclass tabs', 'GENERAL,LEVELS,SPELLCASTING,RULES,DESCRIPTION,DATA', tabs.join(','));
 
     // The class: its subclass choice's tag and level come with it.
     await clickCss(ctx, '[data-field="parentClass"] .hb-pick-btn');

@@ -984,7 +984,8 @@ export class MockApi implements Api {
   async homebrewListDrafts() { await this.tick(); return this.homebrew.listDrafts(); }
   async homebrewDeleteElements({ packId, elementIds }: Parameters<Api["homebrewDeleteElements"]>[0]) { await this.tick(); return this.homebrew.deleteElements(packId, elementIds); }
   async homebrewDuplicateElement({ packId, elementId }: { packId: string; elementId: string }) { await this.tick(); return this.homebrew.duplicateElement(packId, elementId); }
-  async homebrewBulkEdit(_: Parameters<Api["homebrewBulkEdit"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_bulk_edit"); }
+  async homebrewBulkEdit({ packId, elementIds, patch }: Parameters<Api["homebrewBulkEdit"]>[0]) { await this.tick(); return this.homebrew.bulkEdit(packId, elementIds, patch); }
+  async homebrewUndo({ undoId }: { undoId: string }) { await this.tick(); return this.homebrew.undo(undoId); }
   async homebrewReferenceOptions({ target, query, filters, page, draftId }: Parameters<Api["homebrewReferenceOptions"]>[0]) {
     await this.tick();
     if (target.types.includes(ELEMENT_TYPE_PICKER) || target.types.includes(SETTER_NAME_PICKER) || target.types[0] === FEAT_PARAMETER_PICKER) return wordRows(this.homebrew.words(target.types), target.types[0]!, query, page);
@@ -994,9 +995,11 @@ export class MockApi implements Api {
     const loaded = copying === "srd" ? [] : this.content.search({ query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items;
     return referenceRows(loaded, this.homebrew.pickerRows(draftId, copying), target, query, page);
   }
-  async homebrewWhereUsed(_: { elementId: string }) { await this.tick(); return []; }
-  async homebrewSpellList(_: { packId: string; listTag: string }): Promise<never> { await this.tick(); throw notImplemented("homebrew_spell_list"); }
-  async homebrewSetSpellList(_: Parameters<Api["homebrewSetSpellList"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_set_spell_list"); }
+  async homebrewWhereUsed({ elementId }: { elementId: string }) { await this.tick(); return this.homebrew.whereUsed(elementId, this.loadedElements()); }
+  async homebrewSpellList({ packId, listTag }: { packId: string; listTag: string }) { await this.tick(); return this.homebrew.spellList(packId, listTag, this.loadedElements()); }
+  async homebrewSetSpellList({ packId, listTag, add, remove }: Parameters<Api["homebrewSetSpellList"]>[0]) { await this.tick(); return this.homebrew.setSpellList(packId, listTag, add, remove, this.loadedElements()); }
+  /** Every loaded element of the sample content (the creator's own packs are `MockHomebrew`'s). */
+  private loadedElements() { return this.content.search({ query: "", limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items; }
   async homebrewTrialStart({ draftId, setup }: Parameters<Api["homebrewTrialStart"]>[0]) { await this.tick(); return this.trials.start(draftId, setup); }
   async homebrewTrialUpdate({ trialId, change }: Parameters<Api["homebrewTrialUpdate"]>[0]) { await this.tick(); return this.trials.update(trialId, change); }
   async homebrewTrialEnd({ trialId }: { trialId: string }) { await this.tick(); this.trials.end(trialId); }

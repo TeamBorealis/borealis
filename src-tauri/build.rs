@@ -176,6 +176,7 @@ const COMMANDS: &[&str] = &[
     "homebrew_where_used",
     "homebrew_spell_list",
     "homebrew_set_spell_list",
+    "homebrew_undo",
     "homebrew_trial_start",
     "homebrew_trial_update",
     "homebrew_trial_end",

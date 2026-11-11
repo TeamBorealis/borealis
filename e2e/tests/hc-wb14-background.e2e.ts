@@ -47,7 +47,7 @@ describe('hc-wb14 homebrew background form (web mock)', { tags: ['homebrew'] }, 
     const sections = await ctx.browser.evaluate((_: null) => [...document.querySelectorAll('.hb-editor .hb-section-title')].map((h) => h.textContent ?? ''), null);
     expectEqual('sections', 'Ability scores,Origin feat,Proficiencies,Details', sections.join(','));
     const tabs = await ctx.browser.evaluate((_: null) => [...document.querySelectorAll('.hb-band [role="tab"]')].map((t) => t.textContent ?? ''), null);
-    expectEqual('tabs', 'GENERAL,EQUIPMENT,RULES,DESCRIPTION', tabs.join(','));
+    expectEqual('tabs', 'GENERAL,EQUIPMENT,RULES,DESCRIPTION,DATA', tabs.join(','));
     await expect(ctx.screen.getByRole('button', /Problems \(3\)/)).toBeVisible();
 
     // Three abilities.

@@ -658,7 +658,7 @@
    "method": "homebrewBulkEdit",
    "response": {
     "k": "ref",
-    "name": "ContentPack"
+    "name": "HomebrewBulkResult"
    }
   },
   "homebrew_check_draft": {
@@ -890,6 +890,16 @@
    "response": {
     "k": "ref",
     "name": "HomebrewTrialView"
+   }
+  },
+  "homebrew_undo": {
+   "args": {
+    "undoId": false
+   },
+   "method": "homebrewUndo",
+   "response": {
+    "k": "ref",
+    "name": "ContentPack"
    }
   },
   "homebrew_update_draft": {
@@ -7014,6 +7024,33 @@
     }
    }
   },
+  "HomebrewBulkResult": {
+   "k": "object",
+   "props": {
+    "elementIds": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "pack": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ContentPack"
+     }
+    },
+    "undoId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "HomebrewCharacterRef": {
    "k": "object",
    "props": {
@@ -7048,6 +7085,45 @@
     }
    }
   },
+  "HomebrewDataNode": {
+   "k": "object",
+   "props": {
+    "children": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewDataNode"
+      }
+     }
+    },
+    "key": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sentence": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "text": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "HomebrewDeleteResult": {
    "k": "object",
    "props": {
@@ -7062,6 +7138,12 @@
      "t": {
       "k": "ref",
       "name": "ContentPack"
+     }
+    },
+    "undoId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
      }
     },
     "usedBy": {
@@ -7289,6 +7371,21 @@
       "k": "ref",
       "name": "HomebrewProblemCounts"
      }
+    },
+    "tags": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "text": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
     }
    }
   },
@@ -7480,10 +7577,8 @@
      "t": {
       "k": "array",
       "t": {
-       "k": "record",
-       "t": {
-        "k": "any"
-       }
+       "k": "ref",
+       "name": "HomebrewDataNode"
       }
      }
     }
@@ -7813,6 +7908,18 @@
   "HomebrewSpellListRow": {
    "k": "object",
    "props": {
+    "draft": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "edition": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "id": {
      "opt": false,
      "t": {
@@ -7820,13 +7927,7 @@
      }
     },
     "level": {
-     "opt": false,
-     "t": {
-      "k": "prim"
-     }
-    },
-    "material": {
-     "opt": false,
+     "opt": true,
      "t": {
       "k": "prim"
      }
@@ -7843,6 +7944,12 @@
       "k": "prim"
      }
     },
+    "prerequisites": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "removable": {
      "opt": false,
      "t": {
@@ -7850,13 +7957,7 @@
      }
     },
     "school": {
-     "opt": false,
-     "t": {
-      "k": "prim"
-     }
-    },
-    "somatic": {
-     "opt": false,
+     "opt": true,
      "t": {
       "k": "prim"
      }
@@ -7867,7 +7968,20 @@
       "k": "prim"
      }
     },
-    "verbal": {
+    "spell": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "SpellFacts"
+     }
+    },
+    "summary": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "type": {
      "opt": false,
      "t": {
       "k": "prim"

@@ -407,8 +407,8 @@ creator's entry points; until 1.5.0 the UI reaches these commands only with it o
 **Not implemented yet.** Until a command's work item lands (spec section 21), it rejects with `requirement_failed` and
 `details: { notImplemented: "<command>" }`. Implemented in the backend: the catalogs and kinds, packs, the element list,
 drafts (new, open, update, save, discard, list), delete, duplicate and reference options (WB-04/05/06), the
-validation of drafts with `homebrew_check_draft` (WB-07) and Try it (WB-08); bulk edit, where-used and spell lists
-(WB-23) and export (WB-24) still answer it. Copies (WB-22) are implemented, deep ones too. `homebrew_new_draft` with
+validation of drafts with `homebrew_check_draft` (WB-07), Try it (WB-08), and bulk edit, undo, where-used and spell
+lists (WB-23, `homebrew_expert.rs`, `homebrew_undo.rs`); export (WB-24) still answers it. Copies (WB-22) are implemented, deep ones too. `homebrew_new_draft` with
 `parentId` makes a child (WB-16). The web mock
 implements packs, elements and drafts in memory (kinds are sample forms).
 
@@ -427,19 +427,36 @@ implements packs, elements and drafts in memory (kinds are sample forms).
 | `homebrew_save_draft` | `{ draftId }` | `HomebrewSaveResult` (`{ pack, elementIds }`); `invalid_argument` with `details` = the problems when errors exist |
 | `homebrew_discard_draft` | `{ draftId }` | `void` |
 | `homebrew_list_drafts` | none | `HomebrewDraftSummary[]` |
-| `homebrew_delete_elements` | `{ packId, elementIds, confirm }` | `HomebrewDeleteResult` (`{ deleted, usedBy, pack }`) |
+| `homebrew_delete_elements` | `{ packId, elementIds, confirm }` | `HomebrewDeleteResult` (`{ deleted, usedBy, pack, undoId }`) |
 | `homebrew_duplicate_element` | `{ packId, elementId }` | `HomebrewDraftView` |
-| `homebrew_bulk_edit` | `{ packId, elementIds, patch: HomebrewBulkPatch }` | `ContentPack` |
+| `homebrew_bulk_edit` | `{ packId, elementIds, patch: HomebrewBulkPatch }` (`edition?`, `addTags?`, `removeTags?` together; or `moveToPackId`; or `duplicate: true`) | `HomebrewBulkResult` (`{ pack, elementIds, undoId }`); `invalid_argument` with `details` = the problems when an element can't take the change (nothing changes) |
+| `homebrew_undo` | `{ undoId }` | `ContentPack` (a delete or bulk edit undone; `requirement_failed` when a pack changed since, `not_found` once used) |
 | `homebrew_reference_options` | `{ target: HomebrewPickerTarget, query, filters: HomebrewPickerFilters, page: { offset, limit }, draftId? }` | `Page<HomebrewPickerRow>` |
-| `homebrew_where_used` | `{ elementId }` | `HomebrewElementRef[]` |
-| `homebrew_spell_list` | `{ packId, listTag }` | `HomebrewSpellListView` |
-| `homebrew_set_spell_list` | `{ packId, listTag, add, remove }` | `HomebrewSpellListView` |
+| `homebrew_where_used` | `{ elementId }` | `HomebrewElementRef[]` (loaded elements that grant, select, require or list it; strongest use first) |
+| `homebrew_spell_list` | `{ packId, listTag }` | `HomebrewSpellListView` (every loaded spell and the pack's own, `onList`, `removable`) |
+| `homebrew_set_spell_list` | `{ packId, listTag, add, remove }` | `HomebrewSpellListView` (one write; own spells change their tags, loaded spells get the pack's append) |
 | `homebrew_trial_start` | `{ draftId, setup: HomebrewTrialSetup }` | `HomebrewTrialView` (`{ trialId, snapshot, ladder, problems, changed }`) |
 | `homebrew_trial_update` | `{ trialId, change: HomebrewTrialChange }` | `HomebrewTrialView` |
 | `homebrew_trial_end` | `{ trialId }` | `void` |
 | `homebrew_trial_options` | `{ trialId, slotId, query?, limit?, offset? }` | `Page<SlotOption>` (a trial choice's options, as `get_slot_options`) |
 | `homebrew_export_pack` | `{ packId, leaveOutCopiedText }` | `ExportResult` (desktop `path`, phones `dataBase64` for the share sheet) |
 
+- **Expert features (WB-23, `homebrew_expert.rs`).** *Where used* runs the delete scan's reference scanner
+  (`borealis_authoring::pack::use_of`: ids as whole tokens, so `!ID_A,ID_B` counts) over every loaded element:
+  `grants` (a grant or a custom rule naming it), `selects` (a choice offering it by id, or by a tag it carries, of its
+  type), `requires`, `lists` (a spell list that offers the spell, an `extend`, or the id anywhere else: a package,
+  `data.owner`). *SPELL LISTS*: own spells change their tags through their form (`data.classes` follows), loaded
+  spells get the pack's append `{id, supports: [tag]}` (HC5, never an in-place edit); only own spells and own appends
+  come off. *Bulk edit* changes each element through its form (`form::bulk_patched`: the tags field, a spell's lists;
+  the edition field; a class keeps its edition, R4); a move keeps ids, `creator.json` entries and editions (an element
+  that followed its pack's edition takes it along) and retires the ids in the old pack; refused when an element has
+  unsaved changes; duplicates use WB-22's copier. Deletes and bulk edits return an `undoId`: `homebrew_undo` writes
+  every pack it touched back as it was (content and `creator.json`), as one change, when no pack changed since; made
+  elements' ids are retired. Undo records live in memory (the last 20). *DATA view*: `generated.tree` is
+  `HomebrewDataNode[]` (one top line per element, keys in file order, setters as `name: value`, descriptions `html`,
+  expressions `expr`, rules with their block sentence); `generated.json` is the element (one) or the elements (several)
+  as the content file writes them. `HomebrewElementSummary` carries `tags` and `text` (summary + description as plain
+  text, 400 characters) for the list filter.
 - **Try it (WB-08, `homebrew_trial.rs`).** A trial is a test character on a private engine that holds the draft's
   elements (with the ids they would get now); it is never saved, listed or opened as a character, and never changes the
   open character. `setup: {}` takes the defaults: the draft's (else its pack's) edition, the SRD picks of that edition

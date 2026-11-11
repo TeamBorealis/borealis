@@ -116,6 +116,7 @@ pub mod homebrew_creator;
 pub mod homebrew_draft_api;
 pub mod homebrew_drafts;
 pub mod homebrew_dto;
+pub mod homebrew_expert;
 pub mod homebrew_files;
 pub mod homebrew_packs;
 pub mod homebrew_refs;
@@ -123,6 +124,7 @@ pub mod homebrew_trial;
 mod homebrew_trial_build;
 mod homebrew_trial_place;
 mod homebrew_trial_view;
+pub mod homebrew_undo;
 pub mod hp_api;
 pub mod ids;
 #[cfg(ai_cli)]
@@ -595,6 +597,7 @@ pub fn run() {
             commands_homebrew::homebrew_where_used,
             commands_homebrew::homebrew_spell_list,
             commands_homebrew::homebrew_set_spell_list,
+            commands_homebrew::homebrew_undo,
             commands_homebrew::homebrew_trial_start,
             commands_homebrew::homebrew_trial_update,
             commands_homebrew::homebrew_trial_end,

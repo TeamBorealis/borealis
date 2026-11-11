@@ -6,6 +6,8 @@
 mod children;
 mod creator;
 mod layout;
+mod refs;
+mod spell_lists;
 
 pub(crate) use children::granted_ids;
 pub use children::{child_types, granted_children, parent_of};
@@ -18,6 +20,8 @@ pub use layout::{
     with_elements, without_elements, PackSettings, SettingsProblem, CONTENT_FILE, FIRST_VERSION,
     PACK_NAME_MAX, SOURCE_TYPE,
 };
+pub use refs::{id_tokens, mentions, names_any, offers, use_of, UseRelation};
+pub use spell_lists::{appended, on_list, removable, with_spell_list, ListChange};
 
 #[cfg(test)]
 mod tests;

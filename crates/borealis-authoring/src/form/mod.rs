@@ -20,9 +20,11 @@
 mod append;
 pub mod block;
 mod block_codec;
+mod bulk;
 mod child_refs;
 mod codec;
 mod copy;
+pub mod data_view;
 pub mod descriptor;
 mod item_codec;
 mod item_kinds;
@@ -42,6 +44,7 @@ pub use append::{append_to_form, form_to_append, APPEND_KIND};
 pub use block::{Block, BlockCodec, BlockMemo};
 pub use block_codec::CatalogBlockCodec;
 pub(crate) use block_codec::INCOMPLETE;
+pub use bulk::{bulk_patched, tag_field, with_tag, BulkChange};
 pub use child_refs::{add_child, new_child_key, ChildEntry, ParentInfo};
 pub use codec::{
     feat_parameter_words, feat_params, param_key, ArmorClassValue, BackgroundField, CasterField,
@@ -53,6 +56,7 @@ pub use copy::{
     copy_child, copy_element, edition_problems, repoint, write_copy, Copy, CopyExtras, CopyLink,
     CopyTag, Written,
 };
+pub use data_view::{data_json, data_tree, DataKind, DataNode};
 pub use descriptor::descriptors;
 pub use kinds::{
     append_kind, kind, kind_for_element, kind_for_type, kinds, Control, FieldDef, KindDef,

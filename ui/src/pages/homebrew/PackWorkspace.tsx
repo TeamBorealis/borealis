@@ -6,9 +6,14 @@ import { useNarrow } from "../../components/shell/useNarrow";
 import { useApi } from "../../state/ApiContext";
 import { setStatus } from "../../state/status";
 import { errorMessage, useAsync } from "../../state/useAsync";
-import { ElementDetailView } from "../builder/DescriptionPane";
+import { DescriptionPane, ElementDetailView } from "../builder/DescriptionPane";
 import { Editor, editionOf, editorTabs } from "./Editor";
-import { Categories, ElementList, KindChips } from "./ElementList";
+import { BulkActions, type BulkDone } from "./BulkActions";
+import { Categories, ElementList, type ExtraCategory, KindChips } from "./ElementList";
+import { KeysDialog } from "./KeysDialog";
+import { EMPTY_FILTER, type ListFilter } from "./search";
+import { SpellLists, type SpellListsHandle } from "./SpellLists";
+import { WhereUsed } from "./WhereUsed";
 import { useCreatorKeys } from "./keymap";
 import { ADD_BLOCK_EVENT } from "./blocks/BlockList";
 import { type CopyChoice, NewElementFlyout, creatableKinds } from "./NewElementFlyout";
@@ -18,6 +23,7 @@ import { useDraft } from "./useDraft";
 import { useMessageBox } from "./useMessageBox";
 import "../builder/builder.css";
 import "./homebrew.css";
+import "./expert.css";
 
 const timeOf = (iso: string): string => {
   const d = new Date(iso);
@@ -51,7 +57,16 @@ export function PackWorkspace() {
   const { ask, box } = useMessageBox();
   const [kindPick, setKindPick] = useState<string | null>(null);
   const [tab, setTab] = useState("general");
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = useState<ListFilter>(EMPTY_FILTER);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  /** The workspace shows a kind's elements, or the pack's SPELL LISTS (spec 12.4). */
+  const [pane, setPane] = useState<"elements" | "lists">("elements");
+  const [described, setDescribed] = useState<string | null>(null);
+  const [keysOpen, setKeysOpen] = useState(false);
+  /** Bumped after every write: WHERE USED reads again. */
+  const [written, setWritten] = useState(0);
+  const lists = useRef<SpellListsHandle | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [tryItOpen, setTryItOpen] = useState(false);
   const [mobileView, setMobileView] = useState<"list" | "editor">("list");
@@ -78,7 +93,6 @@ export function PackWorkspace() {
   const kindOf = useCallback((id: string | undefined): HomebrewKindDescriptor | null => (kinds.data ?? []).find((k) => k.id === id) ?? null, [kinds.data]);
   const openKind = kindOf(draft.form?.kind);
   const listKind = kindOf(kindPick ?? undefined) ?? openKind ?? offered.find((k) => counts.has(k.id)) ?? offered[0] ?? null;
-  const listRows = rows.filter((r) => r.kind === listKind?.id);
   const openId = draft.view?.elementId ?? null;
   const unsaved = draft.form && !openId && draft.form.kind === listKind?.id
     ? { name: typeof draft.form.fields.name === "string" && draft.form.fields.name.trim() ? draft.form.fields.name.trim() : `New ${listKind.label.toLowerCase()}` }
@@ -129,6 +143,43 @@ export function PackWorkspace() {
     } catch (e) { toast.push(errorMessage(e), "error"); }
   };
 
+  /** Open a saved element of the pack by id (WHERE USED, `?element=`, after a multi-select edit). */
+  const openById = async (id: string) => {
+    const row = rows.find((r) => r.id === id);
+    if (row) { setPane("elements"); await openElement(row); return; }
+    try { setPane("elements"); await show(await settleBase(await api.homebrewOpenDraft({ packId, elementId: id }))); } catch (e) { toast.push(errorMessage(e), "error"); }
+  };
+
+  /** Leave SPELL LISTS for a kind: unsaved checks ask first. */
+  const pickKind = async (kindId: string) => {
+    if (pane === "lists" && (lists.current?.pending() ?? 0) > 0) {
+      const r = await ask({
+        title: "Unsaved changes", cancelId: "cancel", message: "Changes to the spell list are not saved.",
+        buttons: [{ id: "save", label: "Save" }, { id: "discard", label: "Discard" }, { id: "cancel", label: "Cancel" }],
+      });
+      if (r === "cancel") return;
+      if (r === "save") await lists.current?.save();
+    }
+    setPane("elements");
+    setKindPick(kindId);
+    setSelected(new Set());
+  };
+  const extra: ExtraCategory[] = [{ label: "Spell Lists", current: pane === "lists", onPick: () => { setPane("lists"); setMobileView("list"); } }];
+
+  /** After a multi-select edit or its undo: read the pack again; the open element closes when it left the pack, else it is
+   * opened again (a draft of it asks which version to keep, spec 10.1). */
+  const bulkDone = (done: BulkDone) => {
+    elements.reload();
+    packs.reload();
+    setWritten((n) => n + 1);
+    setSelected(new Set());
+    if (!openId || !done.ids.includes(openId)) return;
+    if (done.action === "delete" || done.action === "move") { void draft.open(null); return; }
+    // the open element changed under its form: open it again from the pack
+    const id = openId;
+    void api.homebrewOpenDraft({ packId, elementId: id }).then(settleBase).then(show).catch(() => draft.open(null));
+  };
+
   /** A new element (spec 10.1), or a copy (spec 11): a copy is named "<Name> (copy)", selected for renaming. */
   const createElement = async (kindId: string, name: string, copy?: CopyChoice) => {
     const fresh = await api.homebrewNewDraft({ packId, kind: kindId, ...(copy ? { copyFrom: copy.copyFrom, deepCopy: copy.deepCopy } : {}) });
@@ -137,6 +188,14 @@ export function PackWorkspace() {
     await show(view);
     if (!name) setTimeout(() => focusField("name", !!copy), 0);
   };
+
+  // WHERE USED in another pack lands here with ?element=<id>.
+  useEffect(() => {
+    const elementId = params.get("element");
+    if (!elementId || !elements.data) return;
+    setParams({}, { replace: true });
+    void openById(elementId);
+  }, [params, elements.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // "Copy to homebrew" (Compendium, builder) lands here with ?draft=<id>: the copy opens, its name selected for renaming.
   useEffect(() => {
@@ -164,6 +223,7 @@ export function PackWorkspace() {
       if (id) draft.rebase(await api.homebrewOpenDraft({ packId, elementId: id }));
       elements.reload();
       packs.reload();
+      setWritten((n) => n + 1);
       setStatus(`Saved '${name}' to ${result.pack.name}.`);
     } catch (e) {
       setStatus(errorMessage(e));
@@ -200,12 +260,12 @@ export function PackWorkspace() {
   };
 
   useCreatorKeys({
-    save: () => void save(),
+    save: () => void (pane === "lists" ? lists.current?.save() : save()),
     undo: () => draft.undo(),
     redo: () => draft.redo(),
     newElement: () => newOfKind(),
     duplicate: () => void duplicate(),
-    focusFilter: () => { setMobileView("list"); setTimeout(() => filterRef.current?.focus(), 0); },
+    focusFilter: () => { setPane("elements"); setMobileView("list"); setTimeout(() => filterRef.current?.focus(), 0); },
     tryIt,
     tab: (a) => { const t = openKind ? editorTabs(openKind, narrow, editionOf(draft.form))[a.index ?? 0] : undefined; if (t) setTab(t.id); },
     rename: () => focusField("name", true),
@@ -217,16 +277,40 @@ export function PackWorkspace() {
     },
   });
 
-  const preview = draft.view?.preview
-    ? <ElementDetailView d={draft.view.preview} />
-    : <aside className="desc-pane" aria-label="Description" />;
+  const homebrewIds = new Set((packs.data ?? []).filter((p) => p.kind === "homebrew").map((p) => p.id));
+  const openRef = (r: { id: string; packId: string | null }) => {
+    if (r.packId === packId) void openById(r.id);
+    else nav(`/homebrew/${encodeURIComponent(r.packId ?? "")}?element=${encodeURIComponent(r.id)}`);
+  };
+  const whereUsed = (id: string | null) => <WhereUsed elementId={id} version={written} homebrewPackIds={homebrewIds} onOpen={openRef} />;
+  const preview = (
+    <>
+      {draft.view?.preview ? <ElementDetailView d={draft.view.preview} /> : <aside className="desc-pane" aria-label="Description" />}
+      {whereUsed(openId)}
+    </>
+  );
+  const spellPane = (
+    <>
+      <DescriptionPane elementId={described} fallback={<aside className="desc-pane" aria-label="Description" />} />
+      {whereUsed(described)}
+    </>
+  );
+  const spellLists = <SpellLists packId={packId} narrow={narrow} described={described} onDescribe={setDescribed} handle={lists} onSaved={() => setWritten((n) => n + 1)} />;
   const editor = openKind && draft.form
     ? <Editor kind={openKind} kinds={kinds.data ?? []} draft={draft} tab={tab} onTab={setTab} narrow={narrow} preview={preview} tryItOpen={tryItOpen}
       actions={{ onSave: () => void save(), onTryIt: tryIt, onTryItClose: () => setTryItOpen(false), onDuplicate: () => void duplicate(), onJump: jump, onNewChild: newChild }} />
     : <div className="hb-empty"><p>Choose an element in the list, or make a new one.</p><Button onClick={() => setNewOpen(true)} disabled={offered.length === 0}>New element</Button></div>;
+  const chosen = rows.filter((r) => selected.has(r.id));
   const list = (
-    <ElementList kind={listKind} rows={listRows} unsaved={unsaved} openId={openId} filter={filter} filterRef={filterRef} onFilter={setFilter}
-      onOpen={(r) => void openElement(r)} onNew={() => setNewOpen(true)} onDuplicate={() => void duplicate()} />
+    <div className="hb-list-col">
+      <ElementList kind={listKind} kinds={offered} rows={rows} unsaved={unsaved} openId={openId} filter={filter} filterRef={filterRef} onFilter={setFilter}
+        onOpen={(r) => void openElement(r)} onNew={() => setNewOpen(true)} onDuplicate={() => void duplicate()}
+        selected={selected} onSelect={setSelected} selectMode={selectMode} onSelectMode={(on) => { setSelectMode(on); if (!on) setSelected(new Set()); }} />
+      {(chosen.length > 1 || (selectMode && chosen.length > 0)) && (
+        <BulkActions packId={packId} chosen={chosen} packs={packs.data ?? []} onDone={bulkDone} onClear={() => setSelected(new Set())}
+          beforeChange={async () => { if (draft.form) await draft.flush(); }} />
+      )}
+    </div>
   );
   const errors = [kinds.error, elements.error].filter(Boolean);
   return (
@@ -237,22 +321,28 @@ export function PackWorkspace() {
           <Icon name="back" />{narrow && mobileView === "editor" ? `Back to ${listKind?.pluralLabel.toLowerCase() ?? "the list"}` : "All packs"}
         </button>
         <span className="hb-ws-pack">{pack?.name ?? ""}</span>
+        {!narrow && <button type="button" className="hb-tool hb-keys-btn" title="Keyboard shortcuts" onClick={() => setKeysOpen(true)}>Keys</button>}
       </div>
       {errors.map((e) => <p key={e} className="hb-error-line" role="alert">{e}</p>)}
       {narrow ? (
         mobileView === "list"
-          ? <div className="hb-ws-list"><KindChips kinds={offered} counts={counts} current={listKind?.id ?? null} onPick={setKindPick} />{list}</div>
+          ? (
+            <div className="hb-ws-list">
+              <KindChips kinds={offered} counts={counts} current={listKind?.id ?? null} onPick={(k) => void pickKind(k)} extra={extra} />
+              {pane === "lists" ? <>{spellLists}<div className="hb-ws-desc">{spellPane}</div></> : list}
+            </div>
+          )
           : <div className="hb-ws-editor">{editor}</div>
       ) : (
         <div className="hb-ws-grid">
-          <div className="hb-ws-left">
-            <Categories kinds={offered} counts={counts} current={listKind?.id ?? null} onPick={setKindPick} />
-            {list}
-            <div className="hb-ws-editor">{editor}</div>
+          <div className={`hb-ws-left ${pane === "lists" ? "hb-lists-view" : ""}`}>
+            <Categories kinds={offered} counts={counts} current={listKind?.id ?? null} onPick={(k) => void pickKind(k)} extra={extra} />
+            {pane === "lists" ? spellLists : <>{list}<div className="hb-ws-editor">{editor}</div></>}
           </div>
-          <div className="hb-ws-desc">{preview}</div>
+          <div className="hb-ws-desc">{pane === "lists" ? spellPane : preview}</div>
         </div>
       )}
+      {keysOpen && <KeysDialog onClose={() => setKeysOpen(false)} />}
       {newOpen && <NewElementFlyout kinds={kinds.data ?? []} initialKind={listKind?.id ?? null} onCreate={createElement} onClose={() => setNewOpen(false)} />}
       {box}
     </div>

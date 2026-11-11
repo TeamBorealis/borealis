@@ -127,6 +127,7 @@ import type {
   ConversionPreview,
   HomebrewBlockSpec,
   HomebrewBulkPatch,
+  HomebrewBulkResult,
   HomebrewDeleteResult,
   HomebrewDraftSummary,
   HomebrewDraftView,
@@ -659,9 +660,13 @@ export interface ApiMethods {
   homebrewDeleteElements(args: { packId: string; elementIds: string[]; confirm: boolean }): Promise<HomebrewDeleteResult>;
   /** A copy inside the same pack with a new id (deep for classes). */
   homebrewDuplicateElement(args: { packId: string; elementId: string }): Promise<HomebrewDraftView>;
-  homebrewBulkEdit(args: { packId: string; elementIds: string[]; patch: HomebrewBulkPatch }): Promise<ContentPack>;
+  /** Multi-select edits (spec 12.5): edition and tags, a move to another homebrew pack, or duplicates; one write, one undoable step. */
+  homebrewBulkEdit(args: { packId: string; elementIds: string[]; patch: HomebrewBulkPatch }): Promise<HomebrewBulkResult>;
+  /** Undo a delete or a multi-select edit (the toast's Undo): the packs it wrote go back as they were, unless they changed since. */
+  homebrewUndo(args: { undoId: string }): Promise<ContentPack>;
   /** Picker rows for a reference field (loaded content plus the current pack's unsaved drafts). */
   homebrewReferenceOptions(args: { target: HomebrewPickerTarget; query: string; filters: HomebrewPickerFilters; page: HomebrewPageRequest; draftId?: string }): Promise<Page<HomebrewPickerRow>>;
+  /** Where used (spec 12.3): loaded elements that grant, offer (select), require or list the element. */
   homebrewWhereUsed(args: { elementId: string }): Promise<HomebrewElementRef[]>;
   homebrewSpellList(args: { packId: string; listTag: string }): Promise<HomebrewSpellListView>;
   /** Add or remove spells (own spells change their tags; loaded spells get an append in the pack). */
@@ -926,6 +931,7 @@ export const COMMANDS = {
   homebrewWhereUsed: "homebrew_where_used",
   homebrewSpellList: "homebrew_spell_list",
   homebrewSetSpellList: "homebrew_set_spell_list",
+  homebrewUndo: "homebrew_undo",
   homebrewTrialStart: "homebrew_trial_start",
   homebrewTrialUpdate: "homebrew_trial_update",
   homebrewTrialEnd: "homebrew_trial_end",

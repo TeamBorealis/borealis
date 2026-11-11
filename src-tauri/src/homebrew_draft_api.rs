@@ -19,10 +19,10 @@ use crate::ids::rfc3339;
 use crate::state::{AppState, ContentHub, BUNDLED_PACKS};
 use borealis_authoring::check::{issue_problems, Problem};
 use borealis_authoring::form::{
-    add_child, assign_ids, copy_child, copy_element, element_group_to_form, kind, merge_ui,
-    new_background_form, new_child_key, new_class_form, new_creature_form, refresh_blocks, to_ui,
-    write_copy, CatalogBlockCodec, Copy, CopyExtras, FormContext, FormState, WithElements,
-    BACKGROUND_KIND, CLASS_KIND, CREATURE_KIND, SUBCLASS_KIND,
+    add_child, assign_ids, copy_child, copy_element, data_json, data_tree, element_group_to_form,
+    kind, merge_ui, new_background_form, new_child_key, new_class_form, new_creature_form,
+    refresh_blocks, to_ui, write_copy, CatalogBlockCodec, Copy, CopyExtras, FormContext, FormState,
+    WithElements, BACKGROUND_KIND, CLASS_KIND, CREATURE_KIND, SUBCLASS_KIND,
 };
 use borealis_authoring::pack::{
     bump_patch, digest, granted_children, pack_edition, source_name, with_elements,
@@ -116,10 +116,10 @@ impl AppState {
             .as_ref()
             .and_then(|els| els.first())
             .map(|e| element_detail(&hub.store, e));
-        let json = elements
-            .as_ref()
-            .and_then(|els| serde_json::to_string_pretty(els).ok())
-            .unwrap_or_default();
+        let (json, tree) = elements.as_ref().map_or_else(
+            || (String::new(), Vec::new()),
+            |els| (data_json(els), data_tree(&provisional, els, &cx)),
+        );
         Ok(HomebrewDraftView {
             draft_id: draft.draft_id.clone(),
             pack_id: draft.pack_id.clone(),
@@ -127,10 +127,7 @@ impl AppState {
             form: to_ui(&draft.form),
             preview,
             problems,
-            generated: HomebrewGeneratedView {
-                json,
-                tree: Vec::new(),
-            },
+            generated: HomebrewGeneratedView { json, tree },
             updated_at: draft.updated_at.clone(),
             base_changed: Self::hb_base_changed(pack, draft),
         })

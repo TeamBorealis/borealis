@@ -462,6 +462,8 @@ pub struct AppState {
     pub(crate) hb_drafts: crate::homebrew_drafts::CreatorDrafts,
     /// Try it's test characters (memory only, spec 9).
     pub(crate) hb_trials: crate::homebrew_trial::CreatorTrials,
+    /// The homebrew creator's undoable pack changes (deletes, multi-select edits; spec 10.2, 12.5).
+    pub(crate) hb_undo: crate::homebrew_undo::CreatorUndo,
 }
 
 impl AppState {
@@ -546,6 +548,7 @@ impl AppState {
             vault: crate::vault::VaultService::default(),
             hb_drafts: crate::homebrew_drafts::CreatorDrafts::default(),
             hb_trials: crate::homebrew_trial::CreatorTrials::default(),
+            hb_undo: crate::homebrew_undo::CreatorUndo::default(),
         }
     }
 

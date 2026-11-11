@@ -58,7 +58,7 @@ describe("WB-20 creature form (mock)", () => {
     await user.type(within(flyout).getByLabelText("Name"), "Cinder Boar");
     await user.click(within(flyout).getByRole("button", { name: "Create" }));
     await waitFor(() => expect((screen.getByRole("textbox", { name: /^Name/ }) as HTMLInputElement).value).toBe("Cinder Boar"));
-    expect(tabs()).toEqual(["GENERAL", "STATISTICS", "ACTIONS", "LEGENDARY", "RULES", "DESCRIPTION"]);
+    expect(tabs()).toEqual(["GENERAL", "STATISTICS", "ACTIONS", "LEGENDARY", "RULES", "DESCRIPTION", "DATA"]);
     expect(sections()).toEqual(["Size, type and alignment", "Armor class and hit points", "Speed and initiative", "Challenge", "Details"]);
     await waitFor(() => expect(screen.getAllByText("A creature needs a creature type.").length).toBeGreaterThan(0));
 

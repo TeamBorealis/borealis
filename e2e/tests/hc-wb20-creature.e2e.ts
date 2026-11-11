@@ -35,7 +35,7 @@ describe('hc-wb20 homebrew creature form (web mock)', { tags: ['homebrew'] }, ()
 
     // The stat block's tabs and GENERAL's sections, in its order; the creature type comes first.
     const tabs = await ctx.browser.evaluate((_: null) => [...document.querySelectorAll('.hb-band [role="tab"]')].map((t) => t.textContent ?? ''), null);
-    expectEqual('tabs', 'GENERAL,STATISTICS,ACTIONS,LEGENDARY,RULES,DESCRIPTION', tabs.join(','));
+    expectEqual('tabs', 'GENERAL,STATISTICS,ACTIONS,LEGENDARY,RULES,DESCRIPTION,DATA', tabs.join(','));
     const sections = await ctx.browser.evaluate((_: null) => [...document.querySelectorAll('.hb-editor .hb-section-title')].map((h) => h.textContent ?? ''), null);
     expectEqual('sections', 'Size, type and alignment,Armor class and hit points,Speed and initiative,Challenge,Details', sections.join(','));
     await expect(ctx.screen.getByRole('button', /Problems \(1\)/)).toBeVisible();

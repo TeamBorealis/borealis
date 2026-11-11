@@ -7,7 +7,7 @@ const PACK = { name: "Gloom", code: "GL", edition: "dnd2024" as const };
 describe("homebrew creator contract (WB-00)", () => {
   it("names every creator command after its method", () => {
     const creator = Object.entries(COMMANDS).filter(([m]) => m.startsWith("homebrew"));
-    expect(creator).toHaveLength(25);
+    expect(creator).toHaveLength(26);
     for (const [method, command] of creator) expect(command).toBe(method.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`));
   });
 
@@ -61,9 +61,9 @@ describe("homebrew creator contract (WB-00)", () => {
 
   it("answers not implemented where the backend has no work item yet", async () => {
     const api = new MockApi();
-    await expect(api.homebrewSpellList({ packId: "p", listTag: "Wizard" })).rejects.toMatchObject({
+    await expect(api.homebrewExportPack({ packId: "p", leaveOutCopiedText: true })).rejects.toMatchObject({
       code: "requirement_failed",
-      details: { notImplemented: "homebrew_spell_list" },
+      details: { notImplemented: "homebrew_export_pack" },
     });
   });
 

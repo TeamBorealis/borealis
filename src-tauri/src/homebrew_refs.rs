@@ -26,7 +26,7 @@ const MAX_PAGE: usize = 500;
 pub const SPELL_LIST_TYPE: &str = "Spell List";
 
 /// A `spellcasting.list.supports` that is one plain tag ("Wizard"), not an expression.
-fn plain_list_tag(supports: &str) -> Option<&str> {
+pub(crate) fn plain_list_tag(supports: &str) -> Option<&str> {
     let t = supports.trim();
     let plain = !t.is_empty()
         && t.chars()
@@ -210,8 +210,17 @@ fn row(store: &ContentStore, c: &Candidate<'_>) -> HomebrewPickerRow {
     }
 }
 
+/// The picker row of a loaded (or the pack's own) element, as every picker shows it.
+pub(crate) fn picker_row(
+    store: &ContentStore,
+    element: &Element,
+    draft: bool,
+) -> HomebrewPickerRow {
+    row(store, &Candidate { element, draft })
+}
+
 /// The file belongs to a bundled pack (`<pack>/<path>`).
-fn is_bundled(file: &str) -> bool {
+pub(crate) fn is_bundled(file: &str) -> bool {
     let pack = file.split('/').next().unwrap_or_default();
     crate::state::BUNDLED_PACKS.contains(&pack)
 }

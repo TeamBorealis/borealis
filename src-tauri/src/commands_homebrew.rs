@@ -9,11 +9,12 @@ use crate::dto::{ExportResult, Page, SlotOption};
 use crate::error::ApiResult;
 use crate::homebrew_creator::{self, not_implemented};
 use crate::homebrew_dto::{
-    HomebrewBlockSpec, HomebrewBulkPatch, HomebrewDeleteResult, HomebrewDraftSummary,
-    HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary, HomebrewForm, HomebrewPackPatch,
-    HomebrewPackRequest, HomebrewPageRequest, HomebrewPickerFilters, HomebrewPickerRow,
-    HomebrewPickerTarget, HomebrewProblem, HomebrewSaveResult, HomebrewSpellListView,
-    HomebrewStatGroup, HomebrewTrialChange, HomebrewTrialSetup, HomebrewTrialView,
+    HomebrewBlockSpec, HomebrewBulkPatch, HomebrewBulkResult, HomebrewDeleteResult,
+    HomebrewDraftSummary, HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary,
+    HomebrewForm, HomebrewPackPatch, HomebrewPackRequest, HomebrewPageRequest,
+    HomebrewPickerFilters, HomebrewPickerRow, HomebrewPickerTarget, HomebrewProblem,
+    HomebrewSaveResult, HomebrewSpellListView, HomebrewStatGroup, HomebrewTrialChange,
+    HomebrewTrialSetup, HomebrewTrialView,
 };
 use crate::state::AppState;
 use tauri::State;
@@ -165,15 +166,24 @@ pub fn homebrew_duplicate_element(
     state.homebrew_duplicate_element(&pack_id, &element_id)
 }
 
-/// Multi-select edits (spec 12.5).
+/// Multi-select edits (spec 12.5): one write, one undoable step.
 #[tauri::command]
-pub fn homebrew_bulk_edit(
+pub async fn homebrew_bulk_edit(
+    app: tauri::AppHandle,
     pack_id: String,
     element_ids: Vec<String>,
     patch: HomebrewBulkPatch,
-) -> ApiResult<ContentPack> {
-    let _ = (pack_id, element_ids, patch);
-    Err(not_implemented("homebrew_bulk_edit"))
+) -> ApiResult<HomebrewBulkResult> {
+    crate::commands_content::blocking(app, move |s, sink| {
+        s.homebrew_bulk_edit(&pack_id, &element_ids, &patch, sink)
+    })
+    .await
+}
+
+/// Undo a delete or a multi-select edit (spec 10.2, 12.5).
+#[tauri::command]
+pub async fn homebrew_undo(app: tauri::AppHandle, undo_id: String) -> ApiResult<ContentPack> {
+    crate::commands_content::blocking(app, move |s, sink| s.homebrew_undo(&undo_id, sink)).await
 }
 
 /// Picker rows (spec 5.1).
@@ -190,29 +200,37 @@ pub fn homebrew_reference_options(
 }
 
 /// Where used (spec 12.3).
-#[tauri::command]
-pub fn homebrew_where_used(element_id: String) -> ApiResult<Vec<HomebrewElementRef>> {
-    let _ = element_id;
-    Err(not_implemented("homebrew_where_used"))
+#[tauri::command(async)]
+pub fn homebrew_where_used(
+    state: State<'_, AppState>,
+    element_id: String,
+) -> ApiResult<Vec<HomebrewElementRef>> {
+    state.homebrew_where_used(&element_id)
 }
 
 /// A spell list (spec 12.4).
-#[tauri::command]
-pub fn homebrew_spell_list(pack_id: String, list_tag: String) -> ApiResult<HomebrewSpellListView> {
-    let _ = (pack_id, list_tag);
-    Err(not_implemented("homebrew_spell_list"))
+#[tauri::command(async)]
+pub fn homebrew_spell_list(
+    state: State<'_, AppState>,
+    pack_id: String,
+    list_tag: String,
+) -> ApiResult<HomebrewSpellListView> {
+    state.homebrew_spell_list(&pack_id, &list_tag)
 }
 
-/// Change a spell list (spec 12.4).
+/// Change a spell list (spec 12.4): one write, one reload.
 #[tauri::command]
-pub fn homebrew_set_spell_list(
+pub async fn homebrew_set_spell_list(
+    app: tauri::AppHandle,
     pack_id: String,
     list_tag: String,
     add: Vec<String>,
     remove: Vec<String>,
 ) -> ApiResult<HomebrewSpellListView> {
-    let _ = (pack_id, list_tag, add, remove);
-    Err(not_implemented("homebrew_set_spell_list"))
+    crate::commands_content::blocking(app, move |s, sink| {
+        s.homebrew_set_spell_list(&pack_id, &list_tag, &add, &remove, sink)
+    })
+    .await
 }
 
 /// Try it (spec 9): a test character that takes the draft (`homebrew_trial.rs`).

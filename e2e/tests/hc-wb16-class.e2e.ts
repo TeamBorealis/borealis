@@ -48,7 +48,7 @@ describe('hc-wb16 homebrew class form (web mock)', { tags: ['homebrew'] }, () =>
 
     // The class's sub-tabs, then the LEVELS grid with the generated features.
     const tabs = await ctx.browser.evaluate((_: null) => [...document.querySelectorAll('.hb-band [role="tab"]')].map((t) => t.textContent ?? ''), null);
-    expectEqual('class tabs', 'GENERAL,PROFICIENCIES,LEVELS,SPELLCASTING,MULTICLASS,EQUIPMENT,RULES,DESCRIPTION', tabs.join(','));
+    expectEqual('class tabs', 'GENERAL,PROFICIENCIES,LEVELS,SPELLCASTING,MULTICLASS,EQUIPMENT,RULES,DESCRIPTION,DATA', tabs.join(','));
     await ctx.screen.getByRole('tab', 'LEVELS').tap();
     await expect(ctx.screen.getByRole('table', 'Features by level')).toBeVisible();
     expectEqual('level 3', 'Subclass', (await featuresAt(ctx, 3)).join(','));

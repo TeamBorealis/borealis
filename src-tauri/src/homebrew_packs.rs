@@ -16,8 +16,9 @@ use crate::state::{AppState, ContentHub};
 use borealis_authoring::form::kind;
 use borealis_authoring::ids::{is_pack_code, IdGenerator};
 use borealis_authoring::pack::{
-    bump_patch, content_with, manifest_with, new_content, new_manifest, pack_edition, parent_of,
-    source_element, source_of, without_elements, CreatorFile, PackSettings, CONTENT_FILE,
+    bump_patch, content_with, manifest_with, mentions, new_content, new_manifest, pack_edition,
+    parent_of, source_element, source_of, without_elements, CreatorFile, PackSettings,
+    CONTENT_FILE,
 };
 use borealis_content::validate::validate_elements;
 use borealis_content::{ContentStore, Issue, ParsedPack, Severity};
@@ -191,10 +192,8 @@ impl AppState {
             .map_err(|e| ApiError::invalid(e.to_string()))
     }
 
-    /// Check a save against the loaded content, write it, and swap the content in (spec 14.1). The elements
-    /// `check_ids` are checked with the content validator in a store that holds the new pack; an error stops the save
-    /// before anything is written. The reload re-adds only this pack to the cached builder (fast reload); a pack the
-    /// loaded content does not hold (turned off, or failed to load) reloads everything.
+    /// Check a save against the loaded content, write it, and swap the content in (spec 14.1): [`Self::hb_commit_all`]
+    /// for one pack.
     pub(crate) fn hb_commit(
         &self,
         pack: &CreatorPack,
@@ -202,16 +201,38 @@ impl AppState {
         check_ids: &[String],
         sink: &dyn EventSink,
     ) -> Result<(), CommitError> {
+        self.hb_commit_all(&[(pack, next)], check_ids, sink)
+    }
+
+    /// Check a change to one or more packs against the loaded content, write them, and swap the content in (spec
+    /// 14.1; a move to another pack writes two). The elements `check_ids` are checked with the content validator in a
+    /// store that holds the new packs; an error stops the change before anything is written. The reload re-adds only
+    /// these packs to the cached builder (fast reload); a pack the loaded content does not hold (turned off, or failed
+    /// to load) reloads everything.
+    pub(crate) fn hb_commit_all(
+        &self,
+        writes: &[(&CreatorPack, &PackWrite)],
+        check_ids: &[String],
+        sink: &dyn EventSink,
+    ) -> Result<(), CommitError> {
         let hub = self.hub()?;
-        let parsed = ParsedPack::from_parts(
-            next.manifest.clone(),
-            vec![(pack.disk.content_path.clone(), next.content.clone())],
-        );
-        let fast = hub.builder_with_pack(parsed.clone());
-        let store = match &fast {
-            Some(b) => b.clone().build(),
-            None => hub.builder.as_ref().clone().add_parsed_pack(parsed).build(),
-        };
+        let mut builder = hub.builder.as_ref().clone();
+        let mut fast = true;
+        for (pack, next) in writes {
+            let parsed = ParsedPack::from_parts(
+                next.manifest.clone(),
+                vec![(pack.disk.content_path.clone(), next.content.clone())],
+            );
+            builder = if builder.has_pack(pack.id()) {
+                builder
+                    .replace_pack(parsed)
+                    .ok_or_else(|| ApiError::internal("a loaded pack could not be replaced"))?
+            } else {
+                fast = false;
+                builder.add_parsed_pack(parsed)
+            };
+        }
+        let store = builder.clone().build();
         let ids: HashSet<&str> = check_ids.iter().map(String::as_str).collect();
         let errors: Vec<Issue> = validate_elements(&store, &ids)
             .into_iter()
@@ -220,21 +241,23 @@ impl AppState {
         if !errors.is_empty() {
             return Err(CommitError::Problems(errors));
         }
-        write_pack(&pack.disk, next, now_ms())?;
+        let at = now_ms();
+        for (pack, next) in writes {
+            write_pack(&pack.disk, next, at)?;
+        }
         let prefs = self.content_prefs();
-        match fast {
-            Some(builder) => {
-                let settings = self.settings()?;
-                let next_hub =
-                    ContentHub::from_built(builder, store, hub.load_warnings.clone(), &settings);
-                self.set_hub(next_hub)?;
-                if let Err(e) = self.recheck_missing_content() {
-                    tracing::warn!("re-checking imported characters failed: {e}");
-                }
-                sink.content_reloaded(FAST_RELOAD);
-                self.hub()?.save_cache(&self.paths, &prefs);
+        if fast {
+            let settings = self.settings()?;
+            let next_hub =
+                ContentHub::from_built(builder, store, hub.load_warnings.clone(), &settings);
+            self.set_hub(next_hub)?;
+            if let Err(e) = self.recheck_missing_content() {
+                tracing::warn!("re-checking imported characters failed: {e}");
             }
-            None => self.reload_content(&prefs, sink, FULL_RELOAD)?,
+            sink.content_reloaded(FAST_RELOAD);
+            self.hub()?.save_cache(&self.paths, &prefs);
+        } else {
+            self.reload_content(&prefs, sink, FULL_RELOAD)?;
         }
         Ok(())
     }
@@ -382,6 +405,8 @@ impl AppState {
                 edition: e.ruleset.filter(|r| *r != Ruleset::Any),
                 problems: counts.get(&e.id).copied().unwrap_or_default(),
                 has_draft: drafted.contains(&e.id),
+                tags: e.supports.clone(),
+                text: search_text(e),
             })
             .collect())
     }
@@ -399,7 +424,7 @@ impl AppState {
         let sessions = self.sessions()?;
         for (id, s) in sessions.iter() {
             if let Ok(v) = serde_json::to_value(&s.character) {
-                if mentions_any(&v, ids) {
+                if mentions(&v, ids) {
                     out.push(HomebrewCharacterRef {
                         character_id: id.clone(),
                         name: s.character.meta.name.clone(),
@@ -425,7 +450,7 @@ impl AppState {
                 else {
                     continue;
                 };
-                if mentions_any(&v, ids) {
+                if mentions(&v, ids) {
                     out.push(HomebrewCharacterRef {
                         character_id: id.to_string(),
                         name: v["meta"]["name"].as_str().unwrap_or_default().to_string(),
@@ -478,6 +503,7 @@ impl AppState {
                 deleted: false,
                 used_by,
                 pack: None,
+                undo_id: None,
             });
         }
         let (content, trashed) = without_elements(&pack.disk.content, &ids);
@@ -489,6 +515,7 @@ impl AppState {
             creator: pack.creator.with_retired(ids.iter().copied()),
             trashed,
         };
+        let before = crate::homebrew_undo::PackBefore::of(&pack, &next);
         match self.hb_commit(&pack, &next, &[], sink) {
             Ok(()) => {}
             Err(CommitError::Api(e)) => return Err(e),
@@ -502,20 +529,20 @@ impl AppState {
             deleted: true,
             used_by,
             pack: Some(self.hb_pack_dto(pack_id)?),
+            undo_id: Some(self.hb_undo.record(vec![before])?),
         })
     }
 }
 
-/// True when any string anywhere in `v` is one of `ids`.
-fn mentions_any(v: &Value, ids: &HashSet<&str>) -> bool {
-    match v {
-        Value::String(s) => ids.contains(s.as_str()),
-        Value::Array(a) => a.iter().any(|x| mentions_any(x, ids)),
-        Value::Object(o) => o
-            .iter()
-            .any(|(k, x)| ids.contains(k.as_str()) || mentions_any(x, ids)),
-        _ => false,
-    }
+/// How much of an element's text the list filter searches (spec 12.3 "text").
+const SEARCH_TEXT_MAX: usize = 400;
+
+/// An element's summary line and description as plain text, cut short, for the list filter.
+fn search_text(e: &borealis_content::Element) -> String {
+    let short = e.setter_value("short").unwrap_or_default().trim();
+    let body = borealis_content::text::html_to_text(&e.description);
+    let all = format!("{short} {}", body.trim());
+    all.trim().chars().take(SEARCH_TEXT_MAX).collect()
 }
 
 #[cfg(test)]
@@ -530,19 +557,5 @@ mod tests {
         assert_eq!(suggest_code("a b c d e f", &none), "ABCD");
         let taken: HashSet<String> = ["MH".to_string(), "MH2".to_string()].into();
         assert_eq!(suggest_code("My Homebrew", &taken), "MH3");
-    }
-
-    #[test]
-    fn mentions_are_found_at_any_depth_and_in_keys() {
-        let ids: HashSet<&str> = ["ID_X"].into();
-        assert!(mentions_any(
-            &serde_json::json!({"a": [{"b": "ID_X"}]}),
-            &ids
-        ));
-        assert!(mentions_any(
-            &serde_json::json!({"choices": {"ID_X": 1}}),
-            &ids
-        ));
-        assert!(!mentions_any(&serde_json::json!({"a": "ID_XY"}), &ids));
     }
 }
