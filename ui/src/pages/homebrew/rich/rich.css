@@ -60,3 +60,6 @@ html.phone .rich-edit:focus { border-color: var(--ph-accent); outline: 2px solid
 html.phone .rich-kept-remove { min-height: var(--ph-hit); padding: 0 12px; color: var(--ph-accent); font: 500 var(--ph-t-foot)/1.2 var(--ph-font-ui); text-transform: none; }
 html.phone .rich-lint { font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); }
 html.phone .rich-lint .hb-tool { min-height: var(--ph-hit); }
+/* Phones: a table cell edited in a sheet (spec 16). */
+.rich-cell-nav { display: flex; gap: 8px; margin-top: 12px; }
+.rich-cell-nav .btn { flex: 1 1 0; }

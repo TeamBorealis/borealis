@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import type { HomebrewBlock, HomebrewBlockSpec, HomebrewBuilderProblem, HomebrewForm, HomebrewProblem } from "../../../api/contract";
 import { Icon } from "../../../components";
+import { haptic } from "../../../lib/haptics";
 import { setStatus } from "../../../state/status";
 import { MgIcon } from "../../manage/mgIcons";
 import "../../manage/manage.css";
@@ -87,6 +88,7 @@ export function BlockList({ label, blocks, onChange, kinds, problems, answer, ne
   };
   const remove = (i: number) => {
     onChange(blocks.filter((_, j) => j !== i));
+    haptic("delete");
     setSel(null);
     setStatus("Rule removed. Undo brings it back.");
   };

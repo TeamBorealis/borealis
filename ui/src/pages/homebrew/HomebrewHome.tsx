@@ -103,7 +103,7 @@ export function HomebrewHome() {
             {rows.map((p) => (
               <div key={p.id} role="row" aria-selected={p.id === selectedId} className={`v4-grid-row${p.id === selectedId ? " sel" : ""}`}
                 onClick={() => setSelectedId(p.id)} onDoubleClick={() => openPack(p)}>
-                <span role="gridcell" className="nm">{p.name}{problemMark(p)}<RowDetail parts={[editionLabel(p.rulesets), `${p.elementCount} elements`, `v${p.version}`]} /></span>
+                <span role="gridcell" className="nm">{p.name}{problemMark(p)}<RowDetail parts={[editionLabel(p.rulesets), `${p.elementCount} ${p.elementCount === 1 ? "element" : "elements"}`, `v${p.version}`]} /></span>
                 <span role="gridcell">{editionLabel(p.rulesets)}</span>
                 <span role="gridcell">{p.elementCount}</span>
                 <span role="gridcell">{p.version}</span>

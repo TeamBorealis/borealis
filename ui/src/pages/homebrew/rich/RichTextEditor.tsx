@@ -6,11 +6,12 @@ import { EditorState, Selection, type Command, type Transaction } from "prosemir
 import { EditorView } from "prosemirror-view";
 import { Icon, type IconName } from "../../../components/Icon";
 import { usePhone } from "../../../lib/phone";
+import { CellSheet } from "./CellSheet";
 import "../../equipment/equipment.css";
 import "../homebrew.css";
 import "./rich.css";
 import {
-  ACTION_META, addTableColumn, addTableRow, asAction, deleteTable, docFromJson, insertHigherLevel, insertTable, isHeadingActive,
+  ACTION_META, addTableColumn, addTableRow, asAction, cellIndexAt, setCellText, tableCells, deleteTable, docFromJson, insertHigherLevel, insertTable, isHeadingActive,
   isListActive, isMarkActive, removeKeptAt, replaceDoc, richKeys, tableAt, toggleBold, toggleHeading, toggleItalic, toggleList,
   type Edition,
 } from "./commands";
@@ -135,6 +136,8 @@ export function RichTextEditor(props: RichTextEditorProps) {
   const propsRef = useRef(props);
   const [state, setState] = useState<EditorState | null>(null);
   const [focused, setFocused] = useState(false);
+  /** Phones: the table cell open in the cell sheet (spec 16), by its index in the table. */
+  const [cellSheet, setCellSheet] = useState<number | null>(null);
 
   useLayoutEffect(() => {
     propsRef.current = props;
@@ -196,7 +199,10 @@ export function RichTextEditor(props: RichTextEditorProps) {
   const doc = state?.doc;
   const findings = useMemo(() => (doc ? lintDocJson(doc.toJSON() as DocJson) : []), [doc]);
   const buttons = state ? toolButtons(state, props.extras, props.edition) : [];
-  const docked = phone && focused;
+  const docked = phone && (focused || cellSheet !== null);
+  const cells = phone && state ? tableCells(state) : null;
+  const here = cells && state ? cells[cellIndexAt(state)] : undefined;
+  const cellEditable = !!here?.plain;
 
   return (
     <div
@@ -220,8 +226,18 @@ export function RichTextEditor(props: RichTextEditorProps) {
             <Icon name={b.icon} />{b.text}
           </button>
         ))}
+        {phone && cells && (
+          <button type="button" aria-label="Edit cell" title={cellEditable ? "Edit this cell in a sheet" : "This cell has bold or italic text: edit it in place"}
+            disabled={!cellEditable} onMouseDown={keepFocus} onClick={() => setCellSheet(cellIndexAt(state!))}>
+            <Icon name="pen" />Edit cell
+          </button>
+        )}
       </div>
       <div ref={hostRef} className="rich-host" />
+      {cellSheet !== null && cells && (
+        <CellSheet cells={cells} index={cellSheet} onIndex={setCellSheet} onClose={() => setCellSheet(null)}
+          onWrite={(cell, text) => { const view = viewRef.current; if (view) asAction(setCellText(cell.pos, text))(view.state, view.dispatch, view); }} />
+      )}
       {findings.length > 0 && (
         <div className="rich-lint" role="status">
           <Icon name="alert" />

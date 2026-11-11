@@ -4,6 +4,7 @@ import type { HomebrewDraftView, HomebrewElementSummary, HomebrewForm, HomebrewK
 import { Button, Icon, useToast } from "../../components";
 import { useNarrow } from "../../components/shell/useNarrow";
 import { useApi } from "../../state/ApiContext";
+import { haptic } from "../../lib/haptics";
 import { setStatus } from "../../state/status";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { DescriptionPane, ElementDetailView } from "../builder/DescriptionPane";
@@ -244,6 +245,7 @@ export function PackWorkspace() {
       elements.reload();
       packs.reload();
       setWritten((n) => n + 1);
+      haptic("save");
       setStatus(`Saved '${name}' to ${result.pack.name}.`);
     } catch (e) {
       setStatus(errorMessage(e));

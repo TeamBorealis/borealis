@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useCreatorEnv } from "../env";
 import type { HomebrewForm, HomebrewTableColumn } from "../../../api/contract";
-import { CheckBox, Icon, NumericUpDown, TextBox } from "../../../components";
+import { Button, CheckBox, Dialog, Icon, NumericUpDown, TextBox } from "../../../components";
+import { usePhone } from "../../../lib/phone";
 import { setStatus } from "../../../state/status";
 import { NumbersControl } from "../blocks/valueControls";
 import { ChildDialog, type ChildEditing, childKind } from "./ChildDialog";
@@ -37,6 +38,9 @@ export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing
   const env = useCreatorEnv();
   const [open, setOpen] = useState<string | null>(null);
   const [newColumn, setNewColumn] = useState("");
+  const phone = usePhone();
+  /** Phones (spec 16): the level whose sheet is open. */
+  const [sheetLevel, setSheetLevel] = useState<number | null>(null);
   const isClass = featureType === "Class Feature";
   const entries = entriesOf(form, LEVELS_FIELD);
   const columns = isClass ? columnsOf(form) : [];
@@ -67,11 +71,52 @@ export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing
     setStatus("Feature removed. Undo brings it back.");
   };
 
+  /** The FEATURES cell of a level: the features at it (a chip opens one), and the Plus that adds one. */
+  const atLevel = (level: number) => entries.map((e, i) => ({ e, i })).filter(({ e }) => (e.level ?? 1) === level);
+  const featuresAt = (level: number, labelled = false) => (
+    <>
+      {marked.has(level) && atLevel(level).length === 0 && <span className="hb-level-hint">Subclass feature</span>}
+      {atLevel(level).map(({ e, i }) => (
+        <span key={e.child ?? `${i}-${e.element?.id ?? ""}`} className={`hb-chip-item hb-feature-chip ${e.element?.missing ? "hb-missing" : ""}`}>
+          {e.child
+            ? <button type="button" className="hb-feature-name" data-feature={entryName(form, e)} onClick={() => setOpen(e.child!)}>{entryName(form, e)}</button>
+            : <span className="hb-feature-name" title="Given from another pack: copy the class with its features to edit it.">{entryName(form, e)}</span>}
+          {!e.child && <button type="button" className="hb-chip-x" aria-label={`Remove ${entryName(form, e)}`} onClick={() => editing.edit((f) => withoutEntry(f, LEVELS_FIELD, i))}><Icon name="x" /></button>}
+        </span>
+      ))}
+      {feature && <button type="button" className="hb-chip-x hb-add-feature" aria-label={`Add a feature at level ${level}`} title={`Add a feature at level ${level}`}
+        onClick={() => void addAt(level)}><Icon name="plus" />{labelled && "Add feature"}</button>}
+    </>
+  );
+  const counterAt = (column: HomebrewTableColumn, index: number, level: number) => (
+    <input aria-label={`${column.label || column.key} at level ${level}`} value={String(column.values[level - 1] ?? 0)}
+      onChange={(ev) => setCell(index, level, ev.target.value)} />
+  );
+  /** A phone row's detail line: the proficiency bonus, then the features at the level (or the subclass mark). */
+  const levelDetail = (level: number): string => {
+    const names = atLevel(level).map(({ e }) => entryName(form, e));
+    const what = names.length > 0 ? names.join(", ") : marked.has(level) ? "Subclass feature" : "No features";
+    return `+${proficiencyBonus(level)} · ${what}`;
+  };
+
   return (
     <div className="hb-levels-tab">
       {isClass && <GeneratedFeatures editing={editing} />}
       <div className="hb-section">
         <h3 className="hb-section-title">Levels</h3>
+        {phone ? (
+          // Phones (spec 16): one row per level; a tap opens that level's features (and counters) in a sheet.
+          <ul className="hb-level-rows" aria-label="Features by level">
+            {LEVELS.map((level) => (
+              <li key={level} data-level={level} className={marked.has(level) ? "hb-marked-level" : undefined}>
+                <button type="button" className="hb-level-row" aria-haspopup="dialog" onClick={() => setSheetLevel(level)}>
+                  <span className="hb-level-row-name">Level {level}</span>
+                  <span className="hb-level-row-detail">{levelDetail(level)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
         <div className="hb-levels-wrap">
           <table className="ap-grid hb-levels" aria-label="Features by level">
             <thead>
@@ -93,30 +138,14 @@ export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing
                 <tr key={level} data-level={level} className={marked.has(level) ? "hb-marked-level" : undefined}>
                   <th scope="row">{level}</th>
                   <td>+{proficiencyBonus(level)}</td>
-                  <td className="hb-level-features">
-                    {marked.has(level) && !entries.some((e) => (e.level ?? 1) === level) && <span className="hb-level-hint">Subclass feature</span>}
-                    {entries.map((e, i) => (e.level ?? 1) === level && (
-                      <span key={e.child ?? `${i}-${e.element?.id ?? ""}`} className={`hb-chip-item hb-feature-chip ${e.element?.missing ? "hb-missing" : ""}`}>
-                        {e.child
-                          ? <button type="button" className="hb-feature-name" data-feature={entryName(form, e)} onClick={() => setOpen(e.child!)}>{entryName(form, e)}</button>
-                          : <span className="hb-feature-name" title="Given from another pack: copy the class with its features to edit it.">{entryName(form, e)}</span>}
-                        {!e.child && <button type="button" className="hb-chip-x" aria-label={`Remove ${entryName(form, e)}`} onClick={() => editing.edit((f) => withoutEntry(f, LEVELS_FIELD, i))}><Icon name="x" /></button>}
-                      </span>
-                    ))}
-                    {feature && <button type="button" className="hb-chip-x hb-add-feature" aria-label={`Add a feature at level ${level}`} title={`Add a feature at level ${level}`}
-                      onClick={() => void addAt(level)}><Icon name="plus" /></button>}
-                  </td>
-                  {counters.map(({ column, index }) => (
-                    <td key={index} className="hb-counter">
-                      <input aria-label={`${column.label || column.key} at level ${level}`} value={String(column.values[level - 1] ?? 0)}
-                        onChange={(ev) => setCell(index, level, ev.target.value)} />
-                    </td>
-                  ))}
+                  <td className="hb-level-features">{featuresAt(level)}</td>
+                  {counters.map(({ column, index }) => <td key={index} className="hb-counter">{counterAt(column, index, level)}</td>)}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        )}
         {isClass && <div className="hb-add-column">
           <label htmlFor="hb-new-column">New column</label>
           <TextBox id="hb-new-column" value={newColumn} placeholder="Rage uses" onChange={(e) => setNewColumn(e.target.value)}
@@ -125,6 +154,19 @@ export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing
           <p className="hb-field-help">Counters per level (uses, dice); a rule&apos;s maximum can read a column (&quot;class table&quot;).</p>
         </div>}
       </div>
+      {phone && sheetLevel !== null && open === null && (
+        <Dialog title={`Level ${sheetLevel}`} onClose={() => setSheetLevel(null)} className="hb-level-sheet"
+          footer={<Button onClick={() => setSheetLevel(null)}>Close</Button>}>
+          <p className="hb-field-help">Proficiency bonus +{proficiencyBonus(sheetLevel)}.</p>
+          <div className="hb-level-features" role="group" aria-label={`Features at level ${sheetLevel}`}>{featuresAt(sheetLevel, true)}</div>
+          {counters.map(({ column, index }) => (
+            <label key={index} className="mg-f hb-field hb-counter">
+              <span>{column.label || column.key}</span>
+              {counterAt(column, index, sheetLevel)}
+            </label>
+          ))}
+        </Dialog>
+      )}
       {open && <ChildDialog editing={editing} childKey={open} levelField={LEVELS_FIELD} onRemove={() => remove(open)} onClose={() => setOpen(null)} />}
     </div>
   );

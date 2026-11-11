@@ -3,6 +3,7 @@ import type { HomebrewElementSummary, HomebrewKindDescriptor } from "../../api/c
 import { Icon, RowDetail } from "../../components";
 import { Band } from "../spells/TwoPane";
 import { Glyph } from "../equipment/Glyph";
+import { usePhone } from "../../lib/phone";
 import "../equipment/equipment.css";
 import "../spells/pane.css";
 import { filterRows, isSearching, type ListFilter, nextSelection } from "./search";
@@ -89,6 +90,7 @@ export interface ElementListProps {
  */
 export function ElementList({ kind, kinds, rows, unsaved, openId, filter, filterRef, onFilter, onOpen, onNew, onDuplicate, selected, onSelect, selectMode, onSelectMode }: ElementListProps) {
   const [anchor, setAnchor] = useState<string | null>(null);
+  const phone = usePhone();
   const searching = isSearching(filter);
   const shown = filterRows(rows, kind?.id ?? null, filter, kinds);
   const shownIds = shown.map((r) => r.id);
@@ -110,15 +112,15 @@ export function ElementList({ kind, kinds, rows, unsaved, openId, filter, filter
     <div className="hb-elements">
       <Band title={searching ? "Found" : kind?.pluralLabel ?? "Elements"} />
       <div className="ap-scroll hb-element-scroll">
-        <table className="ap-grid" aria-label="Elements" aria-multiselectable="true">
+        <table className={selectMode ? "ap-grid hb-select-mode" : "ap-grid"} aria-label="Elements" aria-multiselectable="true">
           <thead><tr>{selectMode && <th aria-label="Chosen" />}<th>Name</th><th>Edition</th><th aria-label="Marks" /></tr></thead>
           <tbody>
             {unsaved && !searching && (
               <tr className="sel" aria-current="true">
                 {selectMode && <td />}
-                <td className="grow"><span className="ap-name hb-new-name">{unsaved.name}</span></td>
-                <td>New</td>
-                <td><span className="hb-mark-draft" title="Not saved yet"><Icon name="pen" /></span></td>
+                <td className="grow"><span className="ap-name hb-new-name">{unsaved.name}</span><RowDetail parts={["New", "Not saved yet"]} /></td>
+                <td className="hide-narrow">New</td>
+                <td className="hide-narrow"><span className="hb-mark-draft" title="Not saved yet"><Icon name="pen" /></span></td>
               </tr>
             )}
             {shown.map((r) => {
@@ -154,7 +156,7 @@ export function ElementList({ kind, kinds, rows, unsaved, openId, filter, filter
           <button type="button" className="hb-tool" aria-pressed={selectMode} title="Choose several elements (or Ctrl+click, Shift+click)" onClick={() => onSelectMode(!selectMode)}>Select</button>
         </span>
         <span className="eq-filter">
-          <input ref={filterRef} type="text" aria-label="Filter elements" placeholder="filter names, tags, text... (Ctrl+F)" value={filter.text} onChange={(e) => onFilter({ ...filter, text: e.target.value })} />
+          <input ref={filterRef} type="text" aria-label="Filter elements" placeholder={phone ? "Filter names, tags, text..." : "filter names, tags, text... (Ctrl+F)"} value={filter.text} onChange={(e) => onFilter({ ...filter, text: e.target.value })} />
           <button type="button" aria-label="Clear" onClick={() => onFilter({ ...filter, text: "" })}><Glyph name="x" /></button>
         </span>
         <button type="button" className="hb-chip hb-problems-only" aria-pressed={filter.problemsOnly} onClick={() => onFilter({ ...filter, problemsOnly: !filter.problemsOnly })}>Has problems</button>

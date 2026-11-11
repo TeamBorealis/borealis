@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import type { HomebrewPickerFilters, HomebrewPickerRow, HomebrewPickerTarget, HomebrewRef } from "../../../api/contract";
 import { Button, ComboBox, Dialog, Expander, FocusBar, Icon } from "../../../components";
+import { haptic } from "../../../lib/haptics";
 import { usePhone } from "../../../lib/phone";
 import { editionsOf, effectiveFilter, NO_FILTER, type PickerFilter, sourcesOf, versionPasses } from "../../../lib/versions";
 import { useApi } from "../../../state/ApiContext";
@@ -81,6 +82,7 @@ export function ReferencePicker({ title, target, chosen, onChoose, onClose, filt
   const noun = targetNoun(target);
 
   const choose = (row: HomebrewPickerRow) => {
+    haptic("choose");
     if (!multiple) { onChoose([refOf(row)]); return; }
     setPicked((cur) => (cur.some((p) => sameId(p.id, row.id)) ? cur.filter((p) => !sameId(p.id, row.id)) : [...cur, refOf(row)]));
   };
@@ -91,6 +93,7 @@ export function ReferencePicker({ title, target, chosen, onChoose, onClose, filt
     return v ? refOf(v.row) : p;
   };
   const done = () => {
+    haptic("choose");
     if (multiple) { onChoose(picked.map(named)); return; }
     if (described) onChoose([refOf(described)]);
   };
@@ -121,7 +124,7 @@ export function ReferencePicker({ title, target, chosen, onChoose, onClose, filt
           {visible.map((v) => (
             <PickerRow key={`${v.type}:${v.id}`} row={shownRow(v, isPicked(v.id))} listSlot={false} showDescription versionColumn={false}
               highlighted={described?.id === v.id} menuOpen={false} notesOpen={false} notesId={`hb-pick-notes-${v.id}`} onToggleNotes={() => undefined}
-              onDescribe={() => setDescribed(v.row)} onChoose={() => choose(v.row)} onOpenMenu={() => undefined} onKeyNav={onKeyNav} />
+              onDescribe={() => setDescribed(v.row)} onChoose={() => choose(v.row)} onOpenMenu={() => undefined} onKeyNav={onKeyNav} multiple={multiple} />
           ))}
         </ul>
       </Expander>

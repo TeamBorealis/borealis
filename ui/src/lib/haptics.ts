@@ -4,7 +4,7 @@ import { phoneOs } from "./phone";
 import { isTauri } from "./tauri";
 
 /**
- * B-48 O13: light haptics on choose, level up, rest and delete, on iOS and Android builds only (mobile-facelift-spec
+ * B-48 O13: light haptics on choose, level up, rest and delete (and, in the homebrew creator, save: spec 16), on iOS and Android builds only (mobile-facelift-spec
  * sec. 5.13). The official Tauri haptics plugin (`tauri-plugin-haptics`) does the work; its JS binding
  * (`@tauri-apps/plugin-haptics`) is a thin `invoke` wrapper, called here directly as `pages/transfer/scanner.ts` does
  * for the barcode plugin. Desktop builds, plain browsers and the web mock have no plugin: nothing happens there.
@@ -13,13 +13,13 @@ import { isTauri } from "./tauri";
  * plugin vibrates through `Vibrator`, which ignores Settings > Touch feedback, so the backend's `haptics_enabled`
  * command reads that setting first and nothing fires when it is off.
  */
-export type HapticEvent = "choose" | "levelUp" | "rest" | "delete";
+export type HapticEvent = "choose" | "levelUp" | "rest" | "delete" | "save";
 export type ImpactStyle = "light";
 
 export interface HapticsBackend {
   /** A selection tick (picker choice). */
   selection(): Promise<void>;
-  /** A light impact (level up, rest, delete). */
+  /** A light impact (level up, rest, delete, save). */
   impact(style: ImpactStyle): Promise<void>;
   /** The platform's system haptics setting. */
   enabled(): Promise<boolean>;

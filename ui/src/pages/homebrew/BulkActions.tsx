@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ContentPack, HomebrewBulkPatch, HomebrewElementSummary } from "../../api/contract";
 import { Alert, Button, ComboBox, Dialog, TextBox, useToast } from "../../components";
+import { haptic } from "../../lib/haptics";
 import { useApi } from "../../state/ApiContext";
 import { setStatus } from "../../state/status";
 import { errorMessage } from "../../state/useAsync";
@@ -107,6 +108,7 @@ export function BulkActions({ packId, chosen, packs, beforeChange, onDone, onCle
         if (answer !== "delete") return;
         r = await api.homebrewDeleteElements({ packId, elementIds: ids, confirm: true });
       }
+      haptic("delete");
       offerUndo(`Deleted ${what}.`, r.undoId);
       onDone({ action: "delete", ids });
     } catch (e) {

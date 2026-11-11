@@ -56,3 +56,10 @@
 html.phone .hb-bulk { background: var(--ph-raised); border: 0; border-radius: var(--ph-r-md); }
 html.phone .hb-bulk-count { font: 600 var(--ph-t-foot)/1.2 var(--ph-font-ui); text-transform: none; color: var(--ph-text); }
 html.phone .hb-pick input { width: 24px; height: 24px; }
+/* DATA on phones: the sheet's surface and text colours (the desktop description pane's #101010 is the dark theme's). */
+html.phone .hb-data { padding: 8px var(--ph-gutter); border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .hb-data-line { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); }
+html.phone .hb-data-key { color: var(--ph-text-2); }
+html.phone .hb-data-val { color: var(--ph-text); }
+html.phone .hb-data-expr, html.phone .hb-data-number, html.phone .hb-data-flag { color: var(--ph-gold); }
+html.phone .hb-data-empty { color: var(--ph-text-3); }

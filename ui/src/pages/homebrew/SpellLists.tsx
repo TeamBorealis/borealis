@@ -1,6 +1,7 @@
 import { type MutableRefObject, useCallback, useEffect, useMemo, useState } from "react";
 import type { HomebrewSpellListRow, HomebrewSpellListView } from "../../api/contract";
 import { Alert, ComboBox, TextBox } from "../../components";
+import { haptic } from "../../lib/haptics";
 import { useApi } from "../../state/ApiContext";
 import { setStatus } from "../../state/status";
 import { errorMessage, useAsync } from "../../state/useAsync";
@@ -96,6 +97,7 @@ export function SpellLists({ packId, narrow, described, onDescribe, handle, onSa
       const next = await api.homebrewSetSpellList({ packId, listTag: view.listTag, add, remove });
       setView(next);
       setPending(new Map());
+      haptic("save");
       setStatus(`Saved the ${next.listTag} list: ${spells(next.count)}.`);
       onSaved?.();
     } catch (e) {

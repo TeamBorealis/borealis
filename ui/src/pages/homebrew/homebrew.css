@@ -42,7 +42,11 @@
 
 /* Editor: title band, command row, PROBLEMS, the 30 px sub-tab band, the form */
 .hb-ws-editor { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
-.hb-editor { display: flex; flex-direction: column; min-height: 0; flex: 1 1 0; overflow-y: auto; }
+.hb-editor { display: flex; flex-direction: column; min-height: 0; flex: 1 1 0; overflow: hidden; }
+/* The title band, commands, PROBLEMS and the sub-tab band stay put; only the form scrolls (an open PROBLEMS list scrolls
+   inside its expander, so the form keeps its room). */
+.hb-editor > .hb-tabpanel { flex: 1 1 0; min-height: 0; overflow-y: auto; }
+.hb-ws.wide .hb-problems .aur-expander-body { max-height: 160px; overflow-y: auto; }
 .hb-editor > .ap-band h2 { font-size: 12px; }
 .hb-autosave { margin-left: auto; font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; color: var(--gray-6); }
 .hb-autosave.hb-error { color: var(--aur-danger-bright); }
@@ -94,6 +98,11 @@
 .hb-ws.narrow .hb-ws-head { padding: 8px 16px 0; }
 .hb-ws-list, .hb-ws.narrow .hb-ws-editor { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
 .hb-ws.narrow .hb-editor { flex: none; overflow: visible; }
+.hb-ws.narrow .hb-editor > .hb-tabpanel { flex: none; overflow: visible; }
+/* Spec 16: the element's name and the sub-tab strip stay at the top of the page while the form scrolls under them. */
+.hb-ws.narrow .hb-editor-head { position: sticky; top: 0; z-index: 3; background: var(--bg); }
+.hb-ws.narrow .hb-editor-head .ap-band h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb-ws.narrow .hb-field, .hb-ws.narrow .hb-section-title { scroll-margin-top: 120px; scroll-margin-bottom: 72px; }
 .hb-ws.narrow .hb-element-scroll { flex: none; }
 .hb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .hb-chip { height: 26px; min-height: 26px; padding: 0 10px; background: transparent; border: 1px solid var(--accent-80); border-radius: 2px; color: var(--text-body); font-size: 11px; cursor: pointer; }
@@ -105,7 +114,37 @@ html.phone .hb-pack-grid .v4-grid-head, html.phone .hb-pack-grid .v4-grid-row { 
 html.phone .hb-pack-grid .v4-grid-head > :nth-child(n+2), html.phone .hb-pack-grid .v4-grid-row > :nth-child(n+2) { display: none; }
 html.phone .hb-chip { min-height: var(--ph-hit); border-radius: var(--ph-r-pill); border-color: var(--ph-field-line); background: transparent; color: var(--ph-text); font: 500 var(--ph-t-foot)/1.2 var(--ph-font-ui); padding: 0 14px; }
 html.phone .hb-chip[aria-pressed="true"] { background: var(--ph-accent); border-color: var(--ph-accent); color: var(--ph-on-accent); }
-html.phone .hb-commands.eq-pin { background: var(--ph-bg); justify-content: space-between; height: auto; min-height: var(--ph-hit); }
+/* The pinned row sits on (and 2 px past, so no rounding leaves a hairline) the page's bottom edge with its own background, and covers 8 px above it: no strip of the form
+   shows between it and the status line (the gear lists' 8 px gap below the bar let the form through). */
+html.phone .hb-commands.eq-pin { bottom: -2px; padding-bottom: 2px; box-shadow: 0 -8px 0 var(--ph-bg); background: var(--ph-bg); justify-content: space-between; height: auto; min-height: var(--ph-hit); }
+html.phone .hb-ws.narrow .hb-ws-editor { padding-bottom: 0; }
+html.phone .hb-ws.narrow .hb-editor-head { margin: 0 calc(-1 * var(--ph-gutter)); padding: 0 var(--ph-gutter); background: var(--ph-bg); }
+html.phone .hb-ws.narrow .hb-editor-head .ap-band { flex-wrap: wrap; padding: 8px var(--ph-gutter) 6px; border-radius: var(--ph-r-lg) var(--ph-r-lg) 0 0; }
+html.phone .hb-ws.narrow .hb-editor-head .ap-band h2 { flex: 1 1 100%; }
+html.phone .hb-ws.narrow .hb-editor-head .hb-autosave { margin-left: 0; font: 400 var(--ph-t-foot)/1.3 var(--ph-font-ui); text-transform: none; color: var(--ph-text-2); }
 html.phone .hb-commands.eq-pin button { min-height: var(--ph-hit); font-size: var(--ph-t-foot); text-transform: none; }
 html.phone .hb-problem { min-height: var(--ph-hit); align-items: center; }
 html.phone .hb-ws.narrow .hb-ws-desc, html.phone .hb-ws.narrow .desc-pane { background: transparent; }
+/* Spec 16: the kinds are one scrolling chip row above the list (33 wrapped chips pushed the list off the screen). */
+html.phone .hb-ws-list .hb-chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 calc(-1 * var(--ph-gutter)); padding: 2px var(--ph-gutter); scrollbar-width: none; }
+html.phone .hb-ws-list .hb-chips::-webkit-scrollbar { display: none; }
+html.phone .hb-ws-list .hb-chip { flex: none; white-space: nowrap; }
+/* New element / New pack option cards on phones: the kind's name in the sheet's text colour, the chosen card marked by the
+   accent tint and a check (the desktop card's light name was unreadable on the light sheet). */
+html.phone .hb-kind-card { padding-right: calc(var(--ph-gutter) + 32px); }
+html.phone .hb-kind-name { font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .hb-kind-desc { margin-top: 2px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .hb-kind-card[aria-checked="true"] { background: var(--ph-accent-soft); border-style: none; }
+html.phone .hb-kind-card[aria-checked="true"]::after {
+  content: ""; position: absolute; right: var(--ph-gutter); top: 50%; width: 7px; height: 13px; margin-top: -9px;
+  border: solid var(--ph-accent); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg);
+}
+/* Element rows on phones (O14 B): the name with its detail line; the edition and mark columns are in that line already. */
+html.phone .hb-elements .ap-grid td.hide-narrow { display: none; }
+/* Select mode (spec 12.5, O6 A): the check box leads the one-line row. */
+html.phone .hb-elements .ap-grid.hb-select-mode tbody tr:not(.ap-empty-row) { grid-template-columns: 24px minmax(0, 1fr); }
+html.phone .hb-elements .ap-grid td.hb-pick { display: grid; place-items: center; }
+/* With the keyboard up the rich-text toolbar docks above it (spec 16); the pinned commands step aside until it closes. */
+html.phone.kb-open .hb-commands.eq-pin { display: none; }
+html.phone .hb-ws.narrow .rich-docked .rich-toolbar { top: var(--hb-head-h, 0px); }
+html.phone .hb-multiline { padding: 10px 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text); font: 400 var(--ph-t-body)/1.35 var(--ph-font-ui); }

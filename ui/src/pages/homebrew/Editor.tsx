@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import type { HomebrewFieldSpec, HomebrewForm, HomebrewKindDescriptor, HomebrewProblem, HomebrewTab, Ruleset } from "../../api/contract";
 import { Icon, TabControl, ToggleSwitch } from "../../components";
 import { PreservedList } from "./blocks/BlockDialog";
@@ -70,6 +70,20 @@ const valueOf = (f: HomebrewFieldSpec, form: HomebrewForm, answer: HomebrewForm 
 /** The SPELLCASTING sub-tab (spec 4.6): a class's edits its Spellcasting feature; any other form's, its own section. */
 const SPELLCASTING_TAB = "spellcasting";
 
+/** The sticky head's height as `--hb-head-h` on the editor (phones): the rich-text toolbar sticks under it while editing. */
+function useHeadHeight(head: RefObject<HTMLDivElement>, editor: RefObject<HTMLElement>, on: boolean): void {
+  useEffect(() => {
+    const h = head.current;
+    const e = editor.current;
+    if (!on || !h || !e || typeof ResizeObserver === "undefined") return;
+    const set = () => e.style.setProperty("--hb-head-h", `${h.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(h);
+    return () => ro.disconnect();
+  }, [head, editor, on]);
+}
+
 /** The kind's sub-tabs as the band shows them; phones add PREVIEW after the kind's own. */
 export function editorTabs(kind: HomebrewKindDescriptor, narrow: boolean, edition: Ruleset | null = null): HomebrewTab[] {
   // a tab whose fields are all of the other edition is not shown (a 2024 background has no CHARACTERISTICS, WB-14)
@@ -92,6 +106,9 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
   tryItOpen?: boolean;
 }) {
   const [expert, setExpert] = useState(false);
+  const headRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLElement>(null);
+  useHeadHeight(headRef, editorRef, narrow && draft.form !== null);
   const form = draft.form;
   if (!form) return null;
   const name = typeof form.fields.name === "string" && form.fields.name.trim() ? form.fields.name.trim() : `New ${kind.label.toLowerCase()}`;
@@ -123,18 +140,31 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
       {!narrow && <button type="button" aria-label="Duplicate" title="Duplicate (Ctrl+D)" disabled={!draft.view?.elementId} onClick={actions.onDuplicate}><Icon name="copy" />Duplicate</button>}
     </div>
   );
+  const band = <Band title={name}><span className={`hb-autosave hb-${draft.autosave}`} role="status">{AUTOSAVE_TEXT[draft.autosave]}</span></Band>;
+  const tabBand = (
+    <div className="aur-subband hb-band">
+      <TabControl tabs={tabs.map((t) => ({ id: t.id, label: t.label }))} active={current} onChange={onTab} label="Editor sections" idPrefix="hb-tab" />
+      {hasExpert && !narrow && expertSwitch}
+    </div>
+  );
+  const error = draft.error && <p className="hb-error-line" role="alert">{draft.error}</p>;
+  const problemsPanel = <ProblemsPanel problems={draft.problems} checking={draft.checking} onJump={actions.onJump} onOpen={() => void draft.check()} />;
   return (
     <CreatorEnvProvider draftId={draft.view?.draftId ?? null} edition={edition} form={form} answer={draft.view?.form ?? null} problems={draft.problems} expert={expert}>
-      <section className="hb-editor" aria-label="Element editor">
-        <Band title={name}><span className={`hb-autosave hb-${draft.autosave}`} role="status">{AUTOSAVE_TEXT[draft.autosave]}</span></Band>
-        {!narrow && commands}
-        {draft.error && <p className="hb-error-line" role="alert">{draft.error}</p>}
-        <ProblemsPanel problems={draft.problems} checking={draft.checking} onJump={actions.onJump} onOpen={() => void draft.check()} />
-        <div className="aur-subband hb-band">
-          <TabControl tabs={tabs.map((t) => ({ id: t.id, label: t.label }))} active={current} onChange={onTab} label="Editor sections" idPrefix="hb-tab" />
-          {hasExpert && !narrow && expertSwitch}
-        </div>
-        {hasExpert && narrow && <div className="hb-expert-row">{expertSwitch}</div>}
+      <section className="hb-editor" aria-label="Element editor" ref={editorRef}>
+        {narrow ? (
+          // Phones (spec 16): the element's name and the sub-tab strip stay at the top while the form scrolls under them;
+          // PROBLEMS follows the strip, and the commands are pinned at the bottom.
+          <>
+            <div className="hb-editor-head" ref={headRef}>{band}{tabBand}</div>
+            {error}
+            {problemsPanel}
+            {hasExpert && <div className="hb-expert-row">{expertSwitch}</div>}
+          </>
+        ) : (
+          // Desktop (13.2-13.4): the title band, commands, PROBLEMS and the sub-tab band stay; only the form scrolls.
+          <>{band}{commands}{error}{problemsPanel}{tabBand}</>
+        )}
         <div role="tabpanel" id="hb-tab-panel" aria-labelledby={`hb-tab-${current}`} className="hb-tabpanel">
           {current === PREVIEW_TAB.id ? preview : current === DATA_TAB.id ? <DataView generated={draft.view?.generated} /> : current === SPELLCASTING_TAB && (kind.id === "class" || kind.id === "subclass")
             ? <SpellcastingTab editing={childEditing} expert={expert} />
