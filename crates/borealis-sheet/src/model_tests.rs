@@ -315,6 +315,52 @@ fn shared_class_features_merge_their_sources() {
 }
 
 #[test]
+fn improvement_placeholders_are_left_out_but_their_feat_stays() {
+    use borealis_engine::snapshot::FeatureDetail;
+    let (c, mut snap) = fighter_wizard_2014();
+    let base: FeatureDetail = snap
+        .features
+        .iter()
+        .find(|f| f.name == "Second Wind")
+        .expect("fighter feature")
+        .clone();
+    let placeholder = FeatureDetail {
+        id: "ID_INTERNAL_CLASS_FEATURE_FEAT_8_FIGHTER".into(),
+        name: "Feat (8)".into(),
+        level: 8,
+        granted_by: Some("Ability Score Improvement".into()),
+        sheet_summary: Some(
+            "Template for taking a feat instead of an ability score improvement.".into(),
+        ),
+        ..base.clone()
+    };
+    let asi = FeatureDetail {
+        id: "ID_INTERNAL_CLASS_FEATURE_ASI_4_FIGHTER".into(),
+        name: "Ability Score Improvement (4)".into(),
+        level: 4,
+        ..placeholder.clone()
+    };
+    let feat = FeatureDetail {
+        id: "ID_TEST_FEAT_ALERT".into(),
+        name: "Alert".into(),
+        ty: "Feat".into(),
+        level: 8,
+        granted_by: Some("Feat (8)".into()),
+        sheet_summary: Some("You can't be surprised while you are conscious.".into()),
+        ..base
+    };
+    snap.features.extend([placeholder, asi, feat]);
+    let d = crate::sheet_data(&c, &snap, &SpellFactsMap::new());
+    let names: Vec<_> = d.features.iter().map(|f| f.name.as_str()).collect();
+    assert!(!names.contains(&"Feat (8)"), "{names:?}");
+    assert!(
+        !names.contains(&"Ability Score Improvement (4)"),
+        "{names:?}"
+    );
+    assert!(names.contains(&"Alert"), "{names:?}");
+}
+
+#[test]
 fn play_state_fields_exist_as_blank_write_ins() {
     let d = data(&wizard_2014());
     assert_eq!((d.play.current_hp, d.play.temp_hp), (None, None));
