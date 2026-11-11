@@ -59,7 +59,9 @@ describe('hc-wb23 homebrew SPELL LISTS and where used (web mock)', { tags: ['hom
     }, GRID);
     await expect(ctx.screen.getByRole('region', 'Where used')).toBeVisible();
     await waitFor(ctx, (_: null) => [...document.querySelectorAll('.hb-where-list .ap-name')].some((b) => b.textContent === 'Wizard'), null, 'Wizard in where used');
-    const uses = await ctx.browser.evaluate((_: null) => [...document.querySelectorAll('.hb-where-list li')].map((li) => li.textContent ?? ''), null);
-    expectEqual('where used', 'ClericLists it · Class|WizardLists it · Class', uses.join('|'));
+    // each row: its name and what it does (a loaded element's row also has Edit, which edits a copy: P2b, HC5)
+    const uses = await ctx.browser.evaluate((_: null) => [...document.querySelectorAll('.hb-where-list li')]
+      .map((li) => `${li.querySelector('.ap-name')?.textContent ?? ''}${li.querySelector('.hb-where-what')?.textContent ?? ''}${li.querySelector('.hb-where-edit') ? '+Edit' : ''}`), null);
+    expectEqual('where used', 'ClericLists it · Class+Edit|WizardLists it · Class+Edit', uses.join('|'));
   });
 });
