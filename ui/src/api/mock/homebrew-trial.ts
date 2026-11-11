@@ -1,12 +1,13 @@
 import type {
-  AbilityKey, CharacterSnapshot, HomebrewDraftView, HomebrewKindDescriptor, HomebrewLadderRow, HomebrewProblem, HomebrewTrialChange,
-  HomebrewTrialSetup, HomebrewTrialView, PlayFeature, Ruleset, SpellEntry,
+  AbilityKey, Attack, CharacterSnapshot, HomebrewDraftView, HomebrewKindDescriptor, HomebrewLadderRow, HomebrewProblem, HomebrewTrialChange,
+  HomebrewTrialSetup, HomebrewTrialView, InventoryItem, PlayFeature, Ruleset, SpellEntry, WeaponFacts,
 } from "../types";
+import type { MockElement } from "./data-types";
 import { ABILITY_KEYS } from "../types";
 import { getClass } from "./content";
 import { apiError } from "./errors";
 import { createCharacter } from "./library";
-import { buildSlotDefs } from "./slots";
+import { buildSlotDefs, type SlotDef } from "./slots";
 import { findByWireId } from "./slot-ids";
 import { buildSnapshot } from "./snapshot";
 import { type MockCharacter, type RuleSettings, STANDARD_ARRAY } from "./state";
@@ -80,6 +81,85 @@ function statChanges(draft: TrialDraft, edition: Ruleset): StatChange[] {
   });
 }
 
+const ITEM_TYPES: readonly string[] = ["Item", "Weapon", "Armor", "Magic Item", "Item Pack", "Equipment Package"];
+const refName = (v: unknown): string => (typeof v === "object" && v !== null && !Array.isArray(v) ? String((v as { name?: unknown }).name ?? "").trim() : "");
+const refNames = (v: unknown): string[] => (Array.isArray(v) ? v.map(refName).filter(Boolean) : []);
+const fieldText = (draft: TrialDraft, key: string): string => {
+  const v = draft.view.form.fields[key];
+  return typeof v === "string" ? v.trim() : "";
+};
+
+/** Does the item draft need attunement (its Attunement field set)? */
+export function needsAttunement(fields: Readonly<Record<string, unknown>>): boolean {
+  const v = fields.attunement;
+  return v === true || (typeof v === "string" && v.trim() !== "" && v.trim().toLowerCase() !== "false");
+}
+
+/** A weapon draft's weapon facts, as the backend reads them from what the form writes. */
+function weaponFacts(draft: TrialDraft): WeaponFacts | null {
+  if (draft.kind.elementTypes[0] !== "Weapon") return null;
+  const category = refName(draft.view.form.fields.weaponCategory);
+  const [proficiency = "", kind = ""] = category.split(" ");
+  return {
+    damage: fieldText(draft, "damage"), damageType: refName(draft.view.form.fields.damageType).toLowerCase(),
+    properties: refNames(draft.view.form.fields.properties), mastery: refNames(draft.view.form.fields.mastery).join(", ") || null,
+    range: fieldText(draft, "range") || null, proficiency, kind,
+  };
+}
+
+/** The weapon draft as a loaded weapon (the Weapon Mastery choice offers it, P2b), or null for any other draft. */
+export function draftWeapon(draft: TrialDraft): MockElement | null {
+  const weapon = weaponFacts(draft);
+  if (!weapon) return null;
+  const p = draft.view.preview;
+  return {
+    id: draft.view.draftId, name: nameOf(draft.view), type: "weapon", source: p?.source ?? "", sourceName: p?.sourceName ?? "",
+    shortDescription: "", prerequisites: null, rulesets: draft.rulesets, weapon, description: p?.descriptionHtml ?? "", facts: p?.facts ?? [], grants: [],
+  };
+}
+
+/** The draft's extra options in a choice of the trial character: a weapon draft in a Weapon Mastery choice. */
+export function draftOptions(draft: TrialDraft, def: SlotDef): MockElement[] {
+  const w = draftWeapon(draft);
+  return w?.weapon?.mastery && def.title === "Weapon Mastery" ? [w] : [];
+}
+
+/** An item draft on the test character (spec 9): carried and, when it is worn or held, equipped; attuned only when it
+ * needs attunement; a weapon is an attack. Never a feature. */
+function withItem(s: CharacterSnapshot, draft: TrialDraft): { snapshot: CharacterSnapshot; changed: string[] } {
+  const name = nameOf(draft.view);
+  const fields = draft.view.form.fields;
+  const weapon = weaponFacts(draft);
+  const slot = fieldText(draft, "slot");
+  const held = weapon !== null || slot !== "";
+  const attuned = held && needsAttunement(fields);
+  const strength = s.abilities.modifier.str;
+  const dex = s.abilities.modifier.dex;
+  const finesse = weapon?.properties.some((p) => /^finesse$/i.test(p)) ?? false;
+  const ability: AbilityKey = weapon?.kind === "Ranged" || (finesse && dex > strength) ? "dex" : "str";
+  const mod = s.abilities.modifier[ability];
+  const item: InventoryItem = {
+    id: `trial-${draft.view.draftId}`, itemId: draft.view.draftId, name, displayName: name, category: fieldText(draft, "category") || draft.kind.label,
+    quantity: 1, weight: Number(fieldText(draft, "weight")) || 0, valueCp: Math.round((Number(fieldText(draft, "cost")) || 0) * 100),
+    equipped: held ? "primary" : null, attuned, requiresAttunement: needsAttunement(fields), storage: 0, notes: "", listInInventory: true,
+    isPack: false, packContents: [], isWeapon: weapon !== null, equippable: held, armor: null, overrideRequirements: false, withheldGrants: [],
+    weapon: weapon ? { damage: weapon.damage, damageType: weapon.damageType, properties: weapon.properties.join(", "), ability, mastery: weapon.mastery, range: weapon.range } : null,
+  };
+  let next: CharacterSnapshot = { ...s, inventory: { ...s.inventory, items: [...s.inventory.items, item] } };
+  const changed = [`inventory.items:${name}`];
+  if (weapon) {
+    const toHit = s.stats.proficiencyBonus + mod;
+    const bonus = mod === 0 ? "" : mod > 0 ? ` + ${mod}` : ` - ${-mod}`;
+    const attack: Attack = {
+      id: item.id, name, range: weapon.range ?? "5 ft.", attackBonus: toHit >= 0 ? `+${toHit}` : String(toHit),
+      damage: `${weapon.damage}${bonus} ${weapon.damageType}`.trim(), description: "", ability, auto: true, showInCombat: true, card: true, toHit,
+    };
+    next = { ...next, attacks: [...next.attacks, attack] };
+    changed.push(`attacks:${name}`);
+  }
+  return { snapshot: next, changed };
+}
+
 /** The snapshot with the draft applied (the mock's stand-in for loading it into the engine), and what changed. */
 function withDraft(s: CharacterSnapshot, draft: TrialDraft, level: number): { snapshot: CharacterSnapshot; changed: string[] } {
   const name = nameOf(draft.view);
@@ -98,6 +178,10 @@ function withDraft(s: CharacterSnapshot, draft: TrialDraft, level: number): { sn
       cantripsMax: 0, cantripsKnown: 0, preparedMax: 0, preparedCount: 0, maxSpellLevel: 9, pact: null, spells: [spell], other: true };
     next = { ...next, spellcasting: { ...next.spellcasting, classes: [...next.spellcasting.classes, block] } };
     changed.push(`spellcasting.spells:${name}`);
+  } else if (ITEM_TYPES.includes(type)) {
+    const placed = withItem(next, draft);
+    next = placed.snapshot;
+    changed.push(...placed.changed);
   } else if (level >= at && type === "Language") {
     next = { ...next, stats: { ...next.stats, languages: [...next.stats.languages, name] } };
     changed.push(`stats.languages:${name}`);
@@ -166,6 +250,11 @@ export class MockTrials {
     return this.build(t, t.setup.level);
   }
 
+  /** The draft's own options in one of the trial character's choices (a weapon draft in Weapon Mastery). */
+  extraOptions(trialId: string, def: SlotDef): MockElement[] {
+    return draftOptions(this.deps.draft(this.trial(trialId).draftId), def);
+  }
+
   private resolve(setup: HomebrewTrialSetup, edition: Ruleset, prev: ResolvedSetup | null): ResolvedSetup {
     const scores = setup.abilityScores ?? (prev && prev.edition === edition ? prev.abilityScores : standardArrayFor(DEFAULT_CHOICES["c0:class"]!));
     if (scores.length !== 6 || scores.some((n) => !Number.isInteger(n) || n < 1 || n > 30)) throw apiError("invalid_argument", "Ability scores are six whole numbers from 1 to 30.");
@@ -181,7 +270,8 @@ export class MockTrials {
       return rest;
     }
     if (def.locked) throw apiError("invalid_argument", "This selection is locked.");
-    if (!def.candidates.some((e) => e.id === elementId)) throw apiError("requirement_failed", "That option is not available for this slot.");
+    const offered = [...def.candidates, ...draftOptions(this.deps.draft(t.draftId), def)];
+    if (!offered.some((e) => e.id === elementId)) throw apiError("requirement_failed", "That option is not available for this slot.");
     return { ...t.choices, [def.id]: elementId };
   }
 

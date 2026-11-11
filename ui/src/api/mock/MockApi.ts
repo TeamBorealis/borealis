@@ -38,7 +38,8 @@ import * as play from "./play";
 import * as hp from "./hit-points";
 import * as track from "./spell-tracker";
 import { renderSheetHtml } from "./sheet";
-import { buildSlotDefs } from "./slots";
+import { buildSlotDefs, type SlotDef } from "./slots";
+import type { MockElement } from "./data-types";
 import { DEFAULT_PAGE, groupRows, queryRows, switchVersionChoices, toVersion } from "./slot-options";
 import { OPTION_DEFS, buildName, buildSnapshot, setMockDeities } from "./snapshot";
 import { NO_COMPANIONS, addCompanion, removeCompanion, updateCompanionOf } from "./companions";
@@ -332,11 +333,11 @@ export class MockApi implements Api {
   }
 
   /** A slot's option rows for a mock character (the Build pickers, and Try it's choices). */
-  private slotOptionsOf(c: MockCharacter, a: Omit<SlotOptionsArgs, "characterId">): Page<SlotOption> {
+  private slotOptionsOf(c: MockCharacter, a: Omit<SlotOptionsArgs, "characterId">, extra?: (def: SlotDef) => MockElement[]): Page<SlotOption> {
     const def = findByWireId(buildSlotDefs(c), a.slotId);
     if (!def) throw apiError("not_found", `Unknown slot ${a.slotId}`);
     const { snapshot } = buildSnapshot(c, this.rules);
-    const offered = def.candidates
+    const offered = [...def.candidates, ...(extra?.(def) ?? [])]
       .filter((e) => {
         if (e.type !== "multiclass") return true;
         const cls = getClass(e.id.slice(6));
@@ -1007,6 +1008,9 @@ export class MockApi implements Api {
   async homebrewTrialStart({ draftId, setup }: Parameters<Api["homebrewTrialStart"]>[0]) { await this.tick(); return this.trials.start(draftId, setup); }
   async homebrewTrialUpdate({ trialId, change }: Parameters<Api["homebrewTrialUpdate"]>[0]) { await this.tick(); return this.trials.update(trialId, change); }
   async homebrewTrialEnd({ trialId }: { trialId: string }) { await this.tick(); this.trials.end(trialId); }
-  async homebrewTrialOptions({ trialId, ...rest }: Parameters<Api["homebrewTrialOptions"]>[0]) { await this.tick(); return this.slotOptionsOf(this.trials.character(trialId), rest); }
+  async homebrewTrialOptions({ trialId, ...rest }: Parameters<Api["homebrewTrialOptions"]>[0]) {
+    await this.tick();
+    return this.slotOptionsOf(this.trials.character(trialId), rest, (def) => this.trials.extraOptions(trialId, def));
+  }
   async homebrewExportPack({ packId, leaveOutCopiedText }: Parameters<Api["homebrewExportPack"]>[0]) { await this.tick(); return this.homebrew.exportPack(packId, leaveOutCopiedText); }
 }

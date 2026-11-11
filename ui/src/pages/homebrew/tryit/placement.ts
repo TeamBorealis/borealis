@@ -1,4 +1,4 @@
-import type { CharacterSnapshot, HomebrewKindDescriptor } from "../../../api/contract";
+import type { CharacterSnapshot, HomebrewKindDescriptor, InventoryItem } from "../../../api/contract";
 
 /** Where the draft sits on the test character (spec 9 "plus the draft in its slot"), read from the kind's element type. */
 export type TrialSlot = "class" | "subclass" | "species" | "background" | "feat" | "spell" | "item" | "creature" | "grant";
@@ -21,13 +21,28 @@ const PLACEMENT: Readonly<Record<TrialSlot, string>> = {
   background: "The test character takes it as its background.",
   feat: "The test character takes it at its first feat slot.",
   spell: "Granted through the class's spell list, or as a test spell when no list has it.",
-  item: "Added to the inventory, equipped and attuned.",
+  item: "Added to the inventory, and equipped when it is worn or held.",
   creature: "Shown as a stat block, and as the companion when the build has a companion slot.",
   grant: "Granted to the test character.",
 };
 
-export const placementText = (slot: TrialSlot, asSecondClass: boolean): string =>
-  slot === "class" && asSecondClass ? "The test character starts as a Fighter, then takes levels in this class." : PLACEMENT[slot];
+/** How the test character carries an item draft, read from its inventory: never "attuned" for an item that needs no
+ * attunement (a mundane weapon). */
+export function itemPlacement(item: Pick<InventoryItem, "equipped" | "attuned"> | undefined): string {
+  if (!item) return PLACEMENT.item;
+  if (!item.equipped) return "Added to the inventory.";
+  return item.attuned ? "Added to the inventory, equipped and attuned." : "Added to the inventory and equipped.";
+}
+
+export const placementText = (slot: TrialSlot, asSecondClass: boolean, item?: Pick<InventoryItem, "equipped" | "attuned">): string =>
+  slot === "class" && asSecondClass ? "The test character starts as a Fighter, then takes levels in this class."
+    : slot === "item" ? itemPlacement(item) : PLACEMENT[slot];
+
+/** The draft item in the test character's inventory (the last of its name). */
+export function draftItem(snapshot: CharacterSnapshot, name: string): InventoryItem | undefined {
+  const wanted = name.trim().toLowerCase();
+  return [...snapshot.inventory.items].reverse().find((i) => i.name.trim().toLowerCase() === wanted);
+}
 
 /** The level the draft shows up at, when it is a feature of the test character ("Taken at level 4"). */
 export function takenAtLevel(snapshot: CharacterSnapshot, name: string): number | null {

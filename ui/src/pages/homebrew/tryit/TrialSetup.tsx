@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { HomebrewKindDescriptor, HomebrewTrialView, Ruleset } from "../../../api/contract";
 import { ABILITY_KEYS } from "../../../api/contract";
 import { ComboBox, NumericUpDown } from "../../../components";
-import { type TrialSlot, placementText, takenAtLevel } from "./placement";
+import { type TrialSlot, draftItem, placementText, takenAtLevel } from "./placement";
 
 const EDITIONS = [{ value: "dnd2024", label: "2024" }, { value: "dnd2014", label: "2014" }];
 const MAX_LEVEL = 20;
@@ -46,7 +46,7 @@ export function TrialSetup({ kind, draftName, slot, view, level, asSecondClass, 
       <div className="v4-opt hb-try-draft">
         <span className="v4-fl">Your {kind.label.toLowerCase()}</span>
         <strong className="hb-try-draft-name">{draftName}</strong>
-        <p>{placementText(slot, asSecondClass)}{takenAt !== null ? ` Taken at level ${takenAt}.` : ""}</p>
+        <p>{placementText(slot, asSecondClass, slot === "item" ? draftItem(s, draftName) : undefined)}{takenAt !== null ? ` Taken at level ${takenAt}.` : ""}</p>
         {slot === "class" && (
           <label className="hb-try-check">
             <input type="checkbox" checked={asSecondClass} onChange={(e) => onSecondClass(e.target.checked)} />

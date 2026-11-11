@@ -1029,7 +1029,8 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
           "setter:slot"
         ],
         "help": "Only items worn or held can be equipped.",
-        "section": "In the inventory"
+        "section": "In the inventory",
+        "default": "onehand"
       },
       {
         "key": "tags",

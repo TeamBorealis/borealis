@@ -396,7 +396,9 @@ fn weapon() -> KindDef {
         proficiency(WEAPON),
     ];
     own.extend(cost_and_weight());
-    own.push(slot());
+    // a weapon is held: a new one starts in one hand, so a character can wield it (the engine equips only items
+    // worn or held somewhere)
+    own.push(slot().default("\"onehand\""));
     kind(
         "weapon",
         "Weapon",

@@ -239,3 +239,61 @@ fn a_weapon_s_live_preview_gives_every_weapon_fact() {
         preview.description_html
     );
 }
+
+#[test]
+fn a_weapon_tried_out_is_carried_equipped_and_an_attack_never_a_feature() {
+    let app = App::new();
+    let pack = app.pack(Ruleset::Dnd2024);
+    let draft = twinblade(&app, &pack);
+    let view = app.try_it(&draft, 1);
+    let snap = serde_json::to_value(&view.snapshot).unwrap();
+    let carried: Vec<&serde_json::Value> = snap["inventory"]["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|i| i["name"] == "Twinblade")
+        .collect();
+    assert_eq!(carried.len(), 1, "{:?}", snap["inventory"]["items"]);
+    assert_eq!(carried[0]["isWeapon"], true);
+    assert_eq!(carried[0]["equipped"], "primary");
+    assert_eq!(
+        carried[0]["attuned"], false,
+        "a weapon that needs no attunement isn't attuned"
+    );
+    assert!(
+        snap["attacks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|a| a["name"] == "Twinblade"
+                && a["damage"].as_str().is_some_and(|d| d.contains("slashing"))),
+        "an attack: {}",
+        snap["attacks"]
+    );
+    assert!(
+        snap["play"]["features"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|f| f["name"] != "Twinblade"),
+        "never a feature"
+    );
+    // the Fighter's Weapon Mastery choice offers it
+    let mastery = view
+        .snapshot
+        .slots
+        .iter()
+        .find(|s| s.title == "Weapon Mastery" && s.chosen.is_none())
+        .expect("a Weapon Mastery choice");
+    let page = app
+        .state
+        .homebrew_trial_options(&view.trial_id, &mastery.id, Some("Twin"), Some(10), None)
+        .unwrap();
+    assert_eq!(
+        page.items
+            .iter()
+            .map(|i| i.base.summary.name.as_str())
+            .collect::<Vec<_>>(),
+        ["Twinblade"]
+    );
+}
