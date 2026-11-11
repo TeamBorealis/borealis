@@ -97,8 +97,10 @@
 .hb-ws.narrow { height: auto; min-height: 100%; }
 .hb-ws.narrow .hb-ws-head { padding: 8px 16px 0; }
 .hb-ws-list, .hb-ws.narrow .hb-ws-editor { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
-.hb-ws.narrow .hb-editor { flex: none; overflow: visible; }
-.hb-ws.narrow .hb-editor > .hb-tabpanel { flex: none; overflow: visible; }
+.hb-ws.narrow .hb-editor { flex: 1 0 auto; overflow: visible; }
+.hb-ws.narrow .hb-editor > .hb-tabpanel { flex: 1 0 auto; overflow: visible; }
+/* A short form still fills the page, so the pinned commands sit above the bottom tabs, not in the middle (spec 16). */
+.hb-ws.narrow .hb-ws-editor { flex: 1 0 auto; }
 /* Spec 16: the element's name and the sub-tab strip stay at the top of the page while the form scrolls under them. */
 .hb-ws.narrow .hb-editor-head { position: sticky; top: 0; z-index: 3; background: var(--bg); }
 .hb-ws.narrow .hb-editor-head .ap-band h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

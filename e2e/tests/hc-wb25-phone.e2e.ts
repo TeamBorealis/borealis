@@ -137,6 +137,9 @@ describe('hc-wb25 homebrew creator on a phone (web mock)', { tags: ['homebrew'] 
     }, null);
     expectEqual('the toolbar docked above the keyboard, the pinned row hidden', 'true:true:none', docked);
     await ctx.browser.evaluate((_: null) => { document.documentElement.classList.remove('kb-open'); document.documentElement.style.setProperty('--kb', '0px'); return true; }, null);
+    // A short form (RULES with no rule yet) still puts the pinned row on the page's bottom edge, not mid-screen.
+    await ctx.screen.getByRole('tab', 'RULES').tap();
+    expectEqual('the pinned row on the status line (short form)', 'true', String(await ctx.browser.evaluate(reaches, null)));
     await ctx.screen.getByRole('tab', 'GENERAL').tap();
 
     // A class's Armor training picker keeps several choices: a tap on a row's name checks it, a second tap clears it.
