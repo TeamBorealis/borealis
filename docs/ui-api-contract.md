@@ -408,7 +408,7 @@ creator's entry points; until 1.5.0 the UI reaches these commands only with it o
 `details: { notImplemented: "<command>" }`. Implemented in the backend: the catalogs and kinds, packs, the element list,
 drafts (new, open, update, save, discard, list), delete, duplicate and reference options (WB-04/05/06), the
 validation of drafts with `homebrew_check_draft` (WB-07), Try it (WB-08), and bulk edit, undo, where-used and spell
-lists (WB-23, `homebrew_expert.rs`, `homebrew_undo.rs`); export (WB-24) still answers it. Copies (WB-22) are implemented, deep ones too. `homebrew_new_draft` with
+lists (WB-23, `homebrew_expert.rs`, `homebrew_undo.rs`), and the pack file (WB-24, `homebrew_transfer.rs`). Copies (WB-22) are implemented, deep ones too. `homebrew_new_draft` with
 `parentId` makes a child (WB-16). The web mock
 implements packs, elements and drafts in memory (kinds are sample forms).
 
@@ -439,8 +439,23 @@ implements packs, elements and drafts in memory (kinds are sample forms).
 | `homebrew_trial_update` | `{ trialId, change: HomebrewTrialChange }` | `HomebrewTrialView` |
 | `homebrew_trial_end` | `{ trialId }` | `void` |
 | `homebrew_trial_options` | `{ trialId, slotId, query?, limit?, offset? }` | `Page<SlotOption>` (a trial choice's options, as `get_slot_options`) |
-| `homebrew_export_pack` | `{ packId, leaveOutCopiedText }` | `ExportResult` (desktop `path`, phones `dataBase64` for the share sheet) |
+| `homebrew_export_pack` | `{ packId, leaveOutCopiedText }` | `HomebrewExportResult` (`{ fileName, path, shared, dataBase64, leftOut }`: desktop saves through a save dialog, `path` null when cancelled; Android opens the share sheet, `shared`; elsewhere `dataBase64` for the web view's share sheet or a download) |
 
+- **Pack file (WB-24, `homebrew_transfer.rs`, spec 14.2).** `homebrew_export_pack` writes a `.borealis-pack.zip`: the pack
+  folder `<packId>/` with `pack.json`, its content file and `creator.json` (no drafts, no `.trash`, no `pack-meta.json`).
+  With `leaveOutCopiedText` the elements `creator.json` marks `nonSrdText` export without their text (description and sheet
+  texts empty; a creature's stat-block texts read "Text left out of this shared copy." and its flavour text goes); the marks
+  stay, so the imported pack is still not redistributable. Only `kind: "homebrew"` packs export (`requirement_failed`).
+  `HomebrewElementSummary.copiedText` marks the elements that still hold copied text (the export dialog's count). Import
+  goes through `preview_import_pack`: one `.zip` holding a `creator.json` beside a `pack.json` is a creator pack, installed
+  unconverted as `kind: "homebrew"`; its preview carries `homebrew: { code, codeTaken, copyCode, copyName }`, no `books`.
+  When its pack is installed (`replacesExisting`), `install_import_preview` replaces it (the old folder is copied to
+  `<data>/sync/trash/<ms>-<packId>`, swept after 30 days) or, with `asCopy: true`, installs a copy: code `copyCode`, pack id
+  `homebrew-<copyCode>`, name `copyName`, every `ID_<CODE>_` token of the pack and every element id given again with the
+  references following (other packs' ids untouched), `creator.json` re-keyed with its provenance, no retired ids. A code
+  another pack uses (`codeTaken`, pack not installed) installs only as a copy. `content-reloaded` reason
+  `homebrew-pack-imported`. The creator workspace opens the open element again on that reason and on `device-sync`, so a
+  draft whose element changed asks "Keep my draft / Use the saved version" (spec 10.1, 14.4).
 - **Expert features (WB-23, `homebrew_expert.rs`).** *Where used* runs the delete scan's reference scanner
   (`borealis_authoring::pack::use_of`: ids as whole tokens, so `!ID_A,ID_B` counts) over every loaded element:
   `grants` (a grant or a custom rule naming it), `selects` (a choice offering it by id, or by a tag it carries, of its
@@ -787,7 +802,8 @@ without the host: the host commands answer `invalid_argument` / `supported: fals
   the user's book editions (IM14, `sourceEditions`: book name key -> `dnd2014`/`dnd2024`; unknown keys a newer app
   wrote are kept) are stored in `content-prefs.json` in the data folder. `preview_import_pack` lists the set's `books`
   (`{ name, detected, edition, setByUser }`) and `install_import_preview` takes an optional
-  `editions: Record<bookName, Ruleset>` stored before the install. A re-import without the preview never changes an
+  `editions: Record<bookName, Ruleset>` stored before the install (and `asCopy` for a homebrew pack file, see Homebrew
+  creator, Pack file). A re-import without the preview never changes an
   installed book's edition: a changed guess is stored as the book's previous edition. `set_pack_enabled`, `remove_pack`, `import_pack`, `import_5etools`,
   `clear_downloaded_content` and `update_indexes` all hot-reload the ContentStore and Engine and emit
   `borealis://content-reloaded` (`reason`: `pack-enabled`, `pack-removed`, `pack-imported`, `5etools-imported`,

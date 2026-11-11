@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import type { ContentProgress, ImportPreview, BookRuleset, PreviewBook, UnresolvedRef } from "../../api/contract";
 import { Alert, Button, Modal, ProgressBar, useConfirm, useToast } from "../../components";
 import { ComboBox, Expander } from "../../components/controls";
@@ -47,8 +47,10 @@ export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
   const api = useApi();
   const toast = useToast();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { busy } = useImportPreviewState();
-  const none = preview.converted === 0;
+  const homebrew = preview.homebrew;
+  const none = preview.converted === 0 && !preview.homebrew; // a homebrew pack file installs even with only its book
   const confirm = useConfirm();
   const source = none ? preview.indexUrl : undefined;
   const [progress, setProgress] = useState<ContentProgress | null>(null);
@@ -67,29 +69,42 @@ export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
     navigate("/content");
   };
   const [editions, setEditions] = useState<Record<string, BookRuleset>>({});
-  const install = async () => {
+  /** `asCopy` (spec 14.2): a homebrew pack file imported as a copy, with a new code and ids. */
+  const install = async (asCopy = false) => {
     setImportBusy(true);
     try {
       const changed = Object.fromEntries(preview.books.filter((b) => editions[b.name] && editions[b.name] !== b.edition).map((b) => [b.name, editions[b.name]!]));
-      const r = await api.installImportPreview({ previewId: preview.previewId, ...(Object.keys(changed).length ? { editions: changed } : {}) });
+      const r = await api.installImportPreview({ previewId: preview.previewId, ...(Object.keys(changed).length ? { editions: changed } : {}), ...(asCopy ? { asCopy } : {}) });
       toast.push(r.pack ? `Imported "${r.pack.name}" (${plural(r.report.converted, "element")}).` : "Nothing was imported.", r.pack ? "info" : "error");
       showInstallReport(r.report);
-      navigate("/content");
+      // a homebrew pack imported from the creator opens there, editable
+      navigate(homebrew && r.pack && pathname.startsWith("/homebrew") ? `/homebrew/${encodeURIComponent(r.pack.id)}` : "/content");
     } catch (e) { setImportBusy(false); toast.push(errorMessage(e), "error"); }
   };
+  const copyOnly = !!homebrew && homebrew.codeTaken && !preview.replacesExisting;
+  const installButtons = homebrew && preview.replacesExisting
+    ? <><Button disabled={busy} onClick={() => void install(true)}>Import as a copy</Button><Button variant="primary" disabled={busy} onClick={() => void install(false)}>Replace</Button></>
+    : copyOnly
+      ? <Button variant="primary" disabled={busy} onClick={() => void install(true)}>Import as a copy</Button>
+      : <Button variant="primary" disabled={none || busy} onClick={() => void install()}>Install</Button>;
+  const summaryLine = homebrew
+    ? `${plural(preview.converted, "element")} will be added as the homebrew pack "${copyOnly ? homebrew.copyName : preview.packName}", editable in Homebrew.`
+    : `${plural(preview.converted, "element")} from ${plural(preview.fileCount, "file")} will be added as "${preview.packName}".`;
   const { errors, warnings } = preview.summary;
   return (
     <Modal title="Import preview" wide className="aur-rep-dlg" onClose={() => dismissImportPreview(api)}
       footer={<><Button onClick={() => dismissImportPreview(api)}>Cancel</Button>{source
         ? <Button variant="primary" disabled={busy} onClick={() => void addSource()}>Add as source</Button>
-        : <Button variant="primary" disabled={none || busy} onClick={() => void install()}>Install</Button>}</>}>
+        : installButtons}</>}>
       <div className="stack">
         <Alert tone={none ? "danger" : errors ? "warning" : "success"}>
-          {source ? `${preview.packName} lists files to download. Add it as a content source to get them.` : none ? `Nothing in ${preview.packName} can be imported.` : `${plural(preview.converted, "element")} from ${plural(preview.fileCount, "file")} will be added as "${preview.packName}".`}
+          {source ? `${preview.packName} lists files to download. Add it as a content source to get them.` : none ? `Nothing in ${preview.packName} can be imported.` : summaryLine}
           {!none && preview.skipped > 0 && ` ${preview.skipped} skipped.`}
         </Alert>
         {source && busy && progress && progress.phase !== "done" && <div><ProgressBar label="Update progress" value={progress.done} max={Math.max(1, progress.total)} /><span className="small muted" role="status">{progress.message}</span></div>}
-        {preview.replacesExisting && !none && <Alert tone="warning">An installed pack named "{preview.packName}" will be replaced.</Alert>}
+        {preview.replacesExisting && !none && !homebrew && <Alert tone="warning">An installed pack named "{preview.packName}" will be replaced.</Alert>}
+        {homebrew && preview.replacesExisting && <Alert tone="warning">You already have the pack "{preview.packName}". Replace it (your copy is kept in the trash for 30 days), or import this one as a copy, "{homebrew.copyName}".</Alert>}
+        {copyOnly && <Alert tone="warning">Another pack already uses the code {homebrew?.code}, so this one is imported as a copy.</Alert>}
         {!none && preview.books.length > 0 && <BookEditions books={preview.books} chosen={editions} onChange={(name, r) => setEditions({ ...editions, [name]: r })} />}
         {preview.counts.length > 0 && (
           <Expander title="Converted">

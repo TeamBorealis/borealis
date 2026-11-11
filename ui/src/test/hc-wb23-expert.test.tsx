@@ -22,7 +22,7 @@ async function saved(api: MockApi, packId: string, kind: string, fields: Record<
 
 const row = (over: Partial<HomebrewElementSummary>): HomebrewElementSummary => ({
   id: "ID_A", name: "Gloomspeak", kind: "language", elementType: "Language", parentId: null, edition: null,
-  problems: { errors: 0, warnings: 0 }, hasDraft: false, tags: [], text: "", ...over,
+  problems: { errors: 0, warnings: 0 }, hasDraft: false, tags: [], text: "", copiedText: false, ...over,
 });
 const KINDS = [{ id: "language", label: "Language", pluralLabel: "Languages" }, { id: "spell", label: "Spell", pluralLabel: "Spells" }] as HomebrewKindDescriptor[];
 

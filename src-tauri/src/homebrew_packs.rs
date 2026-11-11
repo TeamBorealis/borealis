@@ -128,7 +128,11 @@ impl AppState {
     }
 
     /// Codes in use: loaded books' abbreviations and other creator packs' codes (`except_pack` excluded).
-    fn hb_taken_codes(&self, hub: &ContentHub, except_pack: Option<&str>) -> HashSet<String> {
+    pub(crate) fn hb_taken_codes(
+        &self,
+        hub: &ContentHub,
+        except_pack: Option<&str>,
+    ) -> HashSet<String> {
         let mut taken = book_codes(&hub.store, except_pack);
         for p in self.installed_packs() {
             if p.bundled || Some(p.manifest.id.as_str()) == except_pack {
@@ -385,6 +389,10 @@ impl AppState {
             .filter(|d| d.pack_id == pack_id)
             .filter_map(|d| d.element_id)
             .collect();
+        let copied: HashSet<String> =
+            borealis_authoring::pack::copied_text_ids(&pack.disk.content, &pack.creator)
+                .into_iter()
+                .collect();
         Ok(elements
             .iter()
             .filter(|e| e.ty != borealis_authoring::pack::SOURCE_TYPE)
@@ -407,6 +415,7 @@ impl AppState {
                 has_draft: drafted.contains(&e.id),
                 tags: e.supports.clone(),
                 text: search_text(e),
+                copied_text: copied.contains(&e.id),
             })
             .collect())
     }

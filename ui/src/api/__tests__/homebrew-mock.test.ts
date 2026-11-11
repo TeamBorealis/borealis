@@ -59,12 +59,25 @@ describe("homebrew creator contract (WB-00)", () => {
     expect(await api.homebrewListElements({ packId })).toEqual([]);
   });
 
-  it("answers not implemented where the backend has no work item yet", async () => {
+  it("exports a pack file and imports it back as a copy with new ids (WB-24, spec 14.2)", async () => {
+    // Arrange
     const api = new MockApi();
-    await expect(api.homebrewExportPack({ packId: "p", leaveOutCopiedText: true })).rejects.toMatchObject({
-      code: "requirement_failed",
-      details: { notImplemented: "homebrew_export_pack" },
-    });
+    const { id: packId } = await api.homebrewCreatePack({ request: PACK });
+    const d = await api.homebrewNewDraft({ packId, kind: "feat" });
+    await api.homebrewUpdateDraft({ draftId: d.draftId, form: { ...d.form, fields: { name: "Sturdy" } } });
+    await api.homebrewSaveDraft({ draftId: d.draftId });
+
+    // Act
+    const file = await api.homebrewExportPack({ packId, leaveOutCopiedText: true });
+    const preview = await api.previewImportPack({ request: { files: [{ fileName: file.fileName, contentBase64: file.dataBase64! }] } });
+    const copy = await api.installImportPreview({ previewId: preview.previewId, asCopy: true });
+
+    // Assert
+    expect(file).toMatchObject({ fileName: "Gloom.borealis-pack.zip", path: null, shared: false, leftOut: 0 });
+    expect(preview).toMatchObject({ packId, replacesExisting: true, converted: 1, homebrew: { code: "GL", codeTaken: false, copyCode: "GL2", copyName: "Gloom (copy)" } });
+    expect(copy.pack).toMatchObject({ id: "homebrew-gl2", name: "Gloom (copy)", kind: "homebrew" });
+    expect((await api.homebrewListElements({ packId: "homebrew-gl2" })).map((r) => r.id)).toEqual(["ID_GL2_FEAT_STURDY"]);
+    expect((await api.homebrewListElements({ packId })).map((r) => r.id)).toEqual(["ID_GL_FEAT_STURDY"]);
   });
 
   it("serves the block and statistic catalogs the backend sends (WB-05)", async () => {

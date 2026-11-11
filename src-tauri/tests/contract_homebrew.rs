@@ -1,16 +1,14 @@
 //! Homebrew creator contract (WB-00): the Rust wire types in `homebrew_dto.rs` serialise to the shapes the UI declares in
-//! `ui/src/api/types/homebrew.ts`, the request types read what the UI sends, and every creator command answers the
-//! documented "not implemented" error until its work item lands.
+//! `ui/src/api/types/homebrew.ts`, and the request types read what the UI sends.
 
 mod contract_support;
 use borealis_authoring::form::Memo;
 use borealis_lib::content_dto::{ContentPack, PackKind};
 use borealis_lib::dto::Ruleset;
-use borealis_lib::error::ErrorCode;
 use borealis_lib::homebrew_dto::*;
 use contract_support::Contract;
 use serde::Serialize;
-use serde_json::{json, Value};
+use serde_json::json;
 use std::collections::BTreeMap;
 
 fn check<T: Serialize>(c: &Contract, def: &str, value: &T) {
@@ -203,6 +201,7 @@ fn pack_element_and_draft_types_match_the_ts_contract() {
             has_draft: true,
             tags: vec!["Wizard".into()],
             text: "A lance of fire.".into(),
+            copied_text: false,
         },
     );
     check(
@@ -391,16 +390,29 @@ fn request_types_read_what_the_ui_sends() {
 }
 
 #[test]
-fn creator_commands_answer_not_implemented_until_their_item_lands() {
-    use borealis_lib::commands_homebrew as hb;
-    let errs = [hb::homebrew_export_pack("p".into(), true).unwrap_err()];
-    for e in errs {
-        assert_eq!(e.code, ErrorCode::RequirementFailed);
-        let details: &Value = e.details.as_ref().expect("details");
-        assert!(details["notImplemented"]
-            .as_str()
-            .is_some_and(|c| c.starts_with("homebrew_")));
-    }
+fn pack_file_types_match_the_ts_contract() {
+    let c = Contract::load();
+    check(
+        &c,
+        "HomebrewExportResult",
+        &HomebrewExportResult {
+            file_name: "Gloom Hollow.borealis-pack.zip".into(),
+            path: Some("/Users/me/Gloom Hollow.borealis-pack.zip".into()),
+            shared: false,
+            data_base64: None,
+            left_out: 2,
+        },
+    );
+    check(
+        &c,
+        "HomebrewImportInfo",
+        &borealis_lib::homebrew_transfer::HomebrewImportInfo {
+            code: "GH".into(),
+            code_taken: false,
+            copy_code: "GH2".into(),
+            copy_name: "Gloom Hollow (copy)".into(),
+        },
+    );
 }
 
 /// The real catalogs (WB-05) match the TS contract, and the web mock serves exactly them:

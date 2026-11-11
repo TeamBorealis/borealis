@@ -120,6 +120,7 @@ pub mod homebrew_expert;
 pub mod homebrew_files;
 pub mod homebrew_packs;
 pub mod homebrew_refs;
+pub mod homebrew_transfer;
 pub mod homebrew_trial;
 mod homebrew_trial_build;
 mod homebrew_trial_place;

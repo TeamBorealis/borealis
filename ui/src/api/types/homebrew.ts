@@ -258,6 +258,22 @@ export interface HomebrewElementSummary {
   tags: string[];
   /** Its summary line and description as plain text (cut short), for the list filter's text search. */
   text: string;
+  /** It holds text copied from a non-SRD pack (CS1, HC8): the export dialog counts these. */
+  copiedText: boolean;
+}
+
+/**
+ * `homebrewExportPack` (spec 14.2): the `.borealis-pack.zip` saved (desktop: `path`, null when the save dialog was
+ * cancelled) or shared (Android opens the share sheet itself: `shared`; elsewhere the bytes in `dataBase64` for the web
+ * view's share sheet or a download).
+ */
+export interface HomebrewExportResult {
+  fileName: string;
+  path: string | null;
+  shared: boolean;
+  dataBase64: string | null;
+  /** Elements whose copied text was left out. */
+  leftOut: number;
 }
 
 /** A reference held by a form field: the id travels, the name is shown (spec 5.1). */

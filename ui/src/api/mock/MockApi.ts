@@ -46,7 +46,7 @@ import { type MockCharacter, type RuleSettings, levelOf } from "./state";
 import { findByWireId, toWireSlotId } from "./slot-ids";
 import { MOCK_INDEX_STATUS, mockPassage, mockSearch } from "./search";
 import { FEAT_PARAMETER_PICKER } from "./homebrew-background";
-import { ELEMENT_TYPE_PICKER, MockHomebrew, notImplemented, SETTER_NAME_PICKER } from "./homebrew";
+import { ELEMENT_TYPE_PICKER, MockHomebrew, SETTER_NAME_PICKER } from "./homebrew";
 import { MockTrials } from "./homebrew-trial";
 import { MOCK_BLOCK_CATALOG, MOCK_STAT_CATALOG } from "./homebrew-catalog";
 import { referenceRows, wordRows } from "./homebrew-check";
@@ -664,11 +664,14 @@ export class MockApi implements Api {
   openedFiles: OpenedFile[] = [];
   async previewImportPack({ request }: Parameters<Api["previewImportPack"]>[0]) {
     await this.tick();
+    const packFile = request.files ? this.homebrew.previewFile(request.files) : null;
+    if (packFile) return packFile;
     const folder = request.folder ? { name: this.picks.resolve(request.folder, "content-folder").split("/").pop() ?? "content", files: this.folderFiles } : null;
     return this.previews.preview(request, folder, this.content.editions);
   }
-  async installImportPreview({ previewId, editions }: { previewId: string; editions?: Record<string, BookRuleset> | null }) {
+  async installImportPreview({ previewId, editions, asCopy }: Parameters<Api["installImportPreview"]>[0]) {
     await this.tick();
+    if (this.homebrew.hasStagedFile(previewId)) return this.homebrew.installFile(previewId, asCopy === true);
     const { preview, texts } = this.previews.take(previewId, editions);
     for (const [book, edition] of Object.entries(editions ?? {})) this.content.editions.set(book, edition);
     if (!preview.converted) throw apiError("invalid_argument", "Nothing could be imported.");
@@ -677,7 +680,7 @@ export class MockApi implements Api {
     // The install report lists every issue of the staged conversion (the preview's list, uncapped there).
     return { ...installed, report: { ...installed.report, issues: preview.diagnostics } };
   }
-  async cancelImportPreview({ previewId }: { previewId: string }) { await this.tick(); this.previews.cancel(previewId); }
+  async cancelImportPreview({ previewId }: { previewId: string }) { await this.tick(); this.homebrew.cancelFile(previewId); this.previews.cancel(previewId); }
   async takeOpenedFiles() { await this.tick(); const out = this.openedFiles; this.openedFiles = []; return out; }
   async setPackEnabled(a: { packId: string; enabled: boolean }) { await this.tick(); return this.content.setEnabled(a.packId, a.enabled); }
   async removePack({ packId }: { packId: string }) { await this.tick(); return this.content.remove(packId); }
@@ -1004,5 +1007,5 @@ export class MockApi implements Api {
   async homebrewTrialUpdate({ trialId, change }: Parameters<Api["homebrewTrialUpdate"]>[0]) { await this.tick(); return this.trials.update(trialId, change); }
   async homebrewTrialEnd({ trialId }: { trialId: string }) { await this.tick(); this.trials.end(trialId); }
   async homebrewTrialOptions({ trialId, ...rest }: Parameters<Api["homebrewTrialOptions"]>[0]) { await this.tick(); return this.slotOptionsOf(this.trials.character(trialId), rest); }
-  async homebrewExportPack(_: Parameters<Api["homebrewExportPack"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_export_pack"); }
+  async homebrewExportPack({ packId, leaveOutCopiedText }: Parameters<Api["homebrewExportPack"]>[0]) { await this.tick(); return this.homebrew.exportPack(packId, leaveOutCopiedText); }
 }

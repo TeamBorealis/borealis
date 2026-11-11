@@ -1,20 +1,19 @@
 //! `#[tauri::command]` wrappers of the homebrew creator (1.5.0; `specs/homebrew-creator-spec.md` section 15.2,
 //! `docs/ui-api-contract.md` "Homebrew creator"). Each delegates to an `AppState` method (`homebrew_packs`,
-//! `homebrew_draft_api`, `homebrew_refs`, `homebrew_trial`) or [`crate::homebrew_creator`]; until its work item lands a command answers
-//! `not_implemented`. Work that writes packs runs off the main thread (`commands_content::blocking`). The UI reaches
+//! `homebrew_draft_api`, `homebrew_refs`, `homebrew_trial`, `homebrew_transfer`) or [`crate::homebrew_creator`]. Work that writes packs runs off the main thread (`commands_content::blocking`). The UI reaches
 //! them only with `AppSettings::creator_enabled` on (HC3).
 
 use crate::content_dto::ContentPack;
-use crate::dto::{ExportResult, Page, SlotOption};
+use crate::dto::{Page, SlotOption};
 use crate::error::ApiResult;
-use crate::homebrew_creator::{self, not_implemented};
+use crate::homebrew_creator;
 use crate::homebrew_dto::{
     HomebrewBlockSpec, HomebrewBulkPatch, HomebrewBulkResult, HomebrewDeleteResult,
     HomebrewDraftSummary, HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary,
-    HomebrewForm, HomebrewPackPatch, HomebrewPackRequest, HomebrewPageRequest,
-    HomebrewPickerFilters, HomebrewPickerRow, HomebrewPickerTarget, HomebrewProblem,
-    HomebrewSaveResult, HomebrewSpellListView, HomebrewStatGroup, HomebrewTrialChange,
-    HomebrewTrialSetup, HomebrewTrialView,
+    HomebrewExportResult, HomebrewForm, HomebrewPackPatch, HomebrewPackRequest,
+    HomebrewPageRequest, HomebrewPickerFilters, HomebrewPickerRow, HomebrewPickerTarget,
+    HomebrewProblem, HomebrewSaveResult, HomebrewSpellListView, HomebrewStatGroup,
+    HomebrewTrialChange, HomebrewTrialSetup, HomebrewTrialView,
 };
 use crate::state::AppState;
 use tauri::State;
@@ -272,12 +271,85 @@ pub fn homebrew_trial_options(
     state.homebrew_trial_options(&trial_id, &slot_id, query.as_deref(), limit, offset)
 }
 
-/// Export a pack file (spec 14.2).
-#[tauri::command]
+/// Export a pack file (spec 14.2, HC8): a `.borealis-pack.zip`. Desktop asks where to save it in a native dialog the
+/// backend opens (a cancelled dialog answers no `path`; nothing is written then).
+#[cfg(desktop)]
+#[tauri::command(async)]
 pub fn homebrew_export_pack(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
     pack_id: String,
     leave_out_copied_text: bool,
-) -> ApiResult<ExportResult> {
-    let _ = (pack_id, leave_out_copied_text);
-    Err(not_implemented("homebrew_export_pack"))
+) -> ApiResult<HomebrewExportResult> {
+    use tauri_plugin_dialog::DialogExt;
+    let file = state.homebrew_export_file(&pack_id, leave_out_copied_text)?;
+    let picked = app
+        .dialog()
+        .file()
+        .add_filter("Borealis pack", &["zip"])
+        .set_file_name(&file.file_name)
+        .blocking_save_file();
+    let mut out = HomebrewExportResult::of(&file);
+    let Some(picked) = picked else {
+        return Ok(out);
+    };
+    let mut dest = picked
+        .into_path()
+        .map_err(|_| crate::error::ApiError::invalid("That location cannot be used."))?;
+    if dest.extension().is_none() {
+        dest.set_extension("borealis-pack.zip");
+    }
+    std::fs::write(&dest, &file.bytes)
+        .map_err(|e| crate::error::ApiError::io("save the pack file", e))?;
+    out.path = Some(dest.to_string_lossy().into_owned());
+    Ok(out)
+}
+
+/// Phones (spec 16): the share sheet. Android opens it from the backend (`ACTION_SEND`); elsewhere the bytes come back
+/// for the web view's share sheet (`dataBase64`).
+#[cfg(not(desktop))]
+#[tauri::command(async)]
+pub fn homebrew_export_pack(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    pack_id: String,
+    leave_out_copied_text: bool,
+) -> ApiResult<HomebrewExportResult> {
+    let file = state.homebrew_export_file(&pack_id, leave_out_copied_text)?;
+    share_pack_file(&app, &state, &file)
+}
+
+/// The share step of the phone export (compiled everywhere, so the desktop build checks it too).
+#[cfg_attr(desktop, allow(dead_code))]
+fn share_pack_file(
+    app: &tauri::AppHandle,
+    state: &AppState,
+    file: &crate::homebrew_transfer::PackExportFile,
+) -> ApiResult<HomebrewExportResult> {
+    use base64::engine::general_purpose::STANDARD;
+    use base64::Engine as _;
+    let io = |e: std::io::Error| crate::error::ApiError::io("prepare the pack file", e);
+    let dir = state.paths.data.join("pack-share");
+    std::fs::create_dir_all(&dir).map_err(io)?;
+    // the platform copies the file before the share sheet returns; the temporary file goes when this ends
+    let tmp = tempfile::Builder::new()
+        .suffix(".zip")
+        .tempfile_in(&dir)
+        .map_err(io)?;
+    std::fs::write(tmp.path(), &file.bytes).map_err(io)?;
+    let shared = crate::native_share::share_file(
+        app,
+        &crate::native_share::ShareFileArgs {
+            path: &tmp.path().to_string_lossy(),
+            file_name: &file.file_name,
+            mime: "application/zip",
+            title: "Borealis pack",
+        },
+    )?;
+    let mut out = HomebrewExportResult::of(file);
+    out.shared = shared;
+    if !shared {
+        out.data_base64 = Some(STANDARD.encode(&file.bytes));
+    }
+    Ok(out)
 }

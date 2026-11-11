@@ -195,15 +195,22 @@ pub async fn preview_import_pack(
     blocking(app, move |state, _| state.preview_import_pack(&request)).await
 }
 
-/// `editions` (IM14): the edition the user chose for books of the set, by book name.
+/// `editions` (IM14): the edition the user chose for books of the set, by book name. `asCopy` (spec 14.2): a homebrew
+/// pack file is imported as a copy (a new code and ids) instead of as it is.
 #[tauri::command]
 pub async fn install_import_preview(
     app: AppHandle,
     preview_id: String,
     editions: Option<std::collections::BTreeMap<String, crate::dto::Ruleset>>,
+    as_copy: Option<bool>,
 ) -> ApiResult<ImportPackResult> {
     blocking(app, move |state, sink| {
-        state.install_import_preview(&preview_id, editions.as_ref(), sink)
+        state.install_import_preview_as(
+            &preview_id,
+            editions.as_ref(),
+            as_copy.unwrap_or(false),
+            sink,
+        )
     })
     .await
 }

@@ -2,6 +2,7 @@ import type {
   ApiError, BookRuleset, ContentPack, ElementDetail, ElementSummary, ElementType, HomebrewBulkPatch, HomebrewBulkResult, HomebrewDeleteResult, HomebrewDraftSummary,
   HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary, HomebrewForm, HomebrewKindDescriptor, HomebrewKindId, HomebrewPackPatch, HomebrewPackRequest,
   HomebrewPickerRow, HomebrewProblem, HomebrewSaveResult, HomebrewSpellListRow, HomebrewSpellListView, Ruleset,
+  HomebrewExportResult, ImportFileInput, ImportPackResult, ImportPreview, TypeCount,
 } from "../types";
 import { formUse, generatedOf, hasTag, listingClasses, loadedListRow, tagsOf, textOf, withTags } from "./homebrew-expert";
 import { apiError } from "./errors";
@@ -17,6 +18,8 @@ import { MOCK_COPY_SOURCES } from "./homebrew-copies";
 import { MOCK_ITEM_KINDS } from "./homebrew-item-kinds";
 import { MOCK_KIND_DESCRIPTORS } from "./homebrew-kinds";
 import type { TrialDraft } from "./homebrew-trial";
+import { copyCode, copyOf, type MockPackData, packFile, packFileName, readPackFile } from "./homebrew-transfer";
+import { toBase64 } from "./pack-file";
 
 /** The backend's answer for a creator command whose work item has not landed (contract: `details.notImplemented`). */
 export function notImplemented(command: string): ApiError {
@@ -87,6 +90,12 @@ export class MockHomebrew {
   private nextDraft = 1;
   /** A deep class copy's subclasses, saved with it (spec 11). */
   private companions = new Map<string, HomebrewForm[]>();
+  /** Drafts copied from loaded sample content that is not an SRD copy source: they stand for text copied from the user's
+   * own imports (CS1, HC8), so their saved elements are `copiedText`. */
+  private copiedText = new Set<string>();
+  /** Pack files waiting in an import preview (spec 14.2). */
+  private stagedFiles = new Map<string, { fileName: string; data: MockPackData }>();
+  private nextPreview = 1;
 
   constructor(private putPack: (pack: ContentPack) => ContentPack) {}
 
@@ -158,6 +167,7 @@ export class MockHomebrew {
       throw apiError("not_found", "That element isn't loaded any more.");
     }
     const view = this.store(own.pack.id, null, form);
+    if (!source && !saved) this.copiedText.add(view.draftId);
     if (companions.length) this.companions.set(view.draftId, companions);
     return view;
   }
@@ -207,6 +217,7 @@ export class MockHomebrew {
     const id = draft.elementId ?? this.freeId(own, `ID_${own.code}_${TYPE_TOKENS[type] ?? slug(type)}_${slug(name)}`);
     const summary: HomebrewElementSummary = {
       id, name, kind: k.id, elementType: type, parentId: null, edition: listEdition(draft.form), problems: { errors: 0, warnings: 0 }, hasDraft: false, tags: [], text: "",
+      copiedText: this.copiedText.has(draftId) || (own.elements.get(id)?.summary.copiedText ?? false),
     };
     const elements = new Map(own.elements).set(id, { summary, form: draft.form });
     const savedWith = (this.companions.get(draftId) ?? []).map((c) => {
@@ -222,6 +233,7 @@ export class MockHomebrew {
     this.packs.set(own.pack.id, { ...own, pack, elements });
     this.drafts.delete(draftId);
     this.touched.delete(draftId);
+    this.copiedText.delete(draftId);
     return { pack: this.putPack(pack), elementIds: [id, ...savedWith] };
   }
 
@@ -383,6 +395,51 @@ export class MockHomebrew {
     const kind = KINDS.find((k) => k.id === view.form.kind);
     if (!kind) throw apiError("invalid_argument", `Unknown kind ${view.form.kind}.`);
     return { view, kind, rulesets: this.own(view.packId).pack.rulesets };
+  }
+
+  /** Export pack (spec 14.2): the `.borealis-pack.zip` as bytes (the web view downloads or shares them). */
+  exportPack(packId: string, leaveOutCopiedText: boolean): HomebrewExportResult {
+    const own = this.own(packId);
+    const { bytes, leftOut } = packFile({ pack: own.pack, code: own.code, elements: [...own.elements], appends: [...own.appends] }, leaveOutCopiedText);
+    return { fileName: packFileName(own.pack.name), path: null, shared: false, dataBase64: toBase64(bytes), leftOut };
+  }
+
+  /** The import preview of a homebrew pack file, or null when `files` are not one (the XML import reads them). */
+  previewFile(files: readonly ImportFileInput[]): ImportPreview | null {
+    const data = readPackFile(files);
+    if (!data) return null;
+    const previewId = `prev_hb_${this.nextPreview++}`;
+    this.stagedFiles.set(previewId, { fileName: files[0]!.fileName, data });
+    const installed = this.packs.has(data.pack.id);
+    const codes = new Set([...this.packs.values()].map((p) => p.code));
+    const counts = new Map<string, number>();
+    for (const [, e] of data.elements) counts.set(e.summary.elementType, (counts.get(e.summary.elementType) ?? 0) + 1);
+    return {
+      previewId, packName: data.pack.name, packId: data.pack.id, fileCount: 1, converted: data.elements.length, skipped: 0,
+      counts: [...counts].map(([type, count]): TypeCount => ({ type, count })), summary: { errors: 0, warnings: 0, infos: 0 },
+      diagnostics: [], diagnosticsTruncated: false, unresolved: [], unresolvedTotal: 0, conditions: [], conditionsTotal: 0,
+      replacesExisting: installed, books: [],
+      homebrew: { code: data.code, codeTaken: !installed && codes.has(data.code), copyCode: copyCode(data.code, codes), copyName: `${data.pack.name} (copy)` },
+    };
+  }
+
+  hasStagedFile(previewId: string): boolean { return this.stagedFiles.has(previewId); }
+  cancelFile(previewId: string): void { this.stagedFiles.delete(previewId); }
+
+  /** Install a previewed pack file: as it is (replacing an installed pack of its id) or as a copy (a new code and ids). */
+  installFile(previewId: string, asCopy: boolean): ImportPackResult {
+    const staged = this.stagedFiles.get(previewId);
+    if (!staged) throw apiError("invalid_argument", "This preview has expired. Choose the files again.");
+    this.stagedFiles.delete(previewId);
+    const { data } = staged;
+    const codes = new Set([...this.packs.values()].map((p) => p.code));
+    if (!asCopy && !this.packs.has(data.pack.id) && codes.has(data.code)) {
+      throw apiError("invalid_argument", `Another pack already uses the code ${data.code}. Import it as a copy instead.`);
+    }
+    const next = asCopy ? copyOf(data, copyCode(data.code, codes), `${data.pack.name} (copy)`) : data;
+    const pack: ContentPack = { ...next.pack, elementCount: next.elements.length };
+    this.packs.set(pack.id, { pack, code: next.code, elements: new Map(next.elements), appends: new Map(next.appends) });
+    return { pack: this.putPack(pack), report: { fileName: staged.fileName, format: "borealis-pack", converted: next.elements.length, skipped: 0, issues: [] } };
   }
 
   private own(packId: string): OwnPack {

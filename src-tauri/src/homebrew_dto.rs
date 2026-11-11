@@ -208,6 +208,36 @@ pub struct HomebrewElementSummary {
     pub tags: Vec<String>,
     /// Its summary line and description as plain text (cut short), for the list filter's text search.
     pub text: String,
+    /// It holds text copied from a non-SRD pack (CS1, HC8): the export dialog counts these.
+    pub copied_text: bool,
+}
+
+/// `homebrew_export_pack` (spec 14.2): the pack file saved (desktop: `path`, none when the dialog was cancelled) or
+/// shared (Android: `shared`; elsewhere the bytes in `dataBase64` for the web view's share sheet).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomebrewExportResult {
+    /// `<Pack name>.borealis-pack.zip`.
+    pub file_name: String,
+    pub path: Option<String>,
+    pub shared: bool,
+    pub data_base64: Option<String>,
+    /// Elements whose copied text was left out.
+    pub left_out: usize,
+}
+
+impl HomebrewExportResult {
+    /// The answer for `file` before it is saved or shared.
+    #[must_use]
+    pub fn of(file: &crate::homebrew_transfer::PackExportFile) -> Self {
+        Self {
+            file_name: file.file_name.clone(),
+            path: None,
+            shared: false,
+            data_base64: None,
+            left_out: file.left_out,
+        }
+    }
 }
 
 /// One rule block of a form: `borealis_authoring::form::Block` (its `memo` never travels: `to_ui` strips it).

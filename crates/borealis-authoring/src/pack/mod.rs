@@ -1,13 +1,14 @@
 //! Homebrew packs (spec 14, 15.1 `pack`): the pack layout on disk, `creator.json`, child elements, and the pure
 //! steps of saving and deleting (the app does the file writes and the reload). Deterministic, no AI (G7).
 //!
-//! Export and import of `.borealis-pack.zip` (spec 14.2, WB-24) build on these.
+//! Export and import of `.borealis-pack.zip` (spec 14.2, WB-24): `transfer` (leave text out, import as a copy).
 
 mod children;
 mod creator;
 mod layout;
 mod refs;
 mod spell_lists;
+mod transfer;
 
 pub(crate) use children::granted_ids;
 pub use children::{child_types, granted_children, parent_of};
@@ -22,6 +23,12 @@ pub use layout::{
 };
 pub use refs::{id_tokens, mentions, names_any, offers, use_of, UseRelation};
 pub use spell_lists::{appended, on_list, removable, with_spell_list, ListChange};
+pub use transfer::{
+    copied_text_ids, copy_code, copy_name, pack_copy, rewrite_ids, without_copied_text, PackCopy,
+    LEFT_OUT_TEXT, PACK_FILE_SUFFIX,
+};
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod transfer_tests;

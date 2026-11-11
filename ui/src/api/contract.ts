@@ -133,6 +133,7 @@ import type {
   HomebrewDraftView,
   HomebrewElementRef,
   HomebrewElementSummary,
+  HomebrewExportResult,
   HomebrewForm,
   HomebrewKindDescriptor,
   HomebrewKindId,
@@ -417,7 +418,8 @@ export interface ApiMethods {
   /** Convert files or a picked folder without installing; `installImportPreview` then installs exactly that result. */
   previewImportPack(args: { request: PreviewImportRequest }): Promise<ImportPreview>;
   /** `editions` (IM14): the edition the user chose for books of the set, by book name; stored as each book's choice. */
-  installImportPreview(args: { previewId: string; editions?: Record<string, BookRuleset> | null }): Promise<ImportPackResult>;
+  /** `asCopy` (spec 14.2): a homebrew pack file (`ImportPreview.homebrew`) installs as a copy, with a new code and ids. */
+  installImportPreview(args: { previewId: string; editions?: Record<string, BookRuleset> | null; asCopy?: boolean }): Promise<ImportPackResult>;
   cancelImportPreview(args: { previewId: string }): Promise<void>;
   /** Files the OS opened with the app (macOS/iOS/Android "open with" / share), oldest first. */
   takeOpenedFiles(): Promise<OpenedFile[]>;
@@ -630,9 +632,7 @@ export interface ApiMethods {
   /** Sends exactly the previewed payload (HTTPS POST to the Borealis website). */
   importReportSend(args: { previewId: string }): Promise<ImportReportSent>;
 
-  /* Homebrew creator (1.5.0; specs/homebrew-creator-spec.md section 15.2). Hidden until `AppSettings.creatorEnabled` (HC3).
-   * Until each command's work item lands, the backend rejects with `requirement_failed` and
-   * `details.notImplemented` = the command name. */
+  /* Homebrew creator (1.5.0; specs/homebrew-creator-spec.md section 15.2). Hidden until `AppSettings.creatorEnabled` (HC3). */
   /** Every creator form: fields, sub-tabs, bindings and defaults per edition. */
   homebrewKinds(): Promise<HomebrewKindDescriptor[]>;
   /** Every rule block the forms offer (grant, select, list, stat and each custom rule kind). */
@@ -680,8 +680,9 @@ export interface ApiMethods {
    * character, so Try it lists them with the Build pickers. `slotId` is a `SelectionSlot.id` of the trial's snapshot.
    */
   homebrewTrialOptions(args: { trialId: string; slotId: string; query?: string; limit?: number; offset?: number }): Promise<Page<SlotOption>>;
-  /** `.borealis-pack.zip`: desktop save dialog (`path`), phones the share sheet (`dataBase64`). */
-  homebrewExportPack(args: { packId: string; leaveOutCopiedText: boolean }): Promise<ExportResult>;
+  /** `.borealis-pack.zip` (spec 14.2): desktop save dialog (`path`), Android the share sheet (`shared`), elsewhere the bytes
+   * (`dataBase64`) for the web view's share sheet. `leaveOutCopiedText` (HC8) leaves descriptions copied from non-SRD packs out. */
+  homebrewExportPack(args: { packId: string; leaveOutCopiedText: boolean }): Promise<HomebrewExportResult>;
 }
 
 export type CommandName = keyof ApiMethods;

@@ -724,7 +724,7 @@
    "method": "homebrewExportPack",
    "response": {
     "k": "ref",
-    "name": "ExportResult"
+    "name": "HomebrewExportResult"
    }
   },
   "homebrew_kinds": {
@@ -1136,6 +1136,7 @@
   },
   "install_import_preview": {
    "args": {
+    "asCopy": true,
     "editions": true,
     "previewId": false
    },
@@ -7323,6 +7324,12 @@
   "HomebrewElementSummary": {
    "k": "object",
    "props": {
+    "copiedText": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "edition": {
      "opt": false,
      "t": {
@@ -7382,6 +7389,41 @@
      }
     },
     "text": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewExportResult": {
+   "k": "object",
+   "props": {
+    "dataBase64": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fileName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "leftOut": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "shared": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -7580,6 +7622,35 @@
        "k": "ref",
        "name": "HomebrewDataNode"
       }
+     }
+    }
+   }
+  },
+  "HomebrewImportInfo": {
+   "k": "object",
+   "props": {
+    "code": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "codeTaken": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "copyCode": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "copyName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
      }
     }
    }
@@ -8598,6 +8669,13 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "homebrew": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "HomebrewImportInfo"
      }
     },
     "indexUrl": {

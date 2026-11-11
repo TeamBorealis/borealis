@@ -6,9 +6,10 @@ import { Button, RowDetail, SearchInput, useToast } from "../../components";
 import { filesToInputs } from "../../lib/files";
 import { useApi } from "../../state/ApiContext";
 import { startImportPreview } from "../../state/importPreview";
-import { errorMessage, useAsync } from "../../state/useAsync";
+import { useAsync } from "../../state/useAsync";
 import { PaneShell } from "../builder/DescriptionPane";
 import { openSendToDevice } from "../transfer/openTransfer";
+import { ExportPackDialog } from "./ExportPackDialog";
 import { NewPackFlyout } from "./NewPackFlyout";
 import { editionLabel, lastPackId, rememberPack } from "./packs";
 import "../builder/builder.css";
@@ -42,6 +43,7 @@ export function HomebrewHome() {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [exporting, setExporting] = useState<ContentPack | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const q = query.trim().toLowerCase();
   const rows = own.filter((p) => !q || p.name.toLowerCase().includes(q) || p.attribution.toLowerCase().includes(q));
@@ -64,13 +66,6 @@ export function HomebrewHome() {
     const files = Array.from(list ?? []);
     if (fileRef.current) fileRef.current.value = "";
     if (files.length) await startImportPreview(api, { files: await filesToInputs(files) }, (m) => toast.push(m, "error"));
-  };
-  const onExport = async () => {
-    if (!selected) return;
-    try {
-      const r = await api.homebrewExportPack({ packId: selected.id, leaveOutCopiedText: true });
-      toast.push(r.path ? `Exported "${selected.name}" to ${r.path}.` : `Exported "${selected.name}".`);
-    } catch (e) { toast.push(errorMessage(e), "error"); }
   };
   const onGridKey = (e: KeyboardEvent<HTMLDivElement>) => {
     const step = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
@@ -95,7 +90,7 @@ export function HomebrewHome() {
           <span className="v4-grid-cmds" role="toolbar" aria-label="Pack commands">
             <button type="button" className="v4-grid-cmd" aria-label="New pack" title="New pack" onClick={() => setCreating(true)}><Svg d={mdiPlus} /></button>
             <button type="button" className="v4-grid-cmd" aria-label="Import pack" title="Import a pack file" onClick={() => fileRef.current?.click()}><Svg d={mdiUpload} /></button>
-            <button type="button" className="v4-grid-cmd" aria-label="Export pack" title="Export the selected pack to a file" disabled={!selected} onClick={() => void onExport()}><Svg d={mdiDownload} /></button>
+            <button type="button" className="v4-grid-cmd" aria-label="Export pack" title="Export the selected pack to a file" disabled={!selected} onClick={() => setExporting(selected)}><Svg d={mdiDownload} /></button>
             <button type="button" className="v4-grid-cmd" aria-label="Send to device" title="Send to another device" onClick={() => openSendToDevice()}><Svg d={mdiSend} /></button>
           </span>
           <input ref={fileRef} type="file" hidden accept=".zip,application/zip" aria-label="Choose a pack file" onChange={(e) => void onImport(e.target.files)} />
@@ -133,6 +128,7 @@ export function HomebrewHome() {
         ) : <aside className="desc-pane" aria-label="Description" />}
       </div>
       {creating && <NewPackFlyout onCreated={onCreated} onClose={() => setCreating(false)} />}
+      {exporting && <ExportPackDialog pack={exporting} onClose={() => setExporting(null)} />}
     </div>
   );
 }

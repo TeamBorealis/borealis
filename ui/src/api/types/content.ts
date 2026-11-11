@@ -170,7 +170,8 @@ export interface MigrationIssue {
 
 export interface MigrationReport {
   fileName: string;
-  format: ContentFormat;
+  /** `borealis-pack`: a homebrew pack file (spec 14.2), installed as it is. */
+  format: ContentFormat | "borealis-pack";
   converted: number;
   skipped: number;
   issues: MigrationIssue[];

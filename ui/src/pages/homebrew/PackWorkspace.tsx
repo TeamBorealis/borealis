@@ -25,6 +25,9 @@ import "../builder/builder.css";
 import "./homebrew.css";
 import "./expert.css";
 
+/** `content-reloaded` reasons of a pack changed from outside this page: a device receive, an imported pack file. */
+const PACK_CHANGED = new Set(["device-sync", "homebrew-pack-imported"]);
+
 const timeOf = (iso: string): string => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
@@ -125,6 +128,23 @@ export function PackWorkspace() {
     await api.homebrewDiscardDraft({ draftId: view.draftId });
     return api.homebrewOpenDraft({ packId, elementId: view.elementId });
   };
+
+  // Spec 14.4: a pack received from another device, or replaced by an imported pack file, while an element is open: the
+  // element opens again from the pack (the list and pack too); a draft of it asks which version to keep (10.1).
+  const onPackChanged = useRef<() => void>(() => undefined);
+  onPackChanged.current = () => {
+    elements.reload();
+    packs.reload();
+    const id = openId;
+    if (!id) return;
+    void draft.flush()
+      .then(() => api.homebrewOpenDraft({ packId, elementId: id }))
+      .then(settleBase).then(show)
+      .catch(() => draft.open(null));
+  };
+  useEffect(() => api.subscribe("content:reloaded", ({ reason }) => {
+    if (PACK_CHANGED.has(reason)) onPackChanged.current();
+  }), [api]);
 
   const openElement = async (row: HomebrewElementSummary) => {
     if (row.id === openId) { setMobileView("editor"); return; }
