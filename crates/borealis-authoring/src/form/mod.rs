@@ -31,6 +31,7 @@ mod paths;
 pub mod preserved;
 mod read;
 mod repeat;
+mod subclass;
 mod ui;
 pub mod value;
 mod write;
@@ -41,23 +42,25 @@ pub use block_codec::CatalogBlockCodec;
 pub(crate) use block_codec::INCOMPLETE;
 pub use child_refs::{add_child, new_child_key, ChildEntry, ParentInfo};
 pub use codec::{
-    CasterField, ClassField, FeatureField, LevelCounts, ProficiencyGroup, SkillChoice, TableColumn,
+    CasterField, ClassField, FeatureField, LevelCounts, ProficiencyGroup, SkillChoice,
+    SubclassField, TableColumn,
 };
 pub use descriptor::descriptors;
 pub use kinds::new_class_form;
 pub use kinds::{
-    append_kind, kind, kind_for_type, kinds, Control, FieldDef, KindDef, KindGroup,
-    CLASS_FEATURE_KIND, CLASS_KIND, OTHER_KIND,
+    append_kind, kind, kind_for_element, kind_for_type, kinds, Control, FieldDef, KindDef,
+    KindGroup, CLASS_FEATURE_KIND, CLASS_KIND, CLASS_OPTION_KIND, OTHER_KIND,
 };
 pub use paths::{check_fields, form_path_for_issue, form_path_for_location};
 pub use preserved::{KeptPart, PreservedPart};
 pub use read::{element_group_to_form, element_to_form};
 pub use repeat::AGAIN_AT;
+pub use subclass::{refresh_subclass, SUBCLASS_FEATURE_KIND, SUBCLASS_KIND};
 pub use ui::{assign_ids, merge_ui, refresh_blocks, to_ui};
 pub use write::{form_to_element, form_to_elements};
 
 use crate::expr_build::condition::ConditionContext;
-use borealis_content::ContentStore;
+use borealis_content::{ContentStore, Element};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeMap, HashMap};
@@ -242,6 +245,17 @@ pub struct RefInfo {
 pub trait Lookup {
     /// The element with this id, if loaded.
     fn find(&self, id: &str) -> Option<RefInfo>;
+
+    /// The whole loaded element with this id, when the lookup holds elements (a subclass reads its class's subclass
+    /// choice, spec 4.7). Lookups of names only answer `None`.
+    fn loaded(&self, _id: &str) -> Option<&Element> {
+        None
+    }
+
+    /// Every loaded element of type `ty`, when the lookup holds elements (empty otherwise).
+    fn loaded_of_type(&self, _ty: &str) -> Vec<&Element> {
+        Vec::new()
+    }
 }
 
 impl Lookup for ContentStore {
@@ -250,6 +264,53 @@ impl Lookup for ContentStore {
             name: e.name.clone(),
             ty: e.ty.clone(),
         })
+    }
+
+    fn loaded(&self, id: &str) -> Option<&Element> {
+        self.element(id)
+    }
+
+    fn loaded_of_type(&self, ty: &str) -> Vec<&Element> {
+        self.by_type(ty).map(|s| &s.element).collect()
+    }
+}
+
+/// A lookup over another one plus some elements that are not loaded (a pack's unsaved drafts): those are found first.
+pub struct WithElements<'a> {
+    /// The loaded content.
+    pub base: &'a dyn Lookup,
+    /// The extra elements.
+    pub extra: &'a [Element],
+}
+
+impl Lookup for WithElements<'_> {
+    fn find(&self, id: &str) -> Option<RefInfo> {
+        self.extra
+            .iter()
+            .find(|e| e.id == id)
+            .map(|e| RefInfo {
+                name: e.name.clone(),
+                ty: e.ty.clone(),
+            })
+            .or_else(|| self.base.find(id))
+    }
+
+    fn loaded(&self, id: &str) -> Option<&Element> {
+        self.extra
+            .iter()
+            .find(|e| e.id == id)
+            .or_else(|| self.base.loaded(id))
+    }
+
+    fn loaded_of_type(&self, ty: &str) -> Vec<&Element> {
+        let mut out: Vec<&Element> = self.extra.iter().filter(|e| e.ty == ty).collect();
+        out.extend(
+            self.base
+                .loaded_of_type(ty)
+                .into_iter()
+                .filter(|e| !self.extra.iter().any(|x| x.id == e.id)),
+        );
+        out
     }
 }
 

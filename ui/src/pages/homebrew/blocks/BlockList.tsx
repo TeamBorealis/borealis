@@ -13,7 +13,7 @@ import { shownSentence } from "./sentence";
 import { newBlock } from "./values";
 
 /** Kinds whose blocks can be gained again at other levels (`borealis-authoring::form::repeat`, WB-16). */
-export const REPEAT_KINDS: readonly string[] = ["classFeature"];
+export const REPEAT_KINDS: readonly string[] = ["classFeature", "subclassFeature"];
 
 /** The reserved block field: the levels a block is gained again at. */
 export const AGAIN_AT = "againAt";

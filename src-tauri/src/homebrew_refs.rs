@@ -238,7 +238,7 @@ impl AppState {
 
     /// The new (never saved) elements of the drafts of `draft_id`'s pack, the open one included, with provisional
     /// ids.
-    fn hb_unsaved_elements(&self, draft_id: &str) -> ApiResult<Vec<Element>> {
+    pub(crate) fn hb_unsaved_elements(&self, draft_id: &str) -> ApiResult<Vec<Element>> {
         let open = self.hb_drafts.get(&self.paths.data, draft_id)?;
         let Ok(pack) = self.hb_pack(&open.pack_id) else {
             return Ok(Vec::new());

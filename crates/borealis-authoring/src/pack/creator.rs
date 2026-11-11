@@ -5,7 +5,7 @@
 //! (it is part of the pack), and a pack without one (an AI-made pack, a pack edited outside the app) gets one the
 //! first time the creator opens it ([`CreatorFile::adopt`]).
 
-use crate::form::kind_for_type;
+use crate::form::kind_for_element;
 use borealis_content::ContentFile;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -138,7 +138,7 @@ impl CreatorFile {
             next.elements
                 .entry(e.id.clone())
                 .or_insert_with(|| CreatorElement {
-                    kind: kind_for_type(&e.ty).id.to_string(),
+                    kind: kind_for_element(e).id.to_string(),
                     created_at: String::new(),
                     copied_from: None,
                     non_srd_text: false,

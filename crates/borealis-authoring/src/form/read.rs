@@ -1,7 +1,7 @@
 //! Element to form.
 
 use super::codec::{self, Codec, Reader};
-use super::kinds::{kind_for_type, KindDef};
+use super::kinds::{kind_for_element, KindDef};
 use super::preserved::{self, Residue};
 use super::{child_refs, repeat};
 use super::{FormContext, FormState, Memo};
@@ -46,7 +46,7 @@ pub(crate) fn owned_tags(kind: &KindDef) -> BTreeSet<&'static str> {
 }
 
 pub(crate) fn read_one(e: &Element, key: String, cx: &FormContext<'_>) -> FormState {
-    read_as(kind_for_type(&e.ty), e, key, cx)
+    read_as(kind_for_element(e), e, key, cx)
 }
 
 pub(crate) fn read_as(kind: &KindDef, e: &Element, key: String, cx: &FormContext<'_>) -> FormState {

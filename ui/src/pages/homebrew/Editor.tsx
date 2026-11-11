@@ -56,8 +56,13 @@ function editionOf(form: HomebrewForm): Ruleset | null {
   return e === "dnd2014" || e === "dnd2024" ? e : null;
 }
 
-/** A field's value: a `blocks` field is the form's block list (spec 6), every other field its `fields` entry. */
-const valueOf = (f: HomebrewFieldSpec, form: HomebrewForm): unknown => (f.control === "blocks" ? form.blocks : form.fields[f.key]);
+/** A field's value: a `blocks` field is the form's block list (spec 6), a read-only one the backend's last answer (a
+ * subclass's tag and levels come from its class, WB-18), every other field its `fields` entry. */
+const valueOf = (f: HomebrewFieldSpec, form: HomebrewForm, answer: HomebrewForm | null | undefined): unknown => {
+  if (f.control === "blocks") return form.blocks;
+  if (f.readOnly && answer && f.key in answer.fields) return answer.fields[f.key];
+  return form.fields[f.key];
+};
 
 /** The SPELLCASTING sub-tab (spec 4.6): a class's edits its Spellcasting feature; any other form's, its own section. */
 const SPELLCASTING_TAB = "spellcasting";
@@ -123,7 +128,7 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
         </div>
         {hasExpert && narrow && <div className="hb-expert-row">{expertSwitch}</div>}
         <div role="tabpanel" id="hb-tab-panel" aria-labelledby={`hb-tab-${current}`} className="hb-tabpanel">
-          {current === PREVIEW_TAB.id ? preview : current === SPELLCASTING_TAB && kind.id === "class"
+          {current === PREVIEW_TAB.id ? preview : current === SPELLCASTING_TAB && (kind.id === "class" || kind.id === "subclass")
             ? <SpellcastingTab editing={childEditing} expert={expert} />
             : current === SPELLCASTING_TAB
               ? <CasterSection fields={fields} form={form} problems={draft.problems} edition={edition} expert={expert}
@@ -135,7 +140,7 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
                 {title && <h3 className="hb-section-title">{title}</h3>}
                 <div className="mg-grid two">
                   {list.map((f) => (
-                    <FieldView key={f.key} field={f} value={valueOf(f, form)} problems={draft.problems} kindId={kind.id} childEditing={childEditing}
+                    <FieldView key={f.key} field={f} value={valueOf(f, form, draft.view?.form)} problems={draft.problems} kindId={kind.id} childEditing={childEditing}
                       onChange={(v, typing) => setValue(f, v, typing)} />
                   ))}
                 </div>

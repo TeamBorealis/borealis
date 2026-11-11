@@ -375,9 +375,7 @@ impl AppState {
                     .map(|c| c.kind.clone())
                     .filter(|k| kind(k).is_some())
                     .unwrap_or_else(|| {
-                        borealis_authoring::form::kind_for_type(&e.ty)
-                            .id
-                            .to_string()
+                        borealis_authoring::form::kind_for_element(e).id.to_string()
                     }),
                 element_type: e.ty.clone(),
                 parent_id: parent_of(e, elements).map(|p| p.id.clone()),

@@ -25,6 +25,7 @@ mod feat;
 mod feat_prereq;
 mod species;
 mod spell;
+mod subclass;
 pub use caster::{CasterField, LevelCounts};
 pub(crate) use class::ABILITY_CHOICES;
 pub use class::{ClassField, ProficiencyGroup, SkillChoice, TableColumn};
@@ -32,6 +33,7 @@ pub use class_feature::FeatureField;
 pub use feat::FeatField;
 pub use species::{Movement, NameKind, Sense, SpeciesField};
 pub use spell::{Component, SpellField};
+pub use subclass::SubclassField;
 
 /// How one field maps to the element.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -96,6 +98,8 @@ pub enum Codec {
     Feature(FeatureField),
     /// A spellcasting section field (spec 4.6): the `spellcasting` node and the section's rules.
     Caster(CasterField),
+    /// A subclass field (spec 4.7: its class, the tag that class offers it by) or a class option's group (4.8).
+    Subclass(SubclassField),
 }
 
 const RARITIES: [&str; 3] = ["standard", "exotic", "secret"];
@@ -141,6 +145,7 @@ impl Codec {
             Self::Class(f) => f.bindings(),
             Self::Feature(f) => f.bindings(),
             Self::Caster(f) => f.bindings(),
+            Self::Subclass(f) => f.bindings(),
         }
     }
 
@@ -165,6 +170,7 @@ impl Codec {
         match self {
             Self::Tags => true,
             Self::Spell(f) => f.owns_supports(),
+            Self::Subclass(f) => f == SubclassField::OptionGroup,
             _ => false,
         }
     }
@@ -204,6 +210,7 @@ impl Codec {
             Self::Feat(f) => f.data_keys(),
             Self::Species(f) => f.data_keys(),
             Self::Class(f) => f.data_keys(),
+            Self::Subclass(f) => f.data_keys(),
             _ => Vec::new(),
         }
     }
@@ -426,6 +433,7 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
         Codec::Class(f) => class::read(f, r, cx),
         Codec::Feature(f) => class_feature::read(f, r),
         Codec::Caster(f) => caster::read(f, r),
+        Codec::Subclass(f) => subclass::read(f, r, cx),
         Codec::Blocks => return None,
     })
 }
@@ -525,6 +533,7 @@ pub(crate) fn write(
         Codec::Class(f) => return class::write(f, value, memo, path, out, cx),
         Codec::Feature(f) => return class_feature::write(f, value, memo, path, out),
         Codec::Caster(f) => return caster::write(f, value, memo, path, out),
+        Codec::Subclass(f) => return subclass::write(f, value, memo, path, out, cx),
         Codec::Children { ty, levelled } => {
             if let Some(m) = memo.filter(|m| m.value == *value) {
                 let rules: Vec<borealis_content::Rule> = m
@@ -633,6 +642,7 @@ pub(crate) fn write(
         | Codec::Class(_)
         | Codec::Feature(_)
         | Codec::Caster(_)
+        | Codec::Subclass(_)
         | Codec::Children { .. } => {
             unreachable!("written above")
         }
@@ -743,6 +753,7 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
         | Codec::Class(_)
         | Codec::Feature(_)
         | Codec::Caster(_)
+        | Codec::Subclass(_)
         | Codec::Children { .. }
         | Codec::Blocks => {}
     }

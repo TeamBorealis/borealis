@@ -87,10 +87,12 @@ pub fn merge_ui(stored: &FormState, ui: &FormState) -> FormState {
     }
 }
 
-/// The form with every block's sentence (and its nested blocks') written from its current values: call it after
+/// The form with every block's sentence (and its nested blocks') written from its current values, and a subclass's
+/// parts taken from its class written from the class picked now ([`super::refresh_subclass`]): call it after
 /// [`merge_ui`], before the form goes back to the UI.
 #[must_use]
 pub fn refresh_blocks(form: &FormState, cx: &FormContext<'_>) -> FormState {
+    let form = &super::subclass::refresh_subclass(form, cx);
     FormState {
         blocks: form
             .blocks

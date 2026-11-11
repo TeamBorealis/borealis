@@ -137,8 +137,10 @@ pub(crate) fn read(field: FeatField, r: &mut Reader<'_>, cx: &FormContext<'_>) -
         FeatField::Repeatable => {
             let setter = r.take_setter(ALLOW_DUPLICATE);
             let data = r.take_data(REPEATABLE);
+            // `data.repeatable` is `{allowed}` (feats) or a plain boolean (the 2024 SRD's invocations)
             let on = setter.and_then(|(_, s)| s.as_bool()) == Some(true)
-                || data.and_then(|d| d.get(ALLOWED)).and_then(Value::as_bool) == Some(true);
+                || data.and_then(|d| d.get(ALLOWED)).and_then(Value::as_bool) == Some(true)
+                || data.and_then(Value::as_bool) == Some(true);
             memo(
                 json!(on),
                 json!({
@@ -338,6 +340,10 @@ fn write_repeatable(
         out.setters(s, &slots.setters);
     }
     match data {
+        // a plain boolean keeps its shape
+        Some(Value::Bool(_)) => {
+            out.element.data.insert(REPEATABLE.into(), json!(on));
+        }
         Some(d) => {
             let mut entries = owned(d);
             entries.insert(ALLOWED.into(), json!(on));

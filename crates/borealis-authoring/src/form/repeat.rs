@@ -23,7 +23,7 @@ pub const AGAIN_AT: &str = "againAt";
 const MEMO_KEY: &str = "againAt";
 
 /// Kinds whose blocks can be gained again at other levels (the features of a class; WB-18 adds subclass features).
-pub(crate) const REPEAT_KINDS: &[&str] = &["classFeature"];
+pub(crate) const REPEAT_KINDS: &[&str] = &["classFeature", "subclassFeature"];
 
 /// The kind repeats its blocks.
 pub(crate) fn repeats(kind: &str) -> bool {

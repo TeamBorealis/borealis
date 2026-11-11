@@ -18,19 +18,30 @@ export function spellcastingChild(form: HomebrewForm): number {
   return form.children.findIndex((c) => typeof c.fields.name === "string" && CASTER_NAMES.includes(c.fields.name.trim().toLowerCase()));
 }
 
-/** What a new section starts with: a full caster that prepares from its whole list (the class's name as its list). */
+/** What a new section starts with: a full caster that prepares from its whole list (the class's name as its list); a
+ * subclass's, a third caster that knows its spells (the Eldritch Knight shape). */
 const NEW_SECTION: Record<string, unknown> = { casts: true, casterType: "full", preparation: "prepared", multiclassSlots: "auto" };
+const NEW_SUBCLASS_SECTION: Record<string, unknown> = { casts: true, casterType: "third", preparation: "known", multiclassSlots: "auto" };
+
+/** Where a form's Spellcasting feature goes: a class's at level 1, a subclass's at the level it is chosen at. */
+function featurePlace(form: HomebrewForm): { type: string; level: number; noun: string; section: Record<string, unknown> } {
+  if (form.kind !== "subclass") return { type: "Class Feature", level: 1, noun: "class", section: NEW_SECTION };
+  const gained = form.fields.levelGained;
+  return { type: "Archetype Feature", level: typeof gained === "number" ? gained : 3, noun: "subclass", section: NEW_SUBCLASS_SECTION };
+}
 
 /**
  * The class form's SPELLCASTING sub-tab (spec 4.5, 4.6): the spellcasting section of the class's Spellcasting feature
  * (a child at level 1, written the way the SRD stores it), and that feature's other rules (always-prepared spells,
- * ritual casting, a spellbook: rule blocks). A class that doesn't cast offers "Add spellcasting".
+ * ritual casting, a spellbook: rule blocks). A class that doesn't cast offers "Add spellcasting". A subclass's (WB-18)
+ * is the same with a subclass feature at its subclass level (a third caster).
  */
 export function SpellcastingTab({ editing, expert }: { editing: ChildEditing; expert: boolean }) {
   const { form } = editing;
   const index = spellcastingChild(form);
   const child = index >= 0 ? form.children[index] : undefined;
-  const feature = childKind(editing, "Class Feature");
+  const place = featurePlace(form);
+  const feature = childKind(editing, place.type);
   const fields = (feature?.fields ?? []).filter((f) => f.tab === "spellcasting");
   const setChild = (c: HomebrewForm, patch: Record<string, unknown>, group: string | null) =>
     editing.edit((f) => {
@@ -40,20 +51,20 @@ export function SpellcastingTab({ editing, expert }: { editing: ChildEditing; ex
 
   if (!child || child.fields.casts !== true) {
     const add = async () => {
-      if (child) { setChild(child, NEW_SECTION, null); return; }
+      if (child) { setChild(child, place.section, null); return; }
       if (!feature) return;
       const key = await editing.newChild(feature.id, (f, k) => {
         const c = f.children.find((x) => x.key === k);
-        const placed = withChildLevel(f, LEVELS_FIELD, k, 1);
-        return c ? withChild(placed, k, { ...c, fields: { ...c.fields, name: "Spellcasting", ...NEW_SECTION } }) : placed;
+        const placed = withChildLevel(f, LEVELS_FIELD, k, place.level);
+        return c ? withChild(placed, k, { ...c, fields: { ...c.fields, name: "Spellcasting", ...place.section } }) : placed;
       });
-      if (key) setStatus("Spellcasting added at level 1.");
+      if (key) setStatus(`Spellcasting added at level ${place.level}.`);
     };
     return (
       <div className="hb-section hb-caster-empty">
-        <p className="hb-pending">This class doesn&apos;t cast spells.</p>
+        <p className="hb-pending">This {place.noun} doesn&apos;t cast spells.</p>
         <button type="button" className="mg-tool wide" onClick={() => void add()} disabled={!feature && !child}><Icon name="plus" />Add spellcasting</button>
-        <p className="hb-field-help">A Spellcasting feature at level 1 gets the caster type, ability, spell list and spells by level.</p>
+        <p className="hb-field-help">A Spellcasting feature at level {place.level} gets the caster type, ability, spell list and spells by level{place.noun === "subclass" ? ", counted under the subclass's name and gated on the class level" : ""}.</p>
       </div>
     );
   }

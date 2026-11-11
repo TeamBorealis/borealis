@@ -24,3 +24,6 @@ html:not(.phone) .hb-levels thead th:nth-child(2), html:not(.phone) .hb-levels t
 .hb-children .hb-pick-btn { margin-top: 4px; }
 .hb-link { background: none; border: 0; padding: 0; color: var(--highlight); font: inherit; text-decoration: underline; cursor: pointer; }
 .hb-child-body { display: flex; flex-direction: column; gap: 8px; }
+/* A subclass's grid (WB-18): the rows at the levels its class gives subclass features at. */
+.hb-marked-level th[scope="row"] { color: var(--highlight); }
+.hb-level-hint { color: var(--text-muted); font-style: italic; }

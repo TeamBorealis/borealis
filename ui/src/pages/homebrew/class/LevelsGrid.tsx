@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCreatorEnv } from "../env";
 import type { HomebrewForm, HomebrewTableColumn } from "../../../api/contract";
 import { CheckBox, Icon, NumericUpDown, TextBox } from "../../../components";
 import { setStatus } from "../../../state/status";
@@ -15,21 +16,34 @@ import {
 const LEVELS_FIELD = "levels";
 const CHILD_FIELDS = [LEVELS_FIELD, "equipment"];
 
+/** The levels a subclass's class gives subclass features at (the backend derives them from the class, WB-18). */
+const SUBCLASS_LEVELS_FIELD = "subclassLevels";
+
+function numbers(v: unknown): number[] {
+  return Array.isArray(v) ? v.filter((n): n is number => typeof n === "number") : [];
+}
+
 /**
  * The class LEVELS sub-tab (spec 4.5, 13.8; Aurora's level-up panels + DataGrid): the features the class makes for itself
  * (ability score improvements, the subclass choice, the 2024 epic boon), then the 20-row grid LEVEL / PROF. BONUS /
  * FEATURES / the class table's counters. A feature chip opens the feature editor; the Plus of a row adds a feature at
  * that level (made by the backend, `homebrew_new_draft {parentId}`).
+ *
+ * A subclass's grid (spec 4.7, `featureType` "Archetype Feature") has no class parts: its rows at the levels its class gives
+ * subclass features at are marked ("Subclass feature"), from the backend's last answer.
  */
-export function LevelsGrid({ editing }: { editing: ChildEditing }) {
+export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing: ChildEditing; featureType?: string }) {
   const { form } = editing;
+  const env = useCreatorEnv();
   const [open, setOpen] = useState<string | null>(null);
   const [newColumn, setNewColumn] = useState("");
+  const isClass = featureType === "Class Feature";
   const entries = entriesOf(form, LEVELS_FIELD);
-  const columns = columnsOf(form);
+  const columns = isClass ? columnsOf(form) : [];
   // the spellcasting columns (a 2024 class's cantrips, prepared spells and slots) are the SPELLCASTING tab's
   const counters = counterColumns(columns).filter(({ column }) => !isSpellcastingColumn(column.key));
-  const feature = childKind(editing, "Class Feature");
+  const feature = childKind(editing, featureType);
+  const marked = new Set(isClass ? [] : numbers(env.answer?.fields[SUBCLASS_LEVELS_FIELD] ?? form.fields[SUBCLASS_LEVELS_FIELD]));
 
   const addAt = async (level: number) => {
     if (!feature) return;
@@ -55,7 +69,7 @@ export function LevelsGrid({ editing }: { editing: ChildEditing }) {
 
   return (
     <div className="hb-levels-tab">
-      <GeneratedFeatures editing={editing} />
+      {isClass && <GeneratedFeatures editing={editing} />}
       <div className="hb-section">
         <h3 className="hb-section-title">Levels</h3>
         <div className="hb-levels-wrap">
@@ -76,10 +90,11 @@ export function LevelsGrid({ editing }: { editing: ChildEditing }) {
             </thead>
             <tbody>
               {LEVELS.map((level) => (
-                <tr key={level} data-level={level}>
+                <tr key={level} data-level={level} className={marked.has(level) ? "hb-marked-level" : undefined}>
                   <th scope="row">{level}</th>
                   <td>+{proficiencyBonus(level)}</td>
                   <td className="hb-level-features">
+                    {marked.has(level) && !entries.some((e) => (e.level ?? 1) === level) && <span className="hb-level-hint">Subclass feature</span>}
                     {entries.map((e, i) => (e.level ?? 1) === level && (
                       <span key={e.child ?? `${i}-${e.element?.id ?? ""}`} className={`hb-chip-item hb-feature-chip ${e.element?.missing ? "hb-missing" : ""}`}>
                         {e.child
@@ -102,13 +117,13 @@ export function LevelsGrid({ editing }: { editing: ChildEditing }) {
             </tbody>
           </table>
         </div>
-        <div className="hb-add-column">
+        {isClass && <div className="hb-add-column">
           <label htmlFor="hb-new-column">New column</label>
           <TextBox id="hb-new-column" value={newColumn} placeholder="Rage uses" onChange={(e) => setNewColumn(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") addColumn(); }} />
           <button type="button" className="mg-tool wide" onClick={addColumn} disabled={!newColumn.trim()}><Icon name="plus" />Add column</button>
           <p className="hb-field-help">Counters per level (uses, dice); a rule&apos;s maximum can read a column (&quot;class table&quot;).</p>
-        </div>
+        </div>}
       </div>
       {open && <ChildDialog editing={editing} childKey={open} levelField={LEVELS_FIELD} onRemove={() => remove(open)} onClose={() => setOpen(null)} />}
     </div>

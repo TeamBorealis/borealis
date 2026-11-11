@@ -6,6 +6,7 @@ import { apiError } from "./errors";
 import { descriptionHtml, formProblems } from "./homebrew-check";
 import { addChild, newChildKey, newClassForm, newForm } from "./homebrew-class";
 import { featPrerequisite } from "./homebrew-feat";
+import { refreshSubclass, subclassProblems } from "./homebrew-subclass";
 import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
 import { CORE_PICKER_ROWS } from "./homebrew-core-rows";
 import { MOCK_ITEM_KINDS } from "./homebrew-item-kinds";
@@ -50,7 +51,8 @@ const kind = (id: string, label: string, pluralLabel: string, elementType: strin
 });
 
 /** Kinds whose own form has landed in `borealis-authoring`: the mock serves their real descriptors (generated). */
-const REAL_KINDS = ["spell", "feat", "featFeature", "species", "race", "subRace", "raceVariant", "racialTrait", "speciesTraitOption", "class", "classFeature"];
+const REAL_KINDS = ["spell", "feat", "featFeature", "species", "race", "subRace", "raceVariant", "racialTrait", "speciesTraitOption", "class", "classFeature",
+  "subclass", "subclassFeature", "classOption"];
 const realKinds = (): HomebrewKindDescriptor[] => REAL_KINDS.map((id) => {
   const k = MOCK_KIND_DESCRIPTORS.find((d) => d.id === id);
   if (!k) throw new Error(`homebrew-kinds.ts has no ${id} form`);
@@ -76,11 +78,12 @@ const KINDS: HomebrewKindDescriptor[] = [
 const TYPE_TOKENS: Record<string, string> = {
   Spell: "SPELL", Feat: "FEAT", "Feat Feature": "FEAT_FEATURE", Species: "SPECIES", Race: "RACE", "Sub Race": "SUBRACE", "Race Variant": "RACE_VARIANT",
   "Racial Trait": "TRAIT", "Species Trait Option": "TRAIT_OPTION", Language: "LANGUAGE", Companion: "COMPANION", Class: "CLASS",
-  "Class Feature": "CLASS_FEATURE",
+  "Class Feature": "CLASS_FEATURE", Archetype: "SUBCLASS", "Archetype Feature": "SUBCLASS_FEATURE", Option: "OPTION",
 };
 const PREVIEW_TYPES: Record<string, ElementType> = {
   spell: "spell", feat: "feat", language: "language", species: "race", race: "race", subRace: "subrace", raceVariant: "subrace", racialTrait: "racial-trait",
-  speciesTraitOption: "racial-trait", class: "class", classFeature: "class-feature",
+  speciesTraitOption: "racial-trait", class: "class", classFeature: "class-feature", subclass: "archetype", subclassFeature: "class-feature",
+  classOption: "option",
   item: "item", weapon: "weapon", armor: "armor", magicItem: "magic-item", itemPack: "item", equipmentPackage: "option",
 };
 /** Item facts the description pane lists (WB-12): field key and label. */
@@ -178,7 +181,7 @@ export class MockHomebrew {
   updateDraft(draftId: string, form: HomebrewForm): HomebrewDraftView {
     const draft = this.draft(draftId);
     this.touched.add(draftId);
-    return this.store(draft.packId, draft.elementId, form, draftId);
+    return this.store(draft.packId, draft.elementId, refreshSubclass(form), draftId);
   }
 
   /** The engine checks (test character, level sweep, balance hints) need the engine: the mock has none to report. */
@@ -290,6 +293,7 @@ export class MockHomebrew {
   private store(packId: string, elementId: string | null, form: HomebrewForm, draftId = `draft-${this.nextDraft++}`): HomebrewDraftView {
     const problems = [
       ...formProblems(form, MOCK_BLOCK_CATALOG, elementId, KINDS.find((k) => k.id === form.kind)),
+      ...subclassProblems(form, elementId),
       // a child's problems, at its path (`children.0.fields.name`)
       ...form.children.flatMap((c, i) => formProblems(c, MOCK_BLOCK_CATALOG, null, KINDS.find((k) => k.id === c.kind))
         .map((p) => ({ ...p, path: `children.${i}.${p.path ?? ""}`.replace(/\.$/, "") }))),

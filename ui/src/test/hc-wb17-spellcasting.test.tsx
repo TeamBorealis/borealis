@@ -76,7 +76,7 @@ describe("WB-17 spellcasting section", () => {
     renderApp(`/homebrew/${pack.id}`, { api });
     await user.click(await screen.findByRole("button", { name: "New element" }));
     const flyout = await screen.findByRole("dialog", { name: "New element" });
-    await user.click(within(flyout).getByRole("radio", { name: /^Class/ }));
+    await user.click(within(flyout).getByRole("radio", { name: /^Class A class/ }));
     await user.type(within(flyout).getByLabelText("Name"), "Warden");
     await user.click(within(flyout).getByRole("button", { name: "Create" }));
     await waitFor(() => expect((screen.getByRole("textbox", { name: /^Name/ }) as HTMLInputElement).value).toBe("Warden"));

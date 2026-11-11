@@ -20,7 +20,8 @@ use crate::state::{AppState, ContentHub, BUNDLED_PACKS};
 use borealis_authoring::check::{issue_problems, Problem};
 use borealis_authoring::form::{
     add_child, assign_ids, element_group_to_form, element_to_form, kind, merge_ui, new_child_key,
-    new_class_form, refresh_blocks, to_ui, CatalogBlockCodec, FormContext, FormState, CLASS_KIND,
+    new_class_form, refresh_blocks, to_ui, CatalogBlockCodec, FormContext, FormState, WithElements,
+    CLASS_KIND, SUBCLASS_KIND,
 };
 use borealis_authoring::pack::{
     bump_patch, child_types, digest, granted_children, pack_edition, source_name, with_elements,
@@ -315,7 +316,23 @@ impl AppState {
         let pack = self.hb_pack(&stored.pack_id)?;
         let hub = self.hub()?;
         let codec = CatalogBlockCodec;
-        let cx = Self::hb_context(&hub, &codec);
+        // a subclass's class can be a class of the pack not saved yet (spec 4.7: own classes too)
+        let unsaved: Vec<Element> = if stored.form.kind == SUBCLASS_KIND {
+            self.hb_unsaved_elements(draft_id)?
+                .into_iter()
+                .filter(|e| e.ty == "Class" || e.ty == "Class Feature")
+                .collect()
+        } else {
+            Vec::new()
+        };
+        let lookup = WithElements {
+            base: &*hub.store,
+            extra: &unsaved,
+        };
+        let cx = FormContext {
+            lookup: &lookup,
+            ..Self::hb_context(&hub, &codec)
+        };
         let mut merged = merge_ui(&stored.form, ui);
         keep_read_only(&stored.form, &mut merged);
         let draft = DraftFile {

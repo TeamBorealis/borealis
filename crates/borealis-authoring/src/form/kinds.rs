@@ -16,8 +16,10 @@ mod class;
 mod feat;
 mod species;
 mod spell;
+mod subclass;
 
 pub use class::{new_class_form, CLASS_FEATURE_KIND, CLASS_KIND};
+pub use subclass::CLASS_OPTION_KIND;
 
 /// The generic form (spec 4.12), also the form of every type no other kind writes.
 pub const OTHER_KIND: &str = "other";
@@ -778,6 +780,9 @@ pub fn kinds() -> &'static [KindDef] {
             feat::feat_feature_kind(),
             class::class_kind(),
             class::class_feature_kind(),
+            subclass::subclass_kind(),
+            subclass::subclass_feature_kind(),
+            subclass::class_option_kind(),
         ];
         all.extend(species::species_kinds());
         all.extend(small_kinds());
@@ -839,6 +844,16 @@ pub fn kind(id: &str) -> Option<&'static KindDef> {
         .iter()
         .find(|k| k.id == id)
         .or_else(|| (id == super::APPEND_KIND).then(append_kind))
+}
+
+/// The form `e` opens in: [`kind_for_type`], except that a house-rule setting (an `Option` with a `default` setter:
+/// the core's "Multiclassing", "Feats") is no class option (spec 4.8) and opens in the generic form.
+#[must_use]
+pub fn kind_for_element(e: &borealis_content::Element) -> &'static KindDef {
+    if e.ty == "Option" && e.setter_value("default").is_some() {
+        return kind(OTHER_KIND).expect("the generic form exists");
+    }
+    kind_for_type(&e.ty)
 }
 
 /// The form an element of type `ty` opens in: the kind that writes the type, else the generic form.

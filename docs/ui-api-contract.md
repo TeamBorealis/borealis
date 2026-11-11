@@ -617,6 +617,18 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   of its Spellcasting feature (a `classFeature` child at level 1, made with `homebrew_new_draft {parentId}`); a 2024
   class's `data.progression` spellcasting columns (`cantrips`, `prepared`, `slot_N`, `pact_slots`, `pact_slot_level`)
   and `data.spellcasting` (when present) are written from that section whenever it was edited. No new command.
+- **Subclasses and class options (WB-18).** Kind `subclass` (type `Archetype`; tabs GENERAL, LEVELS, SPELLCASTING,
+  RULES, DESCRIPTION): `parentClass` (`reference`, picker `Class`: `data.class` + `data.class_name`), and three
+  read-only fields the backend writes from the class picked (`homebrew_update_draft`, from the class's `select` of type
+  `Archetype`, also a class of the pack not saved yet): `subclassTag` (the support tag that choice offers subclasses
+  by), `levelGained` (`data.level_gained`) and `subclassLevels` (`number[]`, the levels the class gives subclass features
+  at; derived, never stored). The UI shows read-only fields from the last answer's form. `levels` is the LEVELS grid of
+  `subclassFeature` children (type `Archetype Feature`; a child gets `data.class` = the class's name, `data.subclass`,
+  `data.level`; it has the spellcasting section, named after the subclass). Kind `classOption` (type `Option`):
+  `group` (required combo with custom text: the first support tag + `data.group` when present), `className`
+  (`data.class_name`), `repeatable` (`data.repeatable`: a stored boolean keeps its shape, a new one is
+  `{allowed: true}`), the shared condition `requirements` (`[warlock:2]`). House-rule settings (an `Option` with a
+  `default` setter) open in the generic form. No new command or type.
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

@@ -41,7 +41,7 @@ describe('hc-wb17 homebrew spellcasting section (web mock)', { tags: ['homebrew'
 
     await ctx.screen.getByRole('button', /^New( element)?$/).first().tap();
     await expect(ctx.screen.getByRole('dialog', 'New element')).toBeVisible();
-    await ctx.screen.getByRole('radio', /^Class/).tap();
+    await ctx.screen.getByRole('radio', /^Class A class/).tap();
     await ctx.browser.locator('#hb-new-name').fill('Warden');
     await ctx.screen.getByRole('button', 'Create').tap();
     await waitValue(ctx, NAME, 'Warden');

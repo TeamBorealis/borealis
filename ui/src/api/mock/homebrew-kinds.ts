@@ -2560,6 +2560,1171 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
     ]
   },
   {
+    "id": "subclass",
+    "label": "Subclass",
+    "pluralLabel": "Subclasses",
+    "description": "A subclass of an own or loaded class, with its features by level.",
+    "group": "main",
+    "elementTypes": [
+      "Archetype"
+    ],
+    "parentKinds": [],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "levels",
+        "label": "LEVELS"
+      },
+      {
+        "id": "spellcasting",
+        "label": "SPELLCASTING"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "parentClass",
+        "label": "Class",
+        "tab": "general",
+        "control": "reference",
+        "required": true,
+        "bindings": [
+          "data.class",
+          "data.class_name"
+        ],
+        "help": "Its subclass choice offers this subclass.",
+        "section": "Subclass",
+        "picker": {
+          "types": [
+            "Class"
+          ]
+        },
+        "default": null
+      },
+      {
+        "key": "subclassTag",
+        "label": "Offered by the choice",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "supports:<class's subclass tag>"
+        ],
+        "help": "The tag the class's subclass choice offers subclasses by; written from the class.",
+        "readOnly": true,
+        "section": "Subclass",
+        "default": ""
+      },
+      {
+        "key": "levelGained",
+        "label": "Chosen at level",
+        "tab": "general",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "data.level_gained"
+        ],
+        "readOnly": true,
+        "section": "Subclass",
+        "min": 1,
+        "max": 20
+      },
+      {
+        "key": "subclassLevels",
+        "label": "Subclass feature levels",
+        "tab": "levels",
+        "control": "numbers",
+        "required": false,
+        "bindings": [
+          "class:subclass feature levels (derived, not stored)"
+        ],
+        "help": "The levels the class gives subclass features at; the grid marks them.",
+        "readOnly": true,
+        "min": 1,
+        "max": 20,
+        "default": []
+      },
+      {
+        "key": "levels",
+        "label": "Features by level",
+        "tab": "levels",
+        "control": "levels",
+        "required": false,
+        "bindings": [
+          "rules:grant Archetype Feature (level)"
+        ],
+        "picker": {
+          "types": [
+            "Archetype Feature"
+          ]
+        },
+        "default": []
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers.",
+        "section": "Details"
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "subclassFeature",
+    "label": "Subclass feature",
+    "pluralLabel": "Subclass features",
+    "description": "A feature a subclass gives at a level, edited inside the subclass.",
+    "group": "child",
+    "elementTypes": [
+      "Archetype Feature"
+    ],
+    "parentKinds": [
+      "subclass"
+    ],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "spellcasting",
+        "label": "SPELLCASTING"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "casts",
+        "label": "Gives spellcasting",
+        "tab": "spellcasting",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "spellcasting"
+        ],
+        "section": "Spellcasting",
+        "default": false
+      },
+      {
+        "key": "casterName",
+        "label": "Spellcasting name",
+        "tab": "spellcasting",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "spellcasting.name"
+        ],
+        "help": "The name its spells, slots and choices are counted under. Left empty: the class's name.",
+        "expert": true,
+        "section": "Spellcasting",
+        "default": ""
+      },
+      {
+        "key": "ability",
+        "label": "Spellcasting ability",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "Strength",
+            "label": "Strength"
+          },
+          {
+            "value": "Dexterity",
+            "label": "Dexterity"
+          },
+          {
+            "value": "Constitution",
+            "label": "Constitution"
+          },
+          {
+            "value": "Intelligence",
+            "label": "Intelligence"
+          },
+          {
+            "value": "Wisdom",
+            "label": "Wisdom"
+          },
+          {
+            "value": "Charisma",
+            "label": "Charisma"
+          }
+        ],
+        "bindings": [
+          "spellcasting.ability"
+        ],
+        "section": "Spellcasting",
+        "default": ""
+      },
+      {
+        "key": "preparation",
+        "label": "Spells",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "prepared",
+            "label": "Prepares spells from its whole list"
+          },
+          {
+            "value": "spellbook",
+            "label": "Prepares spells from a spellbook"
+          },
+          {
+            "value": "known",
+            "label": "Knows a number of spells"
+          }
+        ],
+        "bindings": [
+          "spellcasting.prepare",
+          "spellcasting.list.known"
+        ],
+        "section": "Spellcasting",
+        "default": "prepared"
+      },
+      {
+        "key": "spellList",
+        "label": "Spell list",
+        "tab": "spellcasting",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "spellcasting.list.supports"
+        ],
+        "help": "Spells on this list are its spells (a spell's Lists). Left empty: the class's name.",
+        "section": "Spellcasting",
+        "default": ""
+      },
+      {
+        "key": "swap",
+        "label": "Swap one spell per level",
+        "tab": "spellcasting",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "spellcasting.allow_replace"
+        ],
+        "help": "On gaining a level, one spell it knows can be replaced with another.",
+        "section": "Spellcasting",
+        "default": false
+      },
+      {
+        "key": "casterType",
+        "label": "Caster type",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "No spell slots"
+          },
+          {
+            "value": "full",
+            "label": "Full caster"
+          },
+          {
+            "value": "halfUp",
+            "label": "Half caster (round up)"
+          },
+          {
+            "value": "halfDown",
+            "label": "Half caster (round down)"
+          },
+          {
+            "value": "third",
+            "label": "Third caster"
+          },
+          {
+            "value": "pact",
+            "label": "Pact magic"
+          },
+          {
+            "value": "custom",
+            "label": "Custom table"
+          }
+        ],
+        "bindings": [
+          "rules:stat <name>:spellcasting:slots:N",
+          "rules:pact_magic"
+        ],
+        "section": "Spell slots",
+        "default": ""
+      },
+      {
+        "key": "slotTable",
+        "label": "Spell slots by level",
+        "tab": "spellcasting",
+        "control": "slotTable",
+        "required": false,
+        "bindings": [
+          "rules:stat <name>:spellcasting:slots:N"
+        ],
+        "section": "Spell slots",
+        "default": []
+      },
+      {
+        "key": "multiclassSlots",
+        "label": "Counts for multiclass spell slots as",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "auto",
+            "label": "As its caster type"
+          },
+          {
+            "value": "full",
+            "label": "Full caster"
+          },
+          {
+            "value": "halfUp",
+            "label": "Half caster (round up)"
+          },
+          {
+            "value": "half",
+            "label": "Half caster (round down)"
+          },
+          {
+            "value": "thirdUp",
+            "label": "Third caster (round up)"
+          },
+          {
+            "value": "third",
+            "label": "Third caster (round down)"
+          },
+          {
+            "value": "fourthUp",
+            "label": "Quarter caster (round up)"
+          },
+          {
+            "value": "fourth",
+            "label": "Quarter caster (round down)"
+          },
+          {
+            "value": "fifth",
+            "label": "Fifth caster"
+          },
+          {
+            "value": "solo",
+            "label": "Its own slots, not pooled"
+          },
+          {
+            "value": "none",
+            "label": "Not at all"
+          }
+        ],
+        "bindings": [
+          "rules:grant ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_*"
+        ],
+        "section": "Spell slots",
+        "default": "auto"
+      },
+      {
+        "key": "prepared",
+        "label": "Prepared spells",
+        "tab": "spellcasting",
+        "control": "levelCounts",
+        "required": false,
+        "bindings": [
+          "rules:stat <name>:spellcasting:prepare"
+        ],
+        "section": "Spells by level",
+        "default": []
+      },
+      {
+        "key": "prepareFormula",
+        "label": "Prepared spells",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "level",
+            "label": "Ability modifier + class level"
+          },
+          {
+            "value": "half",
+            "label": "Ability modifier + half the class level"
+          },
+          {
+            "value": "",
+            "label": "By the table below"
+          }
+        ],
+        "bindings": [
+          "rules:stat <name>:spellcasting:prepare"
+        ],
+        "section": "Spells by level",
+        "default": "",
+        "editions": [
+          "dnd2014"
+        ]
+      },
+      {
+        "key": "cantrips",
+        "label": "Cantrips known",
+        "tab": "spellcasting",
+        "control": "levelCounts",
+        "required": false,
+        "bindings": [
+          "rules:select Cantrip (<Name>)",
+          "rules:stat <name>:spellcasting:cantrips known"
+        ],
+        "section": "Spells by level",
+        "default": {
+          "levels": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "statistic": false
+        }
+      },
+      {
+        "key": "known",
+        "label": "Spells known",
+        "tab": "spellcasting",
+        "control": "levelCounts",
+        "required": false,
+        "bindings": [
+          "rules:select Spell (<Name>)",
+          "rules:stat <name>:spellcasting:spells known"
+        ],
+        "section": "Spells by level",
+        "default": {
+          "levels": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "statistic": true
+        }
+      },
+      {
+        "key": "preparedChange",
+        "label": "Changing prepared spells",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "Not stated"
+          },
+          {
+            "value": "longRestAny",
+            "label": "After a long rest, any of them"
+          },
+          {
+            "value": "longRestOne",
+            "label": "After a long rest, one of them"
+          },
+          {
+            "value": "levelOne",
+            "label": "On gaining a level, one of them"
+          }
+        ],
+        "bindings": [
+          "rules:prepared_spell_change"
+        ],
+        "section": "Spells by level",
+        "default": "",
+        "editions": [
+          "dnd2024"
+        ]
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers."
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ]
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ]
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ]
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ]
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "classOption",
+    "label": "Class option",
+    "pluralLabel": "Class options",
+    "description": "An option a class's choice offers: an invocation, a fighting style, a metamagic.",
+    "group": "main",
+    "elementTypes": [
+      "Option"
+    ],
+    "parentKinds": [],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "group",
+        "label": "Group",
+        "tab": "general",
+        "control": "combo",
+        "required": true,
+        "choices": [
+          {
+            "value": "Eldritch Invocation",
+            "label": "Eldritch Invocation"
+          },
+          {
+            "value": "Fighting Style",
+            "label": "Fighting Style"
+          },
+          {
+            "value": "Metamagic",
+            "label": "Metamagic"
+          },
+          {
+            "value": "Brutal Strike",
+            "label": "Brutal Strike"
+          },
+          {
+            "value": "Cunning Strike",
+            "label": "Cunning Strike"
+          },
+          {
+            "value": "Divine Order",
+            "label": "Divine Order"
+          },
+          {
+            "value": "Primal Order",
+            "label": "Primal Order"
+          },
+          {
+            "value": "Monk Focus",
+            "label": "Monk Focus"
+          }
+        ],
+        "allowCustom": true,
+        "bindings": [
+          "supports:<group>",
+          "data.group"
+        ],
+        "help": "A class's choice offers the options of its group (its tag): Eldritch Invocation, Fighting Style, or a group your class's choice names.",
+        "section": "Option",
+        "default": ""
+      },
+      {
+        "key": "className",
+        "label": "Class",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "Barbarian",
+            "label": "Barbarian"
+          },
+          {
+            "value": "Bard",
+            "label": "Bard"
+          },
+          {
+            "value": "Cleric",
+            "label": "Cleric"
+          },
+          {
+            "value": "Druid",
+            "label": "Druid"
+          },
+          {
+            "value": "Fighter",
+            "label": "Fighter"
+          },
+          {
+            "value": "Monk",
+            "label": "Monk"
+          },
+          {
+            "value": "Paladin",
+            "label": "Paladin"
+          },
+          {
+            "value": "Ranger",
+            "label": "Ranger"
+          },
+          {
+            "value": "Rogue",
+            "label": "Rogue"
+          },
+          {
+            "value": "Sorcerer",
+            "label": "Sorcerer"
+          },
+          {
+            "value": "Warlock",
+            "label": "Warlock"
+          },
+          {
+            "value": "Wizard",
+            "label": "Wizard"
+          }
+        ],
+        "allowCustom": true,
+        "bindings": [
+          "data.class_name"
+        ],
+        "help": "The class it belongs to (shown with it).",
+        "section": "Option"
+      },
+      {
+        "key": "repeatable",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate",
+          "data.repeatable.allowed"
+        ],
+        "section": "Option",
+        "default": false
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ],
+        "help": "A level in its class (Warlock level at least 2), or another option it needs.",
+        "section": "Option"
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ],
+        "section": "Option"
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers.",
+        "section": "Details"
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
     "id": "species",
     "label": "Species",
     "pluralLabel": "Species",

@@ -16,7 +16,7 @@
 
 use borealis_authoring::expr_build::condition::ConditionContext;
 use borealis_authoring::form::{
-    element_group_to_form, element_to_form, form_to_element, form_to_elements, kind_for_type,
+    element_group_to_form, element_to_form, form_to_element, form_to_elements, kind_for_element,
     merge_ui, to_ui, CatalogBlockCodec, FormContext, FormState, RefInfo,
 };
 use borealis_authoring::pack::granted_children;
@@ -337,7 +337,7 @@ fn every_bundled_element_round_trips_through_its_form() {
                 count_builders(v, &mut builders);
             }
         }
-        let entry = by_kind.entry(kind_for_type(&e.ty).id).or_default();
+        let entry = by_kind.entry(kind_for_element(e).id).or_default();
         entry.0 += 1;
         entry.1 += form.blocks.len();
         entry.2 +=

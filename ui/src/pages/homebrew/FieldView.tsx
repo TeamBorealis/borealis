@@ -87,7 +87,7 @@ export function FieldView({ field, value, problems, onChange, kindId, idPrefix =
         {field.label}{field.required ? <span className="hb-req" aria-hidden="true"> *</span> : null}
       </label>
       {field.readOnly
-        ? <p id={inputId} className="hb-readonly" tabIndex={-1}>{text(value) || "-"}</p>
+        ? <p id={inputId} className="hb-readonly" tabIndex={-1}>{(Array.isArray(value) ? value.join(", ") : text(value)) || "-"}</p>
         : <Control field={field} value={value} onChange={onChange} id={inputId} describedBy={msgId} invalid={severity === "error"} problems={problems} kindId={kindId} childEditing={childEditing} />}
       {msgId && <div id={msgId} className="hb-field-msg">{shown.map((p, i) => <p key={i}>{p.message}</p>)}</div>}
       {!msgId && field.help && <p className="hb-field-help">{field.help}</p>}
@@ -163,7 +163,7 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
     case "skillChoice":
       return <SkillChoiceField id={id} label={label} value={value} onChange={(v) => onChange(v, false)} />;
     case "levels":
-      if (childEditing) return <div id={id}><LevelsGrid editing={childEditing} /></div>;
+      if (childEditing) return <div id={id}><LevelsGrid editing={childEditing} featureType={field.picker?.types[0]} /></div>;
       break;
     case "package":
       if (childEditing) return <div id={id}><PackageField editing={childEditing} field={field.key} label={label} /></div>;

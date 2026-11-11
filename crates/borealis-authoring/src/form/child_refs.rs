@@ -52,6 +52,8 @@ pub struct ParentInfo {
     pub level: Option<u32>,
     /// A class's multiclass id as stored and as written now (a copy's changes).
     pub renamed: Option<(String, String)>,
+    /// A subclass's class name (its features' `data.class`, spec 4.7).
+    pub class: Option<String>,
 }
 
 /// A child form as its parent's fields see it.
@@ -266,12 +268,19 @@ pub(crate) fn parent_info(parent: &FormState, child: &FormState) -> ParentInfo {
         "dnd2024" => Some(Ruleset::Dnd2024),
         _ => None,
     };
+    let class = field_value(parent, super::subclass::PARENT)
+        .and_then(|v| v.get("name"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string);
     ParentInfo {
         id: parent.id().map(str::to_string),
         name: borealis_content::rich::normalize_plain_text(&text("name")),
         edition,
         level: level.flatten(),
         renamed: super::codec::class_renamed(parent),
+        class,
     }
 }
 
@@ -317,6 +326,18 @@ pub(crate) fn patch_child(e: &mut Element, child: &FormState, parent: &ParentInf
         "classFeature" => {
             if !parent.name.is_empty() {
                 set("class", json!(parent.name));
+            }
+            if let Some(l) = parent.level {
+                set("level", json!(l));
+            }
+        }
+        // a subclass's feature: its class's name, the subclass's, the level (the 2024 SRD's `data`)
+        super::subclass::SUBCLASS_FEATURE_KIND => {
+            if let Some(class) = &parent.class {
+                set("class", json!(class));
+            }
+            if !parent.name.is_empty() {
+                set("subclass", json!(parent.name));
             }
             if let Some(l) = parent.level {
                 set("level", json!(l));
