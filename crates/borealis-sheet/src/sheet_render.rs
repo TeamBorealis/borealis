@@ -127,6 +127,10 @@ fn data_with_companion(
     content: &SheetContent,
 ) -> SheetData {
     let mut data = sheet_data_for(character, snapshot, &content.spell_facts, options.edition);
+    if options.fold_feature_upgrades {
+        let features = std::mem::take(&mut data.features);
+        data.features = crate::feature_fold::fold_feature_upgrades(features, snapshot);
+    }
     data.extras.companion = content.companion.clone();
     data.extras.has_companion_portrait = content.companion_portrait.is_some();
     data

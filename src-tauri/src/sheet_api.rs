@@ -47,6 +47,7 @@ pub fn sheet_options(s: &SheetSettings) -> SheetOptions {
             feature: s.cards_new_page.feature,
         },
         legacy_spellcasting: s.legacy_spellcasting_page,
+        fold_feature_upgrades: s.fold_feature_upgrades,
         paper: match s.paper {
             Some(SheetPaperSetting::A4) => Paper::A4,
             Some(SheetPaperSetting::Letter) | None => Paper::Letter,

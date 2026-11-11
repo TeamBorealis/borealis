@@ -1063,3 +1063,42 @@ fn flat() -> SheetOptions {
         ..SheetOptions::default()
     }
 }
+
+#[test]
+fn fold_feature_upgrades_is_opt_in() {
+    let (c, mut snap) = fixture();
+    let base = snap
+        .features
+        .iter()
+        .find(|f| f.displayed && f.ty == "Class Feature" && f.name.len() > 4)
+        .expect("fixture has a class feature")
+        .clone();
+    let upgrade = format!("Improved {}", base.name);
+    snap.features
+        .push(borealis_engine::snapshot::FeatureDetail {
+            id: "ID_TEST_IMPROVED_FEATURE".into(),
+            name: upgrade.clone(),
+            level: 9,
+            description: "<p>It works twice as well.</p>".into(),
+            sheet_summary: Some("It works twice as well.".into()),
+            ..base
+        });
+    let lead = format!("{upgrade} (level 9). It works twice as well.");
+    let off = render_html(&c, &snap, &flat()).unwrap();
+    let on = render_html(
+        &c,
+        &snap,
+        &SheetOptions {
+            fold_feature_upgrades: true,
+            ..flat()
+        },
+    )
+    .unwrap();
+    assert!(off.contains(&esc_cell(&upgrade)), "off lists the upgrade");
+    assert!(!off.contains(&esc_cell(&lead)), "off folds nothing");
+    assert!(
+        on.contains(&esc_cell(&lead)),
+        "on folds the upgrade into its base"
+    );
+    assert_eq!(off, render_html(&c, &snap, &flat()).unwrap());
+}

@@ -10688,6 +10688,12 @@
       "k": "prim"
      }
     },
+    "foldFeatureUpgrades": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "formFillable": {
      "opt": false,
      "t": {
