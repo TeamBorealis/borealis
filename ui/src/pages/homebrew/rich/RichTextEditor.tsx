@@ -88,23 +88,26 @@ interface ToolButton {
   pressed?: boolean;
   /** Shown but not usable yet (keeps the tooltip reachable). */
   unavailable?: boolean;
+  /** A formatting button: its icon alone on desktop (the name is its label and tooltip), so the toolbar keeps one row
+   * in the editor column (U7, WB-26); phones show the text under the icon. */
+  compact?: boolean;
 }
 
 function toolButtons(state: EditorState, extras: RichTextEditorProps["extras"], edition: RichTextEditorProps["edition"]): ToolButton[] {
   const inTable = tableAt(state) !== null;
   const buttons: ToolButton[] = [
-    { key: "bold", icon: "bold", text: "Bold", label: "Bold", title: "Bold (Ctrl+B)", cmd: toggleBold, pressed: isMarkActive(state, richSchema.marks.bold) },
-    { key: "italic", icon: "italic", text: "Italic", label: "Italic", title: "Italic (Ctrl+I)", cmd: toggleItalic, pressed: isMarkActive(state, richSchema.marks.italic) },
-    { key: "h3", icon: "heading-3", text: "Heading", label: "Heading", title: "Heading", cmd: toggleHeading(3), pressed: isHeadingActive(state, 3) },
-    { key: "h4", icon: "heading-4", text: "Subheading", label: "Subheading", title: "Subheading", cmd: toggleHeading(4), pressed: isHeadingActive(state, 4) },
-    { key: "ul", icon: "list-bulleted", text: "List", label: "Bulleted list", title: "Bulleted list", cmd: toggleList("bullet_list"), pressed: isListActive(state, "bullet_list") },
-    { key: "ol", icon: "list-numbered", text: "Numbered", label: "Numbered list", title: "Numbered list", cmd: toggleList("ordered_list"), pressed: isListActive(state, "ordered_list") },
+    { key: "bold", compact: true, icon: "bold", text: "Bold", label: "Bold", title: "Bold (Ctrl+B)", cmd: toggleBold, pressed: isMarkActive(state, richSchema.marks.bold) },
+    { key: "italic", compact: true, icon: "italic", text: "Italic", label: "Italic", title: "Italic (Ctrl+I)", cmd: toggleItalic, pressed: isMarkActive(state, richSchema.marks.italic) },
+    { key: "h3", compact: true, icon: "heading-3", text: "Heading", label: "Heading", title: "Heading", cmd: toggleHeading(3), pressed: isHeadingActive(state, 3) },
+    { key: "h4", compact: true, icon: "heading-4", text: "Subheading", label: "Subheading", title: "Subheading", cmd: toggleHeading(4), pressed: isHeadingActive(state, 4) },
+    { key: "ul", compact: true, icon: "list-bulleted", text: "List", label: "Bulleted list", title: "Bulleted list", cmd: toggleList("bullet_list"), pressed: isListActive(state, "bullet_list") },
+    { key: "ol", compact: true, icon: "list-numbered", text: "Numbered", label: "Numbered list", title: "Numbered list", cmd: toggleList("ordered_list"), pressed: isListActive(state, "ordered_list") },
   ];
   if (inTable) {
     buttons.push(
-      { key: "row", icon: "table-row-add", text: "Add row", label: "Add table row", title: "Add a row below", cmd: addTableRow },
-      { key: "col", icon: "table-column-add", text: "Add column", label: "Add table column", title: "Add a column to the right", cmd: addTableColumn },
-      { key: "deltable", icon: "table-remove", text: "Delete table", label: "Delete table", title: "Delete this table", cmd: deleteTable },
+      { key: "row", compact: true, icon: "table-row-add", text: "Add row", label: "Add table row", title: "Add a row below", cmd: addTableRow },
+      { key: "col", compact: true, icon: "table-column-add", text: "Add column", label: "Add table column", title: "Add a column to the right", cmd: addTableColumn },
+      { key: "deltable", compact: true, icon: "table-remove", text: "Delete table", label: "Delete table", title: "Delete this table", cmd: deleteTable },
     );
   } else {
     buttons.push({ key: "table", icon: "table", text: "Table", label: "Insert table", title: "Insert a table with a header row", cmd: insertTable });
@@ -223,7 +226,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
             onMouseDown={keepFocus}
             onClick={() => { if (b.cmd && !b.unavailable) run(b.cmd); }}
           >
-            <Icon name={b.icon} />{b.text}
+            <Icon name={b.icon} /><span className={b.compact ? "rich-btn-text rich-compact" : "rich-btn-text"}>{b.text}</span>
           </button>
         ))}
         {phone && cells && (

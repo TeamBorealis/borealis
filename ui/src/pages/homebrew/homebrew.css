@@ -18,14 +18,15 @@
 
 /* 13.2 workspace: CATEGORIES | element grid | editor | description pane (11* : 5*) */
 .hb-ws { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.hb-ws-head { display: flex; align-items: center; gap: 12px; min-height: 26px; padding: 4px 20px 0; font-size: 11px; color: var(--text-secondary); }
+.hb-ws-head { display: flex; align-items: center; gap: 12px; min-height: 26px; padding: 4px 20px 0 50px; font-size: 11px; color: var(--text-secondary); }
 .hb-back { background: transparent; border: 0; padding: 0; min-height: 0; height: auto; color: var(--text-secondary); font-size: 10px; font-weight: 600; text-transform: uppercase; cursor: pointer; }
 @media (hover: hover) and (pointer: fine) { .hb-back:hover { color: var(--text); } }
 .hb-back { display: inline-flex; align-items: center; gap: 2px; }
 .hb-back .icon { width: 12px; height: 12px; }
 .hb-ws-pack { font-weight: 600; text-transform: uppercase; color: var(--text); }
 .hb-ws-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 30.63%); flex: 1 1 0; min-height: 0; }
-.hb-ws-left { display: grid; grid-template-columns: 170px 220px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 10px; padding: 6px 12px 12px 20px; min-height: 0; }
+/* Aurora's two-pane pages (Equipment): a 50 px left gutter, CATEGORIES 170, 10 px gaps, 20 px before the splitter */
+.hb-ws-left { display: grid; grid-template-columns: 170px 200px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 10px; padding: 6px 20px 12px 50px; min-height: 0; }
 .hb-ws-desc { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #131313; border-left: 2px solid #1a1c1d; }
 .hb-ws-desc .desc-scroll { overflow-y: scroll; }
 .hb-cats { min-height: 0; }
@@ -65,6 +66,14 @@
 .hb-problem.hb-warning .icon { color: var(--aur-warning); }
 .hb-band.aur-subband { flex: none; padding-left: 0; }
 .hb-band .tabs.sub { padding-left: 0; }
+/* Desktop (U7, WB-26): a kind with more sub-tabs than the editor column fits (a class has nine) puts them in a second
+   row of the same 28 px band rows, every tab on screen; the band never scrolls them out of sight. */
+.hb-ws.wide .hb-band.aur-subband { height: auto; flex-wrap: wrap; align-items: stretch; }
+.hb-ws.wide .hb-band .tabs.sub { flex-wrap: wrap; overflow: visible; }
+.hb-ws.wide .hb-band .tabs.sub .tab { height: 28px; }
+/* The command row: Undo .. Duplicate, then the Expert switch at its right end */
+.hb-cmdrow { display: flex; align-items: center; flex: none; min-width: 0; }
+.hb-cmdrow > .hb-commands { flex: 1 1 auto; min-width: 0; }
 .hb-tabpanel { padding: 12px 2px 20px 0; }
 .hb-section + .hb-section { margin-top: 16px; }
 .hb-section-title { margin: 0 0 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
@@ -84,6 +93,18 @@
 .hb-field-help { margin: 2px 0 0; font-size: 11px; color: var(--text-secondary); }
 .hb-multiline { width: 100%; min-height: 60px; resize: vertical; background: var(--field-bg, #1c1c1c); color: var(--text); border: 1px solid #424243; font: inherit; font-size: var(--fs-md); padding: 4px 5px; }
 .hb-check { display: flex; align-items: center; min-height: 26px; }
+/* A check field is Aurora's DescriptionCheckBox (13.4): box, its name beside it (11 SemiBold), help indented 24 px */
+.hb-dcheck { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; min-height: 26px; }
+.hb-dcheck .v4-cb { margin: 0 6px 0 0; }
+.mg-f .hb-dcheck-head { display: flex; align-items: center; gap: 3px; margin: 0; font-size: 11px; font-weight: 600; text-transform: none; color: var(--text-primary-header); cursor: pointer; }
+.hb-dcheck-head .icon { width: 11px; height: 11px; }
+.hb-dcheck-desc { grid-column: 2; margin-top: 1px; font-size: 11px; color: var(--text-secondary); }
+.hb-field.hb-error .hb-dcheck-head { color: var(--aur-danger); }
+.hb-field.hb-warning .hb-dcheck-head { color: var(--aur-warning); }
+.hb-check-field > .hb-field-msg { padding-left: 24px; }
+html.phone .hb-dcheck { min-height: var(--ph-row); grid-template-columns: 36px minmax(0, 1fr); }
+html.phone .mg-f .hb-dcheck-head { min-height: var(--ph-hit); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .hb-dcheck-desc { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
 
 /* Flyouts: New pack, New element (13.11: the New Character flyout's dashed option cards) */
 .hb-flyout-text { width: 100%; min-height: 60px; resize: vertical; background: #fff; color: #161616; border: 0; font: inherit; font-size: var(--fs-md); padding: 4px 6px; }

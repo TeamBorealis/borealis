@@ -94,6 +94,7 @@
 .mg-f > label.hb-inline-check { font-size: var(--fs-md); font-weight: 400; text-transform: none; color: var(--text-body); }
 .hb-wrap { flex-wrap: wrap; }
 .hb-numbers { display: inline-flex; flex-wrap: wrap; gap: 2px; }
+html:not(.phone) .hb-numbers-10 { display: inline-grid; grid-template-columns: repeat(10, auto); }
 .hb-splits { display: flex; flex-direction: column; gap: 4px; }
 .hb-split { display: flex; align-items: center; gap: 4px; }
 .hb-warn-text { color: var(--aur-warning); }

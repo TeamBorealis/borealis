@@ -70,13 +70,16 @@ describe("WB-25 the editor's head", () => {
     const kids = [...editor().children];
     const at = (pred: (e: Element) => boolean) => kids.findIndex(pred);
     const band = at((e) => e.classList.contains("ap-band"));
-    const commands = at((e) => e.getAttribute("aria-label") === "Element commands");
+    // the command row: the commands toolbar, then the Expert switch at its right end (WB-26: the switch covered tabs)
+    const commands = at((e) => e.classList.contains("hb-cmdrow") && e.firstElementChild?.getAttribute("aria-label") === "Element commands");
     const problems = at((e) => e.classList.contains("hb-problems"));
     const tabs = at((e) => e.classList.contains("hb-band"));
     const panel = at((e) => e.getAttribute("role") === "tabpanel");
     expect([band, commands, problems, tabs, panel]).toEqual([0, 1, 2, 3, 4]);
     expect(editor().querySelector(".hb-editor-head")).toBeNull();
-    expect(kids[commands]!.classList.contains("eq-pin")).toBe(false);
+    expect(kids[commands]!.firstElementChild!.classList.contains("eq-pin")).toBe(false);
+    expect(within(kids[commands] as HTMLElement).getByRole("switch", { name: "Expert fields" })).toBeTruthy();
+    expect(within(kids[tabs] as HTMLElement).queryByRole("switch")).toBeNull();
   });
 });
 

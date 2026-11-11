@@ -128,7 +128,8 @@ export function NumbersControl({ label, value, onChange, min = 0, max = 9 }: Val
   const list = value ?? [];
   const all = Array.from({ length: max - min + 1 }, (_, i) => min + i);
   return (
-    <span className="sp-levels hb-numbers" role="group" aria-label={label}>
+    // more than ten (the class's 20 levels): even rows of ten on desktop, not nineteen and a lone 20 (WB-26)
+    <span className={all.length > 10 ? "sp-levels hb-numbers hb-numbers-10" : "sp-levels hb-numbers"} role="group" aria-label={label}>
       {all.map((n) => (
         <button key={n} type="button" className="sp-tog" aria-pressed={list.includes(n)}
           onClick={() => onChange(list.includes(n) ? list.filter((x) => x !== n) : [...list, n].sort((a, b) => a - b))}>{n}</button>

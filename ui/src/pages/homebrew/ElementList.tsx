@@ -31,7 +31,8 @@ export function Categories({ kinds, counts, current, onPick, extra = [] }: {
   return (
     <nav className="eq-cats hb-cats" aria-label="Element kinds">
       <Band title="Categories" />
-      <div className="eq-cats-sub">Kind</div>
+      {/* Aurora Equipment: CATEGORIES, then the CATEGORY column header (U7) */}
+      <div className="eq-cats-sub">Category</div>
       <ul>
         {kinds.map((k) => (
           <li key={k.id}><button type="button" aria-current={k.id === current && !extra.some((x) => x.current)} onClick={() => onPick(k.id)}>{k.pluralLabel} ({counts.get(k.id) ?? 0})</button></li>
@@ -156,7 +157,7 @@ export function ElementList({ kind, kinds, rows, unsaved, openId, filter, filter
           <button type="button" className="hb-tool" aria-pressed={selectMode} title="Choose several elements (or Ctrl+click, Shift+click)" onClick={() => onSelectMode(!selectMode)}>Select</button>
         </span>
         <span className="eq-filter">
-          <input ref={filterRef} type="text" aria-label="Filter elements" placeholder={phone ? "Filter names, tags, text..." : "filter names, tags, text... (Ctrl+F)"} value={filter.text} onChange={(e) => onFilter({ ...filter, text: e.target.value })} />
+          <input ref={filterRef} type="text" aria-label="Filter elements" placeholder={phone ? "Filter names, tags, text..." : "filter names, tags, text..."} title={phone ? undefined : "Filter the elements (Ctrl+F)"} value={filter.text} onChange={(e) => onFilter({ ...filter, text: e.target.value })} />
           <button type="button" aria-label="Clear" onClick={() => onFilter({ ...filter, text: "" })}><Glyph name="x" /></button>
         </span>
         <button type="button" className="hb-chip hb-problems-only" aria-pressed={filter.problemsOnly} onClick={() => onFilter({ ...filter, problemsOnly: !filter.problemsOnly })}>Has problems</button>

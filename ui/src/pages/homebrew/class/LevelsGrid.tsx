@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useCreatorEnv } from "../env";
 import type { HomebrewForm, HomebrewTableColumn } from "../../../api/contract";
-import { Button, CheckBox, Dialog, Icon, NumericUpDown, TextBox } from "../../../components";
+import { Button, Dialog, Icon, NumericUpDown, TextBox } from "../../../components";
+import { DescCheck } from "../fields/DescCheck";
 import { usePhone } from "../../../lib/phone";
 import { setStatus } from "../../../state/status";
 import { NumbersControl } from "../blocks/valueControls";
@@ -230,12 +231,11 @@ function GeneratedFeatures({ editing }: { editing: ChildEditing }) {
           </div>
         )}
         {(newer || gen.epicBoon) && (
-          <div className="mg-f hb-field" data-field="epicBoon">
-            <label htmlFor="hb-epic-boon">Epic boon at level 19</label>
-            <span className="hb-check"><CheckBox id="hb-epic-boon" checked={!!gen.epicBoon} onChange={(e) => {
-              if (e.target.checked) make("Epic Boon", { epicBoon: true }, 19);
+          <div className="mg-f hb-field hb-check-field" data-field="epicBoon">
+            <DescCheck id="hb-epic-boon" label="Epic boon at level 19" checked={!!gen.epicBoon} onChange={(on) => {
+              if (on) make("Epic Boon", { epicBoon: true }, 19);
               else if (gen.epicBoon) void removeChecked(editing, gen.epicBoon.key!, `“${nameOf(gen.epicBoon)}”`, () => editing.edit((f) => withoutChild(f, gen.epicBoon!.key!, CHILD_FIELDS)));
-            }} /></span>
+            }} />
             {/* a 2014 class has no epic boon: one read from content still gives its rules (P2a) */}
             {!newer && <p className="hb-field-help hb-edition-note" role="note">This part belongs to the 2024 edition. It is shown because it still gives its rules: clear it to remove them.</p>}
           </div>

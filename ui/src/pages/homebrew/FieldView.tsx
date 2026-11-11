@@ -3,7 +3,8 @@ import type {
   HomebrewBlock, HomebrewCondition, HomebrewEquipped, HomebrewFieldSpec, HomebrewFormulaNode, HomebrewMapsToValue, HomebrewProblem, HomebrewSetterRow, HomebrewSheetValue,
   HomebrewTagFilter,
 } from "../../api/contract";
-import { CheckBox, ComboBox, EditableComboBox, Icon, NumericUpDown, TextBox, ToggleSwitch } from "../../components";
+import { ComboBox, EditableComboBox, Icon, NumericUpDown, TextBox, ToggleSwitch } from "../../components";
+import { DescCheck } from "./fields/DescCheck";
 import { BlockList, REPEAT_KINDS } from "./blocks/BlockList";
 import { NumbersControl } from "./blocks/valueControls";
 import type { ChildEditing } from "./class/ChildDialog";
@@ -81,12 +82,14 @@ export function FieldView({ field, value, problems, onChange, kindId, idPrefix =
   const msgId = shown.length > 0 ? `${domId}-msg` : undefined;
   const wide = WIDE.has(field.control);
   if (field.control === "check" && !field.readOnly) {
+    // Aurora's DescriptionCheckBox (spec 13.4, U7): the box with its name beside it, the help indented under the name
+    const helpId = !msgId && field.help ? `${domId}-help` : undefined;
     return (
-      <div className={`mg-f hb-field ${severity ? `hb-${severity}` : ""}`} id={domId} data-field={field.key}>
-        <label htmlFor={inputId}>{severity && <Icon name={severity === "error" ? "x" : "alert"} />}{field.label}</label>
-        <span className="hb-check"><CheckBox id={inputId} checked={value === true} aria-describedby={msgId} onChange={(e) => onChange(e.target.checked, false)} /></span>
+      <div className={`mg-f hb-field hb-check-field ${severity ? `hb-${severity}` : ""}`} id={domId} data-field={field.key}>
+        <DescCheck id={inputId} checked={value === true} describedBy={[helpId, msgId].filter(Boolean).join(" ") || undefined}
+          onChange={(on) => onChange(on, false)} label={<>{severity && <Icon name={severity === "error" ? "x" : "alert"} />}{field.label}</>}
+          help={helpId ? <span id={helpId}>{field.help}</span> : undefined} />
         {msgId && <div id={msgId} className="hb-field-msg">{shown.map((p, i) => <p key={i}>{p.message}</p>)}</div>}
-        {!msgId && field.help && <p className="hb-field-help">{field.help}</p>}
         {note && <p className="hb-field-help hb-edition-note" role="note">{note}</p>}
       </div>
     );

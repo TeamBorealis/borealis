@@ -116,7 +116,11 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
   const [expert, setExpert] = useState(false);
   const headRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   useHeadHeight(headRef, editorRef, narrow && draft.form !== null);
+  // Desktop: another sub-tab opens at its top, as an Aurora sub-tab does (the form's scroller is shared by the tabs, so it
+  // kept the last tab's scroll, WB-26)
+  useEffect(() => { if (!narrow && panelRef.current) panelRef.current.scrollTop = 0; }, [tab, narrow]);
   const form = draft.form;
   if (!form) return null;
   const name = typeof form.fields.name === "string" && form.fields.name.trim() ? form.fields.name.trim() : `New ${kind.label.toLowerCase()}`;
@@ -150,10 +154,12 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
     </div>
   );
   const band = <Band title={name}><span className={`hb-autosave hb-${draft.autosave}`} role="status">{AUTOSAVE_TEXT[draft.autosave]}</span></Band>;
+  // Desktop (U7, WB-26): the band holds only the sub-tabs, in rows of the band's height when a kind has more than fit
+  // (a class has nine); the Expert switch sits at the right end of the command row, as the Equipment filter row's
+  // MANAGE COINS does, so it never covers a tab.
   const tabBand = (
     <div className="aur-subband hb-band">
       <TabControl tabs={tabs.map((t) => ({ id: t.id, label: t.label }))} active={current} onChange={onTab} label="Editor sections" idPrefix="hb-tab" />
-      {hasExpert && !narrow && expertSwitch}
     </div>
   );
   const error = draft.error && <p className="hb-error-line" role="alert">{draft.error}</p>;
@@ -172,9 +178,9 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
           </>
         ) : (
           // Desktop (13.2-13.4): the title band, commands, PROBLEMS and the sub-tab band stay; only the form scrolls.
-          <>{band}{commands}{error}{problemsPanel}{tabBand}</>
+          <>{band}<div className="hb-cmdrow">{commands}{hasExpert && expertSwitch}</div>{error}{problemsPanel}{tabBand}</>
         )}
-        <div role="tabpanel" id="hb-tab-panel" aria-labelledby={`hb-tab-${current}`} className="hb-tabpanel">
+        <div role="tabpanel" id="hb-tab-panel" aria-labelledby={`hb-tab-${current}`} className="hb-tabpanel" ref={panelRef}>
           {current === PREVIEW_TAB.id ? preview : current === DATA_TAB.id ? <DataView generated={draft.view?.generated} /> : current === SPELLCASTING_TAB && (kind.id === "class" || kind.id === "subclass")
             ? <SpellcastingTab editing={childEditing} expert={expert} />
             : current === SPELLCASTING_TAB
