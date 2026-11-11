@@ -114,9 +114,10 @@ html.phone .hb-pack-grid .v4-grid-head, html.phone .hb-pack-grid .v4-grid-row { 
 html.phone .hb-pack-grid .v4-grid-head > :nth-child(n+2), html.phone .hb-pack-grid .v4-grid-row > :nth-child(n+2) { display: none; }
 html.phone .hb-chip { min-height: var(--ph-hit); border-radius: var(--ph-r-pill); border-color: var(--ph-field-line); background: transparent; color: var(--ph-text); font: 500 var(--ph-t-foot)/1.2 var(--ph-font-ui); padding: 0 14px; }
 html.phone .hb-chip[aria-pressed="true"] { background: var(--ph-accent); border-color: var(--ph-accent); color: var(--ph-on-accent); }
-/* The pinned row sits on (and 2 px past, so no rounding leaves a hairline) the page's bottom edge with its own background, and covers 8 px above it: no strip of the form
-   shows between it and the status line (the gear lists' 8 px gap below the bar let the form through). */
-html.phone .hb-commands.eq-pin { bottom: -2px; padding-bottom: 2px; box-shadow: 0 -8px 0 var(--ph-bg); background: var(--ph-bg); justify-content: space-between; height: auto; min-height: var(--ph-hit); }
+/* The pinned row spans the page's full width (gutters too) and sits on (and 2 px past, so no rounding leaves a hairline)
+   its bottom edge with its own background, covering 8 px above it: no strip of the form shows between it and the status
+   line or beside it (the gear lists' 8 px gap below the bar, and the form's edges in the gutters, showed through). */
+html.phone .hb-commands.eq-pin { bottom: -2px; margin: 0 calc(-1 * var(--ph-gutter)); padding: 0 var(--ph-gutter) 2px; box-shadow: 0 -8px 0 var(--ph-bg); background: var(--ph-bg); justify-content: space-between; height: auto; min-height: var(--ph-hit); }
 html.phone .hb-ws.narrow .hb-ws-editor { padding-bottom: 0; }
 html.phone .hb-ws.narrow .hb-editor-head { margin: 0 calc(-1 * var(--ph-gutter)); padding: 0 var(--ph-gutter); background: var(--ph-bg); }
 html.phone .hb-ws.narrow .hb-editor-head .ap-band { flex-wrap: wrap; padding: 8px var(--ph-gutter) 6px; border-radius: var(--ph-r-lg) var(--ph-r-lg) 0 0; }
@@ -146,5 +147,5 @@ html.phone .hb-elements .ap-grid.hb-select-mode tbody tr:not(.ap-empty-row) { gr
 html.phone .hb-elements .ap-grid td.hb-pick { display: grid; place-items: center; }
 /* With the keyboard up the rich-text toolbar docks above it (spec 16); the pinned commands step aside until it closes. */
 html.phone.kb-open .hb-commands.eq-pin { display: none; }
-html.phone .hb-ws.narrow .rich-docked .rich-toolbar { top: var(--hb-head-h, 0px); }
+html.phone:not(.kb-open) .hb-ws.narrow .rich-docked .rich-toolbar { top: var(--hb-head-h, 0px); }
 html.phone .hb-multiline { padding: 10px 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text); font: 400 var(--ph-t-body)/1.35 var(--ph-font-ui); }

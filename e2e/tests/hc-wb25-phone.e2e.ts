@@ -124,6 +124,21 @@ describe('hc-wb25 homebrew creator on a phone (web mock)', { tags: ['homebrew'] 
     await ctx.browser.evaluate((_: null) => { const c = document.querySelector('.aur-content')!; c.scrollTop = c.scrollHeight / 3; return true; }, null);
     expectEqual('the pinned row on the status line (mid form)', 'true', String(await ctx.browser.evaluate(reaches, null)));
 
+    // With the keyboard up (the app sets `kb-open` and `--kb`), the rich-text toolbar is one row docked above it and the
+    // pinned commands step aside.
+    await ctx.browser.evaluate((_: null) => { document.querySelector('.aur-content')!.scrollTop = 0; return true; }, null);
+    await ctx.screen.getByRole('tab', 'DESCRIPTION').tap();
+    await ctx.browser.locator('.rich-edit').first().click();
+    await ctx.browser.evaluate((_: null) => { document.documentElement.classList.add('kb-open'); document.documentElement.style.setProperty('--kb', '300px'); return true; }, null);
+    const docked = await ctx.browser.evaluate((_: null) => {
+      const bar = document.querySelector('.rich-docked .rich-toolbar')!.getBoundingClientRect();
+      const pin = getComputedStyle(document.querySelector('.hb-commands.eq-pin')!).display;
+      return `${bar.height < 80}:${Math.abs(innerHeight - 300 - 8 - bar.bottom) < 2}:${pin}`;
+    }, null);
+    expectEqual('the toolbar docked above the keyboard, the pinned row hidden', 'true:true:none', docked);
+    await ctx.browser.evaluate((_: null) => { document.documentElement.classList.remove('kb-open'); document.documentElement.style.setProperty('--kb', '0px'); return true; }, null);
+    await ctx.screen.getByRole('tab', 'GENERAL').tap();
+
     // A class's Armor training picker keeps several choices: a tap on a row's name checks it, a second tap clears it.
     await ctx.browser.evaluate((_: null) => { document.querySelector('.aur-content')!.scrollTop = 0; return true; }, null);
     await ctx.screen.getByRole('button', /^Back to/).tap();
