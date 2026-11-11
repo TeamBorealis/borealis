@@ -184,3 +184,58 @@ fn a_creature_s_live_preview_is_the_whole_stat_block() {
         .collect();
     assert!(at.windows(2).all(|w| w[0] < w[1]), "{html}");
 }
+
+/// The form of a new weapon as a user fills it: Twinblade, a martial melee weapon of 2d4 slashing, two-handed and
+/// finesse, with the Vex mastery, 50 gp and 6 lb.
+fn twinblade(app: &App, pack: &str) -> HomebrewDraftView {
+    let v = app
+        .state
+        .homebrew_new_draft(pack, "weapon", None, None, None)
+        .unwrap();
+    let mut form = v.form.clone();
+    let fields = json!({
+        "name": "Twinblade",
+        "weaponCategory": {"id": "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE", "name": "Martial Melee", "type": "Weapon Category"},
+        "damage": "2d4",
+        "damageType": {"id": "ID_INTERNAL_DAMAGE_TYPE_SLASHING", "name": "Slashing", "type": "Damage Type"},
+        "properties": [
+            {"id": "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED", "name": "Two-Handed", "type": "Weapon Property"},
+            {"id": "ID_INTERNAL_WEAPON_PROPERTY_FINESSE", "name": "Finesse", "type": "Weapon Property"}
+        ],
+        "mastery": [{"id": "ID_2024_MASTERY_VEX", "name": "Vex", "type": "Mastery Property"}],
+        "cost": "50", "weight": "6"
+    });
+    for (k, val) in fields.as_object().unwrap() {
+        form.fields.insert(k.clone(), val.clone());
+    }
+    app.update(&v, &form)
+}
+
+#[test]
+fn a_weapon_s_live_preview_gives_every_weapon_fact() {
+    let app = App::new();
+    let pack = app.pack(Ruleset::Dnd2024);
+    let draft = twinblade(&app, &pack);
+    let preview = draft.preview.expect("a preview");
+    let facts: Vec<(String, String)> = preview
+        .facts
+        .iter()
+        .map(|f| (f.label.clone(), f.value.clone()))
+        .collect();
+    for want in [
+        ("Weapon category", "Martial Melee"),
+        ("Damage", "2d4 slashing"),
+        ("Properties", "Two-Handed, Finesse"),
+        ("Mastery", "Vex"),
+        ("Cost", "50 gp"),
+        ("Weight", "6 lb."),
+    ] {
+        let want = (want.0.to_string(), want.1.to_string());
+        assert!(facts.contains(&want), "{want:?} not in {facts:?}");
+    }
+    assert!(
+        preview.description_html.contains("<h4>Mastery: Vex</h4>"),
+        "the mastery's rule: {}",
+        preview.description_html
+    );
+}

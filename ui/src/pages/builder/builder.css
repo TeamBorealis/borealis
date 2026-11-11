@@ -38,6 +38,8 @@
 .desc-pane h3, .desc-h { margin: 23px 0 6px; padding-bottom: 1px; font-size: 16px; font-weight: 600; text-transform: uppercase; color: var(--desc-head); border-bottom: 1px solid #333333; }
 .desc-pane .rich p { margin: 0 0 6px; }
 .desc-line { margin: 0 0 6px; }
+/* P2b: the facts after a description start a block of their own, so the first one doesn't read as the text's last line. */
+.desc-pane .rich:not(:empty) + .desc-facts { margin-top: 12px; }
 .desc-pane h3.desc-src-h { margin: 20px 0 0; padding: 0; border-bottom: 0; font-size: var(--fs-sm); }
 .desc-source { padding: 0; background: none; border: 0; font: inherit; color: #1e50e6; font-style: italic; text-decoration: underline; text-decoration-color: #1e50e6; text-underline-offset: 2px; cursor: pointer; text-align: left; }
 :root[data-theme="light"] .desc-source { color: #0044aa; text-decoration-color: #0044aa; }

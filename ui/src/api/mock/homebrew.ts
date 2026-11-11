@@ -1,5 +1,5 @@
 import type {
-  ApiError, BookRuleset, ContentPack, ElementDetail, ElementSummary, ElementType, HomebrewBulkPatch, HomebrewBulkResult, HomebrewCharacterRef, HomebrewDeleteResult, HomebrewDraftSummary,
+  ApiError, BookRuleset, ContentPack, ElementDetail, ElementFact, ElementSummary, ElementType, HomebrewBulkPatch, HomebrewBulkResult, HomebrewCharacterRef, HomebrewDeleteResult, HomebrewDraftSummary,
   HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary, HomebrewForm, HomebrewKindDescriptor, HomebrewKindId, HomebrewPackPatch, HomebrewPackRequest,
   HomebrewPickerRow, HomebrewProblem, HomebrewSaveResult, HomebrewSpellListRow, HomebrewSpellListView, Ruleset,
   HomebrewExportResult, ImportFileInput, ImportPackResult, ImportPreview, TypeCount,
@@ -63,8 +63,32 @@ const PREVIEW_TYPES: Record<string, ElementType> = {
   background: "background", backgroundFeature: "background", backgroundVariant: "background", backgroundCharacteristics: "background",
   item: "item", weapon: "weapon", armor: "armor", magicItem: "magic-item", itemPack: "item", equipmentPackage: "option", creature: "monster",
 };
-/** Item facts the description pane lists (WB-12): field key and label. */
-const ITEM_FACTS: [string, string][] = [["rarity", "Rarity"], ["damage", "Damage"], ["cost", "Cost"], ["weight", "Weight (lb.)"]];
+/** A picked reference's name (`{id, name, type}`), or the names of a list of them. */
+const refName = (v: unknown): string => (typeof v === "object" && v !== null && !Array.isArray(v) ? String((v as { name?: unknown }).name ?? "").trim() : "");
+const refNames = (v: unknown): string[] => (Array.isArray(v) ? v.map(refName).filter(Boolean) : []);
+
+/** An item draft's facts as the backend's compendium entry lists them (`compendium::facts`, WB-12, P2b): rarity, the
+ * weapon category, the cost with its coin, the damage with its type, the properties, the mastery and the weight. */
+function itemFacts(form: HomebrewForm): ElementFact[] {
+  const f = form.fields;
+  const text = (key: string) => (typeof f[key] === "string" ? String(f[key]).trim() : "");
+  const versatile = text("versatile");
+  const properties = refNames(f.properties).filter((p) => !versatile || p.toLowerCase() !== "versatile");
+  if (versatile) properties.push(`Versatile (${versatile})`);
+  const cost = Number(text("cost"));
+  const damage = text("damage");
+  const damageType = refName(f.damageType).toLowerCase();
+  const out: [string, string][] = [
+    ["Rarity", text("rarity")],
+    ["Weapon category", refName(f.weaponCategory)],
+    ["Cost", cost > 0 ? `${text("cost")} ${text("currency") || "gp"}` : ""],
+    ["Damage", damage ? `${damage}${damageType ? ` ${damageType}` : ""}` : ""],
+    ["Properties", properties.join(", ")],
+    ["Mastery", refNames(f.mastery).join(", ")],
+    ["Weight", text("weight") ? `${text("weight")} lb.` : ""],
+  ];
+  return out.filter(([, v]) => v).map(([label, value]) => ({ label, value }));
+}
 const slug = (text: string): string => text.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "UNNAMED";
 const now = (): string => new Date().toISOString();
 
@@ -474,7 +498,7 @@ export class MockHomebrew {
     const facts = [
       ...(level !== undefined ? [{ label: "Level", value: level === 0 ? "Cantrip" : String(level) }] : []),
       ...["school", "category"].filter((key) => text(key)).map((key) => ({ label: key === "school" ? "School" : "Category", value: text(key) })),
-      ...ITEM_FACTS.filter(([key]) => text(key)).map(([key, label]) => ({ label, value: text(key) })),
+      ...itemFacts(form),
       ...(typeof form.fields.enhancement === "number" && form.fields.enhancement > 0 ? [{ label: "Bonus", value: `+${form.fields.enhancement}` }] : []),
       ...(form.kind === "spell" ? SPELL_FACTS.filter(([key]) => text(key)).map(([key, label]) => ({ label, value: text(key) })) : []),
     ];

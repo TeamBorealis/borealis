@@ -5,7 +5,7 @@ use crate::dto::{ElementSummary, Page};
 use crate::dto_ext::{CompendiumFacets, CompendiumQuery, ElementDetail, ElementFact, Facet};
 use crate::elements::{plain_text, summary};
 use crate::error::{ApiError, ApiResult};
-use crate::gear_info::{category, cost_cp, weapon_properties};
+use crate::gear_info::{category, cost_cp};
 use crate::ids::{title_case, ui_type};
 use crate::sanitize::sanitize_html;
 use crate::state::AppState;
@@ -323,6 +323,50 @@ fn damage_text(el: &Element) -> String {
     })
 }
 
+/// A weapon's category as its `Weapon Category` element names it (`Martial Melee`); empty for other elements.
+fn weapon_category(store: &ContentStore, el: &Element) -> String {
+    const PREFIX: &str = "ID_INTERNAL_WEAPON_CATEGORY_";
+    if el.ty != "Weapon" {
+        return String::new();
+    }
+    el.supports
+        .iter()
+        .find(|s| s.starts_with(PREFIX))
+        .map(|id| {
+            store.element(id).map_or_else(
+                || title_case(&id[PREFIX.len()..].replace('_', " ").to_lowercase()),
+                |c| c.name.clone(),
+            )
+        })
+        .unwrap_or_default()
+}
+
+/// A weapon's properties as their `Weapon Property` elements name them (`Two-Handed`), a versatile weapon's with
+/// its two-handed dice (`Versatile (1d10)`).
+fn property_names(store: &ContentStore, el: &Element) -> Vec<String> {
+    const PREFIX: &str = "ID_INTERNAL_WEAPON_PROPERTY_";
+    let mut out: Vec<String> = el
+        .supports
+        .iter()
+        .filter_map(|id| {
+            let rest = id.strip_prefix(PREFIX)?;
+            Some(store.element(id).map_or_else(
+                || title_case(&rest.replace('_', " ").to_lowercase()),
+                |p| p.name.clone(),
+            ))
+        })
+        .collect();
+    if let Some(v) = el
+        .setter_value("versatile")
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+    {
+        out.retain(|p| !p.eq_ignore_ascii_case("Versatile"));
+        out.push(format!("Versatile ({v})"));
+    }
+    out
+}
+
 pub(crate) fn facts(store: &ContentStore, el: &Element) -> Vec<ElementFact> {
     let mut out: Vec<ElementFact> = Vec::new();
     out.extend(fact("Type", type_label(ui_type(&el.ty))));
@@ -348,11 +392,12 @@ pub(crate) fn facts(store: &ContentStore, el: &Element) -> Vec<ElementFact> {
         }
     } else {
         out.extend(fact("Category", category(el)));
+        out.extend(fact("Weapon category", weapon_category(store, el)));
         if cost_cp(el) > 0 {
             out.extend(fact("Cost", cost_text(el)));
         }
         out.extend(fact("Damage", damage_text(el)));
-        out.extend(fact("Properties", weapon_properties(el).join(", ")));
+        out.extend(fact("Properties", property_names(store, el).join(", ")));
         out.extend(crate::gear_facts::mastery_names(store, el).and_then(|m| fact("Mastery", m)));
         if let Some(w) = el.setter("weight").map(|w| w.value.clone()) {
             out.extend(fact("Weight", w));
