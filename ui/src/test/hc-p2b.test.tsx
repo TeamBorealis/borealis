@@ -118,4 +118,24 @@ describe("P2b creator previews (mock)", () => {
     const editor = await screen.findByRole("region", { name: "Element editor" });
     await waitFor(() => expect((within(editor).getByRole("textbox", { name: /^Name/ }) as HTMLInputElement).value).toBe("Wizard (copy)"));
   });
+
+  it("SPELL LISTS: a subclass's expanded list is a list choice; checks are saved with its subclass", async () => {
+    const user = userEvent.setup();
+    const api = new MockApi({ creatorEnabled: true });
+    const pack = await api.homebrewCreatePack({ request: { name: "Ember Isles", code: "EMB", edition: "dnd2024" } });
+    const set = vi.spyOn(api, "homebrewSetSpellList");
+    renderApp(`/homebrew/${pack.id}`, { api });
+    await user.click(await screen.findByRole("button", { name: "Spell Lists" }));
+    const view = await screen.findByRole("region", { name: "Spell lists" });
+    const chooser = within(view).getByRole("combobox", { name: "Spell list" });
+    await waitFor(() => expect(within(chooser).getByRole("option", { name: "Life Domain (expanded list)" })).toBeTruthy());
+    await user.selectOptions(chooser, "expanded:life-domain");
+    const grid = await within(view).findByRole("table", { name: "Spells" });
+    expect(within(view).getByText(/Life Domain expanded list belongs to another pack's subclass/)).toBeTruthy();
+    await user.click(within(grid).getByRole("checkbox", { name: "Choose Bless" }));
+    await user.click(within(view).getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(set).toHaveBeenCalledWith({ packId: pack.id, listTag: "", expandedOf: "life-domain", add: ["bless"], remove: [] }));
+    await waitFor(() => expect(within(view).getByRole("status").textContent).toBe("1 spell on this list"));
+    expect((within(grid).getByRole("checkbox", { name: "Choose Bless" }) as HTMLInputElement).checked).toBe(true);
+  });
 });

@@ -673,9 +673,10 @@ export interface ApiMethods {
   homebrewReferenceOptions(args: { target: HomebrewPickerTarget; query: string; filters: HomebrewPickerFilters; page: HomebrewPageRequest; draftId?: string }): Promise<Page<HomebrewPickerRow>>;
   /** Where used (spec 12.3): loaded elements that grant, offer (select), require or list the element. */
   homebrewWhereUsed(args: { elementId: string }): Promise<HomebrewElementRef[]>;
-  homebrewSpellList(args: { packId: string; listTag: string }): Promise<HomebrewSpellListView>;
+  /** A list by tag, or with `expandedOf` a subclass's expanded list (spec 12.4). */
+  homebrewSpellList(args: { packId: string; listTag: string; expandedOf?: string | null }): Promise<HomebrewSpellListView>;
   /** Add or remove spells (own spells change their tags; loaded spells get an append in the pack). */
-  homebrewSetSpellList(args: { packId: string; listTag: string; add: string[]; remove: string[] }): Promise<HomebrewSpellListView>;
+  homebrewSetSpellList(args: { packId: string; listTag: string; expandedOf?: string | null; add: string[]; remove: string[] }): Promise<HomebrewSpellListView>;
   /** Try it: a throwaway character with the draft, never saved or listed. */
   homebrewTrialStart(args: { draftId: string; setup: HomebrewTrialSetup }): Promise<HomebrewTrialView>;
   homebrewTrialUpdate(args: { trialId: string; change: HomebrewTrialChange }): Promise<HomebrewTrialView>;

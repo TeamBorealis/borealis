@@ -13,17 +13,25 @@
 //!   for a loaded subclass, and a character of that subclass is offered the spell.
 
 use borealis_authoring::form::FormState;
+use borealis_content::Ruleset as ContentRuleset;
+use borealis_engine::commands::{self, slot_key};
+use borealis_engine::{CharacterState, Choice, Engine};
 use borealis_lib::content_dto::ContentProgress;
 use borealis_lib::content_packs::EventSink;
 use borealis_lib::dto::Ruleset;
 use borealis_lib::homebrew_dto::{
-    HomebrewDraftView, HomebrewPackRequest, HomebrewTrialSetup, HomebrewTrialView,
+    HomebrewDraftView, HomebrewPackRequest, HomebrewPageRequest, HomebrewPickerFilters,
+    HomebrewPickerTarget, HomebrewSpellListView, HomebrewTrialSetup, HomebrewTrialView,
 };
 use borealis_lib::state::{AppPaths, AppState};
 use serde_json::json;
 use std::path::PathBuf;
 
 const CHAMPION: &str = "ID_2024_SUBCLASS_FIGHTER_CHAMPION";
+const WARLOCK: &str = "ID_WOTC_PHB_CLASS_WARLOCK";
+const FIEND: &str = "ID_WOTC_PHB_ARCHETYPE_OTHERWORLDLY_PATRON_FIEND";
+const BURNING_HANDS: &str = "ID_PHB_SPELL_BURNING_HANDS";
+const CURE_WOUNDS: &str = "ID_PHB_SPELL_CURE_WOUNDS";
 
 struct Quiet;
 impl EventSink for Quiet {
@@ -296,4 +304,182 @@ fn a_weapon_tried_out_is_carried_equipped_and_an_attack_never_a_feature() {
             .collect::<Vec<_>>(),
         ["Twinblade"]
     );
+}
+
+/// The spells a level-1 2014 Warlock of `patron` may learn (the choice that offers Burning Hands, the Fiend's).
+fn warlock_spells(e: &Engine, patron: &str) -> Vec<String> {
+    let mut s: CharacterState = commands::new_character(e, ContentRuleset::Dnd2014);
+    let snap = e.derive(&s);
+    let key = slot_key(&snap, "ID_LEVEL_1", "Class", 1).expect("a class choice");
+    s = commands::select(e, &s, &key, Choice::Element(WARLOCK.into()))
+        .unwrap()
+        .state;
+    let snap = e.derive(&s);
+    let key = snap
+        .slots
+        .iter()
+        .find(|x| x.options.iter().any(|o| o.id == patron))
+        .map(|x| x.key.clone())
+        .expect("the patron choice offers it");
+    s = commands::select(e, &s, &key, Choice::Element(patron.into()))
+        .unwrap()
+        .state;
+    let snap = e.derive(&s);
+    let mut out: Vec<String> = snap
+        .slots
+        .iter()
+        .filter(|x| x.ty == "Spell")
+        .flat_map(|x| x.options.iter().map(|o| o.id.clone()))
+        .collect();
+    out.sort();
+    out.dedup();
+    out
+}
+
+#[test]
+fn spell_lists_edit_a_loaded_subclass_s_expanded_list_through_an_append() {
+    let app = App::new();
+    let pack = app.pack(Ruleset::Dnd2014);
+    // the Fiend is a list choice of SPELL LISTS
+    let lists = app
+        .state
+        .homebrew_reference_options(
+            &HomebrewPickerTarget {
+                types: vec!["Expanded Spell List".into()],
+                tags: None,
+                multiple: None,
+            },
+            "fiend",
+            &HomebrewPickerFilters::default(),
+            HomebrewPageRequest {
+                offset: 0,
+                limit: 50,
+            },
+            None,
+        )
+        .unwrap();
+    assert!(
+        lists.items.iter().any(|r| r.id == FIEND),
+        "{:?}",
+        lists.items.iter().map(|r| &r.id).collect::<Vec<_>>()
+    );
+    let row = |v: &HomebrewSpellListView, id: &str| {
+        v.rows
+            .iter()
+            .find(|r| r.row.id == id)
+            .map(|r| (r.on_list, r.removable))
+            .unwrap_or_else(|| panic!("{id} is a row"))
+    };
+    let view = app.state.homebrew_expanded_list(&pack, FIEND).unwrap();
+    assert_eq!(view.expanded_of.as_deref(), Some(FIEND));
+    assert!(!view.own);
+    assert_eq!(view.count, 10, "the Fiend's ten spells");
+    assert_eq!(
+        row(&view, BURNING_HANDS),
+        (true, false),
+        "its own pack's: locked"
+    );
+    assert_eq!(row(&view, CURE_WOUNDS), (false, false));
+    let before = warlock_spells(&app.state.hub().unwrap().engine, FIEND);
+    assert!(before.contains(&BURNING_HANDS.to_string()));
+    assert!(!before.contains(&CURE_WOUNDS.to_string()));
+
+    // checking Cure Wounds writes the pack's append; a Fiend warlock may learn it
+    let view = app
+        .state
+        .homebrew_set_expanded_list(&pack, FIEND, &[CURE_WOUNDS.into()], &[], &Quiet)
+        .unwrap();
+    assert_eq!(row(&view, CURE_WOUNDS), (true, true));
+    assert_eq!(view.count, 11);
+    let content: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(
+            app._data
+                .path()
+                .join("library")
+                .join(&pack)
+                .join("content.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        content["appends"],
+        json!([{"id": FIEND, "spellcasting": {"name": "Warlock", "extend": true, "extends": [{"supports": CURE_WOUNDS}]}}])
+    );
+    let after = warlock_spells(&app.state.hub().unwrap().engine, FIEND);
+    assert!(after.contains(&CURE_WOUNDS.to_string()), "{after:?}");
+    // only the pack's own addition comes off
+    assert!(app
+        .state
+        .homebrew_set_expanded_list(&pack, FIEND, &[], &[BURNING_HANDS.into()], &Quiet)
+        .is_err());
+    let view = app
+        .state
+        .homebrew_set_expanded_list(&pack, FIEND, &[], &[CURE_WOUNDS.into()], &Quiet)
+        .unwrap();
+    assert_eq!(view.count, 10);
+}
+
+#[test]
+fn spell_lists_edit_an_own_subclass_s_expanded_list_in_its_extends() {
+    let app = App::new();
+    let pack = app.pack(Ruleset::Dnd2014);
+    let copy = app.deep_copy(&pack, FIEND);
+    let saved = app
+        .state
+        .homebrew_save_draft(&copy.draft_id, &Quiet)
+        .unwrap()
+        .element_ids;
+    let sub = saved[0].clone();
+    let view = app.state.homebrew_expanded_list(&pack, &sub).unwrap();
+    assert!(view.own);
+    assert_eq!(view.count, 10, "the copy's feature holds the copied list");
+    let burning = view
+        .rows
+        .iter()
+        .find(|r| r.row.id == BURNING_HANDS)
+        .unwrap();
+    assert!(burning.on_list && burning.removable, "the pack's own list");
+    let view = app
+        .state
+        .homebrew_set_expanded_list(
+            &pack,
+            &sub,
+            &[CURE_WOUNDS.into()],
+            &[BURNING_HANDS.into()],
+            &Quiet,
+        )
+        .unwrap();
+    assert_eq!(view.count, 10);
+    let content: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(
+            app._data
+                .path()
+                .join("library")
+                .join(&pack)
+                .join("content.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    assert!(
+        content
+            .get("appends")
+            .is_none_or(|a| a.as_array().is_none_or(Vec::is_empty)),
+        "no append for an own subclass"
+    );
+    let holder = content["elements"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["spellcasting"]["extend"] == true)
+        .expect("the copied feature holds the list");
+    let extends = holder["spellcasting"]["extends"].to_string();
+    assert!(
+        extends.contains(CURE_WOUNDS) && !extends.contains(BURNING_HANDS),
+        "{extends}"
+    );
+    let spells = warlock_spells(&app.state.hub().unwrap().engine, &sub);
+    assert!(spells.contains(&CURE_WOUNDS.to_string()), "{spells:?}");
+    assert!(!spells.contains(&BURNING_HANDS.to_string()), "{spells:?}");
 }

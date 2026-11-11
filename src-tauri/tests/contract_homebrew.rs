@@ -314,6 +314,7 @@ fn picker_list_and_trial_types_match_the_ts_contract() {
         "HomebrewSpellListView",
         &HomebrewSpellListView {
             list_tag: "Wizard".into(),
+            expanded_of: Some("ID_Y".into()),
             own: true,
             count: 1,
             rows: vec![HomebrewSpellListRow {

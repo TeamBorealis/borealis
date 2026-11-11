@@ -821,8 +821,10 @@ export interface HomebrewSpellListRow extends HomebrewPickerRow {
 }
 
 export interface HomebrewSpellListView {
-  /** The list's tag (`Wizard`). */
+  /** The list's tag (`Wizard`); for a subclass's expanded list, its words ("The Fiend expanded list"). */
   listTag: string;
+  /** The subclass whose expanded list this is (`spellcasting.extends`, spec 12.4); null for a list by tag. */
+  expandedOf: string | null;
   /** The list belongs to an own class (else additions are appends). */
   own: boolean;
   /** "84 spells on this list". */

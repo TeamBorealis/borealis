@@ -225,8 +225,12 @@ pub fn homebrew_spell_list(
     state: State<'_, AppState>,
     pack_id: String,
     list_tag: String,
+    expanded_of: Option<String>,
 ) -> ApiResult<HomebrewSpellListView> {
-    state.homebrew_spell_list(&pack_id, &list_tag)
+    match expanded_of {
+        Some(sub) => state.homebrew_expanded_list(&pack_id, &sub),
+        None => state.homebrew_spell_list(&pack_id, &list_tag),
+    }
 }
 
 /// Change a spell list (spec 12.4): one write, one reload.
@@ -235,11 +239,13 @@ pub async fn homebrew_set_spell_list(
     app: tauri::AppHandle,
     pack_id: String,
     list_tag: String,
+    expanded_of: Option<String>,
     add: Vec<String>,
     remove: Vec<String>,
 ) -> ApiResult<HomebrewSpellListView> {
-    crate::commands_content::blocking(app, move |s, sink| {
-        s.homebrew_set_spell_list(&pack_id, &list_tag, &add, &remove, sink)
+    crate::commands_content::blocking(app, move |s, sink| match expanded_of {
+        Some(sub) => s.homebrew_set_expanded_list(&pack_id, &sub, &add, &remove, sink),
+        None => s.homebrew_set_spell_list(&pack_id, &list_tag, &add, &remove, sink),
     })
     .await
 }

@@ -434,8 +434,8 @@ implements packs, elements and drafts in memory (kinds are sample forms).
 | `homebrew_undo` | `{ undoId }` | `ContentPack` (a delete or bulk edit undone; `requirement_failed` when a pack changed since, `not_found` once used) |
 | `homebrew_reference_options` | `{ target: HomebrewPickerTarget, query, filters: HomebrewPickerFilters, page: { offset, limit }, draftId? }` | `Page<HomebrewPickerRow>` |
 | `homebrew_where_used` | `{ elementId }` | `HomebrewElementRef[]` (loaded elements that grant, select, require or list it; strongest use first) |
-| `homebrew_spell_list` | `{ packId, listTag }` | `HomebrewSpellListView` (every loaded spell and the pack's own, `onList`, `removable`) |
-| `homebrew_set_spell_list` | `{ packId, listTag, add, remove }` | `HomebrewSpellListView` (one write; own spells change their tags, loaded spells get the pack's append) |
+| `homebrew_spell_list` | `{ packId, listTag, expandedOf? }` | `HomebrewSpellListView` (every loaded spell and the pack's own, `onList`, `removable`; with `expandedOf` a subclass's expanded list, `expandedOf` set in the view) |
+| `homebrew_set_spell_list` | `{ packId, listTag, expandedOf?, add, remove }` | `HomebrewSpellListView` (one write; own spells change their tags, loaded spells get the pack's append; an expanded list changes the own subclass's `spellcasting.extends` (or its own feature's that holds them), or the pack's append's `spellcasting` for a loaded subclass) |
 | `homebrew_trial_start` | `{ draftId, setup: HomebrewTrialSetup }` | `HomebrewTrialView` (`{ trialId, snapshot, ladder, problems, changed }`) |
 | `homebrew_trial_update` | `{ trialId, change: HomebrewTrialChange }` | `HomebrewTrialView` |
 | `homebrew_trial_end` | `{ trialId }` | `void` |
@@ -463,7 +463,10 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   type), `requires`, `lists` (a spell list that offers the spell, an `extend`, or the id anywhere else: a package,
   `data.owner`). *SPELL LISTS*: own spells change their tags through their form (`data.classes` follows), loaded
   spells get the pack's append `{id, supports: [tag]}` (HC5, never an in-place edit); only own spells and own appends
-  come off. *Bulk edit* changes each element through its form (`form::bulk_patched`: the tags field, a spell's lists;
+  come off. A subclass's expanded list (P2b; picker type `Expanded Spell List` in `homebrew_reference_options`: the
+  subclasses with one, and a non-bundled pack's subclasses whose class casts) is a list too: an own subclass's
+  `spellcasting.extends` (`{name: <class list>, extend: true}`), or the pack's append `{id, spellcasting}` on a loaded
+  subclass (adopted by a subclass that has no spellcasting of its own). *Bulk edit* changes each element through its form (`form::bulk_patched`: the tags field, a spell's lists;
   the edition field; a class keeps its edition, R4); a move keeps ids, `creator.json` entries and editions (an element
   that followed its pack's edition takes it along) and retires the ids in the old pack; refused when an element has
   unsaved changes; duplicates use WB-22's copier. Deletes and bulk edits return an `undoId`: `homebrew_undo` writes

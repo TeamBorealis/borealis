@@ -22,7 +22,10 @@ pub use layout::{
     PACK_NAME_MAX, SOURCE_TYPE,
 };
 pub use refs::{id_tokens, mentions, names_any, offers, use_of, UseRelation};
-pub use spell_lists::{appended, on_list, removable, with_spell_list, ListChange};
+pub use spell_lists::{
+    appended, appended_expanded, expanded_ids, on_list, removable, with_expanded_list,
+    with_spell_list, ListChange,
+};
 pub use transfer::{
     copied_text_ids, copy_code, copy_name, pack_copy, rewrite_ids, without_copied_text, PackCopy,
     LEFT_OUT_TEXT, PACK_FILE_SUFFIX,

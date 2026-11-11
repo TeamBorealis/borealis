@@ -830,6 +830,7 @@
   "homebrew_set_spell_list": {
    "args": {
     "add": false,
+    "expandedOf": true,
     "listTag": false,
     "packId": false,
     "remove": false
@@ -842,6 +843,7 @@
   },
   "homebrew_spell_list": {
    "args": {
+    "expandedOf": true,
     "listTag": false,
     "packId": false
    },
@@ -8079,6 +8081,12 @@
    "k": "object",
    "props": {
     "count": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "expandedOf": {
      "opt": false,
      "t": {
       "k": "prim"

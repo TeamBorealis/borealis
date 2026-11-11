@@ -12,7 +12,7 @@ use crate::homebrew_dto::{
 };
 use crate::homebrew_files::PackWrite;
 use crate::homebrew_packs::{CommitError, CreatorPack};
-use crate::homebrew_refs::{is_bundled, picker_row, plain_list_tag};
+use crate::homebrew_refs::{class_list_name, granted, is_bundled, picker_row, plain_list_tag};
 use crate::homebrew_undo::PackBefore;
 use crate::state::AppState;
 use borealis_authoring::form::{
@@ -20,8 +20,9 @@ use borealis_authoring::form::{
     FormContext, FormProblem, WithElements,
 };
 use borealis_authoring::pack::{
-    bump_patch, descendants, on_list, parent_of, removable, source_name, use_of, with_elements,
-    with_spell_list, without_elements, CreatorElement, SOURCE_TYPE,
+    appended_expanded, bump_patch, descendants, expanded_ids, on_list, parent_of, removable,
+    source_name, use_of, with_elements, with_expanded_list, with_spell_list, without_elements,
+    CreatorElement, SOURCE_TYPE,
 };
 use borealis_content::{ContentFile, Element, Issue};
 use std::collections::HashSet;
@@ -81,6 +82,16 @@ fn element_of<'p>(pack: &'p CreatorPack, id: &str) -> ApiResult<&'p Element> {
         .iter()
         .find(|e| e.id == id && e.ty != SOURCE_TYPE)
         .ok_or_else(|| ApiError::not_found("That element isn't in this pack any more."))
+}
+
+/// A subclass's expanded list as the pack sees it ([`AppState::hb_expanded`]).
+struct ExpandedList {
+    sub: Element,
+    own: bool,
+    holder: Element,
+    list_name: String,
+    members: Vec<String>,
+    removable: Vec<String>,
 }
 
 fn next_write(pack: &CreatorPack, content: ContentFile) -> PackWrite {
@@ -182,6 +193,7 @@ impl AppState {
         });
         Ok(HomebrewSpellListView {
             list_tag: tag.to_string(),
+            expanded_of: None,
             own,
             count: rows.iter().filter(|r| r.on_list).count(),
             rows,
@@ -261,6 +273,192 @@ impl AppState {
         self.hb_commit(&pack, &next, &change.edited, sink)
             .map_err(commit_error)?;
         self.hb_spell_list_view(&self.hb_pack(pack_id)?, list_tag)
+    }
+
+    /// A subclass's expanded list as the pack sees it (spec 12.4): the subclass (the pack's own, else the loaded
+    /// one), the element that keeps the list (an own subclass's own feature that holds it, else the subclass), the
+    /// class list it extends, and the spells on it.
+    fn hb_expanded(&self, pack: &CreatorPack, subclass_id: &str) -> ApiResult<ExpandedList> {
+        let hub = self.hub()?;
+        let content = &pack.disk.content;
+        let in_pack = |id: &str| content.elements.iter().find(|e| e.id == id);
+        let sub = in_pack(subclass_id)
+            .or_else(|| hub.store.element(subclass_id))
+            .filter(|e| e.ty == "Archetype")
+            .ok_or_else(|| ApiError::not_found("That subclass isn't loaded any more."))?
+            .clone();
+        let own = in_pack(&sub.id).is_some();
+        let features: Vec<Element> = granted(&hub.store, &sub)
+            .into_iter()
+            .map(|f| in_pack(&f.id).unwrap_or(f).clone())
+            .collect();
+        let holder = if own {
+            features
+                .iter()
+                .find(|f| in_pack(&f.id).is_some() && !expanded_ids(f).is_empty())
+                .cloned()
+                .unwrap_or_else(|| sub.clone())
+        } else {
+            sub.clone()
+        };
+        let named = std::iter::once(&holder)
+            .chain(std::iter::once(&sub))
+            .chain(features.iter())
+            .filter_map(|e| e.spellcasting.as_ref())
+            .filter(|s| s.extend == Some(true))
+            .find_map(|s| s.name.clone())
+            .filter(|n| !n.trim().is_empty());
+        let list_name = named
+            .or_else(|| class_list_name(&hub.store, &sub))
+            .or_else(|| {
+                sub.data
+                    .get("class_name")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::to_string)
+            })
+            .ok_or_else(|| {
+                ApiError::invalid(format!("{}'s class has no spell list to add to.", sub.name))
+            })?;
+        let mut members: Vec<String> = Vec::new();
+        for id in expanded_ids(&sub)
+            .into_iter()
+            .chain(features.iter().flat_map(expanded_ids))
+            .chain(appended_expanded(content, &sub.id))
+        {
+            if !members.iter().any(|m| m == id) {
+                members.push(id.to_string());
+            }
+        }
+        let removable: Vec<String> = if own {
+            expanded_ids(&holder)
+                .into_iter()
+                .map(str::to_string)
+                .collect()
+        } else {
+            appended_expanded(content, &sub.id)
+                .into_iter()
+                .map(str::to_string)
+                .collect()
+        };
+        Ok(ExpandedList {
+            sub,
+            own,
+            holder,
+            list_name,
+            members,
+            removable,
+        })
+    }
+
+    fn hb_expanded_view(
+        &self,
+        pack: &CreatorPack,
+        subclass_id: &str,
+    ) -> ApiResult<HomebrewSpellListView> {
+        let list = self.hb_expanded(pack, subclass_id)?;
+        let hub = self.hub()?;
+        let content = &pack.disk.content;
+        let mut seen: HashSet<&str> = HashSet::new();
+        let mut rows: Vec<HomebrewSpellListRow> = content
+            .elements
+            .iter()
+            .filter(|e| e.ty == "Spell")
+            .chain(hub.store.by_type("Spell").map(|s| &s.element))
+            .filter(|e| seen.insert(e.id.as_str()))
+            .map(|el| HomebrewSpellListRow {
+                row: picker_row(&hub.store, el, false),
+                on_list: list.members.contains(&el.id),
+                removable: list.removable.contains(&el.id),
+            })
+            .collect();
+        rows.sort_by(|a, b| {
+            a.row
+                .name
+                .to_lowercase()
+                .cmp(&b.row.name.to_lowercase())
+                .then_with(|| a.row.source_name.cmp(&b.row.source_name))
+                .then_with(|| a.row.id.cmp(&b.row.id))
+        });
+        Ok(HomebrewSpellListView {
+            list_tag: format!("{} expanded list", list.sub.name),
+            expanded_of: Some(list.sub.id.clone()),
+            own: list.own,
+            count: rows.iter().filter(|r| r.on_list).count(),
+            rows,
+        })
+    }
+
+    /// A subclass's expanded list (spec 12.4: `spellcasting.extends` by spell id, a patron's).
+    ///
+    /// # Errors
+    /// As `hb_pack`; `not_found` for a subclass that is not loaded; `invalid_argument` when its class has no list.
+    pub fn homebrew_expanded_list(
+        &self,
+        pack_id: &str,
+        subclass_id: &str,
+    ) -> ApiResult<HomebrewSpellListView> {
+        let pack = self.hb_pack(pack_id)?;
+        self.hb_expanded_view(&pack, subclass_id)
+    }
+
+    /// Put spells on a subclass's expanded list and take them off (spec 12.4, HC5): the pack's own subclass changes
+    /// its `extends` (or its own feature that holds them), a loaded subclass gets the pack's append. One write, one
+    /// reload.
+    ///
+    /// # Errors
+    /// As [`AppState::homebrew_expanded_list`]; `not_found` for an unknown spell; `invalid_argument` for a spell the
+    /// pack can't take off, or one that is not a spell.
+    pub fn homebrew_set_expanded_list(
+        &self,
+        pack_id: &str,
+        subclass_id: &str,
+        add: &[String],
+        remove: &[String],
+        sink: &dyn EventSink,
+    ) -> ApiResult<HomebrewSpellListView> {
+        let _guard = self.content_lock()?;
+        let pack = self.hb_pack(pack_id)?;
+        let list = self.hb_expanded(&pack, subclass_id)?;
+        let hub = self.hub()?;
+        let content = &pack.disk.content;
+        let find = |id: &String| -> ApiResult<&Element> {
+            let el = content
+                .elements
+                .iter()
+                .find(|e| &e.id == id)
+                .or_else(|| hub.store.element(id))
+                .ok_or_else(|| ApiError::not_found("That spell isn't loaded any more."))?;
+            if el.ty == "Spell" {
+                Ok(el)
+            } else {
+                Err(ApiError::invalid(format!("{} is not a spell.", el.name)))
+            }
+        };
+        let add: Vec<&Element> = add.iter().map(find).collect::<ApiResult<_>>()?;
+        let remove: Vec<&Element> = remove.iter().map(find).collect::<ApiResult<_>>()?;
+        let change = with_expanded_list(content, &list.holder, &list.list_name, &add, &remove)
+            .map_err(|ps| {
+                refuse(
+                    "Some spells can't be changed on this list.",
+                    ps.into_iter()
+                        .map(|p| HomebrewProblem {
+                            severity: "error".into(),
+                            message: p.message,
+                            path: None,
+                            element_id: None,
+                            code: "form".into(),
+                        })
+                        .collect(),
+                )
+            })?;
+        if change.content == *content {
+            return self.hb_expanded_view(&pack, subclass_id);
+        }
+        let next = next_write(&pack, change.content);
+        drop(hub);
+        self.hb_commit(&pack, &next, &change.edited, sink)
+            .map_err(commit_error)?;
+        self.hb_expanded_view(&self.hb_pack(pack_id)?, subclass_id)
     }
 
     /// Multi-select edits (spec 12.5): set the edition, add or remove tags, move to another homebrew pack, or

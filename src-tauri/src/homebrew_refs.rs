@@ -25,6 +25,11 @@ const MAX_PAGE: usize = 500;
 /// declares (`spellcasting.list.supports`, a plain tag), its name as id and name. Not an element type.
 pub const SPELL_LIST_TYPE: &str = "Spell List";
 
+/// The picker type of subclasses' expanded lists (SPELL LISTS, spec 12.4): one row per subclass that has one (its own
+/// `spellcasting.extends` by spell id or a feature's it grants), and per subclass of a non-bundled pack whose class
+/// casts (a list it may start). The subclass's id and name. Not an element type.
+pub const EXPANDED_LIST_TYPE: &str = "Expanded Spell List";
+
 /// A `spellcasting.list.supports` that is one plain tag ("Wizard"), not an expression.
 pub(crate) fn plain_list_tag(supports: &str) -> Option<&str> {
     let t = supports.trim();
@@ -72,6 +77,79 @@ fn spell_list_rows<'a>(
     let total = lists.len();
     let items = lists
         .into_values()
+        .skip(page.offset)
+        .take(page.limit.min(MAX_PAGE))
+        .collect();
+    Page { total, items }
+}
+
+/// The features a subclass grants that are loaded.
+pub(crate) fn granted<'s>(store: &'s ContentStore, sub: &Element) -> Vec<&'s Element> {
+    sub.rules
+        .iter()
+        .filter_map(|r| match r {
+            borealis_content::Rule::Grant(g) => store.element(&g.id),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The subclass has an expanded list (its own, or a feature's it grants).
+pub(crate) fn has_expanded_list(store: &ContentStore, sub: &Element) -> bool {
+    !borealis_authoring::pack::expanded_ids(sub).is_empty()
+        || granted(store, sub)
+            .iter()
+            .any(|f| !borealis_authoring::pack::expanded_ids(f).is_empty())
+}
+
+/// The class list a subclass's class declares (`Warlock`), from the class the subclass names (`data.class`).
+pub(crate) fn class_list_name(store: &ContentStore, sub: &Element) -> Option<String> {
+    let class = sub
+        .data
+        .get("class")
+        .and_then(serde_json::Value::as_str)
+        .and_then(|id| store.element(id))?;
+    class
+        .spellcasting
+        .as_ref()
+        .filter(|s| s.list.is_some())
+        .and_then(|s| s.name.clone())
+        .filter(|n| !n.trim().is_empty())
+}
+
+/// One row per subclass with an expanded list, or of a non-bundled pack whose class casts.
+fn expanded_list_rows(
+    store: &ContentStore,
+    query: &str,
+    page: HomebrewPageRequest,
+) -> Page<HomebrewPickerRow> {
+    let mut found: Vec<HomebrewPickerRow> = store
+        .by_type("Archetype")
+        .filter(|s| {
+            has_expanded_list(store, &s.element)
+                || (!is_bundled(&s.file) && class_list_name(store, &s.element).is_some())
+        })
+        .filter(|s| s.element.name.to_lowercase().contains(query))
+        .map(|s| HomebrewPickerRow {
+            ty: EXPANDED_LIST_TYPE.to_string(),
+            ..row(
+                store,
+                &Candidate {
+                    element: &s.element,
+                    draft: false,
+                },
+            )
+        })
+        .collect();
+    found.sort_by(|a, b| {
+        a.name
+            .to_lowercase()
+            .cmp(&b.name.to_lowercase())
+            .then_with(|| a.id.cmp(&b.id))
+    });
+    let total = found.len();
+    let items = found
+        .into_iter()
         .skip(page.offset)
         .take(page.limit.min(MAX_PAGE))
         .collect();
@@ -245,6 +323,9 @@ impl AppState {
             Some(id) => self.hb_unsaved_elements(id)?,
             None => Vec::new(),
         };
+        if target.types.iter().any(|t| t == EXPANDED_LIST_TYPE) {
+            return Ok(expanded_list_rows(&hub.store, &query, page));
+        }
         if target.types.iter().any(|t| t == SPELL_LIST_TYPE) {
             let own = drafted.iter().map(|e| (e, true));
             let loaded = hub.store.iter().map(|s| (&s.element, false));

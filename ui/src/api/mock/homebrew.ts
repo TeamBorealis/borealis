@@ -6,7 +6,7 @@ import type {
 } from "../types";
 import { formUse, generatedOf, hasTag, listingClasses, loadedListRow, tagsOf, textOf, withTags } from "./homebrew-expert";
 import { apiError } from "./errors";
-import { descriptionHtml, formProblems } from "./homebrew-check";
+import { descriptionHtml, formProblems, pickerRow } from "./homebrew-check";
 import { addChild, addChildIn, newChildKey, newClassForm, newForm } from "./homebrew-class";
 import { backgroundProblems, FEAT_PARAMETER_PICKER, featParameterWords } from "./homebrew-background";
 import { creatureFacts, creatureHtml, creatureProblems } from "./homebrew-creature";
@@ -43,6 +43,8 @@ const KINDS: HomebrewKindDescriptor[] = [...realKinds(REAL_KINDS), ...realKinds(
 
 /** The pseudo picker types of the generic form (`borealis_authoring::form::{ELEMENT_TYPE_PICKER, SETTER_NAME_PICKER}`). */
 export const ELEMENT_TYPE_PICKER = "Element Type";
+/** SPELL LISTS' expanded-list choices (the backend's `homebrew_refs::EXPANDED_LIST_TYPE`). */
+export const EXPANDED_LIST_PICKER = "Expanded Spell List";
 export const SETTER_NAME_PICKER = "Setter Name";
 
 const TYPE_TOKENS: Record<string, string> = {
@@ -348,6 +350,47 @@ export class MockHomebrew {
     return [...own, ...listingClasses(loaded, spellTags)].sort((a, b) => order.indexOf(a.relation) - order.indexOf(b.relation) || a.name.localeCompare(b.name));
   }
 
+  /** The packs' expanded lists of subclasses (spec 12.4): pack id -> subclass id -> the spells the pack put on it (an own
+   * subclass's `extends`, or the pack's append for a loaded one). The mock's loaded subclasses have none of their own. */
+  private expanded = new Map<string, Map<string, string[]>>();
+
+  /** SPELL LISTS' expanded-list choices: the loaded subclasses of casting classes and every own subclass. */
+  expandedListRows(loaded: readonly ElementSummary[]): HomebrewPickerRow[] {
+    const casters = new Set(["evoker", "diviner", "life-domain", "light-domain", "circle-of-the-land", "circle-of-the-moon"]);
+    const own = [...this.packs.values()].flatMap((p) => [...p.elements.values()].filter(({ form }) => form.kind === "subclass")
+      .map(({ summary }): HomebrewPickerRow => ({ id: summary.id, name: summary.name, type: "Expanded Spell List", summary: "", prerequisites: null,
+        sourceName: p.pack.name, edition: summary.edition, draft: false })));
+    const others = loaded.filter((e) => e.type === "archetype" && casters.has(e.id)).map((e) => ({ ...pickerRow(e), type: "Expanded Spell List" }));
+    return [...own, ...others].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** A subclass's expanded list (spec 12.4): every loaded spell and the pack's own, on the list when the pack put it there. */
+  expandedList(packId: string, subclassId: string, loaded: readonly ElementSummary[]): HomebrewSpellListView {
+    const own = this.own(packId);
+    const mine = own.elements.get(subclassId);
+    const sub = mine?.summary.name ?? loaded.find((e) => e.id === subclassId && e.type === "archetype")?.name;
+    if (!sub) throw apiError("not_found", "That subclass isn't loaded any more.");
+    const on = new Set(this.expanded.get(packId)?.get(subclassId) ?? []);
+    const spells = [
+      ...[...own.elements.values()].filter((e) => e.form.kind === "spell").map(({ summary, form }) => ({
+        id: summary.id, name: summary.name, type: "Spell", summary: "", prerequisites: null, sourceName: own.pack.name, edition: summary.edition, draft: false, ...spellRow(form),
+      })),
+      ...loaded.filter((e) => e.type === "spell").map((e) => ({ ...pickerRow(e), type: "Spell" })),
+    ];
+    const rows = spells.map((r): HomebrewSpellListRow => ({ ...r, onList: on.has(r.id), removable: on.has(r.id) })).sort((a, b) => a.name.localeCompare(b.name));
+    return { listTag: `${sub} expanded list`, expandedOf: subclassId, own: !!mine, count: rows.filter((r) => r.onList).length, rows };
+  }
+
+  /** Put spells on a subclass's expanded list and take them off: only what the pack put there comes off. */
+  setExpandedList(packId: string, subclassId: string, add: string[], remove: string[], loaded: readonly ElementSummary[]): HomebrewSpellListView {
+    const lists = new Map(this.expanded.get(packId) ?? []);
+    const now = lists.get(subclassId) ?? [];
+    lists.set(subclassId, [...new Set([...now, ...add])].filter((id) => !remove.includes(id)));
+    this.expanded.set(packId, lists);
+    this.putPack(this.write(this.own(packId)).pack);
+    return this.expandedList(packId, subclassId, loaded);
+  }
+
   /** A SPELL LISTS view (spec 12.4): every loaded spell and the pack's own, on the list or not. */
   spellList(packId: string, tag: string, loaded: readonly ElementSummary[]): HomebrewSpellListView {
     const own = this.own(packId);
@@ -358,7 +401,7 @@ export class MockHomebrew {
     }));
     const others = loaded.filter((e) => e.type === "spell").map((e) => loadedListRow(e, tag, own.appends.get(e.id) ?? []));
     const rows = [...mine, ...others].sort((a, b) => a.name.localeCompare(b.name));
-    return { listTag: tag, own: false, count: rows.filter((r) => r.onList).length, rows };
+    return { listTag: tag, expandedOf: null, own: false, count: rows.filter((r) => r.onList).length, rows };
   }
 
   /** Put spells on a list and take them off: own spells by their lists, loaded ones by the pack's append (HC5). */

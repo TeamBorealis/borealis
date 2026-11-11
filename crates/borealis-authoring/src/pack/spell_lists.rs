@@ -1,11 +1,16 @@
 //! SPELL LISTS (spec 12.4, HC5): put spells on a list and take them off. A spell of the pack changes its own tags
 //! (through its form, [`with_tag`]); a loaded spell of another pack gets an additive append in the pack ("add to this
 //! list", `appends[{id, supports: [tag]}]`, content-format 9.2), never an in-place edit. Only what the pack added can
-//! be taken off: its own spells' tags and its own appends. Deterministic, no AI (G7).
+//! be taken off: its own spells' tags and its own appends.
+//!
+//! A subclass's **expanded list** (a patron's, `spellcasting.extends` by spell id, spec 12.4) is a list too
+//! ([`with_expanded_list`]): the pack's own subclass (or its own feature that holds the list) changes its `extends`; a
+//! loaded subclass gets the pack's append with a `spellcasting` extension of its own (an append's `spellcasting` is
+//! adopted by a target that has none, content-format 9.2). Deterministic, no AI (G7).
 
 use super::refs::same_tag;
 use crate::form::{with_tag, FormContext, FormProblem};
-use borealis_content::{Append, ContentFile, Element};
+use borealis_content::{Append, ContentFile, Element, Spellcasting, SpellcastingList};
 
 /// The spell carries the list's tag.
 #[must_use]
@@ -140,6 +145,144 @@ pub fn with_spell_list(
     }
 }
 
+/// The spells an element's expanded list holds: its `spellcasting.extends` entries that name one spell by id.
+#[must_use]
+pub fn expanded_ids(e: &Element) -> Vec<&str> {
+    e.spellcasting
+        .as_ref()
+        .filter(|s| s.extend == Some(true))
+        .map(|s| {
+            s.extends
+                .iter()
+                .filter(|l| l.is_spell_id())
+                .map(|l| l.supports.trim())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// The spells the pack's append adds to the expanded list of the loaded element `id`.
+#[must_use]
+pub fn appended_expanded<'c>(content: &'c ContentFile, id: &str) -> Vec<&'c str> {
+    content
+        .appends
+        .iter()
+        .filter(|a| a.id == id)
+        .flat_map(|a| a.spellcasting.iter())
+        .filter(|s| s.extend == Some(true))
+        .flat_map(|s| s.extends.iter().filter(|l| l.is_spell_id()))
+        .map(|l| l.supports.trim())
+        .collect()
+}
+
+/// `node` with `add` put on its extends and `remove` taken off (each spell once, in the order added).
+fn edit_extends(node: &mut Spellcasting, add: &[&Element], remove: &[&Element]) {
+    node.extend = Some(true);
+    for s in add {
+        if !node.extends.iter().any(|l| l.supports.trim() == s.id) {
+            node.extends.push(SpellcastingList::new(s.id.clone()));
+        }
+    }
+    node.extends
+        .retain(|l| !remove.iter().any(|s| s.id == l.supports.trim()));
+}
+
+/// The pack's content with the spells `add` put on the expanded list `holder` keeps and `remove` taken off it. A
+/// holder of the pack (its subclass, or its feature that holds the list) changes its own `spellcasting.extends`
+/// (named `list_name`, the class list it extends, when it has none yet); a loaded holder gets the pack's append.
+/// Only what the pack added comes off.
+///
+/// # Errors
+/// A spell the pack can't take off (the loaded subclass lists it in its own pack), or a loaded holder with a
+/// spellcasting section of its own (an append can't extend it).
+pub fn with_expanded_list(
+    content: &ContentFile,
+    holder: &Element,
+    list_name: &str,
+    add: &[&Element],
+    remove: &[&Element],
+) -> Result<ListChange, Vec<FormProblem>> {
+    let mut next = content.clone();
+    if let Some(own) = next.elements.iter_mut().find(|e| e.id == holder.id) {
+        let node = own.spellcasting.get_or_insert_with(|| Spellcasting {
+            name: Some(list_name.to_string()),
+            ..Spellcasting::default()
+        });
+        if node.list.is_some() {
+            return Err(vec![FormProblem::new(
+                "",
+                format!(
+                    "{} has a spell list of its own, not an expanded list.",
+                    holder.name
+                ),
+            )]);
+        }
+        edit_extends(node, add, remove);
+        if node.extends.is_empty() && node.list.is_none() {
+            own.spellcasting = None;
+        }
+        return Ok(ListChange {
+            content: next,
+            edited: vec![holder.id.clone()],
+        });
+    }
+    // the loaded holder as loaded: a spellcasting section the pack's own append gave it is the pack's
+    let ours = content
+        .appends
+        .iter()
+        .any(|a| a.id == holder.id && a.spellcasting.is_some());
+    if holder.spellcasting.is_some() && !ours {
+        return Err(vec![FormProblem::new(
+            "",
+            format!(
+                "{} lists its spells in its own pack. Make a copy of it to change that list.",
+                holder.name
+            ),
+        )]);
+    }
+    let mine = appended_expanded(content, &holder.id);
+    let refused: Vec<FormProblem> = remove
+        .iter()
+        .filter(|s| !mine.contains(&s.id.as_str()))
+        .map(|s| {
+            FormProblem::new(
+                "",
+                format!(
+                    "{} is on the {} list in its own pack. A homebrew pack can only add to that list.",
+                    s.name, holder.name
+                ),
+            )
+        })
+        .collect();
+    if !refused.is_empty() {
+        return Err(refused);
+    }
+    let at = match next.appends.iter().position(|a| a.id == holder.id) {
+        Some(i) => i,
+        None => {
+            next.appends.push(Append {
+                id: holder.id.clone(),
+                ..Append::default()
+            });
+            next.appends.len() - 1
+        }
+    };
+    let append = &mut next.appends[at];
+    let node = append.spellcasting.get_or_insert_with(|| Spellcasting {
+        name: Some(list_name.to_string()),
+        ..Spellcasting::default()
+    });
+    edit_extends(node, add, remove);
+    if node.extends.is_empty() {
+        append.spellcasting = None;
+    }
+    next.appends.retain(|a| a.id != holder.id || !is_empty(a));
+    Ok(ListChange {
+        content: next,
+        edited: Vec::new(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -242,5 +385,79 @@ mod tests {
                 json!([{"id": "ID_SRD_SPELL_BLESS", "setters": [{"name": "short", "value": "Blessed."}]}])
             );
         });
+    }
+
+    fn subclass(id: &str, sc: Option<serde_json::Value>) -> Element {
+        let mut v = json!({"id": id, "name": "Velvet Patron", "type": "Archetype", "source": "X"});
+        if let Some(sc) = sc {
+            v["spellcasting"] = sc;
+        }
+        el(v)
+    }
+
+    #[test]
+    fn an_own_subclass_s_expanded_list_is_its_extends() {
+        let sub = subclass("ID_HB_ARCHETYPE_VELVET", None);
+        let content = ContentFile::new(vec![sub.clone()]);
+        let bless = spell("ID_SRD_SPELL_BLESS", &["Cleric"]);
+        let shield = spell("ID_SRD_SPELL_SHIELD", &["Wizard"]);
+        let change =
+            with_expanded_list(&content, &sub, "Warlock", &[&bless, &shield], &[]).expect("change");
+        assert_eq!(change.edited, ["ID_HB_ARCHETYPE_VELVET"]);
+        let sc = change.content.elements[0]
+            .spellcasting
+            .as_ref()
+            .expect("spellcasting");
+        assert_eq!(
+            serde_json::to_value(sc).unwrap(),
+            json!({"name": "Warlock", "extend": true,
+                   "extends": [{"supports": "ID_SRD_SPELL_BLESS"}, {"supports": "ID_SRD_SPELL_SHIELD"}]})
+        );
+        assert_eq!(
+            expanded_ids(&change.content.elements[0]),
+            ["ID_SRD_SPELL_BLESS", "ID_SRD_SPELL_SHIELD"]
+        );
+        // taking both off leaves no spellcasting at all
+        let held = change.content.elements[0].clone();
+        let back = with_expanded_list(&change.content, &held, "Warlock", &[], &[&bless, &shield])
+            .expect("change");
+        assert_eq!(back.content, content);
+    }
+
+    #[test]
+    fn a_loaded_subclass_gets_the_pack_s_append_and_only_that_comes_off() {
+        let sub = subclass("ID_SRD_ARCHETYPE_FIEND", None);
+        let content = ContentFile::new(Vec::new());
+        let bless = spell("ID_SRD_SPELL_BLESS", &["Cleric"]);
+        let change = with_expanded_list(&content, &sub, "Warlock", &[&bless], &[]).expect("change");
+        assert!(change.edited.is_empty());
+        assert_eq!(
+            serde_json::to_value(&change.content.appends).unwrap(),
+            json!([{"id": "ID_SRD_ARCHETYPE_FIEND",
+                    "spellcasting": {"name": "Warlock", "extend": true, "extends": [{"supports": "ID_SRD_SPELL_BLESS"}]}}])
+        );
+        assert_eq!(
+            appended_expanded(&change.content, "ID_SRD_ARCHETYPE_FIEND"),
+            ["ID_SRD_SPELL_BLESS"]
+        );
+        let burning = spell("ID_SRD_SPELL_BURNING_HANDS", &["Wizard"]);
+        let refused = with_expanded_list(&change.content, &sub, "Warlock", &[], &[&burning])
+            .expect_err("not the pack's");
+        assert!(refused[0].message.contains("can only add"), "{refused:?}");
+        let back =
+            with_expanded_list(&change.content, &sub, "Warlock", &[], &[&bless]).expect("change");
+        assert!(back.content.appends.is_empty(), "the empty append goes");
+        // the subclass as loaded with the pack's append adopted: still the pack's list to change
+        let mut adopted = sub.clone();
+        adopted.spellcasting = change.content.appends[0].spellcasting.clone();
+        let again = with_expanded_list(&change.content, &adopted, "Warlock", &[], &[&bless])
+            .expect("change");
+        assert!(again.content.appends.is_empty());
+        // a loaded subclass with a spellcasting section of its own can't take an append's
+        let caster = subclass(
+            "ID_SRD_ARCHETYPE_KNIGHT",
+            Some(json!({"name": "Knight", "list": {"supports": "Wizard"}})),
+        );
+        assert!(with_expanded_list(&content, &caster, "Wizard", &[&bless], &[]).is_err());
     }
 }

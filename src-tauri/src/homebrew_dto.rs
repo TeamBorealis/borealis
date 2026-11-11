@@ -429,6 +429,8 @@ pub struct HomebrewSpellListRow {
 #[serde(rename_all = "camelCase")]
 pub struct HomebrewSpellListView {
     pub list_tag: String,
+    /// The subclass whose expanded list this is (`spellcasting.extends`, spec 12.4); null for a list by tag.
+    pub expanded_of: Option<String>,
     pub own: bool,
     pub count: usize,
     pub rows: Vec<HomebrewSpellListRow>,
