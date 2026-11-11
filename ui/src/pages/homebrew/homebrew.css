@@ -108,7 +108,7 @@ html.phone .hb-dcheck-desc { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); c
 
 /* Flyouts: New pack, New element (13.11: the New Character flyout's dashed option cards) */
 .hb-flyout-text { width: 100%; min-height: 60px; resize: vertical; background: #fff; color: #161616; border: 0; font: inherit; font-size: var(--fs-md); padding: 4px 6px; }
-.hb-kind-cards { display: flex; flex-direction: column; gap: 8px; }
+.hb-kind-cards { display: flex; flex-direction: column; gap: 6px; } /* Aurora New Character option panels: 6 px apart */
 .hb-kind-card { display: block; width: 100%; height: auto; min-height: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; border-radius: 0; }
 .hb-kind-card[aria-checked="true"] { background: var(--accent-80); border-style: solid; }
 .hb-kind-name { display: block; color: #d5d5d5; font-weight: 600; text-transform: uppercase; font-size: 11px; }
