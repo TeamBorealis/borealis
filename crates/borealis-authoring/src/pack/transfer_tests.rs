@@ -123,6 +123,90 @@ fn only_elements_with_copied_text_are_counted_and_left_out() {
     assert_eq!(without_copied_text(&out, &creator).0, out);
 }
 
+/// A copied background and feat holding the other texts a copy keeps: the short description, the display
+/// prerequisite, the sheet's short name and usage, the "At Higher Levels" text, and a characteristic list's entries.
+fn copied_other_texts() -> (ContentFile, CreatorFile) {
+    let content = ContentFile::new(vec![
+        element(
+            json!({"id": "ID_GH_BACKGROUND_ACOLYTE_COPY", "name": "Acolyte (copy)", "type": "Background",
+            "source": "Gloom Hollow", "prerequisite": "Must have served a temple.",
+            "requirements": "ID_GH_LANGUAGE_GLOOM",
+            "setters": [{"name": "short", "value": "You served a temple."}, {"name": "category", "value": "Origin"}],
+            "sheet": {"alt": "Temple Server", "usage": "Once per dawn", "action": "Action"},
+            "rules": [
+                {"kind": "select", "type": "List", "name": "Personality Trait", "number": 2,
+                 "items": [{"id": 1, "text": "I quote sacred texts."}, {"id": 2, "text": "I am patient."}]},
+                {"kind": "grant", "type": "Language", "id": "ID_GH_LANGUAGE_GLOOM"}
+            ]}),
+        ),
+        element(
+            json!({"id": "ID_GH_SPELL_EMBER_COPY", "name": "Ember (copy)", "type": "Spell", "source": "Gloom Hollow",
+            "setters": [{"name": "level", "value": "1"}, {"name": "short", "value": "A small flame."}],
+            "data": {"higher_level": "Using a Higher-Level Spell Slot. More flame.", "level_1_text": "1st-level evocation"}}),
+        ),
+    ]);
+    let mut creator = CreatorFile::adopt("GH", "1.5.0", &content);
+    for id in ["ID_GH_BACKGROUND_ACOLYTE_COPY", "ID_GH_SPELL_EMBER_COPY"] {
+        let e = creator.elements.get_mut(id).unwrap();
+        e.non_srd_text = true;
+        e.copied_from = Some(CopiedFrom {
+            id: "ID_GT_X".into(),
+            pack_id: "imported-book".into(),
+            srd: false,
+        });
+    }
+    (content, creator)
+}
+
+#[test]
+fn every_other_copied_text_is_left_out_and_the_rules_stay() {
+    let (content, creator) = copied_other_texts();
+    assert_eq!(
+        copied_text_ids(&content, &creator),
+        ["ID_GH_BACKGROUND_ACOLYTE_COPY", "ID_GH_SPELL_EMBER_COPY"],
+        "elements holding only those texts are counted too"
+    );
+    let (out, changed) = without_copied_text(&content, &creator);
+    assert_eq!(changed.len(), 2);
+    let text = serde_json::to_string(&out).unwrap();
+    for gone in [
+        "Must have served a temple.",
+        "You served a temple.",
+        "Temple Server",
+        "Once per dawn",
+        "I quote sacred texts.",
+        "I am patient.",
+        "A small flame.",
+        "More flame.",
+        "1st-level evocation",
+    ] {
+        assert!(!text.contains(gone), "{gone} left in {text}");
+    }
+    let bg = by_id(&out, "ID_GH_BACKGROUND_ACOLYTE_COPY");
+    assert_eq!(
+        bg.requirements, "ID_GH_LANGUAGE_GLOOM",
+        "the requirement is a rule"
+    );
+    assert_eq!(bg.setter_value("category"), Some("Origin"));
+    assert_eq!(
+        bg.sheet.as_ref().and_then(|s| s.action.as_deref()),
+        Some("Action")
+    );
+    let list = serde_json::to_value(&bg.rules).unwrap();
+    assert_eq!(list[0]["name"], "Personality Trait");
+    assert_eq!(list[0]["number"], 2);
+    assert_eq!(
+        list[0]["items"],
+        json!([{"id": 1, "text": LEFT_OUT_TEXT}, {"id": 2, "text": LEFT_OUT_TEXT}]),
+        "the list keeps its entries to pick from"
+    );
+    assert_eq!(list[1]["id"], "ID_GH_LANGUAGE_GLOOM");
+    let spell = by_id(&out, "ID_GH_SPELL_EMBER_COPY");
+    assert_eq!(spell.setter_value("level"), Some("1"));
+    assert!(copied_text_ids(&out, &creator).is_empty());
+    assert_eq!(without_copied_text(&out, &creator).0, out);
+}
+
 #[test]
 fn a_copy_code_takes_the_next_free_number() {
     let taken = |codes: &[&str]| {

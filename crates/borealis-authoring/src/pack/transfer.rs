@@ -2,9 +2,11 @@
 //! and the `.borealis-pack.zip` itself.
 //!
 //! * **Leave text out** ([`without_copied_text`]): the elements `creator.json` marks `nonSrdText` (text copied from the
-//!   user's own non-SRD imports, CS1) lose that text: the description and sheet texts are emptied, a creature's
-//!   stat-block texts become [`LEFT_OUT_TEXT`] (a stat block needs text to stay valid) and its flavour text goes. The
-//!   rules, numbers and names stay. The `nonSrdText` mark stays too, so the imported pack is still not redistributable.
+//!   user's own non-SRD imports, CS1) lose that text: the description, the display prerequisite, the sheet's texts,
+//!   short name and usage, the short description and the prose `data` a copy keeps (flavour, "At Higher Levels") are
+//!   emptied; a list choice's entries and a creature's stat-block texts become [`LEFT_OUT_TEXT`] (a list needs entries
+//!   to pick from, a stat block needs text to stay valid). The rules, numbers and names stay (a spell's material
+//!   component and a reaction's trigger are rules). The `nonSrdText` mark stays too, so the imported pack is still not redistributable.
 //! * **Import as a copy** ([`pack_copy`]): the pack gets a new code, id and book name; every element id of the pack is
 //!   given again (`ID_<OLD>_...` becomes `ID_<NEW>_...`; an id of another code, from a move, gets a new creator id),
 //!   so is every other `ID_<OLD>_...` token the pack holds (a class's multiclass node, a deleted element's id), and
@@ -17,7 +19,7 @@ use super::creator::CreatorFile;
 use super::layout::{pack_id_for, PACK_NAME_MAX, SOURCE_TYPE};
 use super::refs::id_tokens;
 use crate::ids::{is_pack_code, IdGenerator, PACK_CODE_MAX};
-use borealis_content::{ContentFile, Element, PackManifest, Setter};
+use borealis_content::{ContentFile, Element, PackManifest, Rule, Setter};
 use serde_json::Value;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
@@ -30,6 +32,17 @@ const COPY_SUFFIX: &str = " (copy)";
 /// A creature's stat-block sections holding texts (`data` keys of `MonsterData`).
 const STAT_BLOCK_LISTS: &[&str] = &["traits", "actions", "bonus_actions", "reactions"];
 const STAT_BLOCK_SECTIONS: &[&str] = &["legendary", "lair_actions", "regional_effects"];
+/// Setters that hold prose rather than rules (the short description).
+const TEXT_SETTERS: &[&str] = &["short"];
+/// `data` keys that hold prose a copy keeps from its original: flavour text, the "At Higher Levels" paragraph, the
+/// printed type and level lines and a pack's contents as written.
+const TEXT_DATA: &[&str] = &[
+    "description",
+    "higher_level",
+    "level_1_text",
+    "raw_type_line",
+    "contents_text",
+];
 
 /// The ids `creator.json` marks as holding text copied from non-SRD packs that still have that text: what the export
 /// dialog counts ("3 elements contain text copied from your imported books").
@@ -60,24 +73,43 @@ pub fn without_copied_text(
     (next, changed)
 }
 
-/// True when the element holds text: a description, sheet texts, or a creature's stat-block texts.
+/// True when the element holds text: a description, sheet texts (its lines, short name and usage), the display
+/// prerequisite, a prose setter or `data` text, a list choice's entries, or a creature's stat-block texts.
 fn has_text(e: &Element) -> bool {
-    let sheet = e
-        .sheet
-        .as_ref()
-        .is_some_and(|s| s.descriptions.iter().any(|d| !d.text.trim().is_empty()));
+    let filled = |t: &str| !t.trim().is_empty() && t != LEFT_OUT_TEXT;
+    let sheet = e.sheet.as_ref().is_some_and(|s| {
+        s.descriptions.iter().any(|d| filled(&d.text))
+            || s.alt.as_deref().is_some_and(filled)
+            || s.usage.as_deref().is_some_and(filled)
+    });
     let mut stat_block = false;
     for v in stat_block_values(e) {
-        visit_texts(&mut v.clone(), &mut |t| {
-            stat_block |= !t.trim().is_empty() && t != LEFT_OUT_TEXT;
-        });
+        visit_texts(&mut v.clone(), &mut |t| stat_block |= filled(t));
     }
-    let flavour = e
-        .data
-        .get("description")
-        .and_then(Value::as_str)
-        .is_some_and(|t| !t.trim().is_empty());
-    !e.description.trim().is_empty() || sheet || stat_block || (is_creature(e) && flavour)
+    let setters = e
+        .setters
+        .iter()
+        .any(|s| TEXT_SETTERS.contains(&s.name.as_str()) && filled(&s.value));
+    let data = TEXT_DATA
+        .iter()
+        .filter_map(|k| e.data.get(*k).and_then(Value::as_str))
+        .any(filled);
+    let lists = list_items(e).any(|i| filled(&i.text));
+    filled(&e.description)
+        || filled(&e.prerequisite)
+        || sheet
+        || stat_block
+        || setters
+        || data
+        || lists
+}
+
+/// The entries of the element's list choices (a background's personality traits, ideals, bonds and flaws).
+fn list_items(e: &Element) -> impl Iterator<Item = &borealis_content::ListItem> {
+    e.rules.iter().flat_map(|r| match r {
+        Rule::Select(s) => s.items.iter(),
+        _ => [].iter(),
+    })
 }
 
 fn is_creature(e: &Element) -> bool {
@@ -113,15 +145,31 @@ fn visit_texts(v: &mut Value, f: &mut dyn FnMut(&mut String)) {
     }
 }
 
-/// The element without its text (module docs).
+/// The element without its text (module docs): names, numbers and rules stay.
 fn blank_text(e: &Element) -> Element {
     let mut next = e.clone();
     next.description = String::new();
+    next.prerequisite = String::new();
     if let Some(sheet) = next.sheet.as_mut() {
         sheet.descriptions.clear();
+        sheet.alt = None;
+        sheet.usage = None;
+    }
+    next.setters
+        .retain(|s| !TEXT_SETTERS.contains(&s.name.as_str()));
+    for key in TEXT_DATA {
+        if next.data.get(*key).is_some_and(Value::is_string) {
+            next.data.remove(*key);
+        }
+    }
+    for rule in &mut next.rules {
+        if let Rule::Select(s) = rule {
+            for item in s.items.iter_mut().filter(|i| !i.text.trim().is_empty()) {
+                item.text = LEFT_OUT_TEXT.to_string();
+            }
+        }
     }
     if is_creature(e) {
-        next.data.remove("description");
         for key in STAT_BLOCK_LISTS.iter().chain(STAT_BLOCK_SECTIONS) {
             if let Some(v) = next.data.get_mut(*key) {
                 visit_texts(v, &mut |t| {
