@@ -190,18 +190,16 @@ fn a_new_creature_validates_shows_in_the_compendium_and_is_a_wild_shape_form() {
     assert_eq!(problems(&v, "error"), Vec::new());
     assert_eq!(problems(&v, "warning"), Vec::new());
     let preview = v.preview.clone().expect("a preview");
-    let facts = |f: &[borealis_lib::dto_ext::ElementFact]| -> Vec<(String, String)> {
-        f.iter()
-            .map(|f| (f.label.clone(), f.value.clone()))
-            .collect()
-    };
     for want in [
-        ("Armor Class", "11 (natural armor)"),
-        ("Hit Points", "11 (2d8+2)"),
-        ("Challenge", "1/4 (50 XP)"),
+        "<p><i>Armor Class.</i> 11 (natural armor)</p>",
+        "<p><i>Hit Points.</i> 11 (2d8+2)</p>",
+        "<p><i>Challenge.</i> 1/4 (50 XP)</p>",
     ] {
-        let want = (want.0.to_string(), want.1.to_string());
-        assert!(facts(&preview.facts).contains(&want), "{want:?}");
+        assert!(
+            preview.description_html.contains(want),
+            "{want} in {}",
+            preview.description_html
+        );
     }
     assert!(preview.description_html.contains("Tusk"));
 
@@ -253,7 +251,11 @@ fn a_new_creature_validates_shows_in_the_compendium_and_is_a_wild_shape_form() {
         page.items.iter().map(|i| &i.id).collect::<Vec<_>>()
     );
     let entry = app.state.get_element(BOAR).unwrap();
-    assert_eq!(facts(&entry.facts), facts(&preview.facts));
+    assert_eq!(entry.facts, preview.facts);
+    assert_eq!(
+        entry.description_html, preview.description_html,
+        "the saved entry is the preview"
+    );
     assert!(entry.description_html.contains("<h4>Actions</h4>"));
 
     // Wild Shape: a level-2 Druid may take its form (a Beast of CR 1/4 that doesn't fly)

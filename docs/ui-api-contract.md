@@ -721,7 +721,9 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   `form.required` (size, creature type, alignment), `form` (creature type missing, unreadable dice or CR), and the stat
   block validator's `invalid_monster_data` / `non_standard_monster_xp` at the field (`fields.armorClass`, an entry at
   `fields.actions.2`) with a sentence per part; the content schema's duplicates inside such a stat block are dropped.
-  The preview is the compendium's monster entry (AC, HP, Challenge facts and the sections).
+  The preview is the compendium's monster entry: the whole stat block in its `descriptionHtml` (type line, armor class,
+  hit points, initiative, speed, the six scores, saves, skills, damage and condition lines, senses, languages,
+  challenge, then the sections); its facts are only `Type` and `Source`.
 - **Copies (WB-22, spec 11, 12.3).** `homebrew_new_draft {packId, copyFrom, deepCopy?}` copies any loaded element (not a
   book): `kind` is not read (the copy opens in its element's form). The copy has no id until its first save, is named
   "<Name> (copy)", keeps the rules, tags, description and edition (its `edition` field is the original's), and drops the

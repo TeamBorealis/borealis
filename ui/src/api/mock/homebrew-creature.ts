@@ -1,9 +1,9 @@
 import type { ElementFact, HomebrewCreatureEntry, HomebrewForm, HomebrewProblem } from "../types";
-import { section } from "./monsters";
+import { modifierOf, section, signed, type StatBlockHeader, statBlockHeaderHtml } from "./monsters";
 
 // The creature form's parts the web mock does the way `borealis-authoring` and the backend do (WB-20, spec 4.11): the
 // sentences the stat block validator says at the fields (`check::monster_messages`), the codec's own (`codec::creature`)
-// and the compendium's stat block for the live preview (`compendium_monster.rs`: AC, HP, CR facts, then the sections).
+// and the compendium's stat block for the live preview (`compendium_monster.rs`: the whole stat block, then the sections).
 
 const XP: Readonly<Record<string, number>> = {
   "0": 10, "1/8": 25, "1/4": 50, "1/2": 100, 1: 200, 2: 450, 3: 700, 4: 1100, 5: 1800, 6: 2300, 7: 2900, 8: 3900, 9: 5000, 10: 5900, 11: 7200,
@@ -51,8 +51,18 @@ export function creatureProblems(form: HomebrewForm, elementId: string | null): 
   return out;
 }
 
-/** The compendium's facts of a creature draft: Armor Class, Hit Points and Challenge as the stat block prints them. */
-export function creatureFacts(form: HomebrewForm): ElementFact[] {
+const cap = (t: string): string => t.charAt(0).toUpperCase() + t.slice(1);
+const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"] as const;
+const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+const words = (v: unknown): string[] => (Array.isArray(v) ? v.map(text).filter(Boolean) : []);
+
+/** The compendium's facts of a creature draft: its type only (the stat block is the entry's text). */
+export function creatureFacts(_form: HomebrewForm): ElementFact[] {
+  return [{ label: "Type", value: "Monster" }];
+}
+
+/** The stat block's header lines of a creature draft, as `compendium_monster.rs::stat_lines` writes them. */
+function header(form: HomebrewForm): StatBlockHeader {
   const f = form.fields;
   const ac = obj(f.armorClass);
   const acText = Array.isArray(ac.entries) && ac.entries.length
@@ -65,14 +75,46 @@ export function creatureFacts(form: HomebrewForm): ElementFact[] {
   const cr = text(c.cr);
   const xp = typeof c.xp === "number" ? c.xp : XP[cr];
   const challenge = cr ? `${cr} (${xp} XP)` : text(c.note) || "—";
-  return [
-    { label: "Type", value: "Monster" }, { label: "Armor Class", value: acText }, { label: "Hit Points", value: hpText }, { label: "Challenge", value: challenge },
-  ];
+  const sp = obj(f.speed);
+  const speed = [num(sp.walk) !== null ? `${sp.walk} ft.` : "",
+    ...(["burrow", "climb", "fly", "swim"] as const).map((k) => (num(sp[k]) !== null ? `${k} ${sp[k]} ft.${k === "fly" && sp.hover === true ? " (hover)" : ""}` : "")),
+    text(sp.note)].filter(Boolean).join(", ");
+  const ini = obj(f.initiative);
+  const initiative = num(ini.modifier) !== null ? `${signed(ini.modifier as number)} (${num(ini.score) ?? 10 + (ini.modifier as number)})` : "";
+  const ab = obj(f.abilities);
+  const scores = ABILITIES.map((a) => num(ab[a]) ?? 10);
+  const saves = obj(f.saves);
+  const savesText = ABILITIES.filter((a) => num(saves[a]) !== null).map((a) => `${cap(a)} ${signed(saves[a] as number)}`).join(", ");
+  const skills = obj(f.skills);
+  const skillsText = [...Object.keys(skills).sort().filter((k) => num(skills[k]) !== null)
+    .map((k) => `${k.split(" ").map((w) => (w === "of" ? w : cap(w))).join(" ")} ${signed(skills[k] as number)}`), ...words(f.skillNotes)].join(", ");
+  const clauses = (v: unknown): string => (Array.isArray(v) ? v.map((x) => { const o = obj(x); return text(o.text) || words(o.types).map(cap).join(", "); }).filter(Boolean).join("; ") : "");
+  const se = obj(f.senses);
+  const passive = num(se.passive_perception) ?? 10 + (num(skills.perception) ?? modifierOf(scores[4]!));
+  const senses = [...(["blindsight", "darkvision", "tremorsense", "truesight"] as const).filter((k) => num(se[k]) !== null).map((k) => `${cap(k)} ${se[k]} ft.`),
+    `passive Perception ${passive}`].join(", ");
+  const languages = [...words(f.languages), ...(num(f.telepathy) !== null ? [`telepathy ${f.telepathy} ft.`] : [])].join(", ") || "—";
+  const size = words(f.size).join(" or ");
+  const swarm = text(f.swarmOf);
+  const ty = text(f.creatureType);
+  const tags = words(f.creatureTags);
+  const head = `${swarm ? `${size} swarm of ${cap(swarm)} ${ty}s` : `${size} ${ty}`}${tags.length ? ` (${tags.join(", ")})` : ""}`;
+  const typeLine = cap(`${head}${text(f.alignment) ? `, ${text(f.alignment)}` : ""}`.trim());
+  return {
+    typeLine,
+    top: [["Armor Class", acText], ["Hit Points", hpText], ["Initiative", initiative], ["Speed", speed]],
+    scores,
+    bottom: [["Saving Throws", savesText], ["Skills", skillsText], ["Damage Vulnerabilities", clauses(f.damageVulnerabilities)],
+      ["Damage Resistances", clauses(f.damageResistances)], ["Damage Immunities", clauses(f.damageImmunities)],
+      ["Condition Immunities", words(f.conditionImmunities).map(cap).join(", ")], ["Senses", senses], ["Languages", languages], ["Challenge", challenge]],
+  };
 }
 
-/** The stat block's sections as the description pane shows them. */
+/** The whole stat block as the description pane shows it: the header, then the sections. A draft without a creature
+ * type writes nothing yet. */
 export function creatureHtml(form: HomebrewForm): string {
   const list = (key: string) => entries(form.fields[key]).map((e) => [escape(text(e.name)), escape(text(e.text))] as const);
-  return [["Traits", "traits"], ["Actions", "actions"], ["Bonus actions", "bonusActions"], ["Reactions", "reactions"]]
+  const sections = [["Traits", "traits"], ["Actions", "actions"], ["Bonus actions", "bonusActions"], ["Reactions", "reactions"]]
     .map(([title, key]) => section(title!, list(key!))).join("");
+  return (text(form.fields.creatureType) ? statBlockHeaderHtml(header(form)) : "") + sections;
 }

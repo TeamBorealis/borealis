@@ -153,3 +153,34 @@ fn the_ladder_tells_a_subclass_s_level_problems_in_plain_words() {
         );
     }
 }
+
+#[test]
+fn a_creature_s_live_preview_is_the_whole_stat_block() {
+    let app = App::new();
+    let pack = app.pack(Ruleset::Dnd2014);
+    let copy = app.deep_copy(&pack, "ID_SRD51_MONSTER_UNICORN");
+    let html = &copy.preview.as_ref().expect("a preview").description_html;
+    let order = [
+        "<p><i>Large celestial, lawful good</i></p>",
+        "<p><i>Armor Class.</i> 12</p>",
+        "<p><i>Hit Points.</i> 67 (9d10+18)</p>",
+        "<p><i>Speed.</i> 50 ft.</p>",
+        "<td>18 (+4)</td><td>14 (+2)</td><td>15 (+2)</td><td>11 (+0)</td><td>17 (+3)</td><td>16 (+3)</td>",
+        "<p><i>Damage Immunities.</i> Poison</p>",
+        "<p><i>Condition Immunities.</i> Charmed, Paralyzed, Poisoned</p>",
+        "<p><i>Senses.</i> Darkvision 60 ft., passive Perception 13</p>",
+        "<p><i>Languages.</i> Celestial, Elvish, Sylvan, telepathy 60 ft.</p>",
+        "<p><i>Challenge.</i> 5 (1800 XP)</p>",
+        "<h4>Traits</h4>",
+        "<h4>Actions</h4>",
+        "<h4>Legendary actions</h4>",
+    ];
+    let at: Vec<usize> = order
+        .iter()
+        .map(|o| {
+            html.find(o)
+                .unwrap_or_else(|| panic!("{o} missing in {html}"))
+        })
+        .collect();
+    assert!(at.windows(2).all(|w| w[0] < w[1]), "{html}");
+}

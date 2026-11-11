@@ -94,14 +94,24 @@ fn import(app: &AppState, dir: &Path) -> FiveToolsImportReport {
     app.import_5etools(&request, &NullSink).expect("import")
 }
 
+/// A line of the entry's stat block (`<p><i>Label.</i> value</p>`), its text unescaped.
 fn fact(app: &AppState, id: &str, label: &str) -> String {
-    app.get_element(id)
+    let html = app
+        .get_element(id)
         .unwrap_or_else(|e| panic!("{id}: {e:?}"))
-        .facts
-        .into_iter()
-        .find(|f| f.label == label)
-        .unwrap_or_else(|| panic!("{id} has no {label} fact"))
-        .value
+        .description_html;
+    let head = format!("<p><i>{label}.</i> ");
+    let start = html
+        .find(&head)
+        .unwrap_or_else(|| panic!("{id} has no {label} line: {html}"))
+        + head.len();
+    let end = start + html[start..].find("</p>").expect("the line ends");
+    html[start..end]
+        .replace("&#39;", "'")
+        .replace("&quot;", "\"")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&amp;", "&")
 }
 
 fn challenge(app: &AppState, id: &str) -> String {

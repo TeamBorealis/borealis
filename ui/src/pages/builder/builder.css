@@ -42,6 +42,10 @@
 .desc-source { padding: 0; background: none; border: 0; font: inherit; color: #1e50e6; font-style: italic; text-decoration: underline; text-decoration-color: #1e50e6; text-underline-offset: 2px; cursor: pointer; text-align: left; }
 :root[data-theme="light"] .desc-source { color: #0044aa; text-decoration-color: #0044aa; }
 .desc-pane ul { margin: 0 0 6px; padding-left: 18px; }
+/* P2b: a description's table (a creature's six scores, a list by level): plain rows, the pane's heading ink on its headers. */
+.desc-pane .rich table { border-collapse: collapse; margin: 0 0 6px; }
+.desc-pane .rich th, .desc-pane .rich td { padding: 0 12px 1px 0; text-align: left; vertical-align: top; }
+.desc-pane .rich th { font-weight: 600; color: var(--desc-head); }
 /* A6: a class's later-level grants fold under "Later levels"; each line leads with its level. */
 .desc-grant-lvl { color: var(--gray-5); }
 p.desc-grant-lvl { margin: 0 0 2px; font-style: italic; }

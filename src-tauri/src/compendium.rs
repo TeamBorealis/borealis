@@ -1,6 +1,6 @@
 //! Compendium services: ranked search with filters, element detail and facets.
 
-use crate::compendium_monster::{monster_facts, monster_html};
+use crate::compendium_monster::monster_html;
 use crate::dto::{ElementSummary, Page};
 use crate::dto_ext::{CompendiumFacets, CompendiumQuery, ElementDetail, ElementFact, Facet};
 use crate::elements::{plain_text, summary};
@@ -338,7 +338,6 @@ pub(crate) fn facts(store: &ContentStore, el: &Element) -> Vec<ElementFact> {
             out.extend(fact(label, v));
         }
     }
-    out.extend(monster_facts(el));
     if el.ty == "Spell" {
         out.extend(fact("Components", components(el)));
         if flag(el, "isConcentration") {
