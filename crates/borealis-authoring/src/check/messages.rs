@@ -541,6 +541,13 @@ pub enum Finding {
         /// The pool's name.
         pool: String,
     },
+    /// The generic form names a type it can't write (spec 4.12): one with a form of its own, or one the pack manages.
+    TypeNotHere {
+        /// The type as written.
+        ty: String,
+        /// Where elements of the type are made ("New element > Spell"); `None` for a managed type (Source).
+        made_with: Option<String>,
+    },
     /// A subrace or race variant no loaded race's choice offers.
     NotOffered {
         /// "subrace", "variant".
@@ -566,6 +573,7 @@ impl Finding {
             Self::SpellListEmpty => "lint.spell_list_empty",
             Self::UnknownPool { .. } => "lint.unknown_pool",
             Self::NotOffered { .. } => "lint.not_offered",
+            Self::TypeNotHere { .. } => "form.type",
         }
     }
 
@@ -579,7 +587,8 @@ impl Finding {
             | Self::BlockRequired { .. }
             | Self::BlockRange { .. }
             | Self::BlockChoice { .. }
-            | Self::BlockShape => Error,
+            | Self::BlockShape
+            | Self::TypeNotHere { .. } => Error,
             Self::BlockDice { .. }
             | Self::DuplicateName { .. }
             | Self::Escape
@@ -642,6 +651,16 @@ impl Finding {
             Self::NotOffered { noun } => format!(
                 "No loaded race's {noun} choice offers it. Check the parent race: it is the tag that choice offers, usually the race's name."
             ),
+            Self::TypeNotHere {
+                ty,
+                made_with: Some(route),
+            } => format!("{ty} elements have their own form: make it with {route}."),
+            Self::TypeNotHere {
+                made_with: None, ..
+            } => {
+                "The pack writes this kind of element itself (its source, a class's multiclassing): choose another type."
+                    .into()
+            }
         }
     }
 }

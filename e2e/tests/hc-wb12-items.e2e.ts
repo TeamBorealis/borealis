@@ -55,7 +55,7 @@ describe('hc-wb12 homebrew item forms (web mock)', { tags: ['homebrew'] }, () =>
     await expect(ctx.screen.getByRole('heading', 'Homebrew: Forge of Embers')).toBeAttached();
 
     // Weapon: damage dice, then the mastery from the reference picker (Mastery Property rows, several allowed: OK).
-    await newElement(ctx, 'New element', /^Weapon/, 'Sickle Sword');
+    await newElement(ctx, 'New element', /^Weapon A weapon/, 'Sickle Sword');
     await expect(ctx.screen.getByRole('heading', 'Weapon')).toBeVisible();
     await ctx.browser.locator('#hb-f-damage-input').fill('1d6');
     await reveal(ctx, '[data-field="mastery"] .hb-pick-btn');

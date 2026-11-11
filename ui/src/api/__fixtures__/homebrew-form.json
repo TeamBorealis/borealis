@@ -417,7 +417,7 @@
             "setter:standard",
             "setter:exotic",
             "setter:secret",
-            "supports:Standard|Exotic|Secret",
+            "supports:Standard|Exotic|Secret|Rare",
             "data.rarity"
           ],
           "choices": [
@@ -426,7 +426,7 @@
               "value": "standard"
             },
             {
-              "label": "Exotic",
+              "label": "Exotic (2024: rare)",
               "value": "exotic"
             },
             {
@@ -435,6 +435,7 @@
             }
           ],
           "control": "combo",
+          "help": "Language choices offer languages by rarity: most offer standard ones, some exotic (2024: rare) ones. Secret languages are given by a feature, not chosen.",
           "key": "rarity",
           "label": "Rarity",
           "required": false,
@@ -656,9 +657,57 @@
           "bindings": [
             "type"
           ],
+          "choices": [
+            {
+              "label": "Companion",
+              "value": "Companion"
+            },
+            {
+              "label": "Companion Action",
+              "value": "Companion Action"
+            },
+            {
+              "label": "Companion Feature",
+              "value": "Companion Feature"
+            },
+            {
+              "label": "Companion Reaction",
+              "value": "Companion Reaction"
+            },
+            {
+              "label": "Companion Trait",
+              "value": "Companion Trait"
+            },
+            {
+              "label": "Familiar",
+              "value": "Familiar"
+            },
+            {
+              "label": "Familiar Action",
+              "value": "Familiar Action"
+            },
+            {
+              "label": "Familiar Feature",
+              "value": "Familiar Feature"
+            },
+            {
+              "label": "Familiar Trait",
+              "value": "Familiar Trait"
+            },
+            {
+              "label": "Property",
+              "value": "Property"
+            }
+          ],
           "control": "combo",
+          "help": "Companion, Familiar, Property, or any type your content uses that has no form of its own.",
           "key": "type",
           "label": "Type",
+          "picker": {
+            "types": [
+              "Element Type"
+            ]
+          },
           "required": true,
           "tab": "general"
         },
@@ -667,9 +716,14 @@
             "setters"
           ],
           "control": "setters",
-          "expert": true,
+          "help": "Each property is a name and a value; the names other elements of this type use are offered.",
           "key": "setters",
-          "label": "Other properties",
+          "label": "Properties",
+          "picker": {
+            "types": [
+              "Setter Name"
+            ]
+          },
           "required": false,
           "tab": "general"
         },

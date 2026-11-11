@@ -208,7 +208,7 @@ describe("WB-09 HOMEBREW pack list and workspace", () => {
     // Act: New element (spell) named Ember Bolt
     await user.click(await screen.findByRole("button", { name: "New element" }));
     const flyout = await screen.findByRole("dialog", { name: "New element" });
-    expect(within(flyout).getByRole("radio", { name: /Spell/ }).getAttribute("aria-checked")).toBe("true");
+    expect(within(flyout).getByRole("radio", { name: /^Spell A spell/ }).getAttribute("aria-checked")).toBe("true");
     await user.type(within(flyout).getByLabelText("Name"), "Ember Bolt");
     await user.click(within(flyout).getByRole("button", { name: "Create" }));
     await waitFor(() => expect(nameBox().value).toBe("Ember Bolt"));

@@ -18,6 +18,7 @@ import { useCreatorEnv } from "./env";
 import { MapsToField, SettersField, SheetField } from "./fields/FormParts";
 import { ContentsField, contentsOf, optionsOf, PackageOptionsField } from "./fields/ItemParts";
 import { SpellListsField } from "./fields/SpellListsField";
+import { useWords } from "./fields/useWords";
 import { ChipsField } from "./pickers/ChipsField";
 import { RefField, refsOf } from "./pickers/RefField";
 import { StatisticField } from "./pickers/StatisticPicker";
@@ -95,6 +96,15 @@ export function FieldView({ field, value, problems, onChange, kindId, idPrefix =
   );
 }
 
+/** A combo that takes typed text: the field's choices, then the words its picker type offers (the generic form's open
+ * types, WB-19), each once. */
+function OpenCombo({ field, id, value, onChange }: { field: HomebrewFieldSpec; id: string; value: string; onChange: (v: string) => void }) {
+  const loaded = useWords(field.picker?.types ?? []);
+  const own = (field.choices ?? []).map((c) => c.label).filter(Boolean);
+  const options = [...own, ...loaded.filter((w) => !own.includes(w))];
+  return <EditableComboBox id={id} label={field.label} value={value} options={options} onChange={onChange} />;
+}
+
 interface ControlProps {
   field: HomebrewFieldSpec; value: unknown; onChange: FieldViewProps["onChange"]; id: string; describedBy: string | undefined; invalid: boolean;
   problems: readonly HomebrewProblem[]; kindId?: string; childEditing?: ChildEditing;
@@ -116,9 +126,7 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
         </span>
       );
     case "combo":
-      if (field.allowCustom) {
-        return <EditableComboBox id={id} label={label} value={text(value)} options={(field.choices ?? []).map((c) => c.label).filter(Boolean)} onChange={(v) => onChange(v, true)} />;
-      }
+      if (field.allowCustom) return <OpenCombo field={field} id={id} value={text(value)} onChange={(v) => onChange(v, true)} />;
       if (!field.choices?.length) return <TextBox id={id} value={text(value)} aria-describedby={describedBy} invalid={invalid} onChange={(e) => onChange(e.target.value, true)} />;
       return <ComboBox id={id} options={withCurrent(field.choices, text(value))} value={text(value)} aria-describedby={describedBy} onChange={(v) => onChange(v, false)} />;
     case "toggle":
@@ -145,8 +153,12 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
         extras={kindId === "spell" ? "spell" : kindId === "class" ? "class" : null} edition={env.edition} />;
     case "sheet":
       return <SheetField id={id} value={(value as HomebrewSheetValue | null) ?? null} onChange={(v, typing) => onChange(v, typing)} />;
-    case "setters":
-      return <SettersField id={id} value={Array.isArray(value) ? value as HomebrewSetterRow[] : []} onChange={(v, typing) => onChange(v, typing)} />;
+    case "setters": {
+      // the generic form offers the setter names elements of its type use (WB-19)
+      const type = typeof env.form?.fields.type === "string" ? env.form.fields.type.trim() : "";
+      const nameTypes = field.picker && type ? [...field.picker.types, type] : [];
+      return <SettersField id={id} value={Array.isArray(value) ? value as HomebrewSetterRow[] : []} nameTypes={nameTypes} onChange={(v, typing) => onChange(v, typing)} />;
+    }
     case "spellLists":
       return <SpellListsField id={id} label={label} value={strings(value)} onChange={(v) => onChange(v, false)} describedBy={describedBy} invalid={invalid} />;
     case "mapsTo":

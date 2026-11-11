@@ -629,6 +629,17 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   (`data.class_name`), `repeatable` (`data.repeatable`: a stored boolean keeps its shape, a new one is
   `{allowed: true}`), the shared condition `requirements` (`[warlock:2]`). House-rule settings (an `Option` with a
   `default` setter) open in the generic form. No new command or type.
+- **Small types and the generic form (WB-19).** One `small` kind per type of spec 4.10. Fields that bind several
+  locations: `language.rarity` (`standard`/`exotic`/`secret`: the setters, the tag `Standard`/`Exotic`/`Secret`, 2024
+  `Rare` for exotic, and `data.rarity`), `proficiency.covers` (`references`, picker `Proficiency`: its plain `grant`s
+  of `Proficiency`), `condition.listed` (`check`: the tag `Condition` and `data.tag`), `rulesText.glossaryGroup`
+  (`data.tag` and the tag of that name). Deity `alignment`, `domains`, `symbol` are required. The generic form
+  (`other`): `type` is a combo with custom text whose `picker.types` is `["Element Type"]`, and `setters` (rows with
+  attributes) has `picker.types` `["Setter Name"]`: these are pseudo picker types of `homebrew_reference_options`
+  (one row per word, the word as id and name). `["Element Type"]` lists the open types (the fixed Companion,
+  Familiar and Property types, then the loaded types with no form of their own); `["Setter Name", "<type>"]` lists
+  the setter names the type requires and the ones its loaded elements use. A new or retyped generic element whose
+  type has its own form, or is `Source`/`Multiclass`, has an error at `fields.type` (code `form.type`).
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

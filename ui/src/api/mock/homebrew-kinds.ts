@@ -6185,7 +6185,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           },
           {
             "value": "exotic",
-            "label": "Exotic"
+            "label": "Exotic (2024: rare)"
           },
           {
             "value": "secret",
@@ -6196,9 +6196,10 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "setter:standard",
           "setter:exotic",
           "setter:secret",
-          "supports:Standard|Exotic|Secret",
+          "supports:Standard|Exotic|Secret|Rare",
           "data.rarity"
-        ]
+        ],
+        "help": "Language choices offer languages by rarity: most offer standard ones, some exotic (2024: rare) ones. Secret languages are given by a feature, not chosen."
       },
       {
         "key": "script",
@@ -6338,7 +6339,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
     "id": "proficiency",
     "label": "Proficiency",
     "pluralLabel": "Proficiencies",
-    "description": "A proficiency, or a group of them (its rules grant the narrower ones).",
+    "description": "A proficiency, or a group of them that gives each narrower one.",
     "group": "small",
     "elementTypes": [
       "Proficiency"
@@ -6412,6 +6413,23 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "expert": true,
         "readOnly": true
+      },
+      {
+        "key": "covers",
+        "label": "What it covers",
+        "tab": "general",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rules:grant Proficiency"
+        ],
+        "help": "For a group (all light armor, a kind of tool): the narrower proficiencies a character with this one also has.",
+        "picker": {
+          "types": [
+            "Proficiency"
+          ],
+          "multiple": true
+        }
       },
       {
         "key": "tags",
@@ -6607,15 +6625,17 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "readOnly": true
       },
       {
-        "key": "dataTag",
-        "label": "Condition group",
+        "key": "listed",
+        "label": "Listed as a condition",
         "tab": "general",
-        "control": "text",
+        "control": "check",
         "required": false,
         "bindings": [
+          "supports:Condition",
           "data.tag"
         ],
-        "expert": true
+        "help": "Shown with the conditions (Blinded, Prone...). Leave it off for helper conditions such as a damage resistance.",
+        "default": true
       },
       {
         "key": "tags",
@@ -7008,7 +7028,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "label": "Ability",
         "tab": "general",
         "control": "combo",
-        "required": false,
+        "required": true,
         "choices": [
           {
             "value": "Strength",
@@ -7038,7 +7058,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "allowCustom": true,
         "bindings": [
           "setter:ability"
-        ]
+        ],
+        "help": "The ability whose modifier the skill adds."
       },
       {
         "key": "tags",
@@ -7048,6 +7069,10 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
+        ],
+        "help": "Skill choices offer skills by these tags: Skill, and the ability or class names a choice asks for.",
+        "default": [
+          "Skill"
         ]
       },
       {
@@ -7237,11 +7262,51 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "key": "alignment",
         "label": "Alignment",
         "tab": "general",
-        "control": "text",
+        "control": "combo",
         "required": true,
+        "choices": [
+          {
+            "value": "Lawful Good",
+            "label": "Lawful Good"
+          },
+          {
+            "value": "Neutral Good",
+            "label": "Neutral Good"
+          },
+          {
+            "value": "Chaotic Good",
+            "label": "Chaotic Good"
+          },
+          {
+            "value": "Lawful Neutral",
+            "label": "Lawful Neutral"
+          },
+          {
+            "value": "Neutral",
+            "label": "Neutral"
+          },
+          {
+            "value": "Chaotic Neutral",
+            "label": "Chaotic Neutral"
+          },
+          {
+            "value": "Lawful Evil",
+            "label": "Lawful Evil"
+          },
+          {
+            "value": "Neutral Evil",
+            "label": "Neutral Evil"
+          },
+          {
+            "value": "Chaotic Evil",
+            "label": "Chaotic Evil"
+          }
+        ],
+        "allowCustom": true,
         "bindings": [
           "setter:alignment"
-        ]
+        ],
+        "help": "Every deity needs an alignment, for example Neutral Good."
       },
       {
         "key": "domains",
@@ -7251,7 +7316,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": true,
         "bindings": [
           "setter:domains"
-        ]
+        ],
+        "help": "Every deity needs at least one domain, for example Life or Light."
       },
       {
         "key": "symbol",
@@ -7261,7 +7327,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": true,
         "bindings": [
           "setter:symbol"
-        ]
+        ],
+        "help": "Every deity needs a symbol, for example a sun with a face."
       },
       {
         "key": "tags",
@@ -8046,6 +8113,18 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "readOnly": true
       },
       {
+        "key": "propertyKey",
+        "label": "Property key",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "data.property"
+        ],
+        "help": "2024 content: the property's name in lower case (ammunition, finesse).",
+        "expert": true
+      },
+      {
         "key": "tags",
         "label": "Tags",
         "tab": "general",
@@ -8825,7 +8904,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "data.kind"
         ],
-        "expert": true
+        "expert": true,
+        "default": "weapon_mastery"
       },
       {
         "key": "mastery",
@@ -8836,7 +8916,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "data.mastery"
         ],
-        "expert": true
+        "help": "The property's name in lower case (cleave, topple): weapons that name it get it."
       },
       {
         "key": "tags",
@@ -8846,6 +8926,10 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
+        ],
+        "help": "Mastery properties carry the tag Mastery Property.",
+        "default": [
+          "Mastery Property"
         ]
       },
       {
@@ -9418,15 +9502,35 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "readOnly": true
       },
       {
-        "key": "dataTag",
+        "key": "glossaryGroup",
         "label": "Glossary group",
         "tab": "general",
-        "control": "text",
+        "control": "combo",
         "required": false,
-        "bindings": [
-          "data.tag"
+        "choices": [
+          {
+            "value": "Action",
+            "label": "Action"
+          },
+          {
+            "value": "Area of Effect",
+            "label": "Area of Effect"
+          },
+          {
+            "value": "Attitude",
+            "label": "Attitude"
+          },
+          {
+            "value": "Hazard",
+            "label": "Hazard"
+          }
         ],
-        "expert": true
+        "allowCustom": true,
+        "bindings": [
+          "data.tag",
+          "supports:<group>"
+        ],
+        "help": "The group the rules glossary lists it under (also one of its tags). Leave it empty for none."
       },
       {
         "key": "tags",
@@ -9436,6 +9540,10 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
+        ],
+        "help": "Glossary entries carry the tag Rules Glossary.",
+        "default": [
+          "Rules Glossary"
         ]
       },
       {
@@ -12551,21 +12659,74 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "tab": "general",
         "control": "combo",
         "required": true,
+        "choices": [
+          {
+            "value": "Companion",
+            "label": "Companion"
+          },
+          {
+            "value": "Companion Action",
+            "label": "Companion Action"
+          },
+          {
+            "value": "Companion Feature",
+            "label": "Companion Feature"
+          },
+          {
+            "value": "Companion Reaction",
+            "label": "Companion Reaction"
+          },
+          {
+            "value": "Companion Trait",
+            "label": "Companion Trait"
+          },
+          {
+            "value": "Familiar",
+            "label": "Familiar"
+          },
+          {
+            "value": "Familiar Action",
+            "label": "Familiar Action"
+          },
+          {
+            "value": "Familiar Feature",
+            "label": "Familiar Feature"
+          },
+          {
+            "value": "Familiar Trait",
+            "label": "Familiar Trait"
+          },
+          {
+            "value": "Property",
+            "label": "Property"
+          }
+        ],
         "allowCustom": true,
         "bindings": [
           "type"
-        ]
+        ],
+        "help": "Companion, Familiar, Property, or any type your content uses that has no form of its own.",
+        "picker": {
+          "types": [
+            "Element Type"
+          ]
+        }
       },
       {
         "key": "setters",
-        "label": "Other properties",
+        "label": "Properties",
         "tab": "general",
         "control": "setters",
         "required": false,
         "bindings": [
           "setters"
         ],
-        "expert": true
+        "help": "Each property is a name and a value; the names other elements of this type use are offered.",
+        "picker": {
+          "types": [
+            "Setter Name"
+          ]
+        }
       },
       {
         "key": "tags",

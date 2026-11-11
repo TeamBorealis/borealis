@@ -53,20 +53,25 @@ impl App {
         }
     }
 
-    /// A new element of the generic form, of `ty`, named `name`, with `blocks` (as the UI sends them).
+    /// A new element of `ty` (a Feat in the feat form, any other type in the generic form), named `name`, with
+    /// `blocks` (as the UI sends them).
     fn draft(&self, ty: &str, name: &str, blocks: Value) -> HomebrewDraftView {
         self.tagged(ty, name, &[], blocks)
     }
 
     /// [`App::draft`] with tags.
     fn tagged(&self, ty: &str, name: &str, tags: &[&str], blocks: Value) -> HomebrewDraftView {
+        // the generic form refuses a type with a form of its own (WB-19)
+        let kind = if ty == "Feat" { "feat" } else { "other" };
         let v = self
             .state
-            .homebrew_new_draft(&self.pack, "other", None, None, None)
+            .homebrew_new_draft(&self.pack, kind, None, None, None)
             .unwrap();
         let mut form: FormState = v.form.clone();
         form.fields.insert("name".into(), json!(name));
-        form.fields.insert("type".into(), json!(ty));
+        if kind == "other" {
+            form.fields.insert("type".into(), json!(ty));
+        }
         form.fields.insert("tags".into(), json!(tags));
         form.blocks = serde_json::from_value(blocks).unwrap();
         self.state

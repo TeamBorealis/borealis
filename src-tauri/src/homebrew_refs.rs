@@ -10,7 +10,10 @@ use crate::homebrew_dto::{
     HomebrewPageRequest, HomebrewPickerFilters, HomebrewPickerRow, HomebrewPickerTarget,
 };
 use crate::state::AppState;
-use borealis_authoring::form::{assign_ids, form_to_elements, CatalogBlockCodec, FormContext};
+use borealis_authoring::form::{
+    assign_ids, form_to_elements, open_types, setter_names, CatalogBlockCodec, FormContext,
+    WithElements, ELEMENT_TYPE_PICKER, SETTER_NAME_PICKER,
+};
 use borealis_content::{ContentStore, Element};
 use std::collections::{BTreeMap, HashSet};
 
@@ -70,6 +73,40 @@ fn spell_list_rows<'a>(
         .into_values()
         .skip(page.offset)
         .take(page.limit.min(MAX_PAGE))
+        .collect();
+    Page { total, items }
+}
+
+/// One row per name (the generic form's open types and setter names, WB-19): the name as id and name, filtered by
+/// `query`, in the order given.
+fn word_rows(
+    names: Vec<String>,
+    ty: &str,
+    query: &str,
+    page: HomebrewPageRequest,
+) -> Page<HomebrewPickerRow> {
+    let found: Vec<String> = names
+        .into_iter()
+        .filter(|n| n.to_lowercase().contains(query))
+        .collect();
+    let total = found.len();
+    let items = found
+        .into_iter()
+        .skip(page.offset)
+        .take(page.limit.min(MAX_PAGE))
+        .map(|name| HomebrewPickerRow {
+            id: name.clone(),
+            name,
+            ty: ty.to_string(),
+            summary: String::new(),
+            prerequisites: None,
+            source_name: String::new(),
+            edition: None,
+            draft: false,
+            level: None,
+            school: None,
+            spell: None,
+        })
         .collect();
     Page { total, items }
 }
@@ -196,6 +233,28 @@ impl AppState {
             let own = drafted.iter().map(|e| (e, true));
             let loaded = hub.store.iter().map(|s| (&s.element, false));
             return Ok(spell_list_rows(own.chain(loaded), &query, page));
+        }
+        // the generic form (spec 4.12): the open types loaded content uses, the setter names a type uses
+        let words = WithElements {
+            base: hub.store.as_ref(),
+            extra: &drafted,
+        };
+        if target.types.iter().any(|t| t == ELEMENT_TYPE_PICKER) {
+            return Ok(word_rows(
+                open_types(&words),
+                ELEMENT_TYPE_PICKER,
+                &query,
+                page,
+            ));
+        }
+        if target.types.iter().any(|t| t == SETTER_NAME_PICKER) {
+            let names = target
+                .types
+                .iter()
+                .filter(|t| *t != SETTER_NAME_PICKER)
+                .flat_map(|t| setter_names(&words, t))
+                .collect();
+            return Ok(word_rows(names, SETTER_NAME_PICKER, &query, page));
         }
         let mut seen: HashSet<&str> = HashSet::new();
         let mut found: Vec<Candidate<'_>> = drafted

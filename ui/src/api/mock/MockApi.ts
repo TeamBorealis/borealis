@@ -45,10 +45,10 @@ import { NO_COMPANIONS, addCompanion, removeCompanion, updateCompanionOf } from 
 import { type MockCharacter, type RuleSettings, levelOf } from "./state";
 import { findByWireId, toWireSlotId } from "./slot-ids";
 import { MOCK_INDEX_STATUS, mockPassage, mockSearch } from "./search";
-import { MockHomebrew, notImplemented } from "./homebrew";
+import { ELEMENT_TYPE_PICKER, MockHomebrew, notImplemented, SETTER_NAME_PICKER } from "./homebrew";
 import { MockTrials } from "./homebrew-trial";
 import { MOCK_BLOCK_CATALOG, MOCK_STAT_CATALOG } from "./homebrew-catalog";
-import { referenceRows } from "./homebrew-check";
+import { referenceRows, wordRows } from "./homebrew-check";
 
 export interface MockApiOptions {
   /** Artificial latency per call in ms (default 0). */
@@ -982,6 +982,7 @@ export class MockApi implements Api {
   async homebrewBulkEdit(_: Parameters<Api["homebrewBulkEdit"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_bulk_edit"); }
   async homebrewReferenceOptions({ target, query, page, draftId }: Parameters<Api["homebrewReferenceOptions"]>[0]) {
     await this.tick();
+    if (target.types.includes(ELEMENT_TYPE_PICKER) || target.types.includes(SETTER_NAME_PICKER)) return wordRows(this.homebrew.words(target.types), target.types[0]!, query, page);
     const loaded = this.content.search({ query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items;
     return referenceRows(loaded, this.homebrew.pickerRows(draftId), target, query, page);
   }

@@ -11,6 +11,14 @@ import { blockShapeProblems } from "./homebrew-shapes";
 /** "Magic Item" -> "magic-item": the creator's type names against the mock's element types. */
 const typeKey = (t: string): string => t.trim().toLowerCase().replace(/\s+/g, "-");
 
+/** One row per word (the generic form's open types and setter names, WB-19), filtered by the query and paged. */
+export function wordRows(words: readonly string[], type: string, query: string, page: { offset: number; limit: number }): Page<HomebrewPickerRow> {
+  const q = query.trim().toLowerCase();
+  const rows = words.filter((w) => w.toLowerCase().includes(q))
+    .map((w): HomebrewPickerRow => ({ id: w, name: w, type, summary: "", prerequisites: null, sourceName: "", edition: null, draft: false }));
+  return { total: rows.length, items: rows.slice(page.offset, page.offset + page.limit) };
+}
+
 /** An element's row as the reference picker shows it (spec 13.5). */
 export function pickerRow(e: ElementSummary): HomebrewPickerRow {
   return {

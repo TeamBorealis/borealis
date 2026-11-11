@@ -23,6 +23,7 @@ mod class_feature;
 mod class_mc;
 mod feat;
 mod feat_prereq;
+mod small;
 mod species;
 mod spell;
 mod subclass;
@@ -31,6 +32,7 @@ pub(crate) use class::ABILITY_CHOICES;
 pub use class::{ClassField, ProficiencyGroup, SkillChoice, TableColumn};
 pub use class_feature::FeatureField;
 pub use feat::FeatField;
+pub use small::SmallField;
 pub use species::{Movement, NameKind, Sense, SpeciesField};
 pub use spell::{Component, SpellField};
 pub use subclass::SubclassField;
@@ -100,9 +102,11 @@ pub enum Codec {
     Caster(CasterField),
     /// A subclass field (spec 4.7: its class, the tag that class offers it by) or a class option's group (4.8).
     Subclass(SubclassField),
+    /// A small type's field (spec 4.10): what a proficiency covers, a condition's listing, a rules text's group.
+    Small(SmallField),
 }
 
-const RARITIES: [&str; 3] = ["standard", "exotic", "secret"];
+use small::{RARITIES, RARITY_TAGS};
 
 impl Codec {
     /// The model locations this field writes, as shown in the generated-data view (`setter:level`, `data.level`).
@@ -128,7 +132,7 @@ impl Codec {
             Self::DataText(k) => vec![format!("data.{k}")],
             Self::LanguageRarity => {
                 let mut b: Vec<String> = RARITIES.iter().map(|r| format!("setter:{r}")).collect();
-                b.push("supports:Standard|Exotic|Secret".into());
+                b.push("supports:Standard|Exotic|Secret|Rare".into());
                 b.push("data.rarity".into());
                 b
             }
@@ -146,6 +150,7 @@ impl Codec {
             Self::Feature(f) => f.bindings(),
             Self::Caster(f) => f.bindings(),
             Self::Subclass(f) => f.bindings(),
+            Self::Small(f) => f.bindings(),
         }
     }
 
@@ -179,7 +184,8 @@ impl Codec {
     #[must_use]
     pub fn owned_tags(self) -> &'static [&'static str] {
         match self {
-            Self::LanguageRarity => &["Standard", "Exotic", "Secret"],
+            Self::LanguageRarity => &RARITY_TAGS,
+            Self::Small(f) => f.owned_tags(),
             _ => &[],
         }
     }
@@ -211,6 +217,7 @@ impl Codec {
             Self::Species(f) => f.data_keys(),
             Self::Class(f) => f.data_keys(),
             Self::Subclass(f) => f.data_keys(),
+            Self::Small(f) => f.data_keys(),
             _ => Vec::new(),
         }
     }
@@ -416,7 +423,8 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
                 present(v),
             )
         }
-        Codec::LanguageRarity => read_rarity(r),
+        Codec::LanguageRarity => small::read_rarity(r),
+        Codec::Small(f) => small::read(f, r, cx),
         Codec::Item(f) => super::item_codec::read(f, r, cx),
         Codec::Target => plain(
             if e.id.is_empty() {
@@ -463,30 +471,6 @@ fn read_other_setters(r: &mut Reader<'_>) -> FieldMemo {
             ..Slots::default()
         },
     )
-}
-
-fn read_rarity(r: &mut Reader<'_>) -> FieldMemo {
-    let mut setters = Vec::new();
-    let mut slots = Slots::default();
-    for name in RARITIES {
-        while let Some((i, s)) = r.take_setter(name) {
-            setters.push(s.clone());
-            slots.setters.push(i);
-        }
-    }
-    let owned = Codec::LanguageRarity.owned_tags();
-    let (tags, tag_slots) = r.take_tags(|t| owned.contains(&t));
-    slots.supports = tag_slots;
-    let data = r.take_data("rarity");
-    let value = setters
-        .iter()
-        .find(|s| s.as_bool() == Some(true))
-        .map(|s| s.name.to_lowercase())
-        .or_else(|| tags.first().map(|t| t.to_lowercase()))
-        .or_else(|| data.and_then(Value::as_str).map(str::to_lowercase))
-        .unwrap_or_default();
-    let raw = json!({ "setters": setters, "tags": tags, "data": present(data) });
-    memo(json!(value), raw, slots)
 }
 
 /// Decode a field value of the shape its control holds.
@@ -634,7 +618,8 @@ pub(crate) fn write(
                 out.element.data.insert(k.to_string(), json!(t));
             }
         }
-        Codec::LanguageRarity => write_rarity(&text()?, raw, &slots, out, path)?,
+        Codec::LanguageRarity => small::write_rarity(&text()?, memo, out, path)?,
+        Codec::Small(f) => small::write(f, value, memo, path, out)?,
         Codec::Item(f) => super::item_codec::write(f, value, memo, path, out, cx)?,
         Codec::Spell(f) => spell::write(f, value, memo, path, out)?,
         Codec::Species(f) => species::write(f, value, memo, path, out)?,
@@ -666,41 +651,6 @@ fn edition(text: &str, path: &str) -> Result<Option<Ruleset>, FormProblem> {
         "any" => Ok(Some(Ruleset::Any)),
         _ => Err(FormProblem::new(path, "Choose an edition from the list.")),
     }
-}
-
-fn write_rarity(
-    rarity: &str,
-    raw: Option<&Value>,
-    slots: &Slots,
-    out: &mut Out,
-    path: &str,
-) -> Result<(), FormProblem> {
-    let rarity = rarity.trim().to_lowercase();
-    if rarity.is_empty() {
-        return Ok(());
-    }
-    if !RARITIES.contains(&rarity.as_str()) {
-        return Err(FormProblem::new(path, "Choose standard, exotic or secret."));
-    }
-    let old = raw.map(|r| raw_setters(&r["setters"])).unwrap_or_default();
-    let setter = old
-        .iter()
-        .find(|s| s.name.eq_ignore_ascii_case(&rarity))
-        .map_or_else(
-            || Setter::new(rarity.clone(), "true"),
-            |s| Setter {
-                value: "true".into(),
-                ..s.clone()
-            },
-        );
-    out.setters(Some(setter), &slots.setters);
-    let mut tag = rarity.clone();
-    tag[..1].make_ascii_uppercase();
-    out.supports(Some(tag), &slots.supports);
-    if raw.and_then(|r| stored(&r["data"])).is_some() {
-        out.element.data.insert("rarity".into(), json!(rarity));
-    }
-    Ok(())
 }
 
 /// Put the stored bytes of an unchanged field back.
@@ -745,6 +695,7 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
             }
         }
         Codec::Target => out.element.id = get(raw)?,
+        Codec::Small(f) => small::write_raw(f, m, out, path),
         Codec::Spell(f) => spell::write_raw(f, m, out),
         Codec::Species(f) => species::write_raw(f, m, out, path),
         // item fields put their parts back in `item_codec::write_raw` (they need the context)

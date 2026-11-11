@@ -1,9 +1,9 @@
 //! The creator's forms (spec 3.1, 3.2, 4.10, 4.12): which element types each kind writes, its sub-tabs and its
 //! fields, each bound to the model locations it edits.
 //!
-//! WB-04 defines the parts every form shares, the small types and the generic "Other element" form. Element types
-//! with no form of their own yet open in the generic form, so every bundled element has a form (the per-kind forms
-//! of WB-11..WB-20 take their types over).
+//! The parts every form shares are here; each kind's own fields are in its module (`small` holds the small types and
+//! the generic "Other element" form, WB-19). Element types with no form of their own open in the generic form, so
+//! every bundled element has a form.
 
 use super::codec::Codec;
 use super::FormState;
@@ -14,6 +14,7 @@ use std::sync::OnceLock;
 mod caster;
 mod class;
 mod feat;
+mod small;
 mod species;
 mod spell;
 mod subclass;
@@ -272,7 +273,7 @@ impl FieldDef {
         Self { editions, ..self }
     }
     /// `default` is JSON text (`"\"1\""`, `"true"`).
-    const fn default(self, default: &'static str) -> Self {
+    pub(crate) const fn default(self, default: &'static str) -> Self {
         Self {
             default: Some(default),
             ..self
@@ -362,20 +363,6 @@ const EDITIONS: &[(&str, &str)] = &[
     ("dnd2024", "2024"),
     ("any", "Either edition"),
 ];
-const RARITY: &[(&str, &str)] = &[
-    ("standard", "Standard"),
-    ("exotic", "Exotic"),
-    ("secret", "Secret"),
-];
-const ABILITIES: &[(&str, &str)] = &[
-    ("Strength", "Strength"),
-    ("Dexterity", "Dexterity"),
-    ("Constitution", "Constitution"),
-    ("Intelligence", "Intelligence"),
-    ("Wisdom", "Wisdom"),
-    ("Charisma", "Charisma"),
-];
-
 /// GENERAL fields before the kind's own.
 pub(crate) fn head() -> Vec<FieldDef> {
     vec![
@@ -467,308 +454,6 @@ pub(crate) fn tail() -> Vec<FieldDef> {
     ]
 }
 
-fn with_own(own: Vec<FieldDef>) -> Vec<FieldDef> {
-    head().into_iter().chain(own).chain(tail()).collect()
-}
-
-fn small(
-    id: &'static str,
-    label: &'static str,
-    plural: &'static str,
-    description: &'static str,
-    element_type: &'static [&'static str],
-    editions: &'static [Ruleset],
-    own: Vec<FieldDef>,
-) -> KindDef {
-    KindDef {
-        id,
-        label,
-        plural,
-        description,
-        group: KindGroup::Small,
-        element_types: element_type,
-        parent_kinds: &[],
-        editions,
-        tabs: TABS,
-        fields: with_own(own),
-    }
-}
-
-fn data_tag(label: &'static str) -> FieldDef {
-    field(
-        "dataTag",
-        label,
-        GENERAL,
-        Control::Text,
-        Codec::DataText("tag"),
-    )
-    .expert()
-}
-
-fn small_kinds() -> Vec<KindDef> {
-    vec![
-        small(
-            "language",
-            "Language",
-            "Languages",
-            "A language characters can speak.",
-            &["Language"],
-            BOTH,
-            vec![
-                field(
-                    "rarity",
-                    "Rarity",
-                    GENERAL,
-                    Control::Combo,
-                    Codec::LanguageRarity,
-                )
-                .choices(RARITY, false),
-                field(
-                    "script",
-                    "Script",
-                    GENERAL,
-                    Control::Text,
-                    Codec::SetterText("script"),
-                ),
-                field(
-                    "speakers",
-                    "Typical speakers",
-                    GENERAL,
-                    Control::Text,
-                    Codec::SetterText("speakers"),
-                ),
-            ],
-        ),
-        small(
-            "proficiency",
-            "Proficiency",
-            "Proficiencies",
-            "A proficiency, or a group of them (its rules grant the narrower ones).",
-            &["Proficiency"],
-            BOTH,
-            vec![],
-        ),
-        small(
-            "condition",
-            "Condition",
-            "Conditions",
-            "A condition, with its effects as rules.",
-            &["Condition"],
-            BOTH,
-            vec![data_tag("Condition group")],
-        ),
-        small(
-            "damageType",
-            "Damage type",
-            "Damage types",
-            "A type of damage.",
-            &["Damage Type"],
-            BOTH,
-            vec![],
-        ),
-        small(
-            "skill",
-            "Skill",
-            "Skills",
-            "A skill and the ability it uses.",
-            &["Skill"],
-            BOTH,
-            vec![field(
-                "ability",
-                "Ability",
-                GENERAL,
-                Control::Combo,
-                Codec::SetterText("ability"),
-            )
-            .choices(ABILITIES, true)],
-        ),
-        small(
-            "deity",
-            "Deity",
-            "Deities",
-            "A god, with alignment, domains and symbol.",
-            &["Deity"],
-            BOTH,
-            vec![
-                field(
-                    "alignment",
-                    "Alignment",
-                    GENERAL,
-                    Control::Text,
-                    Codec::SetterText("alignment"),
-                )
-                .required(),
-                field(
-                    "domains",
-                    "Domains",
-                    GENERAL,
-                    Control::Chips,
-                    Codec::SetterChips("domains"),
-                )
-                .required(),
-                field(
-                    "symbol",
-                    "Symbol",
-                    GENERAL,
-                    Control::Text,
-                    Codec::SetterText("symbol"),
-                )
-                .required(),
-            ],
-        ),
-        small(
-            "vision",
-            "Vision",
-            "Visions",
-            "A kind of sight, such as darkvision.",
-            &["Vision"],
-            BOTH,
-            vec![],
-        ),
-        small(
-            "size",
-            "Size",
-            "Sizes",
-            "A creature size.",
-            &["Size"],
-            BOTH,
-            vec![],
-        ),
-        small(
-            "alignment",
-            "Alignment",
-            "Alignments",
-            "An alignment.",
-            &["Alignment"],
-            BOTH,
-            vec![field(
-                "abbreviation",
-                "Abbreviation",
-                GENERAL,
-                Control::Text,
-                Codec::SetterText("abbreviation"),
-            )],
-        ),
-        small(
-            "weaponProperty",
-            "Weapon property",
-            "Weapon properties",
-            "A property weapons can have.",
-            &["Weapon Property"],
-            BOTH,
-            vec![],
-        ),
-        small(
-            "weaponGroup",
-            "Weapon group",
-            "Weapon groups",
-            "A group of weapons.",
-            &["Weapon Group"],
-            BOTH,
-            vec![],
-        ),
-        small(
-            "weaponCategory",
-            "Weapon category",
-            "Weapon categories",
-            "A weapon category.",
-            &["Weapon Category"],
-            BOTH,
-            vec![],
-        ),
-        small(
-            "armorGroup",
-            "Armor group",
-            "Armor groups",
-            "A group of armor.",
-            &["Armor Group"],
-            BOTH,
-            vec![],
-        ),
-        small(
-            "masteryProperty",
-            "Mastery property",
-            "Mastery properties",
-            "A weapon mastery property.",
-            &["Mastery Property"],
-            ONLY_2024,
-            vec![
-                field(
-                    "masteryKind",
-                    "Kind",
-                    GENERAL,
-                    Control::Text,
-                    Codec::DataText("kind"),
-                )
-                .expert(),
-                field(
-                    "mastery",
-                    "Mastery key",
-                    GENERAL,
-                    Control::Text,
-                    Codec::DataText("mastery"),
-                )
-                .expert(),
-            ],
-        ),
-        small(
-            "focusGroup",
-            "Spellcasting focus group",
-            "Spellcasting focus groups",
-            "A kind of spellcasting focus.",
-            &["Spellcasting Focus Group"],
-            BOTH,
-            vec![],
-        ),
-        small(
-            "dragonmark",
-            "Dragonmark",
-            "Dragonmarks",
-            "A mark with its rules.",
-            &["Dragonmark"],
-            BOTH,
-            vec![],
-        ),
-        small(
-            "rulesText",
-            "Rules text",
-            "Rules text",
-            "A rules or glossary entry (text only).",
-            &["Rules Glossary Entry"],
-            BOTH,
-            vec![data_tag("Glossary group")],
-        ),
-    ]
-}
-
-fn other_kind() -> KindDef {
-    let own = vec![
-        field("type", "Type", GENERAL, Control::Combo, Codec::Type)
-            .required()
-            .choices(&[], true),
-        field(
-            "setters",
-            "Other properties",
-            GENERAL,
-            Control::Setters,
-            Codec::OtherSetters,
-        )
-        .expert(),
-    ];
-    KindDef {
-        id: OTHER_KIND,
-        label: "Other element",
-        plural: "Other elements",
-        description: "Any other kind of element, with the parts every form shares (expert).",
-        group: KindGroup::Expert,
-        element_types: &[],
-        parent_kinds: &[],
-        editions: BOTH,
-        tabs: TABS,
-        fields: with_own(own),
-    }
-}
-
 /// Every creator form.
 #[must_use]
 pub fn kinds() -> &'static [KindDef] {
@@ -785,9 +470,9 @@ pub fn kinds() -> &'static [KindDef] {
             subclass::class_option_kind(),
         ];
         all.extend(species::species_kinds());
-        all.extend(small_kinds());
+        all.extend(small::small_kinds());
         all.extend(super::item_kinds::item_kinds());
-        all.push(other_kind());
+        all.push(small::other_kind());
         all
     })
 }

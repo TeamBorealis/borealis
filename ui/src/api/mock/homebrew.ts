@@ -1,5 +1,5 @@
 import type {
-  ApiError, BookRuleset, ContentPack, ElementDetail, ElementType, HomebrewDeleteResult, HomebrewDraftSummary, HomebrewDraftView, HomebrewElementSummary, HomebrewFieldSpec,
+  ApiError, BookRuleset, ContentPack, ElementDetail, ElementType, HomebrewDeleteResult, HomebrewDraftSummary, HomebrewDraftView, HomebrewElementSummary,
   HomebrewForm, HomebrewKindDescriptor, HomebrewKindId, HomebrewPackPatch, HomebrewPackRequest, HomebrewPickerRow, HomebrewProblem, HomebrewSaveResult, Ruleset,
 } from "../types";
 import { apiError } from "./errors";
@@ -18,72 +18,38 @@ export function notImplemented(command: string): ApiError {
   return { code: "requirement_failed", message: `The homebrew creator can't do this yet (${command} is not implemented).`, details: { notImplemented: command } };
 }
 
-const GENERAL = { id: "general", label: "GENERAL" };
-const DESCRIPTION = { id: "description", label: "DESCRIPTION" };
-const RULES = { id: "rules", label: "RULES" };
-
-const field = (key: string, label: string, control: HomebrewFieldSpec["control"], tab: string, bindings: string[], required = false): HomebrewFieldSpec =>
-  ({ key, label, control, tab, bindings, required });
-
-const choices = (...labels: string[]) => labels.map((label) => ({ value: label, label }));
-
-/** The parts every form shares (spec 3.2), as `borealis-authoring::form::kinds` describes them (WB-04). */
-const SHARED: HomebrewFieldSpec[] = [
-  field("name", "Name", "text", "general", ["name"], true),
-  { ...field("edition", "Edition", "combo", "general", ["ruleset"]), choices: [{ value: "", label: "Pack default" }, { value: "dnd2014", label: "2014" }, { value: "dnd2024", label: "2024" }] },
-  { ...field("source", "Source", "text", "general", ["source"]), expert: true, readOnly: true },
-  field("tags", "Tags", "tags", "general", ["supports"]),
-  field("summary", "Summary line", "text", "general", ["setter:short"]),
-  field("requirements", "Prerequisite", "condition", "general", ["requirements"]),
-  field("prerequisiteText", "Prerequisite as shown", "text", "general", ["prerequisite"]),
-  field("allowDuplicate", "Can be taken more than once", "check", "general", ["setter:allow duplicate"]),
-  field("keywords", "Keywords", "chips", "general", ["setter:keywords"]),
-  field("rules", "Rules", "blocks", "rules", ["rules"]),
-  field("description", "Description", "richText", "description", ["description"]),
-  field("sheet", "On the character sheet", "sheet", "description", ["sheet"]),
-  field("compendium", "Show in Compendium", "check", "description", ["compendium.display"]),
-  { ...field("mapsTo", "2014/2024 counterpart", "mapsTo", "description", ["maps_to"]), expert: true },
-];
-
-const kind = (id: string, label: string, pluralLabel: string, elementType: string, description: string, extra: HomebrewFieldSpec[] = []): HomebrewKindDescriptor => ({
-  id, label, pluralLabel, description, group: "main", elementTypes: [elementType], parentKinds: [], editions: ["dnd2014", "dnd2024"],
-  tabs: [GENERAL, RULES, DESCRIPTION], fields: [...SHARED, ...extra],
-});
-
-/** Kinds whose own form has landed in `borealis-authoring`: the mock serves their real descriptors (generated). */
+/** The kinds `borealis-authoring` defines: the mock serves their real descriptors (generated). */
 const REAL_KINDS = ["spell", "feat", "featFeature", "species", "race", "subRace", "raceVariant", "racialTrait", "speciesTraitOption", "class", "classFeature",
   "subclass", "subclassFeature", "classOption"];
-const realKinds = (): HomebrewKindDescriptor[] => REAL_KINDS.map((id) => {
+/** The small types and the generic form (WB-19), after the item forms as `kinds()` lists them. */
+const SMALL_KINDS = ["language", "proficiency", "condition", "damageType", "skill", "deity", "vision", "size", "alignment", "weaponProperty", "weaponGroup",
+  "weaponCategory", "armorGroup", "masteryProperty", "focusGroup", "dragonmark", "rulesText"];
+const realKinds = (ids: readonly string[]): HomebrewKindDescriptor[] => ids.map((id) => {
   const k = MOCK_KIND_DESCRIPTORS.find((d) => d.id === id);
   if (!k) throw new Error(`homebrew-kinds.ts has no ${id} form`);
   return k;
 });
 
-/** The forms of the web mock: the real ones (WB-11 spell, WB-13 feat, WB-15 species), then samples for kinds whose form is still to come. */
-const KINDS: HomebrewKindDescriptor[] = [
-  ...realKinds(),
-  kind("language", "Language", "Languages", "Language", "A language characters can learn."),
-  // The item forms (WB-12), as borealis-authoring describes them.
-  ...MOCK_ITEM_KINDS,
-  {
-    ...kind("other", "Other element", "Other elements", "Companion", "Any other kind of element, with the parts every form shares (expert).", [
-      { ...field("type", "Type", "combo", "general", ["type"], true), choices: choices("Companion", "Familiar", "Property"), allowCustom: true },
-      { ...field("setters", "Other properties", "setters", "general", ["setters"]), expert: true },
-    ]),
-    group: "expert",
-    elementTypes: [],
-  },
-];
+/** The forms of the web mock: the real ones (generated from borealis-authoring), in the backend's order. */
+const KINDS: HomebrewKindDescriptor[] = [...realKinds(REAL_KINDS), ...realKinds(SMALL_KINDS), ...MOCK_ITEM_KINDS, ...realKinds(["other"])];
+
+/** The pseudo picker types of the generic form (`borealis_authoring::form::{ELEMENT_TYPE_PICKER, SETTER_NAME_PICKER}`). */
+export const ELEMENT_TYPE_PICKER = "Element Type";
+export const SETTER_NAME_PICKER = "Setter Name";
 
 const TYPE_TOKENS: Record<string, string> = {
   Spell: "SPELL", Feat: "FEAT", "Feat Feature": "FEAT_FEATURE", Species: "SPECIES", Race: "RACE", "Sub Race": "SUBRACE", "Race Variant": "RACE_VARIANT",
   "Racial Trait": "TRAIT", "Species Trait Option": "TRAIT_OPTION", Language: "LANGUAGE", Companion: "COMPANION", Class: "CLASS",
   "Class Feature": "CLASS_FEATURE", Archetype: "SUBCLASS", "Archetype Feature": "SUBCLASS_FEATURE", Option: "OPTION",
+  Proficiency: "PROFICIENCY", Condition: "CONDITION", "Damage Type": "DAMAGE_TYPE", Skill: "SKILL", Deity: "DEITY", Vision: "VISION", Size: "SIZE",
+  Alignment: "ALIGNMENT", "Weapon Property": "WEAPON_PROPERTY", "Weapon Group": "WEAPON_GROUP", "Weapon Category": "WEAPON_CATEGORY",
+  "Armor Group": "ARMOR_GROUP", "Mastery Property": "MASTERY", "Spellcasting Focus Group": "FOCUS_GROUP", Dragonmark: "DRAGONMARK",
+  "Rules Glossary Entry": "RULE", Familiar: "FAMILIAR",
 };
 const PREVIEW_TYPES: Record<string, ElementType> = {
   spell: "spell", feat: "feat", language: "language", species: "race", race: "race", subRace: "subrace", raceVariant: "subrace", racialTrait: "racial-trait",
   speciesTraitOption: "racial-trait", class: "class", classFeature: "class-feature", subclass: "archetype", subclassFeature: "class-feature",
-  classOption: "option",
+  classOption: "option", proficiency: "proficiency", skill: "skill", deity: "deity", other: "companion",
   item: "item", weapon: "weapon", armor: "armor", magicItem: "magic-item", itemPack: "item", equipmentPackage: "option",
 };
 /** Item facts the description pane lists (WB-12): field key and label. */
@@ -242,6 +208,21 @@ export class MockHomebrew {
     const drafts = [...this.drafts.values()].filter((d) => d.packId === draftPack && d.elementId === null && d.draftId !== draftId && String(d.form.fields.name ?? "").trim())
       .map((d): HomebrewPickerRow => ({ id: `draft:${d.draftId}`, name: String(d.form.fields.name).trim(), type: KINDS.find((k) => k.id === d.form.kind)?.elementTypes[0] ?? "", summary: "", prerequisites: null, sourceName: this.packs.get(d.packId)?.pack.name ?? "", edition: null, draft: true }));
     return [...saved, ...drafts, ...CORE_PICKER_ROWS];
+  }
+
+  /** The generic form's word lists (WB-19): the open types (the Type combo's own and the saved elements'), or the setter
+   * names saved elements of a type use. */
+  words(types: readonly string[]): string[] {
+    const saved = [...this.packs.values()].flatMap((own) => [...own.elements.values()]);
+    if (types.includes(ELEMENT_TYPE_PICKER)) {
+      const own = KINDS.find((k) => k.id === "other")?.fields.find((f) => f.key === "type")?.choices?.map((c) => c.value) ?? [];
+      const used = saved.filter((e) => e.form.kind === "other").map((e) => e.summary.elementType);
+      return [...new Set([...own, ...used.filter((t) => !own.includes(t)).sort()])];
+    }
+    const ofType = types.filter((t) => t !== SETTER_NAME_PICKER);
+    const names = saved.filter((e) => ofType.includes(e.summary.elementType))
+      .flatMap((e) => (Array.isArray(e.form.fields.setters) ? e.form.fields.setters as { name?: unknown }[] : []).map((r) => String(r.name ?? "").trim()));
+    return [...new Set(names.filter(Boolean))].sort((a, b) => a.localeCompare(b));
   }
 
   /** A draft for Try it (spec 9): its last view, its kind and its pack's editions. */

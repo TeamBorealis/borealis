@@ -27,6 +27,7 @@ mod item_codec;
 mod item_kinds;
 pub mod item_value;
 pub mod kinds;
+mod other;
 mod paths;
 pub mod preserved;
 mod read;
@@ -42,7 +43,7 @@ pub use block_codec::CatalogBlockCodec;
 pub(crate) use block_codec::INCOMPLETE;
 pub use child_refs::{add_child, new_child_key, ChildEntry, ParentInfo};
 pub use codec::{
-    CasterField, ClassField, FeatureField, LevelCounts, ProficiencyGroup, SkillChoice,
+    CasterField, ClassField, FeatureField, LevelCounts, ProficiencyGroup, SkillChoice, SmallField,
     SubclassField, TableColumn,
 };
 pub use descriptor::descriptors;
@@ -50,6 +51,10 @@ pub use kinds::new_class_form;
 pub use kinds::{
     append_kind, kind, kind_for_element, kind_for_type, kinds, Control, FieldDef, KindDef,
     KindGroup, CLASS_FEATURE_KIND, CLASS_KIND, CLASS_OPTION_KIND, OTHER_KIND,
+};
+pub use other::{
+    open_types, setter_names, type_refusal, TypeRefusal, ELEMENT_TYPE_PICKER, OPEN_TYPES,
+    SETTER_NAME_PICKER,
 };
 pub use paths::{check_fields, form_path_for_issue, form_path_for_location};
 pub use preserved::{KeptPart, PreservedPart};
@@ -256,6 +261,12 @@ pub trait Lookup {
     fn loaded_of_type(&self, _ty: &str) -> Vec<&Element> {
         Vec::new()
     }
+
+    /// The element types loaded elements have (each once, any order), when the lookup holds elements (empty
+    /// otherwise): the generic form's Type combo offers the open ones (spec 4.12).
+    fn loaded_types(&self) -> Vec<String> {
+        Vec::new()
+    }
 }
 
 impl Lookup for ContentStore {
@@ -272,6 +283,12 @@ impl Lookup for ContentStore {
 
     fn loaded_of_type(&self, ty: &str) -> Vec<&Element> {
         self.by_type(ty).map(|s| &s.element).collect()
+    }
+
+    fn loaded_types(&self) -> Vec<String> {
+        let types: std::collections::BTreeSet<&str> =
+            self.iter().map(|s| s.element.ty.as_str()).collect();
+        types.into_iter().map(str::to_string).collect()
     }
 }
 
@@ -311,6 +328,16 @@ impl Lookup for WithElements<'_> {
                 .filter(|e| !self.extra.iter().any(|x| x.id == e.id)),
         );
         out
+    }
+
+    fn loaded_types(&self) -> Vec<String> {
+        let mut types = self.base.loaded_types();
+        for e in self.extra {
+            if !types.contains(&e.ty) {
+                types.push(e.ty.clone());
+            }
+        }
+        types
     }
 }
 

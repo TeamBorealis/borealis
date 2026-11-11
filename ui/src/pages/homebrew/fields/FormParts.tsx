@@ -4,6 +4,7 @@ import { CheckBox, ComboBox, EditableComboBox, Icon, NumericUpDown, TextBox } fr
 import { useCreatorEnv } from "../env";
 import { RefField } from "../pickers/RefField";
 import { StatisticPicker, statLabel } from "../pickers/StatisticPicker";
+import { useWords } from "./useWords";
 
 /** A sheet line's parts: text, and values written as `{{statistic}}` (spec 7.4). */
 type Part = { text: string } | { stat: string };
@@ -87,15 +88,39 @@ export function SheetField({ id, value, onChange }: { id?: string; value: Homebr
   );
 }
 
-/** "Other properties" (spec 4.12, expert): setters as name / value rows, attributes as name / value pairs. */
-export function SettersField({ id, value, onChange }: { id?: string; value: readonly HomebrewSetterRow[]; onChange: (rows: HomebrewSetterRow[], typing: boolean) => void }) {
+/** An attribute being added to a setter row: its name and value. */
+interface NewAttribute { name: string; value: string }
+const NO_ATTRIBUTE: NewAttribute = { name: "", value: "" };
+
+/** Attribute names are XML attribute names: letters, digits, `-`, `_`, `.`, and no `name` (the setter's own). */
+const attributeName = (s: string): string => s.trim().replace(/[^A-Za-z0-9_.-]/g, "");
+
+/**
+ * Properties (spec 4.12): setters as name / value rows, the name a combo of the names elements of the type use
+ * (`nameTypes`, WB-19) that takes any text, each row with its attributes as name / value pairs (added and removed here).
+ */
+export function SettersField({ id, value, nameTypes = [], onChange }: {
+  id?: string; value: readonly HomebrewSetterRow[]; nameTypes?: readonly string[]; onChange: (rows: HomebrewSetterRow[], typing: boolean) => void;
+}) {
+  const names = useWords(nameTypes);
+  const [adding, setAdding] = useState<Record<number, NewAttribute>>({});
   const setRow = (i: number, row: HomebrewSetterRow, typing = true) => onChange(value.map((r, j) => (j === i ? row : r)), typing);
+  const pending = (i: number): NewAttribute => adding[i] ?? NO_ATTRIBUTE;
+  const setPending = (i: number, a: NewAttribute) => setAdding((cur) => ({ ...cur, [i]: a }));
+  const addAttribute = (i: number, row: HomebrewSetterRow) => {
+    const a = pending(i);
+    const key = attributeName(a.name);
+    if (!key || key === "name") return;
+    setRow(i, { ...row, attributes: { ...row.attributes, [key]: a.value.trim() } }, false);
+    setPending(i, NO_ATTRIBUTE);
+  };
   return (
     <div className="hb-bf-rows" id={id}>
       {value.map((row, i) => (
         <div key={i} className="hb-bf-row" role="group" aria-label={`Property ${i + 1}`}>
           <span className="hb-row-controls hb-wrap">
-            <TextBox aria-label={`Property ${i + 1}: name`} placeholder="Name" value={row.name} onChange={(e) => setRow(i, { ...row, name: e.target.value })} />
+            <EditableComboBox aria-label={`Property ${i + 1}: name`} label={`Property ${i + 1} name`} placeholder="Name" value={row.name} options={names}
+              onChange={(v) => setRow(i, { ...row, name: v })} />
             <TextBox aria-label={`Property ${i + 1}: value`} placeholder="Value" value={row.value} onChange={(e) => setRow(i, { ...row, value: e.target.value })} />
             {Object.entries(row.attributes).map(([k, a]) => (
               <span key={k} className="hb-chip-item">
@@ -103,6 +128,12 @@ export function SettersField({ id, value, onChange }: { id?: string; value: read
                 <button type="button" className="hb-chip-x" aria-label={`Remove ${k} from property ${i + 1}`} onClick={() => { const { [k]: _gone, ...rest } = row.attributes; setRow(i, { ...row, attributes: rest }, false); }}><Icon name="x" /></button>
               </span>
             ))}
+          </span>
+          <span className="hb-row-controls hb-wrap">
+            <TextBox aria-label={`Property ${i + 1}: new attribute name`} placeholder="Attribute" value={pending(i).name} onChange={(e) => setPending(i, { ...pending(i), name: e.target.value })} />
+            <TextBox aria-label={`Property ${i + 1}: new attribute value`} placeholder="Attribute value" value={pending(i).value}
+              onChange={(e) => setPending(i, { ...pending(i), value: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addAttribute(i, row); } }} />
+            <button type="button" className="hb-pick-btn" disabled={!attributeName(pending(i).name)} onClick={() => addAttribute(i, row)}><Icon name="plus" />Add attribute</button>
           </span>
           <button type="button" className="hb-chip-x" aria-label={`Remove property ${i + 1}`} onClick={() => onChange(value.filter((_, j) => j !== i), false)}><Icon name="x" /></button>
         </div>

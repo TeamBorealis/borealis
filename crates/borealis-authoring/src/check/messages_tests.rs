@@ -294,6 +294,10 @@ fn finding_samples() -> Vec<Finding> {
         Finding::NotOffered {
             noun: "subrace".into(),
         },
+        Finding::TypeNotHere {
+            ty: "Spell".into(),
+            made_with: Some("New element > Spell".into()),
+        },
     ]
 }
 

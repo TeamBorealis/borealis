@@ -70,7 +70,7 @@ fn a_new_block_without_its_required_values_names_them() {
     with_cx(|cx| {
         let mut form = FormState::new("e", "other")
             .with_field("name", json!("Howl"))
-            .with_field("type", json!("Feat"));
+            .with_field("type", json!("Property"));
         form.blocks.push(
             serde_json::from_value(json!({"key": "b1", "kind": "grant", "fields": {}}))
                 .expect("block"),
@@ -171,11 +171,11 @@ fn children_are_checked_with_their_prefix() {
     with_cx(|cx| {
         let mut form = FormState::new("e", "other")
             .with_field("name", json!("Howl"))
-            .with_field("type", json!("Feat"));
+            .with_field("type", json!("Property"));
         form.children.push(
             FormState::new("c", "other")
                 .with_field("name", json!(""))
-                .with_field("type", json!("Feat Feature")),
+                .with_field("type", json!("Companion Trait")),
         );
         assert_eq!(
             messages(&form_findings(&form, cx)),

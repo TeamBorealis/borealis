@@ -96,29 +96,70 @@ fn language_fields_read_from_every_location() {
 #[test]
 fn edited_rarity_rewrites_setter_tag_and_mirror_in_place() {
     with_cx(|cx| {
+        // 2024: exotic is "rare" in the tag and the mirror (the 2024 choices offer Standard||Rare)
         let f = element_to_form(&language_2024(), cx).with_field("rarity", json!("exotic"));
         let e = one(&f, cx);
         let names: Vec<&str> = e.setters.iter().map(|s| s.name.as_str()).collect();
         assert_eq!(names, ["speakers", "exotic", "script"]);
-        assert_eq!(e.supports, ["Lore", "Exotic", "Old"]);
-        assert_eq!(e.data["rarity"], json!("exotic"));
-        // a 2014 language has no data mirror: none is added; its setter keeps the stored spelling
+        assert_eq!(e.supports, ["Lore", "Rare", "Old"]);
+        assert_eq!(e.data["rarity"], json!("rare"));
+        let back = element_to_form(&e, cx);
+        assert_eq!(back.fields["rarity"], json!("exotic"));
+        assert_eq!(back.fields["tags"], json!(["Lore", "Old"]));
+        // a 2014 language has no data mirror: none is added; its one Exotic setter keeps its shape
         let f = element_to_form(&language_2014(), cx);
         assert_eq!(f.fields["rarity"], json!("exotic"));
         assert_eq!(one(&f, cx), language_2014());
         let e = one(&f.with_field("rarity", json!("exotic")), cx);
         assert_eq!(e, language_2014());
+        let e = one(&f.with_field("rarity", json!("standard")), cx);
+        assert_eq!(e.setters[2].name, "Exotic");
+        assert_eq!(e.setters[2].value, "false");
+        assert_eq!(
+            e.supports,
+            ["ID_INTERNAL_SUPPORT_LANGUAGE_EXOTIC", "Standard"]
+        );
+        assert_eq!(element_to_form(&e, cx).fields["rarity"], json!("standard"));
         let e = one(&f.with_field("rarity", json!("secret")), cx);
         assert!(e.data.is_empty());
-        assert_eq!(e.setters[2].name, "secret");
+        assert_eq!(
+            e.setters[2].value, "true",
+            "a secret 2014 language stays exotic"
+        );
         assert_eq!(
             e.supports,
             ["ID_INTERNAL_SUPPORT_LANGUAGE_EXOTIC", "Secret"]
         );
+        assert_eq!(element_to_form(&e, cx).fields["rarity"], json!("secret"));
         let e = one(&f.with_field("rarity", json!("")), cx);
         assert_eq!(e.setters.len(), 2);
         let bad = form_to_element(&f.with_field("rarity", json!("rare")), cx).unwrap_err();
         assert_eq!(bad[0].path, "fields.rarity");
+    });
+}
+
+#[test]
+fn a_new_language_writes_the_shape_of_its_edition() {
+    with_cx(|cx| {
+        let mut ids = IdGenerator::new("GL", Vec::<String>::new(), Vec::<String>::new()).unwrap();
+        let mut new = |edition: &str, rarity: &str| {
+            let f = kind("language")
+                .unwrap()
+                .new_form("e")
+                .with_field("name", json!("Old Tongue"))
+                .with_field("edition", json!(edition))
+                .with_field("rarity", json!(rarity));
+            one(&assign_ids(&f, &mut ids), cx)
+        };
+        let e = new("dnd2024", "exotic");
+        assert_eq!(e.id, "ID_GL_LANGUAGE_OLD_TONGUE");
+        assert_eq!(e.setter_value("exotic"), Some("true"));
+        assert_eq!(e.supports, ["Rare"]);
+        assert_eq!(e.data["rarity"], json!("rare"));
+        let e = new("dnd2014", "standard");
+        assert_eq!(e.setter_value("standard"), Some("true"));
+        assert_eq!(e.supports, ["Standard"]);
+        assert!(e.data.is_empty());
     });
 }
 
@@ -641,7 +682,7 @@ fn kinds_bind_every_location_once() {
             "setter:standard",
             "setter:exotic",
             "setter:secret",
-            "supports:Standard|Exotic|Secret",
+            "supports:Standard|Exotic|Secret|Rare",
             "data.rarity"
         ]
     );

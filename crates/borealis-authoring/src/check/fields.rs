@@ -76,6 +76,13 @@ fn one_form(form: &FormState, prefix: &str, cx: &FormContext<'_>, out: &mut Vec<
             out.push((format!("{prefix}fields.{}", def.key), finding));
         }
     }
+    if let Some(r) = crate::form::type_refusal(form) {
+        let finding = Finding::TypeNotHere {
+            ty: r.ty,
+            made_with: r.made_with,
+        };
+        out.push((format!("{prefix}fields.type"), finding));
+    }
     for (i, b) in form.blocks.iter().enumerate() {
         block_findings(b, &format!("{prefix}blocks.{i}"), cx, out);
     }
