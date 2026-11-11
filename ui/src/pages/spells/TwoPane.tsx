@@ -9,7 +9,7 @@ export function TwoPane({ left, descId, descEmpty }: { left: ReactNode; descId: 
     <div className="ap-page">
       <div className="ap-left">{left}</div>
       <div className={`ap-right ${descEmpty ? "ap-none" : ""}`}>
-        <DescriptionPane elementId={descId} fallback={<aside className="desc-pane" aria-label="Description" />} />
+        <DescriptionPane elementId={descId} fallback={<aside className="desc-pane" aria-label="Description" />} copyable />
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ mod children;
 mod creator;
 mod layout;
 
+pub(crate) use children::granted_ids;
 pub use children::{child_types, granted_children, parent_of};
 pub use creator::{
     CopiedFrom, CreatorElement, CreatorFile, CreatorFileError, CREATOR_FILE, CREATOR_FORMAT,

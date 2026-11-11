@@ -971,7 +971,11 @@ export class MockApi implements Api {
   async homebrewCreatePack({ request }: Parameters<Api["homebrewCreatePack"]>[0]) { await this.tick(); return this.homebrew.createPack(request); }
   async homebrewUpdatePack({ packId, patch }: Parameters<Api["homebrewUpdatePack"]>[0]) { await this.tick(); return this.homebrew.updatePack(packId, patch); }
   async homebrewListElements({ packId }: { packId: string }) { await this.tick(); return this.homebrew.listElements(packId); }
-  async homebrewNewDraft({ packId, kind, copyFrom, parentId }: Parameters<Api["homebrewNewDraft"]>[0]) { await this.tick(); return this.homebrew.newDraft(packId, kind, copyFrom, parentId); }
+  async homebrewNewDraft({ packId, kind, copyFrom, parentId, deepCopy }: Parameters<Api["homebrewNewDraft"]>[0]) {
+    await this.tick();
+    const loaded = copyFrom ? this.content.search({ query: "", limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items.find((e) => e.id === copyFrom) : undefined;
+    return this.homebrew.newDraft(packId, kind, copyFrom, parentId, deepCopy, loaded ? { name: loaded.name, type: loaded.type } : undefined);
+  }
   async homebrewOpenDraft({ packId, elementId, draftId }: Parameters<Api["homebrewOpenDraft"]>[0]) { await this.tick(); return this.homebrew.openDraft(packId, elementId, draftId); }
   async homebrewUpdateDraft({ draftId, form }: Parameters<Api["homebrewUpdateDraft"]>[0]) { await this.tick(); return this.homebrew.updateDraft(draftId, form); }
   async homebrewCheckDraft({ draftId }: { draftId: string }) { await this.tick(); return this.homebrew.checkDraft(draftId); }
@@ -981,11 +985,14 @@ export class MockApi implements Api {
   async homebrewDeleteElements({ packId, elementIds }: Parameters<Api["homebrewDeleteElements"]>[0]) { await this.tick(); return this.homebrew.deleteElements(packId, elementIds); }
   async homebrewDuplicateElement({ packId, elementId }: { packId: string; elementId: string }) { await this.tick(); return this.homebrew.duplicateElement(packId, elementId); }
   async homebrewBulkEdit(_: Parameters<Api["homebrewBulkEdit"]>[0]): Promise<never> { await this.tick(); throw notImplemented("homebrew_bulk_edit"); }
-  async homebrewReferenceOptions({ target, query, page, draftId }: Parameters<Api["homebrewReferenceOptions"]>[0]) {
+  async homebrewReferenceOptions({ target, query, filters, page, draftId }: Parameters<Api["homebrewReferenceOptions"]>[0]) {
     await this.tick();
     if (target.types.includes(ELEMENT_TYPE_PICKER) || target.types.includes(SETTER_NAME_PICKER) || target.types[0] === FEAT_PARAMETER_PICKER) return wordRows(this.homebrew.words(target.types), target.types[0]!, query, page);
-    const loaded = this.content.search({ query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items;
-    return referenceRows(loaded, this.homebrew.pickerRows(draftId), target, query, page);
+    // "Start from a template" (spec 11, `srdOnly: true`): the SRD copy sources only; "New from copy..." (`srdOnly: false`)
+    // adds them to the rest
+    const copying = filters?.srdOnly === true ? "srd" : filters?.srdOnly === false ? "any" : undefined;
+    const loaded = copying === "srd" ? [] : this.content.search({ query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items;
+    return referenceRows(loaded, this.homebrew.pickerRows(draftId, copying), target, query, page);
   }
   async homebrewWhereUsed(_: { elementId: string }) { await this.tick(); return []; }
   async homebrewSpellList(_: { packId: string; listTag: string }): Promise<never> { await this.tick(); throw notImplemented("homebrew_spell_list"); }

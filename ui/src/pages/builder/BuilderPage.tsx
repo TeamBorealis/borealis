@@ -120,7 +120,7 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   const option = describedAbilityOption(own, slots);
   const pane = active === "abilities" ? <AbilitiesPane />
     : option ? <AbilityOptionPane abilities={snapshot.abilities} slot={option.slot} text={option.text} />
-    : <DescriptionPane elementId={paneId} fallback={fallback} />;
+    : <DescriptionPane elementId={paneId} fallback={fallback} copyable />;
   return (
     <div className="bp">
       <h1 className="sr-only">Build</h1>

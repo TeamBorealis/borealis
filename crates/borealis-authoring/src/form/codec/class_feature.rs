@@ -68,10 +68,22 @@ fn asi_rule(shape: Shape, class: &str, level: u32) -> Rule {
     serde_json::from_value(v).expect("a valid rule")
 }
 
+/// A class name as a tag word: without the characters a tag can't hold (a copy's "Wizard (copy)" offers
+/// "Wizard copy Subclass").
+fn tag_word(class: &str) -> String {
+    class
+        .chars()
+        .filter(|c| !",|&!()[]{}$".contains(*c))
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 fn subclass_rule(shape: Shape, class: &str, label: &str, level: u32) -> Rule {
     let v = match shape {
         Shape::New => json!({"kind": "select", "type": "Archetype", "name": label,
-            "supports": format!("{class} Subclass")}),
+            "supports": format!("{} Subclass", tag_word(class))}),
         Shape::Old => {
             json!({"kind": "select", "type": "Archetype", "name": label, "level": level, "supports": label})
         }

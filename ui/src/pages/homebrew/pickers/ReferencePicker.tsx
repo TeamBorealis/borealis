@@ -1,5 +1,5 @@
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
-import type { HomebrewPickerRow, HomebrewPickerTarget, HomebrewRef } from "../../../api/contract";
+import type { HomebrewPickerFilters, HomebrewPickerRow, HomebrewPickerTarget, HomebrewRef } from "../../../api/contract";
 import { Button, ComboBox, Dialog, Expander, FocusBar, Icon } from "../../../components";
 import { usePhone } from "../../../lib/phone";
 import { editionsOf, effectiveFilter, NO_FILTER, type PickerFilter, sourcesOf, versionPasses } from "../../../lib/versions";
@@ -36,6 +36,8 @@ export interface ReferencePickerProps {
   chosen: readonly string[];
   onChoose: (picks: HomebrewRef[]) => void;
   onClose: () => void;
+  /** Filters every query of this picker keeps ("Start from a template": SRD elements only). */
+  filters?: HomebrewPickerFilters;
 }
 
 /** Up/Down move between rows and describe the row reached (the Build picker's keys). */
@@ -54,7 +56,7 @@ function onKeyNav(e: KeyboardEvent<HTMLButtonElement>): void {
  * the right. Spells get the Magic grid and filter bar (13.7); `multiple` pickers keep a check per row. Double-click,
  * Enter or Choose picks. On phones it is a bottom sheet with Choose under the description (spec 16, O2 B).
  */
-export function ReferencePicker({ title, target, chosen, onChoose, onClose }: ReferencePickerProps) {
+export function ReferencePicker({ title, target, chosen, onChoose, onClose, filters }: ReferencePickerProps) {
   const api = useApi();
   const env = useCreatorEnv();
   const phone = usePhone();
@@ -66,8 +68,8 @@ export function ReferencePicker({ title, target, chosen, onChoose, onClose }: Re
   const query = usePaused(filter.text);
   const types = type ? [type] : target.types;
   const data = useAsync(
-    () => api.homebrewReferenceOptions({ target: { ...target, types }, query, filters: {}, page: { offset: 0, limit: PICKER_PAGE }, ...(env.draftId ? { draftId: env.draftId } : {}) }),
-    [api, JSON.stringify(target), type, query, env.draftId],  
+    () => api.homebrewReferenceOptions({ target: { ...target, types }, query, filters: filters ?? {}, page: { offset: 0, limit: PICKER_PAGE }, ...(env.draftId ? { draftId: env.draftId } : {}) }),
+    [api, JSON.stringify(target), JSON.stringify(filters ?? {}), type, query, env.draftId],  
   );
   const rows = useMemo(() => (data.data?.items ?? []).map(toVersion), [data.data]);
   const allRows = useMemo(() => rows.map((v) => shownRow(v, false)), [rows]);

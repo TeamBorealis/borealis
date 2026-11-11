@@ -408,8 +408,8 @@ creator's entry points; until 1.5.0 the UI reaches these commands only with it o
 `details: { notImplemented: "<command>" }`. Implemented in the backend: the catalogs and kinds, packs, the element list,
 drafts (new, open, update, save, discard, list), delete, duplicate and reference options (WB-04/05/06), the
 validation of drafts with `homebrew_check_draft` (WB-07) and Try it (WB-08); bulk edit, where-used and spell lists
-(WB-23) and export (WB-24) still answer it, and so does
-a `deepCopy` of an element with features (WB-22). `homebrew_new_draft` with `parentId` makes a child (WB-16). The web mock
+(WB-23) and export (WB-24) still answer it. Copies (WB-22) are implemented, deep ones too. `homebrew_new_draft` with
+`parentId` makes a child (WB-16). The web mock
 implements packs, elements and drafts in memory (kinds are sample forms).
 
 | Command | Args (camelCase keys) | Returns |
@@ -519,7 +519,9 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   problem (`content.unknown_rule_kind`, `content.unknown_rule_field`), or the creator's own (`form.required`, `form`,
   `block.required`, `block.range`, `block.dice`, `block.choice`, `block.shape`, `lint.duplicate_name`,
   `lint.empty_description`, `lint.escape`, `lint.unknown_pool`, `lint.not_offered`, `lint.select_empty`,
-  `lint.spell_list_empty`, `engine.refused`, `sweep.<finding>`, `balance.<metric>`); sentences per code: `borealis_authoring::check::messages`.
+  `lint.spell_list_empty`, `form.class_edition`, `form.edition_adapted`, `engine.refused`, `sweep.<finding>`,
+  `balance.<metric>`); sentences per code: `borealis_authoring::check::messages` (the edition codes:
+  `borealis_authoring::form::edition_problems`).
   `homebrew_update_draft` sends the live pipeline's problems (spec 8.1 steps 1-5: form, schema, the content validator over
   the loaded content plus the draft, rule problems, lints); `homebrew_check_draft` the engine checks (steps 6-7), all
   warnings or info. Errors block Save (`homebrew_save_draft` runs the live pipeline, then the validator on the saved
@@ -668,6 +670,24 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   block validator's `invalid_monster_data` / `non_standard_monster_xp` at the field (`fields.armorClass`, an entry at
   `fields.actions.2`) with a sentence per part; the content schema's duplicates inside such a stat block are dropped.
   The preview is the compendium's monster entry (AC, HP, Challenge facts and the sections).
+- **Copies (WB-22, spec 11, 12.3).** `homebrew_new_draft {packId, copyFrom, deepCopy?}` copies any loaded element (not a
+  book): `kind` is not read (the copy opens in its element's form). The copy has no id until its first save, is named
+  "<Name> (copy)", keeps the rules, tags, description and edition (its `edition` field is the original's), and drops the
+  2024 mirror keys no field writes (the `data` keys the engine reads or a parent rewrites stay), the 2014/2024
+  counterpart (`mapsTo` null), what it replaces, its earlier type name and its source reference. `deepCopy: true` copies
+  the parts too, ids cleared: a class's features, starting equipment and (2024 shape, "<Class> Subclass") its subclasses
+  with their features; a species' or race's traits and their lineage options; a background's feature, variants and
+  package; a subclass's or feat's own features. The parts are the form's `children`; subclasses are not in the view: they
+  are kept with the draft and saved with it (`elementIds` lists them after the form's). On save every reference to a
+  copied original names its copy, and a copied lineage choice offers the copied options by id (they lose the original's
+  tag, so the original never offers them). Without `deepCopy` the copy grants the originals. A 2024 subclass choice's tag
+  is written from the class name without the characters a tag can't hold ("Wizard (copy)" offers "Wizard copy
+  Subclass"). `homebrew_duplicate_element` copies a class deep (its subclasses in the pack too); a duplicate keeps the
+  original's `copiedFrom`. `creator.json` records `copiedFrom {id, packId, srd}` for every copied element, and
+  `nonSrdText` when a non-bundled original had a description; the pack then lists `redistributable: false`.
+  `HomebrewPickerFilters.srdOnly` ("Start from a template") lists bundled elements only. Problems: a class read from an
+  element keeps its edition (`form.class_edition`, error at `fields.edition`); an element of one edition in a pack of the
+  other is `form.edition_adapted` (warning).
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

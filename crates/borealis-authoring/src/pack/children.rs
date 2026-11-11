@@ -23,7 +23,7 @@ pub fn child_types(ty: &str) -> &'static [&'static str] {
 
 /// The elements a parent gives: its grants, the package of its starting-equipment choice, and the elements a choice
 /// of one of its child types offers by id (a background's variants: `ID_A|ID_B`).
-fn granted_ids(parent: &Element) -> impl Iterator<Item = &str> {
+pub(crate) fn granted_ids(parent: &Element) -> impl Iterator<Item = &str> {
     let types = child_types(&parent.ty);
     parent.rules.iter().flat_map(move |r| -> Vec<&str> {
         match r {

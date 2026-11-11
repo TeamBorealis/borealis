@@ -11,6 +11,7 @@ import { featPrerequisite } from "./homebrew-feat";
 import { refreshSubclass, subclassProblems } from "./homebrew-subclass";
 import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
 import { CORE_PICKER_ROWS } from "./homebrew-core-rows";
+import { MOCK_COPY_SOURCES } from "./homebrew-copies";
 import { MOCK_ITEM_KINDS } from "./homebrew-item-kinds";
 import { MOCK_KIND_DESCRIPTORS } from "./homebrew-kinds";
 import type { TrialDraft } from "./homebrew-trial";
@@ -77,6 +78,8 @@ export class MockHomebrew {
   /** Drafts that received an edit: only those are "unsaved changes" (spec 10.1: a draft is written by every update). */
   private touched = new Set<string>();
   private nextDraft = 1;
+  /** A deep class copy's subclasses, saved with it (spec 11). */
+  private companions = new Map<string, HomebrewForm[]>();
 
   constructor(private putPack: (pack: ContentPack) => ContentPack) {}
 
@@ -112,9 +115,10 @@ export class MockHomebrew {
     return [...own.elements.values()].map(({ summary }) => ({ ...summary, hasDraft: drafted.has(summary.id) }));
   }
 
-  newDraft(packId: string, kindId: HomebrewKindId, copyFrom?: string, parentId?: string): HomebrewDraftView {
+  newDraft(packId: string, kindId: HomebrewKindId, copyFrom?: string, parentId?: string, deepCopy?: boolean, loaded?: { name: string; type: ElementType }): HomebrewDraftView {
     const own = this.own(packId);
-    if (copyFrom) throw notImplemented("homebrew_new_draft (copy)");
+    if (copyFrom && !parentId) return this.copy(own, copyFrom, deepCopy === true, loaded);
+    if (copyFrom) throw notImplemented("homebrew_new_draft (copy into a parent)");
     const k = KINDS.find((x) => x.id === kindId);
     if (!k) throw apiError("invalid_argument", `Unknown kind ${kindId}.`);
     if (parentId) return this.newChild(packId, k, parentId);
@@ -124,6 +128,31 @@ export class MockHomebrew {
     const blank = { ...newForm(k, "e"), key: undefined };
     const form = k.id === "class" ? newClassForm(KINDS, edition) : k.id === "background" || k.id === "creature" ? { ...blank, fields: { ...blank.fields, edition } } : blank;
     return this.store(packId, null, form);
+  }
+
+  /** A copy (spec 11, WB-22): the real backend's copy of an SRD source (`homebrew-copies.ts`), an own element's form, or
+   * for other sample content a blank form of its kind named "<Name> (copy)". A deep class copy saves its subclasses too. */
+  private copy(own: OwnPack, id: string, deep: boolean, loaded?: { name: string; type: ElementType }): HomebrewDraftView {
+    const source = MOCK_COPY_SOURCES.find((c) => c.row.id === id);
+    const saved = [...this.packs.values()].map((p) => p.elements.get(id)).find((e) => e !== undefined);
+    let form: HomebrewForm;
+    let companions: HomebrewForm[] = [];
+    if (source) {
+      const chosen = deep && source.deep ? source.deep : { form: source.form, companions: [] };
+      form = withSource(chosen.form, own.pack.name);
+      companions = chosen.companions.map((c) => withSource(c, own.pack.name));
+    } else if (saved) {
+      form = { ...saved.form, fields: { ...saved.form.fields, name: `${String(saved.form.fields.name)} (copy)` } };
+    } else if (loaded) {
+      const k = KINDS.find((x) => PREVIEW_TYPES[x.id] === loaded.type) ?? KINDS.find((x) => x.id === "other")!;
+      const blank = newForm(k, "e");
+      form = { ...blank, fields: { ...blank.fields, name: `${loaded.name} (copy)`, source: own.pack.name } };
+    } else {
+      throw apiError("not_found", "That element isn't loaded any more.");
+    }
+    const view = this.store(own.pack.id, null, form);
+    if (companions.length) this.companions.set(view.draftId, companions);
+    return view;
   }
 
   /** `homebrew_new_draft {parentId}` (WB-16): a child inside its parent's draft (or a saved element's), given by the
@@ -171,15 +200,25 @@ export class MockHomebrew {
     const id = draft.elementId ?? this.freeId(own, `ID_${own.code}_${TYPE_TOKENS[type] ?? slug(type)}_${slug(name)}`);
     const summary: HomebrewElementSummary = { id, name, kind: k.id, elementType: type, parentId: null, edition: null, problems: { errors: 0, warnings: 0 }, hasDraft: false };
     const elements = new Map(own.elements).set(id, { summary, form: draft.form });
+    const savedWith = (this.companions.get(draftId) ?? []).map((c) => {
+      const ck = KINDS.find((x) => x.id === c.kind)!;
+      const ctype = ck.elementTypes[0] ?? ck.label;
+      const cname = String(c.fields.name ?? "").trim();
+      const cid = this.freeId({ ...own, elements }, `ID_${own.code}_${TYPE_TOKENS[ctype] ?? slug(ctype)}_${slug(cname)}`);
+      elements.set(cid, { summary: { ...summary, id: cid, name: cname, kind: ck.id, elementType: ctype }, form: c });
+      return cid;
+    });
+    this.companions.delete(draftId);
     const pack = { ...own.pack, elementCount: elements.size, version: bumpPatch(own.pack.version) };
     this.packs.set(own.pack.id, { ...own, pack, elements });
     this.drafts.delete(draftId);
     this.touched.delete(draftId);
-    return { pack: this.putPack(pack), elementIds: [id] };
+    return { pack: this.putPack(pack), elementIds: [id, ...savedWith] };
   }
 
   discardDraft(draftId: string): void {
     this.draft(draftId);
+    this.companions.delete(draftId);
     this.drafts.delete(draftId);
     this.touched.delete(draftId);
   }
@@ -205,7 +244,10 @@ export class MockHomebrew {
 
   /** Picker rows of every own pack's saved elements, and of the open drafts of `draftId`'s pack (spec 5.1: "plus the current
    * pack's unsaved drafts"). */
-  pickerRows(draftId?: string): HomebrewPickerRow[] {
+  pickerRows(draftId?: string, copying?: "srd" | "any"): HomebrewPickerRow[] {
+    // the SRD copy sources are offered by the copy pickers only (the other pickers keep the sample content's rows)
+    const srd = copying ? MOCK_COPY_SOURCES.map((c) => c.row) : [];
+    if (copying === "srd") return srd;
     const draftPack = draftId ? this.drafts.get(draftId)?.packId : undefined;
     const saved = [...this.packs.values()].flatMap((own) => [...own.elements.values()].map(({ summary, form }): HomebrewPickerRow => ({
       id: summary.id, name: summary.name, type: summary.elementType, summary: String(form.fields.summary ?? ""), prerequisites: featPrerequisite(form),
@@ -213,7 +255,7 @@ export class MockHomebrew {
     })));
     const drafts = [...this.drafts.values()].filter((d) => d.packId === draftPack && d.elementId === null && d.draftId !== draftId && String(d.form.fields.name ?? "").trim())
       .map((d): HomebrewPickerRow => ({ id: `draft:${d.draftId}`, name: String(d.form.fields.name).trim(), type: KINDS.find((k) => k.id === d.form.kind)?.elementTypes[0] ?? "", summary: "", prerequisites: null, sourceName: this.packs.get(d.packId)?.pack.name ?? "", edition: null, draft: true }));
-    return [...saved, ...drafts, ...CORE_PICKER_ROWS];
+    return [...saved, ...drafts, ...srd, ...CORE_PICKER_ROWS];
   }
 
   /** The generic form's word lists (WB-19): the open types (the Type combo's own and the saved elements'), or the setter
@@ -297,6 +339,12 @@ export class MockHomebrew {
   }
 }
 
+
+/** The form and its children name the pack's book as their source (the backend's `with_source`). */
+function withSource(form: HomebrewForm, source: string): HomebrewForm {
+  const fields = "source" in form.fields ? { ...form.fields, source } : form.fields;
+  return { ...form, fields, children: form.children.map((c) => withSource(c, source)) };
+}
 
 /** A spell form's level ("0"-"9", as the level combo stores it). */
 function spellLevel(form: HomebrewForm): number | undefined {

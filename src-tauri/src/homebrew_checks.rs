@@ -17,7 +17,9 @@ use crate::state::{AppState, ContentHub};
 use borealis_authoring::check::{
     deep_problems, live_problems, DeepInput, LiveInput, PackElement, Problem,
 };
-use borealis_authoring::form::{assign_ids, CatalogBlockCodec, FormContext, FormState};
+use borealis_authoring::form::{
+    assign_ids, edition_problems, CatalogBlockCodec, FormContext, FormState,
+};
 use borealis_authoring::pack::{pack_edition, without_elements, SOURCE_TYPE};
 use borealis_content::{ParsedPack, Ruleset};
 use std::collections::HashSet;
@@ -58,14 +60,20 @@ impl AppState {
                 ty: e.ty.clone(),
             })
             .collect();
-        live_problems(&LiveInput {
+        let mut out = live_problems(&LiveInput {
             form,
             cx,
             store: &hub.store,
             file: &format!("{}/{}", pack.id(), pack.disk.content_path),
             hidden: &hidden,
             pack: &siblings,
-        })
+        });
+        // a class keeps its edition; other content of the other edition is adapted (spec 11)
+        out.extend(edition_problems(
+            form,
+            pack_edition(&pack.disk.manifest, &pack.disk.content),
+        ));
+        out
     }
 
     /// The engine checks of a draft (spec 8.1 steps 6-7): a test character takes it, classes and subclasses are

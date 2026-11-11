@@ -11,7 +11,7 @@ import { Editor, editionOf, editorTabs } from "./Editor";
 import { Categories, ElementList, KindChips } from "./ElementList";
 import { useCreatorKeys } from "./keymap";
 import { ADD_BLOCK_EVENT } from "./blocks/BlockList";
-import { NewElementFlyout, creatableKinds } from "./NewElementFlyout";
+import { type CopyChoice, NewElementFlyout, creatableKinds } from "./NewElementFlyout";
 import { rememberPack } from "./packs";
 import { countProblems, fieldDomId, fieldKeyOf, problemsLine, tabOf } from "./problems";
 import { useDraft } from "./useDraft";
@@ -129,13 +129,24 @@ export function PackWorkspace() {
     } catch (e) { toast.push(errorMessage(e), "error"); }
   };
 
-  const createElement = async (kindId: string, name: string) => {
-    const fresh = await api.homebrewNewDraft({ packId, kind: kindId });
+  /** A new element (spec 10.1), or a copy (spec 11): a copy is named "<Name> (copy)", selected for renaming. */
+  const createElement = async (kindId: string, name: string, copy?: CopyChoice) => {
+    const fresh = await api.homebrewNewDraft({ packId, kind: kindId, ...(copy ? { copyFrom: copy.copyFrom, deepCopy: copy.deepCopy } : {}) });
     const view = name ? await api.homebrewUpdateDraft({ draftId: fresh.draftId, form: { ...fresh.form, fields: { ...fresh.form.fields, name } } }) : fresh;
     setNewOpen(false);
     await show(view);
-    if (!name) setTimeout(() => focusField("name"), 0);
+    if (!name) setTimeout(() => focusField("name", !!copy), 0);
   };
+
+  // "Copy to homebrew" (Compendium, builder) lands here with ?draft=<id>: the copy opens, its name selected for renaming.
+  useEffect(() => {
+    const draftId = params.get("draft");
+    if (!draftId) return;
+    setParams({}, { replace: true });
+    void api.homebrewOpenDraft({ packId, draftId })
+      .then(async (view) => { await show(view); setTimeout(() => focusField("name", true), 0); })
+      .catch((e) => toast.push(errorMessage(e), "error"));
+  }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const newOfKind = () => { if (listKind) void createElement(listKind.id, "").catch((e) => toast.push(errorMessage(e), "error")); };
 

@@ -27,11 +27,22 @@ pub fn element_group_to_form(
     children: &[&Element],
     cx: &FormContext<'_>,
 ) -> FormState {
-    let mut form = element_to_form(parent, cx);
+    element_group_keyed(parent, children, "e", cx)
+}
+
+/// [`element_group_to_form`] with the parent's form key `key` (children `<key>/<i>`): a copy's extra forms (spec 11)
+/// need keys of their own.
+pub(crate) fn element_group_keyed(
+    parent: &Element,
+    children: &[&Element],
+    key: &str,
+    cx: &FormContext<'_>,
+) -> FormState {
+    let mut form = read_one(parent, key.to_string(), cx);
     form.children = children
         .iter()
         .enumerate()
-        .map(|(i, c)| read_one(c, format!("e/{i}"), cx))
+        .map(|(i, c)| read_one(c, format!("{key}/{i}"), cx))
         .collect();
     child_refs::link(&mut form);
     codec::caster_cx::follow_parent(&mut form);

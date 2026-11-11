@@ -721,6 +721,8 @@ export interface HomebrewPickerFilters {
   spellLevels?: number[];
   ritual?: boolean;
   concentration?: boolean;
+  /** Bundled SRD elements only: "Start from a template" (spec 11, CS1). */
+  srdOnly?: boolean;
 }
 
 /** Paging of a picker query. */

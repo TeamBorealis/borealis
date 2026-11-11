@@ -210,6 +210,12 @@ fn row(store: &ContentStore, c: &Candidate<'_>) -> HomebrewPickerRow {
     }
 }
 
+/// The file belongs to a bundled pack (`<pack>/<path>`).
+fn is_bundled(file: &str) -> bool {
+    let pack = file.split('/').next().unwrap_or_default();
+    crate::state::BUNDLED_PACKS.contains(&pack)
+}
+
 impl AppState {
     /// Picker rows (spec 5.1): loaded elements, and with `draft_id` the unsaved new elements of that draft's pack
     /// (with the id they would get if saved now), each once, sorted by name.
@@ -264,9 +270,12 @@ impl AppState {
                 .collect();
             return Ok(word_rows(names, SETTER_NAME_PICKER, &query, page));
         }
+        // "Start from a template" (spec 11, CS1): the bundled SRD elements only, never imported or own ones
+        let srd_only = filters.srd_only == Some(true);
         let mut seen: HashSet<&str> = HashSet::new();
         let mut found: Vec<Candidate<'_>> = drafted
             .iter()
+            .filter(|_| !srd_only)
             .filter(|e| passes(e, target, &query, filters))
             .filter(|e| seen.insert(e.id.as_str()))
             .map(|element| Candidate {
@@ -277,6 +286,7 @@ impl AppState {
         found.extend(
             hub.store
                 .iter()
+                .filter(|s| !srd_only || is_bundled(&s.file))
                 .map(|s| &s.element)
                 .filter(|e| passes(e, target, &query, filters))
                 .filter(|e| seen.insert(e.id.as_str()))

@@ -312,6 +312,8 @@ pub struct HomebrewPickerFilters {
     pub spell_levels: Option<Vec<u32>>,
     pub ritual: Option<bool>,
     pub concentration: Option<bool>,
+    /// Bundled (SRD) elements only: "Start from a template" (spec 11, CS1).
+    pub srd_only: Option<bool>,
 }
 
 /// Paging of a picker query.

@@ -22,6 +22,7 @@ pub mod block;
 mod block_codec;
 mod child_refs;
 mod codec;
+mod copy;
 pub mod descriptor;
 mod item_codec;
 mod item_kinds;
@@ -47,6 +48,10 @@ pub use codec::{
     ChallengeValue, Characteristic, ChoiceRow, ClassField, CreatureField, FeatGrant, FeatureField,
     HitPointsValue, LevelCounts, ProficiencyGroup, SensesValue, SkillChoice, SmallField,
     SubclassField, TableColumn, WrittenList, FEAT_PARAMETER_PICKER,
+};
+pub use copy::{
+    copy_child, copy_element, edition_problems, repoint, write_copy, Copy, CopyExtras, CopyLink,
+    CopyTag, Written,
 };
 pub use descriptor::descriptors;
 pub use kinds::{

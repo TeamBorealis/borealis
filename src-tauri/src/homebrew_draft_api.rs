@@ -19,13 +19,13 @@ use crate::ids::rfc3339;
 use crate::state::{AppState, ContentHub, BUNDLED_PACKS};
 use borealis_authoring::check::{issue_problems, Problem};
 use borealis_authoring::form::{
-    add_child, assign_ids, element_group_to_form, element_to_form, kind, merge_ui,
+    add_child, assign_ids, copy_child, copy_element, element_group_to_form, kind, merge_ui,
     new_background_form, new_child_key, new_class_form, new_creature_form, refresh_blocks, to_ui,
-    CatalogBlockCodec, FormContext, FormState, WithElements, BACKGROUND_KIND, CLASS_KIND,
-    CREATURE_KIND, SUBCLASS_KIND,
+    write_copy, CatalogBlockCodec, Copy, CopyExtras, FormContext, FormState, WithElements,
+    BACKGROUND_KIND, CLASS_KIND, CREATURE_KIND, SUBCLASS_KIND,
 };
 use borealis_authoring::pack::{
-    bump_patch, child_types, digest, granted_children, pack_edition, source_name, with_elements,
+    bump_patch, digest, granted_children, pack_edition, source_name, with_elements,
     without_elements, CopiedFrom, CreatorElement, SOURCE_TYPE,
 };
 use borealis_content::{Element, Ruleset};
@@ -63,23 +63,20 @@ pub(crate) fn saved_ids(draft: &DraftFile) -> HashSet<&str> {
         .collect()
 }
 
-/// A copy of `form` with no ids (a new element), named "<name> (copy)". A copied class gets its own multiclass id
-/// on its first save too (spec 5.3: the original's would collide with it).
-fn as_copy(form: &FormState) -> FormState {
-    let mut copy = form.clone();
-    copy.memo.id = None;
-    copy.memo.multiclass_id = None;
-    copy.children.clear();
-    let name = form
-        .fields
-        .get("name")
-        .and_then(Value::as_str)
+/// Where the loaded element `id` came from: its pack, and whether that is bundled SRD content (spec 11, CS1).
+fn origin(hub: &ContentHub, id: &str) -> Option<CopiedFrom> {
+    let stored = hub.store.get(id)?;
+    let pack_id = stored
+        .file
+        .split('/')
+        .next()
         .unwrap_or_default()
-        .trim()
         .to_string();
-    copy.fields
-        .insert("name".into(), json!(format!("{name} (copy)")));
-    copy
+    Some(CopiedFrom {
+        id: id.to_string(),
+        srd: BUNDLED_PACKS.contains(&pack_id.as_str()),
+        pack_id,
+    })
 }
 
 impl AppState {
@@ -143,6 +140,7 @@ impl AppState {
         pack: &CreatorPack,
         form: FormState,
         copied_from: Option<CopiedFrom>,
+        copy: CopyExtras,
     ) -> DraftFile {
         DraftFile {
             format: HB_DRAFT_FORMAT.into(),
@@ -155,17 +153,19 @@ impl AppState {
             base_digest: String::new(),
             updated_at: now(),
             copied_from,
+            copy,
         }
     }
 
-    /// A new element (spec 10.1): blank, or a copy of any loaded element (spec 11; the copy keeps the rules, tags and
-    /// description, gets "<Name> (copy)" and a new id on its first save; where it came from goes to `creator.json`).
-    /// Nothing is written until the first edit.
+    /// A new element (spec 10.1): blank, or a copy of any loaded element (spec 11; the copy keeps the rules, tags,
+    /// description and edition, gets "<Name> (copy)" and a new id on its first save; where it and every element copied
+    /// with it came from goes to `creator.json`). Nothing is written until the first edit.
     ///
     /// # Errors
     /// As `hb_pack`; `invalid_argument` for an unknown kind or a copy of a book element; `not_found` for an unknown
-    /// copy; `requirement_failed` (not implemented) for a deep copy of an element with features (WB-22). With
-    /// `parent_id` (a draft of the pack, or a saved element of it) it makes a child: [`Self::hb_new_child`].
+    /// copy. With `parent_id` (a draft of the pack, or a saved element of it) it makes a child:
+    /// [`Self::hb_new_child`]. With `copy_from`, `kind_id` is not read (the copy opens in its element's form) and
+    /// `deep_copy` copies its features, traits and subclasses too ([`copy_element`]).
     pub fn homebrew_new_draft(
         &self,
         pack_id: &str,
@@ -180,40 +180,30 @@ impl AppState {
         let pack = self.hb_pack(pack_id)?;
         let hub = self.hub()?;
         let source = source_name(&pack.disk.manifest, &pack.disk.content);
-        let (form, copied_from) = match copy_from {
+        let (form, copied_from, extras) = match copy_from {
             Some(id) => {
-                let stored = hub
+                let el = &hub
                     .store
                     .get(id)
-                    .ok_or_else(|| ApiError::not_found("That element isn't loaded any more."))?;
-                let el = &stored.element;
+                    .ok_or_else(|| ApiError::not_found("That element isn't loaded any more."))?
+                    .element;
                 if el.ty == SOURCE_TYPE {
                     return Err(ApiError::invalid("A book element can't be copied."));
                 }
-                if deep_copy == Some(true) && has_loaded_children(el, &hub) {
-                    return Err(crate::homebrew_creator::not_implemented(
-                        "homebrew_new_draft (deepCopy)",
-                    ));
-                }
                 let codec = CatalogBlockCodec;
                 let cx = Self::hb_context(&hub, &codec);
-                let mut form = as_copy(&element_to_form(el, &cx));
-                form.fields.insert("source".into(), json!(source));
-                let from_pack = stored
-                    .file
-                    .split('/')
-                    .next()
-                    .unwrap_or_default()
-                    .to_string();
-                let srd = BUNDLED_PACKS.contains(&from_pack.as_str());
-                (
-                    form,
-                    Some(CopiedFrom {
-                        id: el.id.clone(),
-                        pack_id: from_pack,
-                        srd,
-                    }),
-                )
+                let Copy {
+                    mut form,
+                    mut extras,
+                } = copy_element(el, &cx, deep_copy == Some(true));
+                with_source(&mut form, &source);
+                for c in &mut extras.companions {
+                    with_source(c, &source);
+                }
+                for l in &mut extras.links {
+                    l.from = origin(&hub, &l.original);
+                }
+                (form, origin(&hub, &el.id), extras)
             }
             None => {
                 let k = kind(kind_id).ok_or_else(|| {
@@ -233,10 +223,10 @@ impl AppState {
                     _ => k.new_form("e"),
                 };
                 with_source(&mut form, &source);
-                (form, None)
+                (form, None, CopyExtras::default())
             }
         };
-        let draft = Self::hb_new_draft_file(&pack, form, copied_from);
+        let draft = Self::hb_new_draft_file(&pack, form, copied_from, extras);
         self.hb_drafts.hold(draft.clone())?;
         self.hb_view(&draft, &pack)
     }
@@ -294,6 +284,7 @@ impl AppState {
             base_digest: digest(&base),
             updated_at: now(),
             copied_from: None,
+            copy: CopyExtras::default(),
         };
         self.hb_drafts.hold(draft.clone())?;
         self.hb_view(&draft, &pack)
@@ -382,7 +373,8 @@ impl AppState {
         if !errors.is_empty() {
             return Err(refuse(errors));
         }
-        let elements = borealis_authoring::form::form_to_elements(&form, &cx).map_err(|ps| {
+        // the form's elements and, for a copy, the elements saved with it, every copied original re-pointed (spec 11)
+        let written = write_copy(&form, &draft.copy, &cx, &mut ids).map_err(|ps| {
             refuse(
                 ps.into_iter()
                     .map(|p| HomebrewProblem {
@@ -395,6 +387,7 @@ impl AppState {
                     .collect(),
             )
         })?;
+        let elements: Vec<Element> = written.iter().map(|w| w.element.clone()).collect();
         let saved: Vec<String> = elements.iter().map(|e| e.id.clone()).collect();
         let dropped: HashSet<&str> = draft
             .base_ids
@@ -405,16 +398,19 @@ impl AppState {
         let (content, trashed) = without_elements(&pack.disk.content, &dropped);
         let at = now();
         let mut creator = pack.creator.with_retired(dropped.iter().copied());
-        for (f, e) in form.flatten().into_iter().zip(&elements) {
-            let copied = (f.key == form.key)
-                .then(|| draft.copied_from.clone())
-                .flatten();
+        for w in &written {
+            let copied = match draft.copy.link(&w.key) {
+                Some(l) => l.from.clone(),
+                None => (w.key == form.key)
+                    .then(|| draft.copied_from.clone())
+                    .flatten(),
+            };
             let non_srd_text =
-                copied.as_ref().is_some_and(|c| !c.srd) && !e.description.trim().is_empty();
+                copied.as_ref().is_some_and(|c| !c.srd) && !w.element.description.trim().is_empty();
             creator = creator.with_saved(
-                &e.id,
+                &w.element.id,
                 CreatorElement {
-                    kind: f.kind.clone(),
+                    kind: w.kind.clone(),
                     created_at: at.clone(),
                     copied_from: copied,
                     non_srd_text,
@@ -433,12 +429,13 @@ impl AppState {
             Ok(()) => {}
             Err(CommitError::Api(e)) => return Err(e),
             Err(CommitError::Problems(issues)) => {
+                let own = form.flatten().len().min(elements.len());
                 return Err(refuse(
-                    issue_problems(&issues, &form, &elements, &cx)
+                    issue_problems(&issues, &form, &elements[..own], &cx)
                         .into_iter()
                         .map(|p| wire_problem(p, &saved_before))
                         .collect(),
-                ))
+                ));
             }
         }
         self.hb_drafts.remove(&self.paths.data, draft_id)?;
@@ -484,8 +481,8 @@ impl AppState {
     }
 
     /// Duplicate (spec 12.3): a new element in the same pack with the element's fields, rules and description,
-    /// "<Name> (copy)", and a new id on its first save. Its features are not copied: the copy grants the same ones
-    /// (a deep copy is WB-22).
+    /// "<Name> (copy)", and a new id on its first save. A class is copied deep (spec 11: its features, package and
+    /// subclasses); other elements grant the same children.
     ///
     /// # Errors
     /// As `hb_pack`; `not_found` for an element not in the pack.
@@ -504,8 +501,27 @@ impl AppState {
             .ok_or_else(|| ApiError::not_found("That element isn't in this pack any more."))?;
         let hub = self.hub()?;
         let codec = CatalogBlockCodec;
-        let cx = Self::hb_context(&hub, &codec);
-        let draft = Self::hb_new_draft_file(&pack, as_copy(&element_to_form(el, &cx)), None);
+        // the pack as it is on disk first (a turned-off pack is not loaded), then the loaded content
+        let lookup = WithElements {
+            base: &*hub.store,
+            extra: &pack.disk.content.elements,
+        };
+        let cx = FormContext {
+            lookup: &lookup,
+            ..Self::hb_context(&hub, &codec)
+        };
+        let Copy { form, mut extras } = copy_element(el, &cx, el.ty == "Class");
+        // a duplicate of text copied from elsewhere is that text too (CS1)
+        let from = |id: &str| {
+            pack.creator
+                .elements
+                .get(id)
+                .and_then(|c| c.copied_from.clone())
+        };
+        for l in &mut extras.links {
+            l.from = from(&l.original);
+        }
+        let draft = Self::hb_new_draft_file(&pack, form, from(&el.id), extras);
         self.hb_drafts.hold(draft.clone())?;
         self.hb_view(&draft, &pack)
     }
@@ -564,10 +580,7 @@ impl AppState {
                 }
                 let codec = CatalogBlockCodec;
                 let cx = Self::hb_context(&hub, &codec);
-                FormState {
-                    key: key.clone(),
-                    ..as_copy(&element_to_form(el, &cx))
-                }
+                copy_child(el, &key, &cx)
             }
             None => k.new_form(key),
         };
@@ -589,18 +602,6 @@ impl AppState {
         self.hb_drafts.put(&self.paths.data, next.clone())?;
         self.hb_view(&next, &pack)
     }
-}
-
-/// The element grants loaded elements of its child types (a class's features): a deep copy would copy them.
-fn has_loaded_children(el: &Element, hub: &ContentHub) -> bool {
-    let types = child_types(&el.ty);
-    el.rules.iter().any(|r| match r {
-        borealis_content::Rule::Grant(g) => hub
-            .store
-            .element(&g.id)
-            .is_some_and(|c| types.contains(&c.ty.as_str())),
-        _ => false,
-    })
 }
 
 /// Read-only fields (the Source label) keep the stored value whatever the UI sends.

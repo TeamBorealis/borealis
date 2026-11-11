@@ -10,7 +10,7 @@
 
 use crate::error::{ApiError, ApiResult};
 use crate::homebrew_files::write_atomic;
-use borealis_authoring::form::FormState;
+use borealis_authoring::form::{CopyExtras, FormState};
 use borealis_authoring::pack::CopiedFrom;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -49,6 +49,10 @@ pub struct DraftFile {
     /// A copy: where it came from (written to `creator.json` on save, spec 11).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub copied_from: Option<CopiedFrom>,
+    /// A copy: the elements saved with it, where each copied element came from, the choices offered by copied
+    /// options (spec 11).
+    #[serde(default, skip_serializing_if = "CopyExtras::is_empty")]
+    pub copy: CopyExtras,
 }
 
 #[derive(Debug, Clone)]
@@ -296,6 +300,7 @@ mod tests {
             base_digest: "x".into(),
             updated_at: at.into(),
             copied_from: None,
+            copy: CopyExtras::default(),
         }
     }
 

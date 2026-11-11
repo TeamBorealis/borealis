@@ -12,6 +12,8 @@ export const SHAPE_MESSAGE = "This value can't be read. Undo the last change or 
 const GATE: Record<string, HomebrewBlockField> = {
   level: { key: "level", label: "From level", tab: "rules", control: "number", required: false, bindings: ["level"] },
   requirements: { key: "requirements", label: "Only if", tab: "rules", control: "condition", required: false, bindings: ["requirements"] },
+  // "Also gained again at levels" (WB-16 `form::AGAIN_AT`): a class feature's block read from copies at other levels
+  againAt: { key: "againAt", label: "Also gained again at levels", tab: "rules", control: "numbers", required: false, bindings: [] },
 };
 
 type Obj = Record<string, unknown>;
@@ -94,7 +96,7 @@ function nestedProblems(b: unknown, f: HomebrewBlockField, path: string, catalog
 }
 
 function fieldsProblems(spec: HomebrewBlockSpec, fields: Obj, path: string, catalog: readonly HomebrewBlockSpec[]): string[] {
-  const gates = { ...(spec.levelGated ? { level: GATE.level! } : {}), ...(spec.onlyIf ? { requirements: GATE.requirements! } : {}) };
+  const gates = { ...(spec.levelGated ? { level: GATE.level!, againAt: GATE.againAt! } : {}), ...(spec.onlyIf ? { requirements: GATE.requirements! } : {}) };
   // A written list is a select of type List: its `type` is the creator's (always "List").
   return partsProblems(spec.fields, fields, path, catalog, gates);
 }
