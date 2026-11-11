@@ -75,8 +75,9 @@ describe("WB-26 aria-haspopup (iOS VoiceOver: a button with it is not a button)"
     // Act
     await user.click(within(editor()).getByRole("tab", { name: "LEVELS" }));
     const row = within(editor()).getByRole("button", { name: /^Level 4/ });
-    // Assert
+    // Assert: a plain button, its name and detail read as two phrases
     expect(row.hasAttribute("aria-haspopup")).toBe(false);
+    expect(row.getAttribute("aria-label")).toBe("Level 4, +2 · Ability Score Improvement");
     await user.click(row);
     expect(await screen.findByRole("dialog", { name: "Level 4" })).toBeTruthy();
   });

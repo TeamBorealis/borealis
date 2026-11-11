@@ -114,7 +114,9 @@ export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing
           <ul className="hb-level-rows" aria-label="Features by level">
             {LEVELS.map((level) => (
               <li key={level} data-level={level} className={marked.has(level) ? "hb-marked-level" : undefined}>
-                <button type="button" className="hb-level-row" onClick={() => setSheetLevel(level)}>
+                {/* the name and the detail line read as two phrases ("Level 4, +2 · Ability Score Improvement"): without
+                    the label, TalkBack and VoiceOver ran them together as "Level 4+2" (WB-26 device check) */}
+                <button type="button" className="hb-level-row" aria-label={`Level ${level}, ${levelDetail(level)}`} onClick={() => setSheetLevel(level)}>
                   <span className="hb-level-row-name">Level {level}</span>
                   <span className="hb-level-row-detail">{levelDetail(level)}</span>
                 </button>
