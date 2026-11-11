@@ -614,6 +614,10 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "label": "GENERAL"
       },
       {
+        "id": "spellcasting",
+        "label": "SPELLCASTING"
+      },
+      {
         "id": "rules",
         "label": "RULES"
       },
@@ -755,6 +759,384 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "help": "The choice that must differ each time, such as Spell List. Leave it empty when any choice may repeat.",
         "section": "Taking it again"
+      },
+      {
+        "key": "casts",
+        "label": "Gives spellcasting",
+        "tab": "spellcasting",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "spellcasting"
+        ],
+        "section": "Spellcasting",
+        "default": false
+      },
+      {
+        "key": "casterName",
+        "label": "Spellcasting name",
+        "tab": "spellcasting",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "spellcasting.name"
+        ],
+        "help": "The name its spells, slots and choices are counted under. Left empty: the class's name.",
+        "expert": true,
+        "section": "Spellcasting",
+        "default": ""
+      },
+      {
+        "key": "ability",
+        "label": "Spellcasting ability",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "Strength",
+            "label": "Strength"
+          },
+          {
+            "value": "Dexterity",
+            "label": "Dexterity"
+          },
+          {
+            "value": "Constitution",
+            "label": "Constitution"
+          },
+          {
+            "value": "Intelligence",
+            "label": "Intelligence"
+          },
+          {
+            "value": "Wisdom",
+            "label": "Wisdom"
+          },
+          {
+            "value": "Charisma",
+            "label": "Charisma"
+          }
+        ],
+        "bindings": [
+          "spellcasting.ability"
+        ],
+        "section": "Spellcasting",
+        "default": ""
+      },
+      {
+        "key": "preparation",
+        "label": "Spells",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "prepared",
+            "label": "Prepares spells from its whole list"
+          },
+          {
+            "value": "spellbook",
+            "label": "Prepares spells from a spellbook"
+          },
+          {
+            "value": "known",
+            "label": "Knows a number of spells"
+          }
+        ],
+        "bindings": [
+          "spellcasting.prepare",
+          "spellcasting.list.known"
+        ],
+        "section": "Spellcasting",
+        "default": "prepared"
+      },
+      {
+        "key": "spellList",
+        "label": "Spell list",
+        "tab": "spellcasting",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "spellcasting.list.supports"
+        ],
+        "help": "Spells on this list are its spells (a spell's Lists). Left empty: the class's name.",
+        "section": "Spellcasting",
+        "default": ""
+      },
+      {
+        "key": "swap",
+        "label": "Swap one spell per level",
+        "tab": "spellcasting",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "spellcasting.allow_replace"
+        ],
+        "help": "On gaining a level, one spell it knows can be replaced with another.",
+        "section": "Spellcasting",
+        "default": false
+      },
+      {
+        "key": "casterType",
+        "label": "Caster type",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "No spell slots"
+          },
+          {
+            "value": "full",
+            "label": "Full caster"
+          },
+          {
+            "value": "halfUp",
+            "label": "Half caster (round up)"
+          },
+          {
+            "value": "halfDown",
+            "label": "Half caster (round down)"
+          },
+          {
+            "value": "third",
+            "label": "Third caster"
+          },
+          {
+            "value": "pact",
+            "label": "Pact magic"
+          },
+          {
+            "value": "custom",
+            "label": "Custom table"
+          }
+        ],
+        "bindings": [
+          "rules:stat <name>:spellcasting:slots:N",
+          "rules:pact_magic"
+        ],
+        "section": "Spell slots",
+        "default": ""
+      },
+      {
+        "key": "slotTable",
+        "label": "Spell slots by level",
+        "tab": "spellcasting",
+        "control": "slotTable",
+        "required": false,
+        "bindings": [
+          "rules:stat <name>:spellcasting:slots:N"
+        ],
+        "section": "Spell slots",
+        "default": []
+      },
+      {
+        "key": "multiclassSlots",
+        "label": "Counts for multiclass spell slots as",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "auto",
+            "label": "As its caster type"
+          },
+          {
+            "value": "full",
+            "label": "Full caster"
+          },
+          {
+            "value": "halfUp",
+            "label": "Half caster (round up)"
+          },
+          {
+            "value": "half",
+            "label": "Half caster (round down)"
+          },
+          {
+            "value": "thirdUp",
+            "label": "Third caster (round up)"
+          },
+          {
+            "value": "third",
+            "label": "Third caster (round down)"
+          },
+          {
+            "value": "fourthUp",
+            "label": "Quarter caster (round up)"
+          },
+          {
+            "value": "fourth",
+            "label": "Quarter caster (round down)"
+          },
+          {
+            "value": "fifth",
+            "label": "Fifth caster"
+          },
+          {
+            "value": "solo",
+            "label": "Its own slots, not pooled"
+          },
+          {
+            "value": "none",
+            "label": "Not at all"
+          }
+        ],
+        "bindings": [
+          "rules:grant ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_*"
+        ],
+        "section": "Spell slots",
+        "default": "auto"
+      },
+      {
+        "key": "prepared",
+        "label": "Prepared spells",
+        "tab": "spellcasting",
+        "control": "levelCounts",
+        "required": false,
+        "bindings": [
+          "rules:stat <name>:spellcasting:prepare"
+        ],
+        "section": "Spells by level",
+        "default": []
+      },
+      {
+        "key": "prepareFormula",
+        "label": "Prepared spells",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "level",
+            "label": "Ability modifier + class level"
+          },
+          {
+            "value": "half",
+            "label": "Ability modifier + half the class level"
+          },
+          {
+            "value": "",
+            "label": "By the table below"
+          }
+        ],
+        "bindings": [
+          "rules:stat <name>:spellcasting:prepare"
+        ],
+        "section": "Spells by level",
+        "default": "",
+        "editions": [
+          "dnd2014"
+        ]
+      },
+      {
+        "key": "cantrips",
+        "label": "Cantrips known",
+        "tab": "spellcasting",
+        "control": "levelCounts",
+        "required": false,
+        "bindings": [
+          "rules:select Cantrip (<Name>)",
+          "rules:stat <name>:spellcasting:cantrips known"
+        ],
+        "section": "Spells by level",
+        "default": {
+          "levels": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "statistic": false
+        }
+      },
+      {
+        "key": "known",
+        "label": "Spells known",
+        "tab": "spellcasting",
+        "control": "levelCounts",
+        "required": false,
+        "bindings": [
+          "rules:select Spell (<Name>)",
+          "rules:stat <name>:spellcasting:spells known"
+        ],
+        "section": "Spells by level",
+        "default": {
+          "levels": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "statistic": true
+        }
+      },
+      {
+        "key": "preparedChange",
+        "label": "Changing prepared spells",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "Not stated"
+          },
+          {
+            "value": "longRestAny",
+            "label": "After a long rest, any of them"
+          },
+          {
+            "value": "longRestOne",
+            "label": "After a long rest, one of them"
+          },
+          {
+            "value": "levelOne",
+            "label": "On gaining a level, one of them"
+          }
+        ],
+        "bindings": [
+          "rules:prepared_spell_change"
+        ],
+        "section": "Spells by level",
+        "default": "",
+        "editions": [
+          "dnd2024"
+        ]
       },
       {
         "key": "tags",
@@ -1579,6 +1961,10 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "label": "GENERAL"
       },
       {
+        "id": "spellcasting",
+        "label": "SPELLCASTING"
+      },
+      {
         "id": "rules",
         "label": "RULES"
       },
@@ -1677,6 +2063,384 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "section": "Made by the class",
         "default": false,
+        "editions": [
+          "dnd2024"
+        ]
+      },
+      {
+        "key": "casts",
+        "label": "Gives spellcasting",
+        "tab": "spellcasting",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "spellcasting"
+        ],
+        "section": "Spellcasting",
+        "default": false
+      },
+      {
+        "key": "casterName",
+        "label": "Spellcasting name",
+        "tab": "spellcasting",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "spellcasting.name"
+        ],
+        "help": "The name its spells, slots and choices are counted under. Left empty: the class's name.",
+        "expert": true,
+        "section": "Spellcasting",
+        "default": ""
+      },
+      {
+        "key": "ability",
+        "label": "Spellcasting ability",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "Strength",
+            "label": "Strength"
+          },
+          {
+            "value": "Dexterity",
+            "label": "Dexterity"
+          },
+          {
+            "value": "Constitution",
+            "label": "Constitution"
+          },
+          {
+            "value": "Intelligence",
+            "label": "Intelligence"
+          },
+          {
+            "value": "Wisdom",
+            "label": "Wisdom"
+          },
+          {
+            "value": "Charisma",
+            "label": "Charisma"
+          }
+        ],
+        "bindings": [
+          "spellcasting.ability"
+        ],
+        "section": "Spellcasting",
+        "default": ""
+      },
+      {
+        "key": "preparation",
+        "label": "Spells",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "prepared",
+            "label": "Prepares spells from its whole list"
+          },
+          {
+            "value": "spellbook",
+            "label": "Prepares spells from a spellbook"
+          },
+          {
+            "value": "known",
+            "label": "Knows a number of spells"
+          }
+        ],
+        "bindings": [
+          "spellcasting.prepare",
+          "spellcasting.list.known"
+        ],
+        "section": "Spellcasting",
+        "default": "prepared"
+      },
+      {
+        "key": "spellList",
+        "label": "Spell list",
+        "tab": "spellcasting",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "spellcasting.list.supports"
+        ],
+        "help": "Spells on this list are its spells (a spell's Lists). Left empty: the class's name.",
+        "section": "Spellcasting",
+        "default": ""
+      },
+      {
+        "key": "swap",
+        "label": "Swap one spell per level",
+        "tab": "spellcasting",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "spellcasting.allow_replace"
+        ],
+        "help": "On gaining a level, one spell it knows can be replaced with another.",
+        "section": "Spellcasting",
+        "default": false
+      },
+      {
+        "key": "casterType",
+        "label": "Caster type",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "No spell slots"
+          },
+          {
+            "value": "full",
+            "label": "Full caster"
+          },
+          {
+            "value": "halfUp",
+            "label": "Half caster (round up)"
+          },
+          {
+            "value": "halfDown",
+            "label": "Half caster (round down)"
+          },
+          {
+            "value": "third",
+            "label": "Third caster"
+          },
+          {
+            "value": "pact",
+            "label": "Pact magic"
+          },
+          {
+            "value": "custom",
+            "label": "Custom table"
+          }
+        ],
+        "bindings": [
+          "rules:stat <name>:spellcasting:slots:N",
+          "rules:pact_magic"
+        ],
+        "section": "Spell slots",
+        "default": ""
+      },
+      {
+        "key": "slotTable",
+        "label": "Spell slots by level",
+        "tab": "spellcasting",
+        "control": "slotTable",
+        "required": false,
+        "bindings": [
+          "rules:stat <name>:spellcasting:slots:N"
+        ],
+        "section": "Spell slots",
+        "default": []
+      },
+      {
+        "key": "multiclassSlots",
+        "label": "Counts for multiclass spell slots as",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "auto",
+            "label": "As its caster type"
+          },
+          {
+            "value": "full",
+            "label": "Full caster"
+          },
+          {
+            "value": "halfUp",
+            "label": "Half caster (round up)"
+          },
+          {
+            "value": "half",
+            "label": "Half caster (round down)"
+          },
+          {
+            "value": "thirdUp",
+            "label": "Third caster (round up)"
+          },
+          {
+            "value": "third",
+            "label": "Third caster (round down)"
+          },
+          {
+            "value": "fourthUp",
+            "label": "Quarter caster (round up)"
+          },
+          {
+            "value": "fourth",
+            "label": "Quarter caster (round down)"
+          },
+          {
+            "value": "fifth",
+            "label": "Fifth caster"
+          },
+          {
+            "value": "solo",
+            "label": "Its own slots, not pooled"
+          },
+          {
+            "value": "none",
+            "label": "Not at all"
+          }
+        ],
+        "bindings": [
+          "rules:grant ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_*"
+        ],
+        "section": "Spell slots",
+        "default": "auto"
+      },
+      {
+        "key": "prepared",
+        "label": "Prepared spells",
+        "tab": "spellcasting",
+        "control": "levelCounts",
+        "required": false,
+        "bindings": [
+          "rules:stat <name>:spellcasting:prepare"
+        ],
+        "section": "Spells by level",
+        "default": []
+      },
+      {
+        "key": "prepareFormula",
+        "label": "Prepared spells",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "level",
+            "label": "Ability modifier + class level"
+          },
+          {
+            "value": "half",
+            "label": "Ability modifier + half the class level"
+          },
+          {
+            "value": "",
+            "label": "By the table below"
+          }
+        ],
+        "bindings": [
+          "rules:stat <name>:spellcasting:prepare"
+        ],
+        "section": "Spells by level",
+        "default": "",
+        "editions": [
+          "dnd2014"
+        ]
+      },
+      {
+        "key": "cantrips",
+        "label": "Cantrips known",
+        "tab": "spellcasting",
+        "control": "levelCounts",
+        "required": false,
+        "bindings": [
+          "rules:select Cantrip (<Name>)",
+          "rules:stat <name>:spellcasting:cantrips known"
+        ],
+        "section": "Spells by level",
+        "default": {
+          "levels": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "statistic": false
+        }
+      },
+      {
+        "key": "known",
+        "label": "Spells known",
+        "tab": "spellcasting",
+        "control": "levelCounts",
+        "required": false,
+        "bindings": [
+          "rules:select Spell (<Name>)",
+          "rules:stat <name>:spellcasting:spells known"
+        ],
+        "section": "Spells by level",
+        "default": {
+          "levels": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "statistic": true
+        }
+      },
+      {
+        "key": "preparedChange",
+        "label": "Changing prepared spells",
+        "tab": "spellcasting",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "Not stated"
+          },
+          {
+            "value": "longRestAny",
+            "label": "After a long rest, any of them"
+          },
+          {
+            "value": "longRestOne",
+            "label": "After a long rest, one of them"
+          },
+          {
+            "value": "levelOne",
+            "label": "On gaining a level, one of them"
+          }
+        ],
+        "bindings": [
+          "rules:prepared_spell_change"
+        ],
+        "section": "Spells by level",
+        "default": "",
         "editions": [
           "dnd2024"
         ]

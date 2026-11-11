@@ -115,10 +115,11 @@ pub(super) fn feat_kind() -> KindDef {
         element_types: &["Feat"],
         parent_kinds: &[],
         editions: BOTH,
-        tabs: TABS,
+        tabs: super::CASTER_TABS,
         fields: head()
             .into_iter()
             .chain(own_fields())
+            .chain(super::caster::caster_fields())
             .chain(shared)
             .chain([sub_features()])
             .collect(),

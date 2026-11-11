@@ -604,6 +604,19 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   feature's `data.class`/`data.level` follow the class. A class feature's block holds `fields.againAt` (levels): the
   block is written again at those levels ("also gained again at levels"; the base level in its name and supports is
   renumbered). `HomebrewFieldSpec.editions` limits a field to editions.
+- **Spellcasting section (WB-17).** Kinds `classFeature` and `feat` have a SPELLCASTING tab (spec 4.6) with the fields
+  `casts` (the `spellcasting` node on/off), `casterName` (expert; empty = the class's name: a class's feature follows its
+  class), `ability`, `preparation` (`prepared` = `prepare` + `list.known`, `spellbook` = `prepare` only, `known`),
+  `spellList` (`list.supports`, empty = the spellcasting name), `swap` (`allow_replace`), `casterType` (`""`, `full`,
+  `halfUp`, `halfDown`, `third`, `pact`, `custom`: the `<name>:spellcasting:slots:N` stats, 2014 pact `slots:count`/`slot`,
+  2024 pact `pact_magic`), `slotTable` (control `slotTable`, `number[][]` 20 x 9 for `custom`, else `[]`),
+  `multiclassSlots` (`auto` = the type's `ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_*`, a specific one, or `none`),
+  `prepared` (control `levelCounts`, `number[]` 20: `prepare` stats), `prepareFormula` (2014: `level`, `half`, `""`),
+  `cantrips` and `known` (control `levelCounts`, `HomebrewLevelCounts { levels, statistic, replace? }`: the choices and
+  count stats) and `preparedChange` (2024 `prepared_spell_change`). The class kind's SPELLCASTING tab edits the section
+  of its Spellcasting feature (a `classFeature` child at level 1, made with `homebrew_new_draft {parentId}`); a 2024
+  class's `data.progression` spellcasting columns (`cantrips`, `prepared`, `slot_N`, `pact_slots`, `pact_slot_level`)
+  and `data.spellcasting` (when present) are written from that section whenever it was edited. No new command.
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

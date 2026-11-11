@@ -11,6 +11,7 @@ use borealis_content::Ruleset;
 use serde_json::{json, Value};
 use std::sync::OnceLock;
 
+mod caster;
 mod class;
 mod feat;
 mod species;
@@ -74,6 +75,11 @@ pub enum Control {
     SkillChoice,
     /// A starting-equipment package edited inside its owner (a child, or a reference).
     Package,
+    /// A count at each of the 20 levels (cantrips known, prepared spells), maybe with expert flags
+    /// ([`super::LevelCounts`]).
+    LevelCounts,
+    /// A spellcasting section's slot table: 20 levels x 9 slot levels.
+    SlotTable,
 }
 
 impl Control {
@@ -106,6 +112,8 @@ impl Control {
             Self::ClassTable => "classTable",
             Self::SkillChoice => "skillChoice",
             Self::Package => "package",
+            Self::LevelCounts => "levelCounts",
+            Self::SlotTable => "slotTable",
         }
     }
 }
@@ -333,6 +341,13 @@ pub(crate) const RULES: &str = "rules";
 pub(crate) const DESCRIPTION: &str = "description";
 pub(crate) const TABS: &[(&str, &str)] = &[
     (GENERAL, "GENERAL"),
+    (RULES, "RULES"),
+    (DESCRIPTION, "DESCRIPTION"),
+];
+/// The sub-tabs of a form with a spellcasting section (spec 4.6).
+pub(crate) const CASTER_TABS: &[(&str, &str)] = &[
+    (GENERAL, "GENERAL"),
+    (caster::SPELLCASTING, "SPELLCASTING"),
     (RULES, "RULES"),
     (DESCRIPTION, "DESCRIPTION"),
 ];

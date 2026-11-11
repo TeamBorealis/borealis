@@ -34,6 +34,7 @@ pub fn element_group_to_form(
         .map(|(i, c)| read_one(c, format!("e/{i}"), cx))
         .collect();
     child_refs::link(&mut form);
+    codec::caster_cx::follow_parent(&mut form);
     form
 }
 

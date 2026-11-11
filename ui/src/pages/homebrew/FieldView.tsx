@@ -175,5 +175,5 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
       break;
   }
   // The class table is a part of the LEVELS grid; child lists need the form (a child's own dialog has none).
-  return <p id={id} className="hb-pending" tabIndex={-1}>This part is edited with the {field.control === "classTable" ? "LEVELS grid" : "element it belongs to"}.</p>;
+  return <p id={id} className="hb-pending" tabIndex={-1}>This part is edited with the {field.control === "classTable" ? "LEVELS grid" : field.control === "levelCounts" || field.control === "slotTable" ? "table on the SPELLCASTING tab" : "element it belongs to"}.</p>;
 }

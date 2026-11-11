@@ -266,8 +266,13 @@ pub(super) fn class_feature_kind() -> KindDef {
         element_types: &["Class Feature"],
         parent_kinds: &[CLASS_KIND],
         editions: BOTH,
-        tabs: super::TABS,
-        fields: head().into_iter().chain(generated).chain(tail()).collect(),
+        tabs: super::CASTER_TABS,
+        fields: head()
+            .into_iter()
+            .chain(generated)
+            .chain(super::caster::caster_fields())
+            .chain(tail())
+            .collect(),
     }
 }
 

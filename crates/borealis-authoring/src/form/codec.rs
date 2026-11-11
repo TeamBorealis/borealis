@@ -15,6 +15,9 @@ use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 
+mod caster;
+pub(crate) mod caster_cx;
+mod caster_read;
 mod class;
 mod class_feature;
 mod class_mc;
@@ -22,6 +25,7 @@ mod feat;
 mod feat_prereq;
 mod species;
 mod spell;
+pub use caster::{CasterField, LevelCounts};
 pub(crate) use class::ABILITY_CHOICES;
 pub use class::{ClassField, ProficiencyGroup, SkillChoice, TableColumn};
 pub use class_feature::FeatureField;
@@ -90,6 +94,8 @@ pub enum Codec {
     Class(ClassField),
     /// A generated class feature's field (spec 4.5: ability score improvements, subclass choice, epic boon).
     Feature(FeatureField),
+    /// A spellcasting section field (spec 4.6): the `spellcasting` node and the section's rules.
+    Caster(CasterField),
 }
 
 const RARITIES: [&str; 3] = ["standard", "exotic", "secret"];
@@ -134,6 +140,7 @@ impl Codec {
             )],
             Self::Class(f) => f.bindings(),
             Self::Feature(f) => f.bindings(),
+            Self::Caster(f) => f.bindings(),
         }
     }
 
@@ -418,6 +425,7 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
         Codec::Children { ty, levelled } => super::child_refs::read(ty, levelled, r, cx),
         Codec::Class(f) => class::read(f, r, cx),
         Codec::Feature(f) => class_feature::read(f, r),
+        Codec::Caster(f) => caster::read(f, r),
         Codec::Blocks => return None,
     })
 }
@@ -516,6 +524,7 @@ pub(crate) fn write(
         Codec::Feat(f) => return feat::write(f, value, memo, path, out, cx),
         Codec::Class(f) => return class::write(f, value, memo, path, out, cx),
         Codec::Feature(f) => return class_feature::write(f, value, memo, path, out),
+        Codec::Caster(f) => return caster::write(f, value, memo, path, out),
         Codec::Children { ty, levelled } => {
             if let Some(m) = memo.filter(|m| m.value == *value) {
                 let rules: Vec<borealis_content::Rule> = m
@@ -620,7 +629,11 @@ pub(crate) fn write(
         Codec::Item(f) => super::item_codec::write(f, value, memo, path, out, cx)?,
         Codec::Spell(f) => spell::write(f, value, memo, path, out)?,
         Codec::Species(f) => species::write(f, value, memo, path, out)?,
-        Codec::Feat(_) | Codec::Class(_) | Codec::Feature(_) | Codec::Children { .. } => {
+        Codec::Feat(_)
+        | Codec::Class(_)
+        | Codec::Feature(_)
+        | Codec::Caster(_)
+        | Codec::Children { .. } => {
             unreachable!("written above")
         }
         Codec::Target => {
@@ -729,6 +742,7 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
         | Codec::Feat(_)
         | Codec::Class(_)
         | Codec::Feature(_)
+        | Codec::Caster(_)
         | Codec::Children { .. }
         | Codec::Blocks => {}
     }

@@ -2,6 +2,8 @@ import { type ReactNode, useState } from "react";
 import type { HomebrewFieldSpec, HomebrewForm, HomebrewKindDescriptor, HomebrewProblem, HomebrewTab, Ruleset } from "../../api/contract";
 import { Icon, TabControl, ToggleSwitch } from "../../components";
 import { PreservedList } from "./blocks/BlockDialog";
+import { CasterSection } from "./caster/CasterSection";
+import { SpellcastingTab } from "./caster/SpellcastingTab";
 import type { ChildEditing } from "./class/ChildDialog";
 import { CreatorEnvProvider } from "./env";
 import { Band } from "../spells/TwoPane";
@@ -56,6 +58,9 @@ function editionOf(form: HomebrewForm): Ruleset | null {
 
 /** A field's value: a `blocks` field is the form's block list (spec 6), every other field its `fields` entry. */
 const valueOf = (f: HomebrewFieldSpec, form: HomebrewForm): unknown => (f.control === "blocks" ? form.blocks : form.fields[f.key]);
+
+/** The SPELLCASTING sub-tab (spec 4.6): a class's edits its Spellcasting feature; any other form's, its own section. */
+const SPELLCASTING_TAB = "spellcasting";
 
 /** The kind's sub-tabs as the band shows them; phones add PREVIEW after the kind's own. */
 export function editorTabs(kind: HomebrewKindDescriptor, narrow: boolean): HomebrewTab[] {
@@ -118,7 +123,12 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
         </div>
         {hasExpert && narrow && <div className="hb-expert-row">{expertSwitch}</div>}
         <div role="tabpanel" id="hb-tab-panel" aria-labelledby={`hb-tab-${current}`} className="hb-tabpanel">
-          {current === PREVIEW_TAB.id ? preview : fields.length === 0
+          {current === PREVIEW_TAB.id ? preview : current === SPELLCASTING_TAB && kind.id === "class"
+            ? <SpellcastingTab editing={childEditing} expert={expert} />
+            : current === SPELLCASTING_TAB
+              ? <CasterSection fields={fields} form={form} problems={draft.problems} edition={edition} expert={expert}
+                onFields={(patch, group) => draft.edit((cur) => ({ ...cur, fields: { ...cur.fields, ...patch } }), group)} />
+              : fields.length === 0
             ? <p className="hb-pending">Nothing to fill in here yet.</p>
             : sections(fields).map(([title, list], i) => (
               <div key={`${i}-${title}`} className="hb-section">

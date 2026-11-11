@@ -7,6 +7,8 @@ use serde_json::{json, Map, Value};
 
 use crate::Edition;
 
+pub mod section;
+
 const N: usize = 20;
 type Row = [u32; 9];
 

@@ -1,0 +1,10 @@
+/* Spellcasting section (WB-17, spec 4.6, 13.8): the class table grid of the LEVELS tab (ap-grid) with the counts and
+   the spell slots of each slot level; slot cells read-only unless the caster type is a custom table. Tokens only (U7). */
+.hb-caster-table .hb-slot-col, .hb-caster-table .hb-slot-cell { width: 44px; text-align: center; }
+html:not(.phone) .hb-caster-table thead th:nth-child(2), html:not(.phone) .hb-caster-table tbody td:nth-child(2) { width: auto; }
+.hb-caster-table .hb-counter { width: 64px; }
+.hb-slot-cell { color: var(--text-body); }
+.hb-caster-flags { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.hb-caster-flag { display: inline-flex; flex-direction: column; gap: 4px; }
+.hb-caster-flag label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-2xs); }
+.hb-caster-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }

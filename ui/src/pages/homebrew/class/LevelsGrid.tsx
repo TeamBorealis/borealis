@@ -5,6 +5,7 @@ import { setStatus } from "../../../state/status";
 import { NumbersControl } from "../blocks/valueControls";
 import { ChildDialog, type ChildEditing, childKind } from "./ChildDialog";
 import "./class.css";
+import { isSpellcastingColumn } from "../caster/slots";
 import {
   LEVELS, cellValue, childOf, columnsOf, counterColumns, entriesOf, entryName, fullColumn, generatedOf, proficiencyBonus,
   withChild, withChildLevel, withField, withoutChild, withoutEntry,
@@ -26,7 +27,8 @@ export function LevelsGrid({ editing }: { editing: ChildEditing }) {
   const [newColumn, setNewColumn] = useState("");
   const entries = entriesOf(form, LEVELS_FIELD);
   const columns = columnsOf(form);
-  const counters = counterColumns(columns);
+  // the spellcasting columns (a 2024 class's cantrips, prepared spells and slots) are the SPELLCASTING tab's
+  const counters = counterColumns(columns).filter(({ column }) => !isSpellcastingColumn(column.key));
   const feature = childKind(editing, "Class Feature");
 
   const addAt = async (level: number) => {

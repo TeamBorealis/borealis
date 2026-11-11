@@ -1,5 +1,11 @@
 import type { HomebrewFieldSpec, HomebrewKindDescriptor, HomebrewProblem, HomebrewProblemCounts } from "../../api/contract";
 
+/** The spellcasting section's field keys (`borealis-authoring::form::codec::caster_cx::SECTION_FIELDS`). */
+export const SECTION_FIELDS: readonly string[] = [
+  "casts", "casterName", "ability", "preparation", "spellList", "swap", "casterType", "slotTable", "multiclassSlots",
+  "prepared", "prepareFormula", "cantrips", "known", "preparedChange",
+];
+
 /** The form field a problem points at (`fields.level` -> `level`), or null for element-wide problems and other parts. */
 export function fieldKeyOf(path: string | null): string | null {
   const m = path ? /^fields\.([^.]+)/.exec(path) : null;
@@ -12,6 +18,9 @@ export function tabOf(problem: HomebrewProblem, kind: HomebrewKindDescriptor | n
   const key = fieldKeyOf(problem.path);
   if (key) return kind.fields.find((f) => f.key === key)?.tab ?? null;
   if (problem.path?.startsWith("blocks")) return kind.tabs.find((t) => t.id === "rules")?.id ?? null;
+  // a child's spellcasting section is the class's SPELLCASTING tab (WB-17)
+  const childField = problem.path ? /^children\.\d+\.fields\.([^.]+)/.exec(problem.path)?.[1] : undefined;
+  if (childField && SECTION_FIELDS.includes(childField) && kind.tabs.some((t) => t.id === "spellcasting")) return "spellcasting";
   // a child's problem: the tab of the field that holds the children (the class LEVELS grid, WB-16)
   if (problem.path?.startsWith("children.")) return kind.fields.find((f) => f.control === "levels" || f.control === "children")?.tab ?? null;
   return null;

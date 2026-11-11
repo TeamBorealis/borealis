@@ -50,7 +50,10 @@ export type HomebrewControl =
   | "spellLists"
   /** Class form (WB-16): the LEVELS grid (`HomebrewChildEntry[]` with levels), the class table (`HomebrewTableColumn[]`),
    * the skill choice (`HomebrewSkillChoice`) and the starting-equipment package (`HomebrewChildEntry[]`, one entry). */
-  | "levels" | "classTable" | "skillChoice" | "package";
+  | "levels" | "classTable" | "skillChoice" | "package"
+  /** Spellcasting section (WB-17): a count at each of the 20 levels (`number[]`, or `HomebrewLevelCounts` for cantrips
+   * and spells known) and a custom caster type's slot table (`number[][]`: 20 levels x 9 slot levels, or `[]`). */
+  | "levelCounts" | "slotTable";
 
 /** One choice of a combo field. `value` is what the form stores; `label` is shown. */
 export interface HomebrewChoice {
@@ -587,6 +590,15 @@ export interface HomebrewTableColumn {
   key: string;
   label: string;
   values: (number | string | null)[];
+}
+
+/** A spellcasting section's count per level with choices (WB-17, cantrips known and spells known): `levels` 1-20;
+ * `statistic` also writes the count statistic (`cantrips known`, `spells known`); `replace` lets each pick be swapped on
+ * a later level. */
+export interface HomebrewLevelCounts {
+  levels: number[];
+  statistic: boolean;
+  replace?: boolean;
 }
 
 export type HomebrewProblemSeverity = "error" | "warning" | "info";

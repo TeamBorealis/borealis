@@ -30,6 +30,8 @@ pub(crate) struct Out {
     pub(crate) multiclass_id: Option<String>,
     /// A class's "first class only" requirement (`!<multiclass id>`), when it has a multiclass section.
     pub(crate) first_class_only: Option<String>,
+    /// The spellcasting section, for a kind that has one (spec 4.6).
+    pub(crate) caster: Option<super::codec::caster_cx::CasterCx>,
 }
 
 /// A rule a field writes (an armor's base AC, its stealth disadvantage).
@@ -57,6 +59,7 @@ impl Out {
             children: Vec::new(),
             multiclass_id: None,
             first_class_only: None,
+            caster: None,
         }
     }
 
@@ -341,6 +344,9 @@ fn write_traced(
     if kind.id == super::kinds::CLASS_KIND {
         prepare_class(form, &mut out);
     }
+    if kind.field("casts").is_some() {
+        out.caster = Some(super::codec::caster_cx::context(form, parent));
+    }
     for f in kind.fields.iter().filter(|f| f.codec != Codec::Blocks) {
         let path = format!("fields.{}", f.key);
         let memo = form.memo.fields.get(f.key);
@@ -383,6 +389,9 @@ fn write_traced(
         return Err(problems);
     }
     let (mut element, origins) = out.finish();
+    if kind.id == super::kinds::CLASS_KIND {
+        super::codec::caster_cx::sync_class(&mut element, form);
+    }
     if let Some((old, new)) = codec::class_renamed(form) {
         codec::rename_requirement_ids(&mut element, &old, &new);
     }

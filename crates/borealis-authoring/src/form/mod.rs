@@ -40,7 +40,9 @@ pub use block::{Block, BlockCodec, BlockMemo};
 pub use block_codec::CatalogBlockCodec;
 pub(crate) use block_codec::INCOMPLETE;
 pub use child_refs::{add_child, new_child_key, ChildEntry, ParentInfo};
-pub use codec::{ClassField, FeatureField, ProficiencyGroup, SkillChoice, TableColumn};
+pub use codec::{
+    CasterField, ClassField, FeatureField, LevelCounts, ProficiencyGroup, SkillChoice, TableColumn,
+};
 pub use descriptor::descriptors;
 pub use kinds::new_class_form;
 pub use kinds::{
