@@ -13,7 +13,7 @@ export function copiedTextLine(n: number): string {
   return `${n} ${n === 1 ? "element contains" : "elements contain"} text copied from your imported books. That text isn't yours to share.`;
 }
 
-type ShareNavigator = Navigator & { canShare?: (d: { files: File[] }) => boolean; share?: (d: { files: File[]; title: string }) => Promise<void> };
+type ShareNavigator = Navigator & { canShare?: (d: { files: File[] }) => boolean; share?: (d: { files: File[] }) => Promise<void> };
 
 /**
  * Export pack (spec 14.2): the pack as a `.borealis-pack.zip`. When elements hold text copied from the user's imported
@@ -55,7 +55,9 @@ export function ExportPackDialog({ pack, onClose }: { pack: ContentPack; onClose
     const nav = navigator as ShareNavigator;
     try {
       if (typeof nav.share === "function" && nav.canShare?.({ files: [file] })) {
-        await nav.share({ files: [file], title: pack.name });
+        // Only the file: WebKit on iOS shares a title as a second, text item, so "Save to Files" saved a text.txt beside
+        // the pack (WB-25, simulator; the same as B-148's sheet share).
+        await nav.share({ files: [file] });
         finish(`Shared ${r.fileName}.`);
         return;
       }

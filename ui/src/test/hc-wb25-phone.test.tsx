@@ -248,3 +248,30 @@ describe("WB-25 table cells in a sheet (spec 16)", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("WB-25 export on a phone (spec 16: the share sheet)", () => {
+  afterEach(() => { Reflect.deleteProperty(navigator, "share"); Reflect.deleteProperty(navigator, "canShare"); });
+
+  it("the second Share hands the share sheet the pack file only (a title became a stray text.txt on iOS)", async () => {
+    // Arrange
+    const share = vi.fn(async (_data: { files: File[]; title?: string }) => undefined);
+    Object.defineProperty(navigator, "share", { value: share, configurable: true });
+    Object.defineProperty(navigator, "canShare", { value: () => true, configurable: true });
+    const user = userEvent.setup();
+    const api = new MockApi({ aiChunkDelayMs: 2, rng: () => 0.5, creatorEnabled: true, mobile: true });
+    await api.homebrewCreatePack({ request: { name: "Ember Isles", code: "EMB", edition: "dnd2024" } });
+    renderApp("/homebrew", { api });
+    await user.click(await screen.findByRole("row", { name: /Ember Isles/ }));
+    await user.click(screen.getByRole("button", { name: "Export pack" }));
+    const dialog = await screen.findByRole("dialog", { name: "Export pack" });
+    // Act: the first Share makes the file, the second shares it
+    await user.click(within(dialog).getByRole("button", { name: "Share" }));
+    await within(dialog).findByText("Ember_Isles.borealis-pack.zip is ready to share.");
+    await user.click(within(dialog).getByRole("button", { name: "Share" }));
+    // Assert
+    await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+    const data = share.mock.calls[0]![0];
+    expect(Object.keys(data)).toEqual(["files"]);
+    expect(data.files.map((f) => f.name)).toEqual(["Ember_Isles.borealis-pack.zip"]);
+  });
+});
