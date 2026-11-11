@@ -264,8 +264,16 @@ fn feature_tables(f: &FeatureDetail, text: &str) -> Vec<crate::model_types::Text
     }
 }
 
+/// Engine-generated improvement placeholders ("Ability Score Improvement (4)", "Feat (8)"): the
+/// chosen increases show in the scores and the chosen feat is listed itself, so the placeholder
+/// (template text only) is not sheet content.
+fn is_improvement_placeholder(id: &str) -> bool {
+    borealis_engine::ids::is_generated_with_class(id)
+}
+
 /// Displayed features, de-duplicated by name (sources merged), formulas evaluated and ordered:
-/// per class base before subclass at equal level, then species, feats, background.
+/// per class base before subclass at equal level, then species, feats, background. Improvement
+/// placeholders are left out.
 pub(crate) fn features(snap: &CharacterSnapshot) -> Vec<FeatureData> {
     struct Keyed {
         key: (u8, usize, u32, u8, usize),
@@ -275,7 +283,10 @@ pub(crate) fn features(snap: &CharacterSnapshot) -> Vec<FeatureData> {
     for (idx, f) in snap.features.iter().enumerate() {
         let name = display_name(&f.name);
         let lower = name.to_lowercase();
-        if !f.displayed || HIDDEN_FEATURES.contains(&lower.as_str()) || lower.ends_with(" subclass")
+        if !f.displayed
+            || HIDDEN_FEATURES.contains(&lower.as_str())
+            || lower.ends_with(" subclass")
+            || is_improvement_placeholder(&f.id)
         {
             continue;
         }
