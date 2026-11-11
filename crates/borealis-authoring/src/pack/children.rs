@@ -11,20 +11,45 @@ pub fn child_types(ty: &str) -> &'static [&'static str] {
         "Class" => &["Class Feature", "Equipment Package"],
         "Archetype" => &["Archetype Feature"],
         "Feat" => &["Feat Feature"],
-        "Background" => &["Background Feature"],
+        "Background" => &[
+            "Background Feature",
+            "Background Variant",
+            "Equipment Package",
+        ],
         "Race" | "Sub Race" | "Species" => &["Racial Trait"],
         _ => &[],
     }
 }
 
-/// The elements a parent gives: its grants, and the package of its starting-equipment choice.
+/// The elements a parent gives: its grants, the package of its starting-equipment choice, and the elements a choice
+/// of one of its child types offers by id (a background's variants: `ID_A|ID_B`).
 fn granted_ids(parent: &Element) -> impl Iterator<Item = &str> {
-    parent.rules.iter().filter_map(|r| match r {
-        Rule::Grant(g) => Some(g.id.as_str()),
-        Rule::Custom(c) if c.kind == "equipment_package" => {
-            c.fields.get("ref").and_then(serde_json::Value::as_str)
+    let types = child_types(&parent.ty);
+    parent.rules.iter().flat_map(move |r| -> Vec<&str> {
+        match r {
+            Rule::Grant(g) => vec![g.id.as_str()],
+            Rule::Custom(c) if c.kind == "equipment_package" => c
+                .fields
+                .get("ref")
+                .and_then(serde_json::Value::as_str)
+                .into_iter()
+                .collect(),
+            Rule::Select(s) if types.contains(&s.ty.as_str()) => {
+                let ids: Vec<&str> = s
+                    .supports
+                    .as_deref()
+                    .unwrap_or_default()
+                    .split('|')
+                    .map(str::trim)
+                    .collect();
+                if ids.iter().all(|id| id.starts_with("ID_")) {
+                    ids
+                } else {
+                    Vec::new()
+                }
+            }
+            _ => Vec::new(),
         }
-        _ => None,
     })
 }
 

@@ -269,14 +269,14 @@ impl<'e> Take<'_, 'e> {
         Some(s)
     }
 
-    fn data(&mut self, key: &str) -> Option<&'e Value> {
+    pub(super) fn data(&mut self, key: &str) -> Option<&'e Value> {
         let v = self.r.take_data(key)?;
         self.raw.data.insert(key.to_string(), v.clone());
         Some(v)
     }
 
     /// Take every untaken rule `want` accepts, in order (at most `limit`).
-    fn rules(&mut self, want: impl Fn(&Rule) -> bool, limit: usize) -> Vec<&'e Rule> {
+    pub(super) fn rules(&mut self, want: impl Fn(&Rule) -> bool, limit: usize) -> Vec<&'e Rule> {
         let e = self.r.e;
         let mut out = Vec::new();
         for (i, rule) in e.rules.iter().enumerate() {
@@ -484,7 +484,10 @@ fn skill_choice(s: &SelectRule, cx: &FormContext<'_>) -> SkillChoice {
     }
 }
 
-fn package_rule<'a>(rule: &'a Rule, req: Option<&str>) -> Option<(&'a str, Option<&'a str>)> {
+pub(super) fn package_rule<'a>(
+    rule: &'a Rule,
+    req: Option<&str>,
+) -> Option<(&'a str, Option<&'a str>)> {
     let Rule::Custom(c) = rule else { return None };
     if c.kind != PACKAGE_KIND {
         return None;

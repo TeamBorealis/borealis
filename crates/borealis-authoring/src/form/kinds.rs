@@ -11,6 +11,7 @@ use borealis_content::Ruleset;
 use serde_json::{json, Value};
 use std::sync::OnceLock;
 
+mod background;
 mod caster;
 mod class;
 mod feat;
@@ -19,6 +20,7 @@ mod species;
 mod spell;
 mod subclass;
 
+pub use background::{new_background_form, BACKGROUND_KIND};
 pub use class::{new_class_form, CLASS_FEATURE_KIND, CLASS_KIND};
 pub use subclass::CLASS_OPTION_KIND;
 
@@ -83,6 +85,12 @@ pub enum Control {
     LevelCounts,
     /// A spellcasting section's slot table: 20 levels x 9 slot levels.
     SlotTable,
+    /// A feat given with some of its own choices made ([`super::codec::FeatGrant`]: a background's origin feat).
+    FeatGrant,
+    /// Language and tool choices ([`super::codec::ChoiceRow`]s: how many, from which tags).
+    Choices,
+    /// A written list the character picks from ([`super::codec::WrittenList`]: a background's ideals).
+    WrittenList,
 }
 
 impl Control {
@@ -117,6 +125,9 @@ impl Control {
             Self::Package => "package",
             Self::LevelCounts => "levelCounts",
             Self::SlotTable => "slotTable",
+            Self::FeatGrant => "featGrant",
+            Self::Choices => "choices",
+            Self::WrittenList => "writtenList",
         }
     }
 }
@@ -180,6 +191,8 @@ pub struct FieldDef {
     pub max: Option<i32>,
     /// Element types a reference field offers.
     pub picker: &'static [&'static str],
+    /// Only the elements with one of these tags (`Skill`); empty = no tag filter.
+    pub picker_tags: &'static [&'static str],
     /// The value a new element starts with, as JSON text.
     pub default: Option<&'static str>,
     /// The editions it is shown for (empty = both).
@@ -209,6 +222,7 @@ pub(crate) const fn field(
         min: None,
         max: None,
         picker: &[],
+        picker_tags: &[],
         default: None,
         editions: &[],
     }
@@ -266,6 +280,12 @@ impl FieldDef {
     pub(crate) const fn picker(self, types: &'static [&'static str]) -> Self {
         Self {
             picker: types,
+            ..self
+        }
+    }
+    pub(crate) const fn picker_tags(self, tags: &'static [&'static str]) -> Self {
+        Self {
+            picker_tags: tags,
             ..self
         }
     }
@@ -470,6 +490,7 @@ pub fn kinds() -> &'static [KindDef] {
             subclass::class_option_kind(),
         ];
         all.extend(species::species_kinds());
+        all.extend(background::background_kinds());
         all.extend(small::small_kinds());
         all.extend(super::item_kinds::item_kinds());
         all.push(small::other_kind());

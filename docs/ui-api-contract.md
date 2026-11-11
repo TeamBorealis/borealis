@@ -640,6 +640,20 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   Familiar and Property types, then the loaded types with no form of their own); `["Setter Name", "<type>"]` lists
   the setter names the type requires and the ones its loaded elements use. A new or retyped generic element whose
   type has its own form, or is `Source`/`Multiclass`, has an error at `fields.type` (code `form.type`).
+- **Background form (WB-14).** Kind `background` (type `Background`, both editions; a new one has its pack's edition,
+  2024 in a pack of both, and shows that edition's fields: `editions`). A tab whose fields are all of the other
+  edition is not shown (CHARACTERISTICS on a 2024 background). 2024: `abilityScores` (closed chips: three abilities,
+  `ability_distribution` with `pool`, `options [[2,1],[1,1,1]]`, `cap 20`, + `data.ability_scores`), `originFeat`
+  (control `featGrant`, `HomebrewFeatGrant` `{feat, params}`: `grant_feat` with `params` by the engine's param key,
+  + `data.origin_feat`, `data.origin_feat_params`). Both: `skills` and `tools` (`references` of Proficiency grants,
+  + `data.skills`, `data.tool`), `choices` (control `choices`, `HomebrewChoiceRow[]`: `select` of type Language or
+  Proficiency with `number` and a tag filter), `equipment` (`package`: `equipment_package` + `data.equipment_package`).
+  2014: `languages`, `feature` (`children` of `backgroundFeature`, granted), `variants` (`children` of
+  `backgroundVariant`, offered by an optional `select` of type `Background Variant` by id), `personalityTraits`,
+  `ideals`, `bonds`, `flaws` (control `writtenList`, `HomebrewWrittenList` `{count, items}`: `select` of type `List`,
+  items numbered 1..n), `equipmentNote` (rich text, the `equipment` part). New pseudo picker type
+  `["Feat Parameter", "<feat id>"]` (the feat's `select_param` names) and `["Feat Parameter", "<feat id>", "<name>"]`
+  (that choice's options). `HomebrewPickerTarget.tags` is now sent in descriptors (skills: tag `Skill`).
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

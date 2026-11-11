@@ -15,6 +15,8 @@ use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 
+mod background;
+mod background_values;
 mod caster;
 pub(crate) mod caster_cx;
 mod caster_read;
@@ -27,6 +29,11 @@ mod small;
 mod species;
 mod spell;
 mod subclass;
+pub use background::{BackgroundField, Characteristic};
+pub use background_values::{
+    feat_parameter_words, feat_params, param_key, ChoiceRow, FeatGrant, WrittenList,
+    FEAT_PARAMETER_PICKER,
+};
 pub use caster::{CasterField, LevelCounts};
 pub(crate) use class::ABILITY_CHOICES;
 pub use class::{ClassField, ProficiencyGroup, SkillChoice, TableColumn};
@@ -104,6 +111,9 @@ pub enum Codec {
     Subclass(SubclassField),
     /// A small type's field (spec 4.10): what a proficiency covers, a condition's listing, a rules text's group.
     Small(SmallField),
+    /// A background field (spec 4.3): the 2024 abilities, origin feat, proficiencies and package; the 2014 choices,
+    /// characteristics, equipment note and variants.
+    Background(BackgroundField),
 }
 
 use small::{RARITIES, RARITY_TAGS};
@@ -151,6 +161,7 @@ impl Codec {
             Self::Caster(f) => f.bindings(),
             Self::Subclass(f) => f.bindings(),
             Self::Small(f) => f.bindings(),
+            Self::Background(f) => f.bindings(),
         }
     }
 
@@ -218,6 +229,7 @@ impl Codec {
             Self::Class(f) => f.data_keys(),
             Self::Subclass(f) => f.data_keys(),
             Self::Small(f) => f.data_keys(),
+            Self::Background(f) => f.data_keys(),
             _ => Vec::new(),
         }
     }
@@ -442,6 +454,7 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
         Codec::Feature(f) => class_feature::read(f, r),
         Codec::Caster(f) => caster::read(f, r),
         Codec::Subclass(f) => subclass::read(f, r, cx),
+        Codec::Background(f) => background::read(f, r, cx),
         Codec::Blocks => return None,
     })
 }
@@ -518,6 +531,7 @@ pub(crate) fn write(
         Codec::Feature(f) => return class_feature::write(f, value, memo, path, out),
         Codec::Caster(f) => return caster::write(f, value, memo, path, out),
         Codec::Subclass(f) => return subclass::write(f, value, memo, path, out, cx),
+        Codec::Background(f) => return background::write(f, value, memo, path, out, cx),
         Codec::Children { ty, levelled } => {
             if let Some(m) = memo.filter(|m| m.value == *value) {
                 let rules: Vec<borealis_content::Rule> = m
@@ -628,6 +642,7 @@ pub(crate) fn write(
         | Codec::Feature(_)
         | Codec::Caster(_)
         | Codec::Subclass(_)
+        | Codec::Background(_)
         | Codec::Children { .. } => {
             unreachable!("written above")
         }
@@ -705,6 +720,7 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
         | Codec::Feature(_)
         | Codec::Caster(_)
         | Codec::Subclass(_)
+        | Codec::Background(_)
         | Codec::Children { .. }
         | Codec::Blocks => {}
     }

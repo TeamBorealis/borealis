@@ -6094,6 +6094,1142 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
     ]
   },
   {
+    "id": "background",
+    "label": "Background",
+    "pluralLabel": "Backgrounds",
+    "description": "A background: 2024 ability scores, origin feat, skills, tool and equipment; 2014 feature and characteristics.",
+    "group": "main",
+    "elementTypes": [
+      "Background"
+    ],
+    "parentKinds": [],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "characteristics",
+        "label": "CHARACTERISTICS"
+      },
+      {
+        "id": "equipment",
+        "label": "EQUIPMENT"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "abilityScores",
+        "label": "Ability scores",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "choices": [
+          {
+            "value": "Strength",
+            "label": "Strength"
+          },
+          {
+            "value": "Dexterity",
+            "label": "Dexterity"
+          },
+          {
+            "value": "Constitution",
+            "label": "Constitution"
+          },
+          {
+            "value": "Intelligence",
+            "label": "Intelligence"
+          },
+          {
+            "value": "Wisdom",
+            "label": "Wisdom"
+          },
+          {
+            "value": "Charisma",
+            "label": "Charisma"
+          }
+        ],
+        "bindings": [
+          "rules:ability_distribution",
+          "data.ability_scores"
+        ],
+        "help": "Pick three. The character adds 2 to one and 1 to another, or 1 to each (up to 20).",
+        "section": "Ability scores",
+        "default": [],
+        "editions": [
+          "dnd2024"
+        ]
+      },
+      {
+        "key": "originFeat",
+        "label": "Origin feat",
+        "tab": "general",
+        "control": "featGrant",
+        "required": false,
+        "bindings": [
+          "rules:grant_feat",
+          "data.origin_feat",
+          "data.origin_feat_params"
+        ],
+        "help": "A choice of the feat the background makes (Magic Initiate's spell list); the others stay the character's.",
+        "section": "Origin feat",
+        "picker": {
+          "types": [
+            "Feat"
+          ]
+        },
+        "default": {
+          "feat": null,
+          "params": {}
+        },
+        "editions": [
+          "dnd2024"
+        ]
+      },
+      {
+        "key": "skills",
+        "label": "Skill proficiencies",
+        "tab": "general",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rules:grant ID_PROFICIENCY_SKILL_*",
+          "data.skills"
+        ],
+        "section": "Proficiencies",
+        "picker": {
+          "types": [
+            "Proficiency"
+          ],
+          "tags": [
+            "Skill"
+          ],
+          "multiple": true
+        },
+        "default": []
+      },
+      {
+        "key": "tools",
+        "label": "Tool proficiencies",
+        "tab": "general",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rules:grant Proficiency",
+          "data.tool"
+        ],
+        "help": "A 2024 background gives one tool, or a choice of one (below).",
+        "section": "Proficiencies",
+        "picker": {
+          "types": [
+            "Proficiency"
+          ],
+          "multiple": true
+        },
+        "default": []
+      },
+      {
+        "key": "languages",
+        "label": "Languages",
+        "tab": "general",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "rules:grant Language"
+        ],
+        "section": "Proficiencies",
+        "picker": {
+          "types": [
+            "Language"
+          ],
+          "multiple": true
+        },
+        "default": [],
+        "editions": [
+          "dnd2014"
+        ]
+      },
+      {
+        "key": "choices",
+        "label": "Language and tool choices",
+        "tab": "general",
+        "control": "choices",
+        "required": false,
+        "bindings": [
+          "rules:select Language",
+          "rules:select Proficiency"
+        ],
+        "help": "Languages or tools the character chooses, from the ones with these tags.",
+        "section": "Proficiencies",
+        "default": []
+      },
+      {
+        "key": "feature",
+        "label": "Background feature",
+        "tab": "general",
+        "control": "children",
+        "required": false,
+        "bindings": [
+          "rules:grant Background Feature"
+        ],
+        "help": "The background gives each one; make it here.",
+        "section": "Feature",
+        "picker": {
+          "types": [
+            "Background Feature"
+          ]
+        },
+        "default": [],
+        "editions": [
+          "dnd2014"
+        ]
+      },
+      {
+        "key": "variants",
+        "label": "Variants",
+        "tab": "general",
+        "control": "children",
+        "required": false,
+        "bindings": [
+          "rules:select Background Variant"
+        ],
+        "help": "Versions of the background a character may take instead (each with its own rules).",
+        "section": "Feature",
+        "picker": {
+          "types": [
+            "Background Variant"
+          ]
+        },
+        "default": [],
+        "editions": [
+          "dnd2014"
+        ]
+      },
+      {
+        "key": "personalityTraits",
+        "label": "Personality traits",
+        "tab": "characteristics",
+        "control": "writtenList",
+        "required": false,
+        "bindings": [
+          "rules:select List"
+        ],
+        "help": "The character picks this many; numbered 1, 2, 3... in order.",
+        "section": "Suggested characteristics",
+        "default": {
+          "count": 2,
+          "items": []
+        },
+        "editions": [
+          "dnd2014"
+        ]
+      },
+      {
+        "key": "ideals",
+        "label": "Ideals",
+        "tab": "characteristics",
+        "control": "writtenList",
+        "required": false,
+        "bindings": [
+          "rules:select List"
+        ],
+        "section": "Suggested characteristics",
+        "default": {
+          "count": 1,
+          "items": []
+        },
+        "editions": [
+          "dnd2014"
+        ]
+      },
+      {
+        "key": "bonds",
+        "label": "Bonds",
+        "tab": "characteristics",
+        "control": "writtenList",
+        "required": false,
+        "bindings": [
+          "rules:select List"
+        ],
+        "section": "Suggested characteristics",
+        "default": {
+          "count": 1,
+          "items": []
+        },
+        "editions": [
+          "dnd2014"
+        ]
+      },
+      {
+        "key": "flaws",
+        "label": "Flaws",
+        "tab": "characteristics",
+        "control": "writtenList",
+        "required": false,
+        "bindings": [
+          "rules:select List"
+        ],
+        "section": "Suggested characteristics",
+        "default": {
+          "count": 1,
+          "items": []
+        },
+        "editions": [
+          "dnd2014"
+        ]
+      },
+      {
+        "key": "equipment",
+        "label": "Starting equipment",
+        "tab": "equipment",
+        "control": "package",
+        "required": false,
+        "bindings": [
+          "rules:equipment_package",
+          "data.equipment_package"
+        ],
+        "help": "The lettered options a character with this background chooses from.",
+        "picker": {
+          "types": [
+            "Equipment Package"
+          ]
+        },
+        "default": []
+      },
+      {
+        "key": "equipmentNote",
+        "label": "Equipment as shown",
+        "tab": "equipment",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "equipment"
+        ],
+        "help": "A note of the equipment, shown with the background.",
+        "editions": [
+          "dnd2014"
+        ]
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers.",
+        "section": "Details"
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "rules",
+        "label": "Other rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ],
+        "help": "Rules of the background that no field above holds."
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "backgroundFeature",
+    "label": "Background feature",
+    "pluralLabel": "Background features",
+    "description": "The feature a background gives, edited inside the background.",
+    "group": "child",
+    "elementTypes": [
+      "Background Feature"
+    ],
+    "parentKinds": [
+      "background"
+    ],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers."
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ]
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ]
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ]
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ]
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "backgroundVariant",
+    "label": "Background variant",
+    "pluralLabel": "Background variants",
+    "description": "A version of a background a character may take instead, edited inside the background.",
+    "group": "child",
+    "elementTypes": [
+      "Background Variant"
+    ],
+    "parentKinds": [
+      "background"
+    ],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers."
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ]
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ]
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ]
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ]
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
+    "id": "backgroundCharacteristics",
+    "label": "Background characteristics",
+    "pluralLabel": "Background characteristics",
+    "description": "Personality traits, ideals, bonds and flaws a background offers.",
+    "group": "child",
+    "elementTypes": [
+      "Background Characteristics"
+    ],
+    "parentKinds": [
+      "background"
+    ],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "personalityTraits",
+        "label": "Personality traits",
+        "tab": "general",
+        "control": "writtenList",
+        "required": false,
+        "bindings": [
+          "rules:select List"
+        ],
+        "help": "The character picks this many; numbered 1, 2, 3... in order.",
+        "section": "Suggested characteristics",
+        "default": {
+          "count": 2,
+          "items": []
+        }
+      },
+      {
+        "key": "ideals",
+        "label": "Ideals",
+        "tab": "general",
+        "control": "writtenList",
+        "required": false,
+        "bindings": [
+          "rules:select List"
+        ],
+        "section": "Suggested characteristics",
+        "default": {
+          "count": 1,
+          "items": []
+        }
+      },
+      {
+        "key": "bonds",
+        "label": "Bonds",
+        "tab": "general",
+        "control": "writtenList",
+        "required": false,
+        "bindings": [
+          "rules:select List"
+        ],
+        "section": "Suggested characteristics",
+        "default": {
+          "count": 1,
+          "items": []
+        }
+      },
+      {
+        "key": "flaws",
+        "label": "Flaws",
+        "tab": "general",
+        "control": "writtenList",
+        "required": false,
+        "bindings": [
+          "rules:select List"
+        ],
+        "section": "Suggested characteristics",
+        "default": {
+          "count": 1,
+          "items": []
+        }
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ]
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers."
+      },
+      {
+        "key": "requirements",
+        "label": "Prerequisite",
+        "tab": "general",
+        "control": "condition",
+        "required": false,
+        "bindings": [
+          "requirements"
+        ]
+      },
+      {
+        "key": "prerequisiteText",
+        "label": "Prerequisite as shown",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "prerequisite"
+        ]
+      },
+      {
+        "key": "allowDuplicate",
+        "label": "Can be taken more than once",
+        "tab": "general",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "setter:allow duplicate"
+        ]
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ]
+      },
+      {
+        "key": "rules",
+        "label": "Rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ]
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "sheet",
+        "label": "On the character sheet",
+        "tab": "description",
+        "control": "sheet",
+        "required": false,
+        "bindings": [
+          "sheet"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
     "id": "language",
     "label": "Language",
     "pluralLabel": "Languages",
@@ -12353,7 +13489,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
       "Equipment Package"
     ],
     "parentKinds": [
-      "class"
+      "class",
+      "background"
     ],
     "editions": [
       "dnd2024"

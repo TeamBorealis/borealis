@@ -53,7 +53,10 @@ export type HomebrewControl =
   | "levels" | "classTable" | "skillChoice" | "package"
   /** Spellcasting section (WB-17): a count at each of the 20 levels (`number[]`, or `HomebrewLevelCounts` for cantrips
    * and spells known) and a custom caster type's slot table (`number[][]`: 20 levels x 9 slot levels, or `[]`). */
-  | "levelCounts" | "slotTable";
+  | "levelCounts" | "slotTable"
+  /** Background form (WB-14): the origin feat with the feat's own choices it makes (`HomebrewFeatGrant`), language and
+   * tool choices (`HomebrewChoiceRow[]`) and a characteristic the character picks from (`HomebrewWrittenList`). */
+  | "featGrant" | "choices" | "writtenList";
 
 /** One choice of a combo field. `value` is what the form stores; `label` is shown. */
 export interface HomebrewChoice {
@@ -582,6 +585,29 @@ export interface HomebrewSkillChoice {
   count: number;
   skills: HomebrewRef[];
   tagged?: string;
+}
+
+/** A background's origin feat (WB-14, `grant_feat`): the feat and the choices of its own the background makes, by the
+ * engine's param key (`spell_list: "Cleric"`); the feat's other choices stay the character's. */
+export interface HomebrewFeatGrant {
+  feat: HomebrewRef | null;
+  params: Record<string, string>;
+}
+
+/** A language or tool choice (WB-14, a `select` with `number` and a tag filter): `kind` `language` or `proficiency`;
+ * `name` is the choice's persistence key, kept once saved (empty for a new row). */
+export interface HomebrewChoiceRow {
+  kind: "language" | "proficiency";
+  count: number;
+  from?: HomebrewExprValue<HomebrewTagFilter> | null;
+  name?: string;
+}
+
+/** A written list the character picks `count` from (WB-14: a background's personality traits, ideals, bonds, flaws;
+ * a `select` of type `List` with its items numbered 1..n). */
+export interface HomebrewWrittenList {
+  count: number;
+  items: string[];
 }
 
 /** One counter column of a class table (WB-16, `data.progression.<key>`): a value per level, level 1 first. */

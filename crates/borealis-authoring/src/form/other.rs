@@ -47,14 +47,8 @@ const NOT_AUTHORED: &[&str] = &[
     "Monster Trait",
 ];
 
-/// Types the spec gives a form of their own that is still to come (backgrounds, creatures): not offered here.
-const OWN_FORM_TO_COME: &[&str] = &[
-    "Background",
-    "Background Feature",
-    "Background Characteristics",
-    "Background Variant",
-    "Monster",
-];
+/// Types the spec gives a form of their own that is still to come (creatures): not offered here.
+const OWN_FORM_TO_COME: &[&str] = &["Monster"];
 
 /// The type has a form of its own (a spell, a language...).
 fn has_own_form(ty: &str) -> bool {

@@ -51,8 +51,8 @@ function sections(fields: readonly HomebrewFieldSpec[]): [string, HomebrewFieldS
 }
 
 /** The element's own edition, when it has one (the description toolbar's higher-level paragraph follows it). */
-function editionOf(form: HomebrewForm): Ruleset | null {
-  const e = form.fields.edition;
+export function editionOf(form: HomebrewForm | null): Ruleset | null {
+  const e = form?.fields.edition;
   return e === "dnd2014" || e === "dnd2024" ? e : null;
 }
 
@@ -68,8 +68,13 @@ const valueOf = (f: HomebrewFieldSpec, form: HomebrewForm, answer: HomebrewForm 
 const SPELLCASTING_TAB = "spellcasting";
 
 /** The kind's sub-tabs as the band shows them; phones add PREVIEW after the kind's own. */
-export function editorTabs(kind: HomebrewKindDescriptor, narrow: boolean): HomebrewTab[] {
-  return narrow ? [...kind.tabs, PREVIEW_TAB] : kind.tabs;
+export function editorTabs(kind: HomebrewKindDescriptor, narrow: boolean, edition: Ruleset | null = null): HomebrewTab[] {
+  // a tab whose fields are all of the other edition is not shown (a 2024 background has no CHARACTERISTICS, WB-14)
+  const shown = kind.tabs.filter((t) => {
+    const own = kind.fields.filter((f) => f.tab === t.id);
+    return own.length === 0 || own.some((f) => forEdition(f, edition));
+  });
+  return narrow ? [...shown, PREVIEW_TAB] : shown;
 }
 
 /**
@@ -87,9 +92,9 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
   const form = draft.form;
   if (!form) return null;
   const name = typeof form.fields.name === "string" && form.fields.name.trim() ? form.fields.name.trim() : `New ${kind.label.toLowerCase()}`;
-  const tabs = editorTabs(kind, narrow);
-  const current = tabs.some((t) => t.id === tab) ? tab : tabs[0]?.id ?? "";
   const edition = editionOf(form);
+  const tabs = editorTabs(kind, narrow, edition);
+  const current = tabs.some((t) => t.id === tab) ? tab : tabs[0]?.id ?? "";
   // the class table is a part of the LEVELS grid (WB-16)
   const fields = kind.fields.filter((f) => f.tab === current && (expert || !f.expert) && f.control !== "classTable" && forEdition(f, edition));
   const hasExpert = kind.fields.some((f) => f.expert);

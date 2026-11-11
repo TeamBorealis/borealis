@@ -15,6 +15,7 @@ import { FormulaBuilder } from "./builders/FormulaBuilder";
 import { TagFilterBuilder } from "./builders/TagFilterBuilder";
 import { asExprValue, relativeProblems } from "./builders/words";
 import { useCreatorEnv } from "./env";
+import { ChoicesField, FeatGrantField, WrittenListField } from "./fields/BackgroundParts";
 import { MapsToField, SettersField, SheetField } from "./fields/FormParts";
 import { ContentsField, contentsOf, optionsOf, PackageOptionsField } from "./fields/ItemParts";
 import { SpellListsField } from "./fields/SpellListsField";
@@ -47,7 +48,8 @@ const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is
 /** Builder controls show their row problems on the rows; under the field only the field's own sentences. */
 const BUILDERS: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "blocks"]);
 /** Controls that take the whole row of the form grid. */
-const WIDE: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "richText", "sheet", "setters", "mapsTo", "blocks", "references", "contents", "packageOptions", "spellLists", "levels", "package", "children", "skillChoice", "numbers"]);
+const WIDE: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "richText", "sheet", "setters", "mapsTo", "blocks", "references", "contents", "packageOptions", "spellLists", "levels", "package", "children", "skillChoice", "numbers",
+  "featGrant", "choices", "writtenList"]);
 
 /** A closed combo's choices, with the stored value kept as a choice when content holds one the list doesn't (a homebrew
  * school), and a blank first choice while nothing is chosen (a new spell's school). */
@@ -172,6 +174,12 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
         repeat={kindId !== undefined && REPEAT_KINDS.includes(kindId)} /></div>;
     case "numbers":
       return <span id={id}><NumbersControl label={label} value={Array.isArray(value) ? value as number[] : []} min={field.min ?? 1} max={field.max ?? 20} onChange={(v) => onChange(v ?? [], false)} /></span>;
+    case "featGrant":
+      return <FeatGrantField id={id} label={label} value={value} target={field.picker ?? { types: ["Feat"] }} describedBy={describedBy} invalid={invalid} onChange={(v) => onChange(v, false)} />;
+    case "choices":
+      return <ChoicesField id={id} label={label} value={value} onChange={(v) => onChange(v, false)} />;
+    case "writtenList":
+      return <WrittenListField id={id} label={label} value={value} onChange={(v, typing) => onChange(v, typing)} />;
     case "skillChoice":
       return <SkillChoiceField id={id} label={label} value={value} onChange={(v) => onChange(v, false)} />;
     case "levels":

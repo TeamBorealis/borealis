@@ -155,3 +155,10 @@ html.phone .hb-inline-check { min-height: var(--ph-hit); }
 .hb-lists-item { display: flex; align-items: center; gap: 6px; min-height: 26px; font-size: 12px; color: var(--text-body); cursor: pointer; }
 .hb-lists-none { margin: 0; font-size: 11px; color: var(--text-secondary); }
 html.phone .hb-lists-item { min-height: var(--ph-hit); font: 400 var(--ph-t-foot)/1.2 var(--ph-font-ui); color: var(--ph-text); }
+/* Background form (WB-14): the origin feat's own choices, language and tool choice rows, written lists numbered 1..n. */
+.hb-feat-grant, .hb-choices, .hb-written-list { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.hb-choice-row { display: flex; flex-direction: column; gap: 4px; padding: 0 0 6px; }
+.hb-list-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.hb-list-item { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.hb-list-item .aur-textbox { flex: 1 1 auto; min-width: 0; }
+.hb-list-number { flex: 0 0 18px; text-align: right; font-size: 11px; font-weight: 600; color: var(--text-secondary); }

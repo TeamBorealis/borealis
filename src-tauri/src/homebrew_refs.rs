@@ -11,8 +11,9 @@ use crate::homebrew_dto::{
 };
 use crate::state::AppState;
 use borealis_authoring::form::{
-    assign_ids, form_to_elements, open_types, setter_names, CatalogBlockCodec, FormContext,
-    WithElements, ELEMENT_TYPE_PICKER, SETTER_NAME_PICKER,
+    assign_ids, feat_parameter_words, form_to_elements, open_types, setter_names,
+    CatalogBlockCodec, FormContext, WithElements, ELEMENT_TYPE_PICKER, FEAT_PARAMETER_PICKER,
+    SETTER_NAME_PICKER,
 };
 use borealis_content::{ContentStore, Element};
 use std::collections::{BTreeMap, HashSet};
@@ -246,6 +247,13 @@ impl AppState {
                 &query,
                 page,
             ));
+        }
+        // a feat's own choices (a background's origin feat, spec 4.3): their names, or one choice's options
+        if target.types.first().map(String::as_str) == Some(FEAT_PARAMETER_PICKER) {
+            let feat = target.types.get(1).map_or("", String::as_str);
+            let param = target.types.get(2).map(String::as_str);
+            let words = feat_parameter_words(&words, feat, param);
+            return Ok(word_rows(words, FEAT_PARAMETER_PICKER, &query, page));
         }
         if target.types.iter().any(|t| t == SETTER_NAME_PICKER) {
             let names = target

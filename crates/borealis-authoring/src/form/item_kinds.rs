@@ -613,7 +613,7 @@ fn equipment_package() -> KindDef {
     ];
     KindDef {
         // edited inside its class too (the class's EQUIPMENT tab, WB-16)
-        parent_kinds: &["class"],
+        parent_kinds: &["class", "background"],
         ..kind(
             "equipmentPackage",
             "Starting equipment",

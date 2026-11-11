@@ -7,7 +7,7 @@ import { useApi } from "../../state/ApiContext";
 import { setStatus } from "../../state/status";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { ElementDetailView } from "../builder/DescriptionPane";
-import { Editor, editorTabs } from "./Editor";
+import { Editor, editionOf, editorTabs } from "./Editor";
 import { Categories, ElementList, KindChips } from "./ElementList";
 import { useCreatorKeys } from "./keymap";
 import { ADD_BLOCK_EVENT } from "./blocks/BlockList";
@@ -196,7 +196,7 @@ export function PackWorkspace() {
     duplicate: () => void duplicate(),
     focusFilter: () => { setMobileView("list"); setTimeout(() => filterRef.current?.focus(), 0); },
     tryIt,
-    tab: (a) => { const t = openKind ? editorTabs(openKind, narrow)[a.index ?? 0] : undefined; if (t) setTab(t.id); },
+    tab: (a) => { const t = openKind ? editorTabs(openKind, narrow, editionOf(draft.form))[a.index ?? 0] : undefined; if (t) setTab(t.id); },
     rename: () => focusField("name", true),
     addBlock: () => {
       const rules = openKind?.fields.find((f) => f.control === "blocks");

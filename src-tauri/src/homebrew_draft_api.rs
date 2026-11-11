@@ -19,9 +19,9 @@ use crate::ids::rfc3339;
 use crate::state::{AppState, ContentHub, BUNDLED_PACKS};
 use borealis_authoring::check::{issue_problems, Problem};
 use borealis_authoring::form::{
-    add_child, assign_ids, element_group_to_form, element_to_form, kind, merge_ui, new_child_key,
-    new_class_form, refresh_blocks, to_ui, CatalogBlockCodec, FormContext, FormState, WithElements,
-    CLASS_KIND, SUBCLASS_KIND,
+    add_child, assign_ids, element_group_to_form, element_to_form, kind, merge_ui,
+    new_background_form, new_child_key, new_class_form, refresh_blocks, to_ui, CatalogBlockCodec,
+    FormContext, FormState, WithElements, BACKGROUND_KIND, CLASS_KIND, SUBCLASS_KIND,
 };
 use borealis_authoring::pack::{
     bump_patch, child_types, digest, granted_children, pack_edition, source_name, with_elements,
@@ -218,15 +218,17 @@ impl AppState {
                 let k = kind(kind_id).ok_or_else(|| {
                     ApiError::invalid(format!("There is no form called {kind_id:?}."))
                 })?;
-                let mut form = if k.id == CLASS_KIND {
-                    // a class is of one edition (R4) and starts with its generated features (spec 4.5)
-                    let edition = match pack_edition(&pack.disk.manifest, &pack.disk.content) {
-                        Ruleset::Dnd2014 => Ruleset::Dnd2014,
-                        _ => Ruleset::Dnd2024,
-                    };
-                    new_class_form(edition)
-                } else {
-                    k.new_form("e")
+                // a class and a background are of one edition (R4; the form shows that edition's fields), a pack of
+                // both editions makes 2024 ones
+                let edition = match pack_edition(&pack.disk.manifest, &pack.disk.content) {
+                    Ruleset::Dnd2014 => Ruleset::Dnd2014,
+                    _ => Ruleset::Dnd2024,
+                };
+                let mut form = match k.id {
+                    // a class starts with its generated features (spec 4.5)
+                    CLASS_KIND => new_class_form(edition),
+                    BACKGROUND_KIND => new_background_form(edition),
+                    _ => k.new_form("e"),
                 };
                 with_source(&mut form, &source);
                 (form, None)

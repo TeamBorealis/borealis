@@ -365,6 +365,7 @@ impl Codec {
         match self {
             Self::Children { levelled, .. } => Some(levelled),
             Self::Class(f) => f.child_list(),
+            Self::Background(f) => f.child_type().map(|_| false),
             _ => None,
         }
     }
@@ -375,6 +376,7 @@ impl Codec {
         match self {
             Self::Children { ty, .. } => Some(ty),
             Self::Class(super::codec::ClassField::Equipment) => Some("Equipment Package"),
+            Self::Background(f) => f.child_type(),
             _ => None,
         }
     }
@@ -410,7 +412,8 @@ pub fn add_child(parent: &FormState, child: FormState, level: Option<u32>) -> Op
         element: None,
     };
     let mut list = entries(field_value(parent, def.key));
-    if def.codec == Codec::Class(super::codec::ClassField::Equipment) {
+    // one starting-equipment package: a new one replaces the one there
+    if def.control == super::kinds::Control::Package {
         list.clear();
     }
     list.push(entry);

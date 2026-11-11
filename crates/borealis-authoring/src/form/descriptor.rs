@@ -31,6 +31,9 @@ pub struct TabSpec {
 pub struct PickerSpec {
     /// Element types offered.
     pub types: Vec<String>,
+    /// Only elements with one of these tags.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<String>>,
     /// Several picks.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub multiple: Option<bool>,
@@ -143,6 +146,7 @@ fn field_spec(f: &FieldDef) -> FieldSpec {
         max: f.max,
         picker: (!f.picker.is_empty()).then(|| PickerSpec {
             types: strings(f.picker),
+            tags: (!f.picker_tags.is_empty()).then(|| strings(f.picker_tags)),
             multiple: (f.control == Control::References).then_some(true),
         }),
         default: f.default_value(),
