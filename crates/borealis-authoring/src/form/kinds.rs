@@ -14,6 +14,7 @@ use std::sync::OnceLock;
 mod background;
 mod caster;
 mod class;
+mod creature;
 mod feat;
 mod small;
 mod species;
@@ -22,6 +23,7 @@ mod subclass;
 
 pub use background::{new_background_form, BACKGROUND_KIND};
 pub use class::{new_class_form, CLASS_FEATURE_KIND, CLASS_KIND};
+pub use creature::{new_creature_form, CREATURE_KIND};
 pub use subclass::CLASS_OPTION_KIND;
 
 /// The generic form (spec 4.12), also the form of every type no other kind writes.
@@ -91,6 +93,30 @@ pub enum Control {
     Choices,
     /// A written list the character picks from ([`super::codec::WrittenList`]: a background's ideals).
     WrittenList,
+    /// A creature's armor class entries or the note for them ([`super::codec::ArmorClassValue`]).
+    ArmorClass,
+    /// A creature's hit points: average and dice, or the note for them ([`super::codec::HitPointsValue`]).
+    HitPoints,
+    /// A creature's speeds (walk, burrow, climb, fly, swim, hover).
+    Speeds,
+    /// A creature's initiative modifier and score.
+    Initiative,
+    /// A creature's six ability scores.
+    Abilities,
+    /// Bonuses by key (`FieldDef::choices`: a creature's saving throws or skills).
+    Bonuses,
+    /// Damage lines: types and their words (`FieldDef::choices`: the damage types).
+    Damage,
+    /// A creature's senses and passive Perception ([`super::codec::SensesValue`]).
+    Senses,
+    /// A creature's challenge rating, XP and proficiency bonus ([`super::codec::ChallengeValue`]).
+    Challenge,
+    /// A creature's traits or actions: name, text, use, attack, saving throw, spellcasting.
+    Entries,
+    /// A creature's legendary actions.
+    Legendary,
+    /// A creature's lair actions or regional effects.
+    Lair,
 }
 
 impl Control {
@@ -128,6 +154,18 @@ impl Control {
             Self::FeatGrant => "featGrant",
             Self::Choices => "choices",
             Self::WrittenList => "writtenList",
+            Self::ArmorClass => "armorClass",
+            Self::HitPoints => "hitPoints",
+            Self::Speeds => "speeds",
+            Self::Initiative => "initiative",
+            Self::Abilities => "abilities",
+            Self::Bonuses => "bonuses",
+            Self::Damage => "damage",
+            Self::Senses => "senses",
+            Self::Challenge => "challenge",
+            Self::Entries => "entries",
+            Self::Legendary => "legendary",
+            Self::Lair => "lair",
         }
     }
 }
@@ -491,6 +529,7 @@ pub fn kinds() -> &'static [KindDef] {
         ];
         all.extend(species::species_kinds());
         all.extend(background::background_kinds());
+        all.push(creature::creature_kind());
         all.extend(small::small_kinds());
         all.extend(super::item_kinds::item_kinds());
         all.push(small::other_kind());

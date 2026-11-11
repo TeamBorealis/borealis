@@ -15,6 +15,8 @@ import { FormulaBuilder } from "./builders/FormulaBuilder";
 import { TagFilterBuilder } from "./builders/TagFilterBuilder";
 import { asExprValue, relativeProblems } from "./builders/words";
 import { useCreatorEnv } from "./env";
+import { EntryList, LairField, LegendaryField } from "./creature/EntryList";
+import { AbilitiesField, ArmorClassField, BonusesField, ChallengeField, DamageField, HitPointsField, InitiativeField, SensesField, SpeedsField } from "./creature/StatParts";
 import { ChoicesField, FeatGrantField, WrittenListField } from "./fields/BackgroundParts";
 import { MapsToField, SettersField, SheetField } from "./fields/FormParts";
 import { ContentsField, contentsOf, optionsOf, PackageOptionsField } from "./fields/ItemParts";
@@ -46,10 +48,13 @@ const text = (v: unknown): string => (typeof v === "string" ? v : v === null || 
 const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
 /** Builder controls show their row problems on the rows; under the field only the field's own sentences. */
-const BUILDERS: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "blocks"]);
+const BUILDERS: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "blocks", "entries", "legendary"]);
 /** Controls that take the whole row of the form grid. */
 const WIDE: ReadonlySet<HomebrewFieldSpec["control"]> = new Set(["condition", "tagFilter", "equipped", "formula", "richText", "sheet", "setters", "mapsTo", "blocks", "references", "contents", "packageOptions", "spellLists", "levels", "package", "children", "skillChoice", "numbers",
-  "featGrant", "choices", "writtenList"]);
+  "featGrant", "choices", "writtenList", "armorClass", "hitPoints", "speeds", "abilities", "bonuses", "damage", "senses", "challenge", "entries", "legendary",
+  "lair"]);
+/** A creature's entry lists name each entry by this noun (WB-20). */
+const ENTRY_NOUNS: Readonly<Record<string, string>> = { traits: "Trait", actions: "Action", bonusActions: "Bonus action", reactions: "Reaction" };
 
 /** A closed combo's choices, with the stored value kept as a choice when content holds one the list doesn't (a homebrew
  * school), and a blank first choice while nothing is chosen (a new spell's school). */
@@ -180,6 +185,30 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
       return <ChoicesField id={id} label={label} value={value} onChange={(v) => onChange(v, false)} />;
     case "writtenList":
       return <WrittenListField id={id} label={label} value={value} onChange={(v, typing) => onChange(v, typing)} />;
+    case "armorClass":
+      return <ArmorClassField id={id} label={label} value={value} onChange={onChange} />;
+    case "hitPoints":
+      return <HitPointsField id={id} label={label} value={value} onChange={onChange} />;
+    case "speeds":
+      return <SpeedsField id={id} label={label} value={value} onChange={onChange} />;
+    case "initiative":
+      return <InitiativeField id={id} label={label} value={value} onChange={onChange} />;
+    case "abilities":
+      return <AbilitiesField id={id} label={label} value={value} onChange={onChange} />;
+    case "bonuses":
+      return <BonusesField id={id} label={label} value={value} choices={field.choices ?? []} onChange={onChange} />;
+    case "damage":
+      return <DamageField id={id} label={label} value={value} choices={field.choices ?? []} onChange={onChange} />;
+    case "senses":
+      return <SensesField id={id} label={label} value={value} onChange={onChange} />;
+    case "challenge":
+      return <ChallengeField id={id} label={label} value={value} choices={field.choices ?? []} onChange={onChange} />;
+    case "entries":
+      return <EntryList id={id} label={label} noun={ENTRY_NOUNS[field.key] ?? "Entry"} value={value} onChange={(v) => onChange(v, false)} problems={problems} path={`fields.${field.key}`} />;
+    case "legendary":
+      return <LegendaryField id={id} label={label} value={value} onChange={onChange} problems={problems} path={`fields.${field.key}`} />;
+    case "lair":
+      return <LairField id={id} label={label} value={value} onChange={onChange} />;
     case "skillChoice":
       return <SkillChoiceField id={id} label={label} value={value} onChange={(v) => onChange(v, false)} />;
     case "levels":

@@ -20,8 +20,9 @@ use crate::state::{AppState, ContentHub, BUNDLED_PACKS};
 use borealis_authoring::check::{issue_problems, Problem};
 use borealis_authoring::form::{
     add_child, assign_ids, element_group_to_form, element_to_form, kind, merge_ui,
-    new_background_form, new_child_key, new_class_form, refresh_blocks, to_ui, CatalogBlockCodec,
-    FormContext, FormState, WithElements, BACKGROUND_KIND, CLASS_KIND, SUBCLASS_KIND,
+    new_background_form, new_child_key, new_class_form, new_creature_form, refresh_blocks, to_ui,
+    CatalogBlockCodec, FormContext, FormState, WithElements, BACKGROUND_KIND, CLASS_KIND,
+    CREATURE_KIND, SUBCLASS_KIND,
 };
 use borealis_authoring::pack::{
     bump_patch, child_types, digest, granted_children, pack_edition, source_name, with_elements,
@@ -218,8 +219,8 @@ impl AppState {
                 let k = kind(kind_id).ok_or_else(|| {
                     ApiError::invalid(format!("There is no form called {kind_id:?}."))
                 })?;
-                // a class and a background are of one edition (R4; the form shows that edition's fields), a pack of
-                // both editions makes 2024 ones
+                // a class, a background and a creature are of one edition (R4; the form shows that edition's
+                // fields, a creature's stat block follows it), a pack of both editions makes 2024 ones
                 let edition = match pack_edition(&pack.disk.manifest, &pack.disk.content) {
                     Ruleset::Dnd2014 => Ruleset::Dnd2014,
                     _ => Ruleset::Dnd2024,
@@ -228,6 +229,7 @@ impl AppState {
                     // a class starts with its generated features (spec 4.5)
                     CLASS_KIND => new_class_form(edition),
                     BACKGROUND_KIND => new_background_form(edition),
+                    CREATURE_KIND => new_creature_form(edition),
                     _ => k.new_form("e"),
                 };
                 with_source(&mut form, &source);

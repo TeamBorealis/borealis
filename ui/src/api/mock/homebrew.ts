@@ -6,6 +6,7 @@ import { apiError } from "./errors";
 import { descriptionHtml, formProblems } from "./homebrew-check";
 import { addChild, newChildKey, newClassForm, newForm } from "./homebrew-class";
 import { backgroundProblems, FEAT_PARAMETER_PICKER, featParameterWords } from "./homebrew-background";
+import { creatureFacts, creatureHtml, creatureProblems } from "./homebrew-creature";
 import { featPrerequisite } from "./homebrew-feat";
 import { refreshSubclass, subclassProblems } from "./homebrew-subclass";
 import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
@@ -21,7 +22,7 @@ export function notImplemented(command: string): ApiError {
 
 /** The kinds `borealis-authoring` defines: the mock serves their real descriptors (generated). */
 const REAL_KINDS = ["spell", "feat", "featFeature", "species", "race", "subRace", "raceVariant", "racialTrait", "speciesTraitOption", "class", "classFeature",
-  "subclass", "subclassFeature", "classOption", "background", "backgroundFeature", "backgroundVariant", "backgroundCharacteristics"];
+  "subclass", "subclassFeature", "classOption", "background", "backgroundFeature", "backgroundVariant", "backgroundCharacteristics", "creature"];
 /** The small types and the generic form (WB-19), after the item forms as `kinds()` lists them. */
 const SMALL_KINDS = ["language", "proficiency", "condition", "damageType", "skill", "deity", "vision", "size", "alignment", "weaponProperty", "weaponGroup",
   "weaponCategory", "armorGroup", "masteryProperty", "focusGroup", "dragonmark", "rulesText"];
@@ -47,13 +48,14 @@ const TYPE_TOKENS: Record<string, string> = {
   "Armor Group": "ARMOR_GROUP", "Mastery Property": "MASTERY", "Spellcasting Focus Group": "FOCUS_GROUP", Dragonmark: "DRAGONMARK",
   "Rules Glossary Entry": "RULE", Familiar: "FAMILIAR", Background: "BACKGROUND", "Background Feature": "BACKGROUND_FEATURE",
   "Background Variant": "BACKGROUND_VARIANT", "Background Characteristics": "BACKGROUND_CHARACTERISTICS", "Equipment Package": "EQUIPMENT_PACKAGE",
+  Monster: "CREATURE",
 };
 const PREVIEW_TYPES: Record<string, ElementType> = {
   spell: "spell", feat: "feat", language: "language", species: "race", race: "race", subRace: "subrace", raceVariant: "subrace", racialTrait: "racial-trait",
   speciesTraitOption: "racial-trait", class: "class", classFeature: "class-feature", subclass: "archetype", subclassFeature: "class-feature",
   classOption: "option", proficiency: "proficiency", skill: "skill", deity: "deity", other: "companion",
   background: "background", backgroundFeature: "background", backgroundVariant: "background", backgroundCharacteristics: "background",
-  item: "item", weapon: "weapon", armor: "armor", magicItem: "magic-item", itemPack: "item", equipmentPackage: "option",
+  item: "item", weapon: "weapon", armor: "armor", magicItem: "magic-item", itemPack: "item", equipmentPackage: "option", creature: "monster",
 };
 /** Item facts the description pane lists (WB-12): field key and label. */
 const ITEM_FACTS: [string, string][] = [["rarity", "Rarity"], ["damage", "Damage"], ["cost", "Cost"], ["weight", "Weight (lb.)"]];
@@ -116,11 +118,11 @@ export class MockHomebrew {
     const k = KINDS.find((x) => x.id === kindId);
     if (!k) throw apiError("invalid_argument", `Unknown kind ${kindId}.`);
     if (parentId) return this.newChild(packId, k, parentId);
-    // A class and a background are of one edition (a pack of both makes 2024 ones); a class starts with its generated
+    // A class, a background and a creature are of one edition (a pack of both makes 2024 ones); a class starts with its generated
     // features (WB-16); every other kind is `KindDef::new_form`.
     const edition: Ruleset = own.pack.rulesets.length === 1 && own.pack.rulesets[0] === "dnd2014" ? "dnd2014" : "dnd2024";
     const blank = { ...newForm(k, "e"), key: undefined };
-    const form = k.id === "class" ? newClassForm(KINDS, edition) : k.id === "background" ? { ...blank, fields: { ...blank.fields, edition } } : blank;
+    const form = k.id === "class" ? newClassForm(KINDS, edition) : k.id === "background" || k.id === "creature" ? { ...blank, fields: { ...blank.fields, edition } } : blank;
     return this.store(packId, null, form);
   }
 
@@ -263,11 +265,11 @@ export class MockHomebrew {
       ...(typeof form.fields.enhancement === "number" && form.fields.enhancement > 0 ? [{ label: "Bonus", value: `+${form.fields.enhancement}` }] : []),
       ...(form.kind === "spell" ? SPELL_FACTS.filter(([key]) => text(key)).map(([key, label]) => ({ label, value: text(key) })) : []),
     ];
-    const description = descriptionHtml(form.fields.description);
+    const description = descriptionHtml(form.fields.description) + (form.kind === "creature" ? creatureHtml(form) : "");
     return {
       id, name: text("name") || "Unnamed", type: PREVIEW_TYPES[form.kind] ?? "option", source: own.pack.sourceIds[0] ?? own.pack.id,
       sourceName: own.pack.name, shortDescription: "", prerequisites: featPrerequisite(form), rulesets: own.pack.rulesets,
-      descriptionHtml: description, facts: k ? facts : [], grants: [],
+      descriptionHtml: description, facts: form.kind === "creature" ? creatureFacts(form) : k ? facts : [], grants: [],
     };
   }
 
@@ -281,6 +283,7 @@ export class MockHomebrew {
       ...formProblems(form, MOCK_BLOCK_CATALOG, elementId, KINDS.find((k) => k.id === form.kind)),
       ...subclassProblems(form, elementId),
       ...backgroundProblems(form, elementId),
+      ...creatureProblems(form, elementId),
       // a child's problems, at its path (`children.0.fields.name`)
       ...form.children.flatMap((c, i) => formProblems(c, MOCK_BLOCK_CATALOG, null, KINDS.find((k) => k.id === c.kind))
         .map((p) => ({ ...p, path: `children.${i}.${p.path ?? ""}`.replace(/\.$/, "") }))),

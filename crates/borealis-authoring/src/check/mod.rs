@@ -11,6 +11,7 @@ mod fields;
 mod lints;
 mod live;
 pub mod messages;
+mod monster_messages;
 mod problem;
 pub mod sweep;
 

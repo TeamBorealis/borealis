@@ -23,6 +23,8 @@ mod caster_read;
 mod class;
 mod class_feature;
 mod class_mc;
+mod creature;
+mod creature_values;
 mod feat;
 mod feat_prereq;
 mod small;
@@ -38,6 +40,8 @@ pub use caster::{CasterField, LevelCounts};
 pub(crate) use class::ABILITY_CHOICES;
 pub use class::{ClassField, ProficiencyGroup, SkillChoice, TableColumn};
 pub use class_feature::FeatureField;
+pub use creature::CreatureField;
+pub use creature_values::{ArmorClassValue, ChallengeValue, HitPointsValue, SensesValue};
 pub use feat::FeatField;
 pub use small::SmallField;
 pub use species::{Movement, NameKind, Sense, SpeciesField};
@@ -114,6 +118,8 @@ pub enum Codec {
     /// A background field (spec 4.3): the 2024 abilities, origin feat, proficiencies and package; the 2014 choices,
     /// characteristics, equipment note and variants.
     Background(BackgroundField),
+    /// A creature field (spec 4.11): one part of the stat block in `data`.
+    Creature(CreatureField),
 }
 
 use small::{RARITIES, RARITY_TAGS};
@@ -162,6 +168,7 @@ impl Codec {
             Self::Subclass(f) => f.bindings(),
             Self::Small(f) => f.bindings(),
             Self::Background(f) => f.bindings(),
+            Self::Creature(f) => f.bindings(),
         }
     }
 
@@ -230,6 +237,7 @@ impl Codec {
             Self::Subclass(f) => f.data_keys(),
             Self::Small(f) => f.data_keys(),
             Self::Background(f) => f.data_keys(),
+            Self::Creature(f) => f.data_keys(),
             _ => Vec::new(),
         }
     }
@@ -455,6 +463,7 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
         Codec::Caster(f) => caster::read(f, r),
         Codec::Subclass(f) => subclass::read(f, r, cx),
         Codec::Background(f) => background::read(f, r, cx),
+        Codec::Creature(f) => creature::read(f, r),
         Codec::Blocks => return None,
     })
 }
@@ -532,6 +541,7 @@ pub(crate) fn write(
         Codec::Caster(f) => return caster::write(f, value, memo, path, out),
         Codec::Subclass(f) => return subclass::write(f, value, memo, path, out, cx),
         Codec::Background(f) => return background::write(f, value, memo, path, out, cx),
+        Codec::Creature(f) => return creature::write(f, value, memo, path, out),
         Codec::Children { ty, levelled } => {
             if let Some(m) = memo.filter(|m| m.value == *value) {
                 let rules: Vec<borealis_content::Rule> = m
@@ -643,6 +653,7 @@ pub(crate) fn write(
         | Codec::Caster(_)
         | Codec::Subclass(_)
         | Codec::Background(_)
+        | Codec::Creature(_)
         | Codec::Children { .. } => {
             unreachable!("written above")
         }
@@ -721,6 +732,7 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
         | Codec::Caster(_)
         | Codec::Subclass(_)
         | Codec::Background(_)
+        | Codec::Creature(_)
         | Codec::Children { .. }
         | Codec::Blocks => {}
     }

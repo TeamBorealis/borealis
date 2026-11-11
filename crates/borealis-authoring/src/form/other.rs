@@ -47,9 +47,6 @@ const NOT_AUTHORED: &[&str] = &[
     "Monster Trait",
 ];
 
-/// Types the spec gives a form of their own that is still to come (creatures): not offered here.
-const OWN_FORM_TO_COME: &[&str] = &["Monster"];
-
 /// The type has a form of its own (a spell, a language...).
 fn has_own_form(ty: &str) -> bool {
     kind_for_type(ty).id != OTHER_KIND
@@ -61,7 +58,6 @@ fn offered(ty: &str) -> bool {
         && !has_own_form(ty)
         && !MANAGED.contains(&ty)
         && !NOT_AUTHORED.contains(&ty)
-        && !OWN_FORM_TO_COME.contains(&ty)
 }
 
 /// The types the Type combo offers: the fixed open types, then every other open type loaded content uses, sorted.

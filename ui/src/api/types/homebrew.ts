@@ -56,7 +56,12 @@ export type HomebrewControl =
   | "levelCounts" | "slotTable"
   /** Background form (WB-14): the origin feat with the feat's own choices it makes (`HomebrewFeatGrant`), language and
    * tool choices (`HomebrewChoiceRow[]`) and a characteristic the character picks from (`HomebrewWrittenList`). */
-  | "featGrant" | "choices" | "writtenList";
+  | "featGrant" | "choices" | "writtenList"
+  /** Creature form (WB-20, `homebrewCreature.ts`): armor class, hit points, speeds, initiative, the six scores, bonuses by
+   * key (saving throws or skills, keys in `choices`), damage lines, senses, challenge, entries (traits, actions...),
+   * legendary actions and a lair section (lair actions, regional effects). */
+  | "armorClass" | "hitPoints" | "speeds" | "initiative" | "abilities" | "bonuses" | "damage" | "senses" | "challenge"
+  | "entries" | "legendary" | "lair";
 
 /** One choice of a combo field. `value` is what the form stores; `label` is shown. */
 export interface HomebrewChoice {

@@ -19,6 +19,7 @@ pub use crate::monster_types::{
     LegendaryActions, RestKind, SaveEffect, Senses, Skill, Speeds, SpellFrequency, SpellList,
     SpellRef, SpellcastingBlock, Usage,
 };
+pub use crate::monster_validate::{dice_average, parse_dice};
 
 /// What a sheet shows for a creature with neither a challenge rating nor a note for it (also
 /// for an armor class or hit points with neither a number nor a note).

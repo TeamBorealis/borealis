@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { HomebrewKindDescriptor, HomebrewProblem, HomebrewTrialChange, Ruleset } from "../../api/contract";
 import { Button, Expander, Flyout } from "../../components";
 import { useApi } from "../../state/ApiContext";
+import { ElementDetailView } from "../builder/DescriptionPane";
 import { SlotList } from "../builder/SlotList";
 import { ProblemsPanel } from "./ProblemsPanel";
 import type { DraftController } from "./useDraft";
@@ -81,6 +82,11 @@ export function TryIt({ kind, draft, onClose, onJump }: TryItProps) {
               {state.busy && <span className="hb-try-busy" role="status">Updating...</span>}
             </p>
             <ProblemsPanel problems={view.problems} checking={false} onJump={jump} onOpen={() => undefined} />
+            {slot === "creature" && draft.view?.preview && (
+              <Expander flyout title="Stat block">
+                <div className="hb-try-statblock"><ElementDetailView d={draft.view.preview} /></div>
+              </Expander>
+            )}
             <Expander flyout title="Setup">
               <TrialSetup kind={kind} draftName={name} slot={slot} view={view} level={level} asSecondClass={asSecondClass}
                 onLevel={setLevel} onEdition={setEdition} onScores={(abilityScores) => send({ setup: { abilityScores } })} onSecondClass={setSecondClass} />

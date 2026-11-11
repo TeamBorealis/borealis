@@ -25,7 +25,7 @@ use borealis_content::file::ContentFile;
 use borealis_content::issue::{Issue, IssueCode};
 use borealis_content::rule_kinds::check_custom;
 use borealis_content::validate::validate_overlay;
-use borealis_content::{ContentStore, Element, Rule};
+use borealis_content::{ContentStore, Element, MonsterData, Rule};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 
@@ -229,6 +229,19 @@ fn schema_location(pointer: &str) -> Option<(usize, Option<String>)> {
     Some((index, Some(location)))
 }
 
+/// A schema violation inside a creature's stat block whose own validator found problems (`monster_validate.rs`): it
+/// tells them with a sentence at each part (`fields.armorClass`), so the schema's general one would say it twice.
+fn told_by_stat_block(elements: &[Element], pointer: &str) -> bool {
+    let Some((i, Some(location))) = schema_location(pointer) else {
+        return false;
+    };
+    location.starts_with("data")
+        && elements
+            .get(i)
+            .and_then(|e| MonsterData::from_element(e).ok())
+            .is_some_and(|m| !m.validate().is_empty())
+}
+
 fn schema_problems(
     form: &FormState,
     elements: &[Element],
@@ -243,6 +256,7 @@ fn schema_problems(
     };
     violations
         .into_iter()
+        .filter(|v| !told_by_stat_block(elements, &v.pointer))
         .map(|v| {
             let (el, location) = schema_location(&v.pointer)
                 .and_then(|(i, l)| elements.get(i).map(|e| (Some(e), l)))

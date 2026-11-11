@@ -43,16 +43,19 @@ pub use block_codec::CatalogBlockCodec;
 pub(crate) use block_codec::INCOMPLETE;
 pub use child_refs::{add_child, new_child_key, ChildEntry, ParentInfo};
 pub use codec::{
-    feat_parameter_words, feat_params, param_key, BackgroundField, CasterField, Characteristic,
-    ChoiceRow, ClassField, FeatGrant, FeatureField, LevelCounts, ProficiencyGroup, SkillChoice,
-    SmallField, SubclassField, TableColumn, WrittenList, FEAT_PARAMETER_PICKER,
+    feat_parameter_words, feat_params, param_key, ArmorClassValue, BackgroundField, CasterField,
+    ChallengeValue, Characteristic, ChoiceRow, ClassField, CreatureField, FeatGrant, FeatureField,
+    HitPointsValue, LevelCounts, ProficiencyGroup, SensesValue, SkillChoice, SmallField,
+    SubclassField, TableColumn, WrittenList, FEAT_PARAMETER_PICKER,
 };
 pub use descriptor::descriptors;
 pub use kinds::{
     append_kind, kind, kind_for_element, kind_for_type, kinds, Control, FieldDef, KindDef,
     KindGroup, CLASS_FEATURE_KIND, CLASS_KIND, CLASS_OPTION_KIND, OTHER_KIND,
 };
-pub use kinds::{new_background_form, new_class_form, BACKGROUND_KIND};
+pub use kinds::{
+    new_background_form, new_class_form, new_creature_form, BACKGROUND_KIND, CREATURE_KIND,
+};
 pub use other::{
     open_types, setter_names, type_refusal, TypeRefusal, ELEMENT_TYPE_PICKER, OPEN_TYPES,
     SETTER_NAME_PICKER,

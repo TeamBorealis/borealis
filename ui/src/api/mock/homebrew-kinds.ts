@@ -7230,6 +7230,1221 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
     ]
   },
   {
+    "id": "creature",
+    "label": "Creature",
+    "pluralLabel": "Creatures",
+    "description": "A stat block: a monster, a companion, a familiar or a Wild Shape form.",
+    "group": "main",
+    "elementTypes": [
+      "Monster"
+    ],
+    "parentKinds": [],
+    "editions": [
+      "dnd2014",
+      "dnd2024"
+    ],
+    "tabs": [
+      {
+        "id": "general",
+        "label": "GENERAL"
+      },
+      {
+        "id": "statistics",
+        "label": "STATISTICS"
+      },
+      {
+        "id": "actions",
+        "label": "ACTIONS"
+      },
+      {
+        "id": "legendary",
+        "label": "LEGENDARY"
+      },
+      {
+        "id": "rules",
+        "label": "RULES"
+      },
+      {
+        "id": "description",
+        "label": "DESCRIPTION"
+      }
+    ],
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name",
+        "tab": "general",
+        "control": "text",
+        "required": true,
+        "bindings": [
+          "name"
+        ]
+      },
+      {
+        "key": "edition",
+        "label": "Edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "The pack's edition"
+          },
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          },
+          {
+            "value": "any",
+            "label": "Either edition"
+          }
+        ],
+        "bindings": [
+          "ruleset"
+        ]
+      },
+      {
+        "key": "source",
+        "label": "Source",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "source"
+        ],
+        "expert": true,
+        "readOnly": true
+      },
+      {
+        "key": "statBlock",
+        "label": "Stat block edition",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "dnd2014",
+            "label": "2014"
+          },
+          {
+            "value": "dnd2024",
+            "label": "2024"
+          }
+        ],
+        "bindings": [
+          "data.ruleset"
+        ],
+        "help": "Follows the edition: the 2024 stat block adds initiative and gear.",
+        "expert": true,
+        "readOnly": true,
+        "default": ""
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "tab": "general",
+        "control": "chips",
+        "required": true,
+        "choices": [
+          {
+            "value": "tiny",
+            "label": "Tiny"
+          },
+          {
+            "value": "small",
+            "label": "Small"
+          },
+          {
+            "value": "medium",
+            "label": "Medium"
+          },
+          {
+            "value": "large",
+            "label": "Large"
+          },
+          {
+            "value": "huge",
+            "label": "Huge"
+          },
+          {
+            "value": "gargantuan",
+            "label": "Gargantuan"
+          }
+        ],
+        "bindings": [
+          "data.size"
+        ],
+        "help": "Pick two for a creature of either size (Medium or Small).",
+        "section": "Size, type and alignment",
+        "default": [
+          "medium"
+        ]
+      },
+      {
+        "key": "creatureType",
+        "label": "Creature type",
+        "tab": "general",
+        "control": "combo",
+        "required": true,
+        "choices": [
+          {
+            "value": "aberration",
+            "label": "Aberration"
+          },
+          {
+            "value": "beast",
+            "label": "Beast"
+          },
+          {
+            "value": "celestial",
+            "label": "Celestial"
+          },
+          {
+            "value": "construct",
+            "label": "Construct"
+          },
+          {
+            "value": "dragon",
+            "label": "Dragon"
+          },
+          {
+            "value": "elemental",
+            "label": "Elemental"
+          },
+          {
+            "value": "fey",
+            "label": "Fey"
+          },
+          {
+            "value": "fiend",
+            "label": "Fiend"
+          },
+          {
+            "value": "giant",
+            "label": "Giant"
+          },
+          {
+            "value": "humanoid",
+            "label": "Humanoid"
+          },
+          {
+            "value": "monstrosity",
+            "label": "Monstrosity"
+          },
+          {
+            "value": "ooze",
+            "label": "Ooze"
+          },
+          {
+            "value": "plant",
+            "label": "Plant"
+          },
+          {
+            "value": "undead",
+            "label": "Undead"
+          }
+        ],
+        "bindings": [
+          "data.creature_type"
+        ],
+        "section": "Size, type and alignment",
+        "default": ""
+      },
+      {
+        "key": "swarmOf",
+        "label": "Swarm of",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "Not a swarm"
+          },
+          {
+            "value": "tiny",
+            "label": "Tiny"
+          },
+          {
+            "value": "small",
+            "label": "Small"
+          },
+          {
+            "value": "medium",
+            "label": "Medium"
+          },
+          {
+            "value": "large",
+            "label": "Large"
+          }
+        ],
+        "bindings": [
+          "data.swarm_of"
+        ],
+        "help": "For a swarm: the size of each creature in it.",
+        "section": "Size, type and alignment",
+        "default": ""
+      },
+      {
+        "key": "creatureTags",
+        "label": "Type tags",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "data.tags"
+        ],
+        "help": "Shown after the type, like goblinoid or shapechanger.",
+        "section": "Size, type and alignment",
+        "default": []
+      },
+      {
+        "key": "alignment",
+        "label": "Alignment",
+        "tab": "general",
+        "control": "combo",
+        "required": true,
+        "choices": [
+          {
+            "value": "unaligned",
+            "label": "unaligned"
+          },
+          {
+            "value": "lawful good",
+            "label": "lawful good"
+          },
+          {
+            "value": "neutral good",
+            "label": "neutral good"
+          },
+          {
+            "value": "chaotic good",
+            "label": "chaotic good"
+          },
+          {
+            "value": "lawful neutral",
+            "label": "lawful neutral"
+          },
+          {
+            "value": "neutral",
+            "label": "neutral"
+          },
+          {
+            "value": "chaotic neutral",
+            "label": "chaotic neutral"
+          },
+          {
+            "value": "lawful evil",
+            "label": "lawful evil"
+          },
+          {
+            "value": "neutral evil",
+            "label": "neutral evil"
+          },
+          {
+            "value": "chaotic evil",
+            "label": "chaotic evil"
+          },
+          {
+            "value": "any alignment",
+            "label": "any alignment"
+          }
+        ],
+        "allowCustom": true,
+        "bindings": [
+          "data.alignment"
+        ],
+        "section": "Size, type and alignment",
+        "default": "unaligned"
+      },
+      {
+        "key": "armorClass",
+        "label": "Armor class",
+        "tab": "general",
+        "control": "armorClass",
+        "required": false,
+        "bindings": [
+          "data.ac",
+          "data.ac_note"
+        ],
+        "help": "A number, with what gives it; or, when it is worked out, the words for it.",
+        "section": "Armor class and hit points",
+        "default": {
+          "entries": [],
+          "note": ""
+        }
+      },
+      {
+        "key": "hitPoints",
+        "label": "Hit points",
+        "tab": "general",
+        "control": "hitPoints",
+        "required": false,
+        "bindings": [
+          "data.hp",
+          "data.hp_note"
+        ],
+        "help": "The hit dice give the average; or, when they are worked out, the words for them.",
+        "section": "Armor class and hit points",
+        "default": {
+          "average": null,
+          "formula": "",
+          "note": ""
+        }
+      },
+      {
+        "key": "speed",
+        "label": "Speed",
+        "tab": "general",
+        "control": "speeds",
+        "required": false,
+        "bindings": [
+          "data.speed"
+        ],
+        "section": "Speed and initiative",
+        "default": {
+          "walk": 30
+        }
+      },
+      {
+        "key": "initiative",
+        "label": "Initiative",
+        "tab": "general",
+        "control": "initiative",
+        "required": false,
+        "bindings": [
+          "data.initiative"
+        ],
+        "section": "Speed and initiative",
+        "default": null,
+        "editions": [
+          "dnd2024"
+        ]
+      },
+      {
+        "key": "challenge",
+        "label": "Challenge",
+        "tab": "general",
+        "control": "challenge",
+        "required": false,
+        "choices": [
+          {
+            "value": "0",
+            "label": "0"
+          },
+          {
+            "value": "1/8",
+            "label": "1/8"
+          },
+          {
+            "value": "1/4",
+            "label": "1/4"
+          },
+          {
+            "value": "1/2",
+            "label": "1/2"
+          },
+          {
+            "value": "1",
+            "label": "1"
+          },
+          {
+            "value": "2",
+            "label": "2"
+          },
+          {
+            "value": "3",
+            "label": "3"
+          },
+          {
+            "value": "4",
+            "label": "4"
+          },
+          {
+            "value": "5",
+            "label": "5"
+          },
+          {
+            "value": "6",
+            "label": "6"
+          },
+          {
+            "value": "7",
+            "label": "7"
+          },
+          {
+            "value": "8",
+            "label": "8"
+          },
+          {
+            "value": "9",
+            "label": "9"
+          },
+          {
+            "value": "10",
+            "label": "10"
+          },
+          {
+            "value": "11",
+            "label": "11"
+          },
+          {
+            "value": "12",
+            "label": "12"
+          },
+          {
+            "value": "13",
+            "label": "13"
+          },
+          {
+            "value": "14",
+            "label": "14"
+          },
+          {
+            "value": "15",
+            "label": "15"
+          },
+          {
+            "value": "16",
+            "label": "16"
+          },
+          {
+            "value": "17",
+            "label": "17"
+          },
+          {
+            "value": "18",
+            "label": "18"
+          },
+          {
+            "value": "19",
+            "label": "19"
+          },
+          {
+            "value": "20",
+            "label": "20"
+          },
+          {
+            "value": "21",
+            "label": "21"
+          },
+          {
+            "value": "22",
+            "label": "22"
+          },
+          {
+            "value": "23",
+            "label": "23"
+          },
+          {
+            "value": "24",
+            "label": "24"
+          },
+          {
+            "value": "25",
+            "label": "25"
+          },
+          {
+            "value": "26",
+            "label": "26"
+          },
+          {
+            "value": "27",
+            "label": "27"
+          },
+          {
+            "value": "28",
+            "label": "28"
+          },
+          {
+            "value": "29",
+            "label": "29"
+          },
+          {
+            "value": "30",
+            "label": "30"
+          }
+        ],
+        "bindings": [
+          "data.cr",
+          "data.cr_note",
+          "data.xp",
+          "data.xp_lair",
+          "data.proficiency_bonus"
+        ],
+        "help": "The XP and proficiency bonus follow the challenge rating unless you change them.",
+        "section": "Challenge",
+        "default": {
+          "cr": "",
+          "note": "",
+          "proficiencyBonus": null,
+          "xp": null,
+          "xpLair": null
+        }
+      },
+      {
+        "key": "abilities",
+        "label": "Ability scores",
+        "tab": "statistics",
+        "control": "abilities",
+        "required": false,
+        "bindings": [
+          "data.abilities"
+        ],
+        "section": "Ability scores",
+        "default": {
+          "cha": 10,
+          "con": 10,
+          "dex": 10,
+          "int": 10,
+          "str": 10,
+          "wis": 10
+        }
+      },
+      {
+        "key": "saves",
+        "label": "Saving throws",
+        "tab": "statistics",
+        "control": "bonuses",
+        "required": false,
+        "choices": [
+          {
+            "value": "str",
+            "label": "Strength"
+          },
+          {
+            "value": "dex",
+            "label": "Dexterity"
+          },
+          {
+            "value": "con",
+            "label": "Constitution"
+          },
+          {
+            "value": "int",
+            "label": "Intelligence"
+          },
+          {
+            "value": "wis",
+            "label": "Wisdom"
+          },
+          {
+            "value": "cha",
+            "label": "Charisma"
+          }
+        ],
+        "bindings": [
+          "data.saves"
+        ],
+        "help": "Only the saving throws it is proficient in, with their whole bonus.",
+        "section": "Ability scores",
+        "default": {}
+      },
+      {
+        "key": "skills",
+        "label": "Skills",
+        "tab": "statistics",
+        "control": "bonuses",
+        "required": false,
+        "choices": [
+          {
+            "value": "acrobatics",
+            "label": "Acrobatics"
+          },
+          {
+            "value": "animal handling",
+            "label": "Animal Handling"
+          },
+          {
+            "value": "arcana",
+            "label": "Arcana"
+          },
+          {
+            "value": "athletics",
+            "label": "Athletics"
+          },
+          {
+            "value": "deception",
+            "label": "Deception"
+          },
+          {
+            "value": "history",
+            "label": "History"
+          },
+          {
+            "value": "insight",
+            "label": "Insight"
+          },
+          {
+            "value": "intimidation",
+            "label": "Intimidation"
+          },
+          {
+            "value": "investigation",
+            "label": "Investigation"
+          },
+          {
+            "value": "medicine",
+            "label": "Medicine"
+          },
+          {
+            "value": "nature",
+            "label": "Nature"
+          },
+          {
+            "value": "perception",
+            "label": "Perception"
+          },
+          {
+            "value": "performance",
+            "label": "Performance"
+          },
+          {
+            "value": "persuasion",
+            "label": "Persuasion"
+          },
+          {
+            "value": "religion",
+            "label": "Religion"
+          },
+          {
+            "value": "sleight of hand",
+            "label": "Sleight of Hand"
+          },
+          {
+            "value": "stealth",
+            "label": "Stealth"
+          },
+          {
+            "value": "survival",
+            "label": "Survival"
+          }
+        ],
+        "bindings": [
+          "data.skills"
+        ],
+        "section": "Ability scores",
+        "default": {}
+      },
+      {
+        "key": "skillNotes",
+        "label": "Skill notes",
+        "tab": "statistics",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "data.skill_notes"
+        ],
+        "expert": true,
+        "section": "Ability scores",
+        "default": []
+      },
+      {
+        "key": "damageVulnerabilities",
+        "label": "Damage vulnerabilities",
+        "tab": "statistics",
+        "control": "damage",
+        "required": false,
+        "choices": [
+          {
+            "value": "acid",
+            "label": "Acid"
+          },
+          {
+            "value": "bludgeoning",
+            "label": "Bludgeoning"
+          },
+          {
+            "value": "cold",
+            "label": "Cold"
+          },
+          {
+            "value": "fire",
+            "label": "Fire"
+          },
+          {
+            "value": "force",
+            "label": "Force"
+          },
+          {
+            "value": "lightning",
+            "label": "Lightning"
+          },
+          {
+            "value": "necrotic",
+            "label": "Necrotic"
+          },
+          {
+            "value": "piercing",
+            "label": "Piercing"
+          },
+          {
+            "value": "poison",
+            "label": "Poison"
+          },
+          {
+            "value": "psychic",
+            "label": "Psychic"
+          },
+          {
+            "value": "radiant",
+            "label": "Radiant"
+          },
+          {
+            "value": "slashing",
+            "label": "Slashing"
+          },
+          {
+            "value": "thunder",
+            "label": "Thunder"
+          }
+        ],
+        "bindings": [
+          "data.damage_vulnerabilities"
+        ],
+        "section": "Damage and conditions",
+        "default": []
+      },
+      {
+        "key": "damageResistances",
+        "label": "Damage resistances",
+        "tab": "statistics",
+        "control": "damage",
+        "required": false,
+        "choices": [
+          {
+            "value": "acid",
+            "label": "Acid"
+          },
+          {
+            "value": "bludgeoning",
+            "label": "Bludgeoning"
+          },
+          {
+            "value": "cold",
+            "label": "Cold"
+          },
+          {
+            "value": "fire",
+            "label": "Fire"
+          },
+          {
+            "value": "force",
+            "label": "Force"
+          },
+          {
+            "value": "lightning",
+            "label": "Lightning"
+          },
+          {
+            "value": "necrotic",
+            "label": "Necrotic"
+          },
+          {
+            "value": "piercing",
+            "label": "Piercing"
+          },
+          {
+            "value": "poison",
+            "label": "Poison"
+          },
+          {
+            "value": "psychic",
+            "label": "Psychic"
+          },
+          {
+            "value": "radiant",
+            "label": "Radiant"
+          },
+          {
+            "value": "slashing",
+            "label": "Slashing"
+          },
+          {
+            "value": "thunder",
+            "label": "Thunder"
+          }
+        ],
+        "bindings": [
+          "data.damage_resistances"
+        ],
+        "section": "Damage and conditions",
+        "default": []
+      },
+      {
+        "key": "damageImmunities",
+        "label": "Damage immunities",
+        "tab": "statistics",
+        "control": "damage",
+        "required": false,
+        "choices": [
+          {
+            "value": "acid",
+            "label": "Acid"
+          },
+          {
+            "value": "bludgeoning",
+            "label": "Bludgeoning"
+          },
+          {
+            "value": "cold",
+            "label": "Cold"
+          },
+          {
+            "value": "fire",
+            "label": "Fire"
+          },
+          {
+            "value": "force",
+            "label": "Force"
+          },
+          {
+            "value": "lightning",
+            "label": "Lightning"
+          },
+          {
+            "value": "necrotic",
+            "label": "Necrotic"
+          },
+          {
+            "value": "piercing",
+            "label": "Piercing"
+          },
+          {
+            "value": "poison",
+            "label": "Poison"
+          },
+          {
+            "value": "psychic",
+            "label": "Psychic"
+          },
+          {
+            "value": "radiant",
+            "label": "Radiant"
+          },
+          {
+            "value": "slashing",
+            "label": "Slashing"
+          },
+          {
+            "value": "thunder",
+            "label": "Thunder"
+          }
+        ],
+        "bindings": [
+          "data.damage_immunities"
+        ],
+        "section": "Damage and conditions",
+        "default": []
+      },
+      {
+        "key": "conditionImmunities",
+        "label": "Condition immunities",
+        "tab": "statistics",
+        "control": "chips",
+        "required": false,
+        "choices": [
+          {
+            "value": "blinded",
+            "label": "blinded"
+          },
+          {
+            "value": "charmed",
+            "label": "charmed"
+          },
+          {
+            "value": "deafened",
+            "label": "deafened"
+          },
+          {
+            "value": "exhaustion",
+            "label": "exhaustion"
+          },
+          {
+            "value": "frightened",
+            "label": "frightened"
+          },
+          {
+            "value": "grappled",
+            "label": "grappled"
+          },
+          {
+            "value": "incapacitated",
+            "label": "incapacitated"
+          },
+          {
+            "value": "invisible",
+            "label": "invisible"
+          },
+          {
+            "value": "paralyzed",
+            "label": "paralyzed"
+          },
+          {
+            "value": "petrified",
+            "label": "petrified"
+          },
+          {
+            "value": "poisoned",
+            "label": "poisoned"
+          },
+          {
+            "value": "prone",
+            "label": "prone"
+          },
+          {
+            "value": "restrained",
+            "label": "restrained"
+          },
+          {
+            "value": "stunned",
+            "label": "stunned"
+          },
+          {
+            "value": "unconscious",
+            "label": "unconscious"
+          }
+        ],
+        "allowCustom": true,
+        "bindings": [
+          "data.condition_immunities"
+        ],
+        "section": "Damage and conditions",
+        "default": []
+      },
+      {
+        "key": "senses",
+        "label": "Senses",
+        "tab": "statistics",
+        "control": "senses",
+        "required": false,
+        "bindings": [
+          "data.senses"
+        ],
+        "section": "Senses and languages",
+        "default": {
+          "passive_perception": null
+        }
+      },
+      {
+        "key": "languages",
+        "label": "Languages",
+        "tab": "statistics",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "data.languages"
+        ],
+        "help": "As printed, one per chip (Common, understands Draconic but can't speak).",
+        "section": "Senses and languages",
+        "default": []
+      },
+      {
+        "key": "telepathy",
+        "label": "Telepathy (feet)",
+        "tab": "statistics",
+        "control": "number",
+        "required": false,
+        "bindings": [
+          "data.telepathy"
+        ],
+        "section": "Senses and languages",
+        "min": 0,
+        "max": 1000,
+        "default": null
+      },
+      {
+        "key": "gear",
+        "label": "Gear",
+        "tab": "statistics",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "data.gear"
+        ],
+        "section": "Gear",
+        "default": [],
+        "editions": [
+          "dnd2024"
+        ]
+      },
+      {
+        "key": "traits",
+        "label": "Traits",
+        "tab": "actions",
+        "control": "entries",
+        "required": false,
+        "bindings": [
+          "data.traits"
+        ],
+        "help": "What it always has or does (Keen Smell, Spellcasting).",
+        "default": []
+      },
+      {
+        "key": "actions",
+        "label": "Actions",
+        "tab": "actions",
+        "control": "entries",
+        "required": false,
+        "bindings": [
+          "data.actions"
+        ],
+        "help": "An attack has its to-hit, reach or range and damage.",
+        "default": []
+      },
+      {
+        "key": "bonusActions",
+        "label": "Bonus actions",
+        "tab": "actions",
+        "control": "entries",
+        "required": false,
+        "bindings": [
+          "data.bonus_actions"
+        ],
+        "help": "Taken as a bonus action.",
+        "default": []
+      },
+      {
+        "key": "reactions",
+        "label": "Reactions",
+        "tab": "actions",
+        "control": "entries",
+        "required": false,
+        "bindings": [
+          "data.reactions"
+        ],
+        "help": "Taken as a reaction, with what triggers it in the text.",
+        "default": []
+      },
+      {
+        "key": "legendary",
+        "label": "Legendary actions",
+        "tab": "legendary",
+        "control": "legendary",
+        "required": false,
+        "bindings": [
+          "data.legendary"
+        ],
+        "default": null
+      },
+      {
+        "key": "lairActions",
+        "label": "Lair actions",
+        "tab": "legendary",
+        "control": "lair",
+        "required": false,
+        "bindings": [
+          "data.lair_actions"
+        ],
+        "default": null
+      },
+      {
+        "key": "regionalEffects",
+        "label": "Regional effects",
+        "tab": "legendary",
+        "control": "lair",
+        "required": false,
+        "bindings": [
+          "data.regional_effects"
+        ],
+        "default": null
+      },
+      {
+        "key": "flavour",
+        "label": "Flavour text",
+        "tab": "description",
+        "control": "multiline",
+        "required": false,
+        "bindings": [
+          "data.description"
+        ],
+        "help": "Printed with the stat block.",
+        "default": ""
+      },
+      {
+        "key": "tags",
+        "label": "Tags",
+        "tab": "general",
+        "control": "tags",
+        "required": false,
+        "bindings": [
+          "supports"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "summary",
+        "label": "Summary line",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "setter:short"
+        ],
+        "help": "Shown in the second column of pickers.",
+        "section": "Details"
+      },
+      {
+        "key": "keywords",
+        "label": "Keywords",
+        "tab": "general",
+        "control": "chips",
+        "required": false,
+        "bindings": [
+          "setter:keywords"
+        ],
+        "section": "Details"
+      },
+      {
+        "key": "rules",
+        "label": "Other rules",
+        "tab": "rules",
+        "control": "blocks",
+        "required": false,
+        "bindings": [
+          "rules"
+        ],
+        "help": "Rules of the creature that no field holds."
+      },
+      {
+        "key": "description",
+        "label": "Description",
+        "tab": "description",
+        "control": "richText",
+        "required": false,
+        "bindings": [
+          "description"
+        ]
+      },
+      {
+        "key": "compendium",
+        "label": "Show in Compendium",
+        "tab": "description",
+        "control": "check",
+        "required": false,
+        "bindings": [
+          "compendium.display"
+        ]
+      },
+      {
+        "key": "mapsTo",
+        "label": "2014/2024 counterpart",
+        "tab": "description",
+        "control": "mapsTo",
+        "required": false,
+        "bindings": [
+          "maps_to"
+        ],
+        "expert": true
+      }
+    ]
+  },
+  {
     "id": "language",
     "label": "Language",
     "pluralLabel": "Languages",

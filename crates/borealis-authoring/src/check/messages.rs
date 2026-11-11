@@ -202,7 +202,7 @@ pub fn issue_message(issue: &Issue, element_type: &str, names: &dyn Lookup) -> S
                 .into()
         }
         IssueCode::InvalidMonsterData => {
-            "Part of this creature's stat block doesn't add up. Check the marked part.".into()
+            super::monster_messages::monster_message(issue.path.as_deref(), m)
         }
         IssueCode::NonStandardMonsterXp => {
             "The experience points differ from the usual amount for this challenge rating (kept as written)."

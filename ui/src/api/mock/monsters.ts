@@ -53,7 +53,8 @@ const MONSTERS: MonsterDef[] = [
 ];
 
 const feature = ([name, text]: Feature): string => `<p><b><i>${name}.</i></b> ${text}</p>`;
-const section = (title: string, list: Feature[] | undefined): string => (list?.length ? `<h4>${title}</h4>${list.map(feature).join("")}` : "");
+/** One stat block section as the backend writes it (`compendium_monster.rs`): a heading, then each feature. */
+export const section = (title: string, list: readonly Feature[] | undefined): string => (list?.length ? `<h4>${title}</h4>${list.map(feature).join("")}` : "");
 
 /** The same description HTML the backend builds for a monster: its sections in stat block order. */
 function statBlock(m: MonsterDef): string {

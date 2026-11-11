@@ -654,6 +654,20 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   items numbered 1..n), `equipmentNote` (rich text, the `equipment` part). New pseudo picker type
   `["Feat Parameter", "<feat id>"]` (the feat's `select_param` names) and `["Feat Parameter", "<feat id>", "<name>"]`
   (that choice's options). `HomebrewPickerTarget.tags` is now sent in descriptors (skills: tag `Skill`).
+- **Creature form (WB-20).** Kind `creature` (type `Monster`, both editions; a new one has its pack's edition, 2024 in
+  a pack of both). The stat block lives in `data` (`MonsterData`); every key is a field, read and written through the
+  typed model. Tabs GENERAL, STATISTICS, ACTIONS, LEGENDARY, RULES, DESCRIPTION. Fields hold the model's own shape
+  (snake_case inside: `homebrewCreature.ts`) except four wrappers: `armorClass` `{entries, note}` (`data.ac`,
+  `data.ac_note`), `hitPoints` `{average, formula, note}` (`average: null` is worked out from the dice), `senses`
+  (`passive_perception: null` is 10 + Perception or the Wisdom modifier) and `challenge` `{cr, note, xp, xpLair,
+  proficiencyBonus}` (`xp` / `proficiencyBonus` null follow the CR). `statBlock` (`data.ruleset`, expert, read-only)
+  follows the edition. New controls: `armorClass`, `hitPoints`, `speeds`, `initiative` (2024), `abilities`, `bonuses`
+  (saves or skills, keys in `choices`), `damage`, `senses`, `challenge`, `entries` (traits, actions, bonus actions,
+  reactions: name, text, usage, condition, attack, save, spellcasting with spell refs), `legendary`, `lair`. Problems:
+  `form.required` (size, creature type, alignment), `form` (creature type missing, unreadable dice or CR), and the stat
+  block validator's `invalid_monster_data` / `non_standard_monster_xp` at the field (`fields.armorClass`, an entry at
+  `fields.actions.2`) with a sentence per part; the content schema's duplicates inside such a stat block are dropped.
+  The preview is the compendium's monster entry (AC, HP, Challenge facts and the sections).
 - **Events:** saves end with the existing `borealis://content-reloaded`.
 
 ### AI tasks

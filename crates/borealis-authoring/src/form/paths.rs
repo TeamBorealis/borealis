@@ -60,8 +60,21 @@ pub fn form_path_for_location(
     if let Some(name) = location.strip_prefix("setter:") {
         return setter_field(form, name);
     }
-    if let Some(key) = location.strip_prefix("data.") {
-        let key = key.split(['.', '[']).next().unwrap_or(key);
+    if let Some(rest) = location.strip_prefix("data.") {
+        let key = rest.split(['.', '[']).next().unwrap_or(rest);
+        // a creature's entry: the entry too (`data.actions[2].attack` -> `fields.actions.2`)
+        let entry: Option<usize> = rest
+            .strip_prefix(key)
+            .and_then(|r| r.strip_prefix('['))
+            .and_then(|r| r.split(']').next())
+            .and_then(|i| i.parse().ok());
+        let entries = |c: Codec| matches!(c, Codec::Creature(f) if f.is_entry_list());
+        if let (Some(i), Some(f)) = (
+            entry,
+            field_with(form, |c| entries(c) && c.data_keys().contains(&key)),
+        ) {
+            return Some(format!("{f}.{i}"));
+        }
         return field_with(form, |c| c.data_keys().contains(&key))
             .or_else(|| preserved(form, &format!("data.{key}")));
     }
