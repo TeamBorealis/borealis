@@ -101,7 +101,10 @@ export function PickerRow({ row, listSlot, showDescription, versionColumn, highl
       </button>
       {/* A1 / TV1 (phones): the ring on the trailing edge is a real button that chooses the row; the name only describes it. */}
       {phone && (
-        <button type="button" className={multiple ? "pick-mark is-check" : "pick-mark"} aria-label={`Choose ${row.name}`} aria-pressed={sel} aria-disabled={disabled || undefined}
+        // a multi-select mark is a check box to screen readers ("Choose Elvish, check box, checked"), a single choice's
+        // ring a toggle button (WB-26)
+        <button type="button" className={multiple ? "pick-mark is-check" : "pick-mark"} aria-label={`Choose ${row.name}`}
+          role={multiple ? "checkbox" : undefined} aria-checked={multiple ? sel : undefined} aria-pressed={multiple ? undefined : sel} aria-disabled={disabled || undefined}
           title={v.disabledReason} onClick={() => { if ((multiple || !sel) && !disabled) onChoose(); }} />
       )}
       {versionColumn && (

@@ -109,8 +109,9 @@ export function HomebrewHome() {
                 <span role="gridcell">{p.version}</span>
               </div>
             ))}
-            {packs.data && own.length === 0 && <p className="v4-grid-empty">No homebrew packs yet. Make one with New pack.</p>}
-            {packs.data && own.length > 0 && rows.length === 0 && <p className="v4-grid-empty">No packs match.</p>}
+            {/* the empty line is a row of the grid (a grid needs rows; phones hide the header row, WB-26 axe) */}
+            {packs.data && own.length === 0 && <div role="row"><p role="gridcell" className="v4-grid-empty">No homebrew packs yet. Make one with New pack.</p></div>}
+            {packs.data && own.length > 0 && rows.length === 0 && <div role="row"><p role="gridcell" className="v4-grid-empty">No packs match.</p></div>}
           </div>
         </div>
       </div>

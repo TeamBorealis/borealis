@@ -34,7 +34,7 @@ export function CellSheet({ cells, index, onWrite, onIndex, onClose }: CellSheet
     <Dialog title={`Table cell: ${cellName(cell)}`} onClose={onClose} className="rich-cell-sheet"
       footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" onClick={() => { keep(); onClose(); }}>OK</Button></>}>
       <div className="mg-f hb-field">
-        <label htmlFor={inputId}>Text</label>
+        <label htmlFor={inputId}>Cell text</label>
         <textarea id={inputId} className="hb-multiline" value={text} rows={4} onChange={(e) => setText(e.target.value)} />
         <p className="hb-field-help">A new line in the text is a line break in the cell.</p>
       </div>

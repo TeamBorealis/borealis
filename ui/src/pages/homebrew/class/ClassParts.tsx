@@ -133,7 +133,7 @@ export function ChildrenField({ editing, field, label, type }: { editing: ChildE
         ))}
       </ul>
       {kind && <button type="button" className="hb-pick-btn" onClick={() => void add()}><Icon name="plus" />Add a {kind.label.toLowerCase()}</button>}
-      {type && <button type="button" className="hb-pick-btn" aria-haspopup="dialog" onClick={() => setPicking(true)}><Icon name="search" />Give one that exists</button>}
+      {type && <button type="button" className="hb-pick-btn" onClick={() => setPicking(true)}><Icon name="search" />Give one that exists</button>}
       {picking && type && (
         <ReferencePicker title={label} target={{ types: [type], multiple: true }} chosen={entries.flatMap((e) => (e.element ? [e.element.id] : []))}
           onChoose={giveExisting} onClose={() => setPicking(false)} />

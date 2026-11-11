@@ -76,7 +76,15 @@ export function PackWorkspace() {
   const [tryItOpen, setTryItOpen] = useState(false);
   const [mobileView, setMobileView] = useState<"list" | "editor">("list");
   const filterRef = useRef<HTMLInputElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const pack = (packs.data ?? []).find((p) => p.id === packId) ?? null;
+  // A pack opened from the list (or just made in New pack) leaves focus nowhere: the opener is gone. Keyboard and screen
+  // reader users start at the pack's heading, "Homebrew: <name>" (WB-26).
+  useEffect(() => {
+    if (!pack) return;
+    const active = document.activeElement;
+    if (!active || active === document.body) headingRef.current?.focus();
+  }, [packId, pack !== null]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { rememberPack(packId); }, [packId]);
   // The problems line belongs to the open element: leaving the workspace clears it.
@@ -214,7 +222,8 @@ export function PackWorkspace() {
     const view = name ? await api.homebrewUpdateDraft({ draftId: fresh.draftId, form: { ...fresh.form, fields: { ...fresh.form.fields, name } } }) : fresh;
     setNewOpen(false);
     await show(view);
-    if (!name) setTimeout(() => focusField("name", !!copy), 0);
+    // keyboard users land in the new element's form, not back on New (WB-26); a copy's name is selected for renaming
+    setTimeout(() => focusField("name", !!copy), 0);
   };
 
   // WHERE USED in another pack lands here with ?element=<id>.
@@ -383,7 +392,7 @@ export function PackWorkspace() {
   const errors = [kinds.error, elements.error].filter(Boolean);
   return (
     <div className={`hb-ws ${narrow ? "narrow" : "wide"}`} data-view={narrow ? mobileView : undefined}>
-      <h1 className="sr-only">{pack ? `Homebrew: ${pack.name}` : "Homebrew"}</h1>
+      <h1 className="sr-only" tabIndex={-1} ref={headingRef}>{pack ? `Homebrew: ${pack.name}` : "Homebrew"}</h1>
       <div className="hb-ws-head">
         <button type="button" className="hb-back" onClick={() => (narrow && mobileView === "editor" ? setMobileView("list") : nav("/homebrew"))}>
           <Icon name="back" />{narrow && mobileView === "editor" ? `Back to ${listKind?.pluralLabel.toLowerCase() ?? "the list"}` : "All packs"}

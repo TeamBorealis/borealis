@@ -61,7 +61,7 @@ export function SourceFilterButton({ filter, onChange, sources }: SourceProps) {
   };
   return (
     <>
-      <button type="button" className="pick-fsrc" aria-haspopup="dialog" aria-expanded={!!anchor} aria-label={`Source: ${sourcesText(filter, sources)}`}
+      <button type="button" className="pick-fsrc" aria-expanded={!!anchor} aria-label={`Source: ${sourcesText(filter, sources)}`}
         onClick={(e) => setAnchor(anchor ? null : e.currentTarget)}>
         <span>{sourcesText(filter, sources)}</span><Icon name="caret" />
       </button>

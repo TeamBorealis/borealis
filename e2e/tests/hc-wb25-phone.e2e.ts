@@ -154,7 +154,7 @@ describe('hc-wb25 homebrew creator on a phone (web mock)', { tags: ['homebrew'] 
     await settledBox(ctx.browser.locator(`${row} button.pick-main`));
     const mark = async () => ctx.browser.evaluate((sel: string) => {
       const m = document.querySelector(`${sel} .pick-mark`);
-      return `${m?.classList.contains('is-check')}:${m?.getAttribute('aria-pressed')}`;
+      return `${m?.classList.contains('is-check')}:${m?.getAttribute('aria-checked')}`;
     }, row);
     expectEqual('a check box, clear', 'true:false', await mark());
     await ctx.browser.locator(`${row} button.pick-main`).click();

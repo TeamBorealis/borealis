@@ -3,6 +3,7 @@ import type { BookRuleset, ContentPack } from "../../api/contract";
 import { Alert, Button, ComboBox, Expander, Flyout, TextBox } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { errorMessage } from "../../state/useAsync";
+import { enterCreates } from "./flyoutKeys";
 import "../characters/characters.css";
 
 const EDITIONS: { value: BookRuleset; label: string }[] = [
@@ -60,7 +61,7 @@ export function NewPackFlyout({ onCreated, onClose }: { onCreated: (pack: Conten
   return (
     <Flyout title="New pack" onClose={onClose}
       footer={<div className="v4-foot"><Button data-testid="create-pack" disabled={busy} onClick={() => void create()}>Create</Button><Button onClick={onClose}>Cancel</Button></div>}>
-      <form className="v4-new" onSubmit={(e) => { e.preventDefault(); void create(); }}>
+      <form className="v4-new" onSubmit={(e) => { e.preventDefault(); void create(); }} onKeyDown={enterCreates(() => { if (!busy) void create(); })}>
         <Expander flyout title="Pack details">
           <p className="sub">Your own elements live in a pack. It loads like any other pack and travels with your other devices.</p>
           <label className="v4-fl" htmlFor="hb-pack-name">Name</label>

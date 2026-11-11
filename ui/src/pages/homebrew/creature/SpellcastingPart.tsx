@@ -27,7 +27,7 @@ function SpellListRow({ list, index, onChange, onRemove }: { list: HomebrewSpell
     <div className="hb-cr-spell-list" role="group" aria-label={label}>
       <span className="hb-row-controls">
         <ComboBox aria-label={`${label}: how often`} value={frequencyKey(list.frequency)} options={FREQUENCIES} onChange={(k) => onChange({ ...list, frequency: frequencyOf(k) })} />
-        <button type="button" className="hb-pick-btn" aria-haspopup="dialog" onClick={() => setPicking(true)}><Icon name="search" />Add spells</button>
+        <button type="button" className="hb-pick-btn" onClick={() => setPicking(true)}><Icon name="search" />Add spells</button>
         <button type="button" className="hb-chip-x" aria-label={`Remove ${label.toLowerCase()}`} onClick={onRemove}><Icon name="x" /></button>
       </span>
       <ul className="hb-ref-list" aria-label={`${label}: spells`}>

@@ -114,7 +114,7 @@ export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing
           <ul className="hb-level-rows" aria-label="Features by level">
             {LEVELS.map((level) => (
               <li key={level} data-level={level} className={marked.has(level) ? "hb-marked-level" : undefined}>
-                <button type="button" className="hb-level-row" aria-haspopup="dialog" onClick={() => setSheetLevel(level)}>
+                <button type="button" className="hb-level-row" onClick={() => setSheetLevel(level)}>
                   <span className="hb-level-row-name">Level {level}</span>
                   <span className="hb-level-row-detail">{levelDetail(level)}</span>
                 </button>

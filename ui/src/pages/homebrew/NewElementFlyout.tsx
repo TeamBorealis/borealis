@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { type KeyboardEvent, useRef, useState } from "react";
 import type { HomebrewKindDescriptor, HomebrewRef } from "../../api/contract";
 import { Alert, Button, Expander, Flyout, TextBox } from "../../components";
 import { CheckBox } from "../../components/controls";
 import { errorMessage } from "../../state/useAsync";
 import { ReferencePicker } from "./pickers/ReferencePicker";
+import { enterCreates } from "./flyoutKeys";
 import "../characters/characters.css";
 
 /** Where a new element starts (spec 11): an empty form, an SRD template (bundled elements only, CS1), or a copy of any
@@ -21,6 +22,42 @@ const STARTS: { id: StartFrom; label: string; description: string }[] = [
   { id: "template", label: "Start from a template", description: "A copy of an element of the System Reference Document." },
   { id: "copy", label: "New from copy...", description: "A copy of any loaded element: SRD, imported or your own." },
 ];
+
+/**
+ * A radio group of option cards (WAI-ARIA radio group): one Tab stop, the chosen card; the arrow keys (and Home / End)
+ * choose the next card and move focus to it (WB-26: each of the 38 kinds was a Tab stop and the arrows did nothing).
+ */
+function RadioCards({ labelledBy, options, value, onChange }: {
+  labelledBy: string; options: readonly { id: string; label: string; description: string }[]; value: string; onChange: (id: string) => void;
+}) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const at = Math.max(0, options.findIndex((o) => o.id === value));
+  const go = (i: number) => {
+    const next = (i + options.length) % options.length;
+    const o = options[next];
+    if (!o) return;
+    onChange(o.id);
+    refs.current[next]?.focus();
+  };
+  const onKey = (e: KeyboardEvent, i: number) => {
+    const to = e.key === "ArrowDown" || e.key === "ArrowRight" ? i + 1 : e.key === "ArrowUp" || e.key === "ArrowLeft" ? i - 1
+      : e.key === "Home" ? 0 : e.key === "End" ? options.length - 1 : null;
+    if (to === null) return;
+    e.preventDefault();
+    go(to);
+  };
+  return (
+    <div className="v4-opts hb-kind-cards" role="radiogroup" aria-labelledby={labelledBy}>
+      {options.map((o, i) => (
+        <button key={o.id} ref={(el) => { refs.current[i] = el; }} type="button" role="radio" aria-checked={o.id === value} tabIndex={i === at ? 0 : -1}
+          className="v4-opt hb-kind-card" onClick={() => onChange(o.id)} onKeyDown={(e) => onKey(e, i)}>
+          <span className="hb-kind-name">{o.label}</span>
+          <span className="hb-kind-desc">{o.description}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 /** Kinds offered by New element, in the CATEGORIES order: main forms, small types, then the expert form. Child kinds are
  * made inside their parent (a class's features). */
@@ -63,7 +100,7 @@ export function NewElementFlyout({ kinds, initialKind, onCreate, onClose }: {
   return (
     <Flyout title="New element" onClose={onClose}
       footer={<div className="v4-foot"><Button data-testid="create-element" disabled={busy || !kindId} onClick={create}>{start === "blank" ? "Create" : "Choose..."}</Button><Button onClick={onClose}>Cancel</Button></div>}>
-      <form className="v4-new" onSubmit={(e) => { e.preventDefault(); void create(); }}>
+      <form className="v4-new" onSubmit={(e) => { e.preventDefault(); void create(); }} onKeyDown={enterCreates(() => { if (!busy && kindId) create(); })}>
         <Expander flyout title="Element">
           <p className="sub">Choose what to make, then give it a name. You can rename it at any time.</p>
           <label className="v4-fl" htmlFor="hb-new-name">Name</label>
@@ -73,27 +110,13 @@ export function NewElementFlyout({ kinds, initialKind, onCreate, onClose }: {
         <section className="aur-expander flyout-variant v4-plain" aria-labelledby="hb-kinds-title">
           <div className="aur-expander-head"><h2 className="aur-expander-toggle" id="hb-kinds-title"><span className="aur-expander-title">Kind</span></h2></div>
           <div className="aur-expander-body">
-            <div className="v4-opts hb-kind-cards" role="radiogroup" aria-labelledby="hb-kinds-title">
-              {offered.map((k) => (
-                <button key={k.id} type="button" role="radio" aria-checked={k.id === kindId} className="v4-opt hb-kind-card" onClick={() => setKindId(k.id)}>
-                  <span className="hb-kind-name">{k.label}</span>
-                  <span className="hb-kind-desc">{k.description}</span>
-                </button>
-              ))}
-            </div>
+            <RadioCards labelledBy="hb-kinds-title" options={offered} value={kindId} onChange={setKindId} />
           </div>
         </section>
         <section className="aur-expander flyout-variant v4-plain" aria-labelledby="hb-start-title">
           <div className="aur-expander-head"><h2 className="aur-expander-toggle" id="hb-start-title"><span className="aur-expander-title">Start from</span></h2></div>
           <div className="aur-expander-body">
-            <div className="v4-opts hb-kind-cards" role="radiogroup" aria-labelledby="hb-start-title">
-              {STARTS.map((o) => (
-                <button key={o.id} type="button" role="radio" aria-checked={o.id === start} className="v4-opt hb-kind-card" onClick={() => setStart(o.id)}>
-                  <span className="hb-kind-name">{o.label}</span>
-                  <span className="hb-kind-desc">{o.description}</span>
-                </button>
-              ))}
-            </div>
+            <RadioCards labelledBy="hb-start-title" options={STARTS} value={start} onChange={(id) => setStart(id as StartFrom)} />
             {start !== "blank" && kind?.id === "class" && (
               <label className="hb-inline-check"><CheckBox checked={deep} onChange={(e) => setDeep(e.target.checked)} />Copy its features and subclasses too</label>
             )}

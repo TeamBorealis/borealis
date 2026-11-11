@@ -113,8 +113,10 @@ export function ElementList({ kind, kinds, rows, unsaved, openId, filter, filter
     <div className="hb-elements">
       <Band title={searching ? "Found" : kind?.pluralLabel ?? "Elements"} />
       <div className="ap-scroll hb-element-scroll">
-        <table className={selectMode ? "ap-grid hb-select-mode" : "ap-grid"} aria-label="Elements" aria-multiselectable="true">
-          <thead><tr>{selectMode && <th aria-label="Chosen" />}<th>Name</th><th>Edition</th><th aria-label="Marks" /></tr></thead>
+        {/* A table of buttons, not a keyboard grid: the chosen rows say so with aria-selected (aria-multiselectable is not
+            allowed on a table, WB-26 axe); the header cells without a visible heading still name their column. */}
+        <table className={selectMode ? "ap-grid hb-select-mode" : "ap-grid"} aria-label="Elements">
+          <thead><tr>{selectMode && <th><span className="sr-only">Chosen</span></th>}<th>Name</th><th>Edition</th><th><span className="sr-only">Marks</span></th></tr></thead>
           <tbody>
             {unsaved && !searching && (
               <tr className="sel" aria-current="true">

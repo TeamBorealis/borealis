@@ -108,11 +108,13 @@ describe("WB-25 multi-select pickers on phones", () => {
     await user.click(within(list).getByRole("button", { name: /^Dwarvish/ }));
     // Assert
     expect(mark(/^Dwarvish/).classList.contains("is-check")).toBe(true);
-    expect(mark(/^Dwarvish/).getAttribute("aria-pressed")).toBe("false");
-    expect(mark(/^Elvish/).getAttribute("aria-pressed")).toBe("true");
+    // the multi-select mark is a check box to screen readers (WB-26)
+    expect(mark(/^Dwarvish/).getAttribute("role")).toBe("checkbox");
+    expect(mark(/^Dwarvish/).getAttribute("aria-checked")).toBe("false");
+    expect(mark(/^Elvish/).getAttribute("aria-checked")).toBe("true");
     // the check box itself toggles both ways too
     await user.click(mark(/^Elvish/));
-    expect(mark(/^Elvish/).getAttribute("aria-pressed")).toBe("false");
+    expect(mark(/^Elvish/).getAttribute("aria-checked")).toBe("false");
     await user.click(mark(/^Giant/));
     await user.click(screen.getByRole("button", { name: "OK" }));
     expect(onValue.mock.lastCall![0].map((r: HomebrewRef) => r.name)).toEqual(["Giant"]);
@@ -237,7 +239,7 @@ describe("WB-25 table cells in a sheet (spec 16)", () => {
     const utils = render(view());
     // Act
     const sheet = await screen.findByRole("dialog", { name: "Table cell: Header, column 1" });
-    const box = within(sheet).getByRole("textbox", { name: "Text" }) as HTMLTextAreaElement;
+    const box = within(sheet).getByRole("textbox", { name: "Cell text" }) as HTMLTextAreaElement;
     expect(box.value).toBe("d6");
     await user.clear(box);
     await user.type(box, "d8");
@@ -245,7 +247,7 @@ describe("WB-25 table cells in a sheet (spec 16)", () => {
     // Assert
     expect(onWrite).toHaveBeenLastCalledWith(cells[0], "d8");
     const second = await screen.findByRole("dialog", { name: "Table cell: Header, column 2" });
-    await user.type(within(second).getByRole("textbox", { name: "Text" }), "Result");
+    await user.type(within(second).getByRole("textbox", { name: "Cell text" }), "Result");
     await user.click(within(second).getByRole("button", { name: "Cancel" }));
     expect(onWrite).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);

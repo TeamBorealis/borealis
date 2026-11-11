@@ -126,7 +126,7 @@ export function StatisticField({ id, label, value, onChange, describedBy, invali
           {clearable && <button type="button" className="hb-chip-x" aria-label={`Clear ${label}`} onClick={() => onChange("")}><Icon name="x" /></button>}
         </span>
       )}
-      <button type="button" className="hb-pick-btn" aria-haspopup="dialog" aria-label={`${value ? "Change" : "Pick"}: ${label}`} onClick={() => setOpen(true)}>
+      <button type="button" className="hb-pick-btn" aria-label={`${value ? "Change" : "Pick"}: ${label}`} onClick={() => setOpen(true)}>
         <Icon name="search" />{value ? "Change" : "Pick"}
       </button>
       {open && <StatisticPicker title={label} onClose={() => setOpen(false)} onChoose={(name) => { setOpen(false); onChange(name); }} />}

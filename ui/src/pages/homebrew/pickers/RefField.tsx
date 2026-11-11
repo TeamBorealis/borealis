@@ -84,7 +84,7 @@ export function RefField({ id, label, target, value, onChange, describedBy, inva
         </ul>
       )}
       {!disabled && (
-        <button type="button" className="hb-pick-btn" aria-haspopup="dialog" aria-label={`${missing ? "Pick again" : value.length && !multiple ? "Change" : "Pick"}: ${label}`} onClick={() => setOpen(true)}>
+        <button type="button" className="hb-pick-btn" aria-label={`${missing ? "Pick again" : value.length && !multiple ? "Change" : "Pick"}: ${label}`} onClick={() => setOpen(true)}>
           <Icon name="search" />{missing ? "Pick again" : value.length && !multiple ? "Change" : multiple ? "Add" : "Pick"}
         </button>
       )}
