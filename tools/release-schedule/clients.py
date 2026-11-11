@@ -43,6 +43,18 @@ class Tag:
     date: datetime
 
 
+def find_release(releases: list[dict], tag: str) -> Optional[dict]:
+    """The release for `tag`. A draft can lose its tag (GitHub shows it as `untagged-...`, seen on the 1.4.0 draft
+    after an edit), so an untagged draft titled "Borealis X.Y.Z" also counts; the automation's edits then put the
+    tag back."""
+    exact = next((r for r in releases if r.get("tag_name") == tag), None)
+    if exact:
+        return exact
+    title = f"Borealis {tag.removeprefix('v')}"
+    return next((r for r in releases if r.get("draft") and str(r.get("tag_name", "")).startswith("untagged-")
+                 and r.get("name") == title), None)
+
+
 class GitHub:
     def __init__(self, token: str, repo: str, dry_run: bool, log: Callable[[str], None] = print):
         self.repo, self.dry_run, self.log = repo, dry_run, log
@@ -84,7 +96,7 @@ class GitHub:
 
     def release(self, tag: str) -> Optional[dict]:
         """The release (draft or published) for `tag`; drafts are listed only with push access."""
-        return next((r for r in self.call("GET", "/releases?per_page=30") if r.get("tag_name") == tag), None)
+        return find_release(self.call("GET", "/releases?per_page=30"), tag)
 
     def artifact(self, name: str) -> Optional[dict]:
         """The newest unexpired workflow artifact called `name` (any run), or None."""

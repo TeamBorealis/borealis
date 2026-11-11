@@ -162,8 +162,10 @@ class Tick:
             return
         text, _ = self.notes(version)
         body, name = notes_mod.strip_comments(text), f"Borealis {version}"
-        if (rel.get("body") or "").strip() != body.strip() or rel.get("name") != name:
-            self.gh.write("PATCH", f"/releases/{rel['id']}", {"body": body, "name": name},
+        tag = f"v{version}"
+        stale = (rel.get("body") or "").strip() != body.strip() or rel.get("name") != name
+        if stale or rel.get("tag_name") != tag:
+            self.gh.write("PATCH", f"/releases/{rel['id']}", {"body": body, "name": name, "tag_name": tag},
                           f"set the v{version} draft's title and notes")
 
     # --- steps --------------------------------------------------------------------------------------------------
@@ -469,8 +471,8 @@ class Tick:
             return f"published ({rel.get('html_url')})"
         text, _ = self.notes(version)
         self.gh.write("PATCH", f"/releases/{rel['id']}", {
-            "body": notes_mod.strip_comments(text), "name": f"Borealis {version}", "draft": False,
-            "make_latest": "true"}, f"publish v{version} as the latest release")
+            "body": notes_mod.strip_comments(text), "name": f"Borealis {version}", "tag_name": f"v{version}",
+            "draft": False, "make_latest": "true"}, f"publish v{version} as the latest release")
         return f"published https://github.com/{REPO}/releases/tag/v{version}"
 
     def publish_ios(self, version: str) -> str:
