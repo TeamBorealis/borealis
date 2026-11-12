@@ -11,6 +11,7 @@ import { toChord } from './keys.ts';
 import { clickAt, permissionMessage, probePermissions, sendKeyCode } from './native.ts';
 import { assertBundleFresh, clearStaleClaims } from './fresh.ts';
 import { projectSnapshot, type RawNode } from './project.ts';
+import { isMainThreadTimeout, recoverWedgedOverlay, wedgedOverlayNotice } from './overlay.ts';
 
 const exec = promisify(execFile);
 // agent-device's Apple runner needs full Xcode, not the Command Line Tools.
@@ -19,6 +20,9 @@ const PLATFORM = 'macos' as const;
 const ROOT_ID = 'root';
 const LAUNCH_TIMEOUT_MS = 45_000;
 const QUIT_GRACE_MS = 6_000;
+/** Longest wait for agent-device's runner to finish the XCTest work it abandoned once a wedged overlay is gone. */
+const RUNNER_DRAIN_TIMEOUT_MS = 30_000;
+const RUNNER_DRAIN_POLL_MS = 500;
 
 export interface MacosOptions { readonly session?: string }
 
@@ -42,6 +46,7 @@ export function macos(options: MacosOptions = {}): EngineHandle {
   const session = options.session ?? `borealis-e2e-${process.pid}`;
   const home = homedir();
   let hidden: readonly string[] = [];
+  let notice: (line: string) => void = () => undefined;
   const onExit = () => { try { restore(home); } catch { /* best effort; next run recovers from the marker */ } };
 
   const c = (): AgentDeviceClient => (client ??= createAgentDeviceClient({ session }));
@@ -108,9 +113,40 @@ export function macos(options: MacosOptions = {}): EngineHandle {
     await exec('open', ['-a', appPath]); // keys go to the frontmost app
     await sendKeyCode(k.code, k.modifiers);
   }
-  async function typeInto(text: string, replace: boolean): Promise<void> {
+  async function typeOnce(text: string, replace: boolean): Promise<void> {
     if (replace) { await chord('ControlOrMeta+a'); await chord(text === '' ? 'Backspace' : 'Delete'); }
     if (text !== '') await c().interactions.type({ ...sel, text });
+  }
+  /** Kills a wedged Automation Mode overlay (overlay.ts) and says so in the run log; returns the pids it killed. */
+  async function recoverOverlay(): Promise<readonly number[]> {
+    const killed = await recoverWedgedOverlay().catch((err: unknown) => {
+      notice(`could not check macOS's Automation Mode overlay: ${err instanceof Error ? err.message : String(err)}`);
+      return [] as readonly number[];
+    });
+    if (killed.length > 0) notice(wedgedOverlayNotice(killed));
+    return killed;
+  }
+  /** Waits until the runner answers a snapshot again: it reports busy while abandoned XCTest work still runs. */
+  async function waitForRunnerDrain(): Promise<void> {
+    const deadline = Date.now() + RUNNER_DRAIN_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      try { await snapshot(); return; } catch { await sleep(RUNNER_DRAIN_POLL_MS); }
+    }
+    throw fail('ENGINE_FAILURE', `agent-device's runner was still busy ${RUNNER_DRAIN_TIMEOUT_MS} ms after the wedged overlay was killed`);
+  }
+  async function typeInto(text: string, replace: boolean): Promise<void> {
+    try {
+      await typeOnce(text, replace);
+    } catch (err) {
+      if (!isMainThreadTimeout(err)) throw err;
+      const killed = await recoverOverlay();
+      if (killed.length === 0) throw err;
+      // The abandoned type resumes once the overlay is gone and may type the text after all; wait for it, then
+      // replace the whole value. An appending type cannot be repeated safely.
+      await waitForRunnerDrain();
+      if (!replace) throw fail('ENGINE_FAILURE', `typing timed out: ${wedgedOverlayNotice(killed)}; rerun the test`);
+      await typeOnce(text, replace);
+    }
   }
 
   return defineEngine({
@@ -149,11 +185,13 @@ export function macos(options: MacosOptions = {}): EngineHandle {
     async init(info) {
       appPath = join(info.projectRoot, info.app.appPath!);
       bundleId = info.app.bundleId ?? bundleId;
+      notice = info.log;
     },
     async startAttempt(ctx) {
       artifactsDir = ctx.artifactsDir;
       shots = 0;
       await quit();
+      await recoverOverlay(); // an overlay wedged in an earlier run hangs this attempt's first typed key
       resetData(home); // throws unless the user's data is safely backed up
       seedAiSetupDone(home); // the first-run "Set up AI assistance" screen would cover every suite
     },
