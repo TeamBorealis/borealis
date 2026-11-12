@@ -393,3 +393,32 @@ fn problems_are_plain_sentences_at_their_fields() {
         }
     });
 }
+
+#[test]
+fn a_stored_empty_spell_list_tag_writes_back_as_stored() {
+    // a community subclass feature whose list tag is empty (WB-27a corpus identity): unchanged, it stays empty;
+    // edited to empty, it is the spellcasting name
+    with_cx(|cx| {
+        let class = warden(Ruleset::Dnd2024, &[]);
+        let out = form_to_elements(&class, cx).expect("writes");
+        let mut sc = out
+            .iter()
+            .find(|e| e.spellcasting.is_some())
+            .expect("the spellcasting feature")
+            .clone();
+        sc.spellcasting
+            .as_mut()
+            .unwrap()
+            .list
+            .as_mut()
+            .unwrap()
+            .supports = String::new();
+        let form = element_to_form(&sc, cx);
+        assert_eq!(form.fields["spellList"], json!(""));
+        assert_eq!(form_to_element(&form, cx).expect("writes"), sc);
+        let edited = form.with_field("spellList", json!(" "));
+        let e = form_to_element(&edited, cx).expect("writes");
+        let sc2 = e.spellcasting.unwrap();
+        assert_eq!(sc2.list.unwrap().supports, sc2.name.unwrap());
+    });
+}

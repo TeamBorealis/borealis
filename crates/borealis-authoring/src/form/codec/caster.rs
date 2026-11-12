@@ -329,10 +329,13 @@ pub(crate) fn write(
             }
         }
         CasterField::List => {
+            // unchanged, the stored tag (even an empty one); edited, empty means the spellcasting name
+            let stored = raw.and_then(|r| r.as_str().map(str::to_string));
             let given: String = decode(value, path)?;
-            let supports = match given.trim() {
-                "" => cx.name.clone(),
-                t => t.to_string(),
+            let supports = match (stored, given.trim()) {
+                (Some(s), _) => s,
+                (None, "") => cx.name.clone(),
+                (None, t) => t.to_string(),
             };
             if let Some(sc) = node(out) {
                 list(sc).supports = supports;

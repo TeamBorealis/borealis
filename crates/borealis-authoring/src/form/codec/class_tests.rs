@@ -524,3 +524,15 @@ fn blocks_after_a_block_s_copies_keep_their_places() {
         );
     });
 }
+
+#[test]
+fn a_stored_multiclass_section_without_the_engine_marker_writes_back_as_stored() {
+    // a community class whose multiclass section has no rules at all (WB-27a corpus identity)
+    with_cx(|cx| {
+        let (mut class, vow, asi) = knight();
+        class.multiclass.as_mut().unwrap().rules.clear();
+        let want = [class.clone(), vow.clone(), asi.clone()];
+        let form = crate::form::element_group_to_form(&class, &[&vow, &asi], cx);
+        round_trip(&want, &form, cx);
+    });
+}

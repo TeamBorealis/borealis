@@ -113,6 +113,8 @@ pub(super) fn read(field: ClassField, mut t: Take<'_, '_>, cx: &FormContext<'_>)
             json!(text)
         }
         ClassField::McProficiencies => {
+            // whether the section was stored: a stored one keeps its rules as they are while unchanged
+            t.raw.part = node.map(|_| json!({ "stored": true }));
             let refs: Vec<RefValue> = node
                 .into_iter()
                 .flat_map(|m| m.rules.iter())
@@ -258,8 +260,11 @@ fn write_part(
             }
         }
         ClassField::McProficiencies => {
+            // unchanged, a stored section keeps its rules (even without the engine's marker grant); a new one starts
+            // with the marker
+            let stored = raw.part.is_some();
             let has_internal = node.rules.iter().any(is_internal);
-            if unchanged && (has_internal || !node.rules.is_empty()) {
+            if unchanged && (stored || has_internal || !node.rules.is_empty()) {
                 return Ok(());
             }
             let refs: Vec<RefValue> = decode(value, path)?;
