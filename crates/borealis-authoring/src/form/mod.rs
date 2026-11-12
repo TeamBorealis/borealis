@@ -75,7 +75,8 @@ pub use preserved::{KeptPart, PreservedPart};
 pub use read::{element_group_to_form, element_to_form, element_tree_to_form};
 pub use repeat::AGAIN_AT;
 pub use subclass::{
-    follow_class, refresh_subclass, ClassRename, SUBCLASS_FEATURE_KIND, SUBCLASS_KIND,
+    follow_class, refresh_subclass, ClassRename, ProvisionalClass, SUBCLASS_FEATURE_KIND,
+    SUBCLASS_KIND,
 };
 pub use ui::{assign_ids, merge_ui, refresh_blocks, to_ui};
 pub use write::{form_to_element, form_to_elements};

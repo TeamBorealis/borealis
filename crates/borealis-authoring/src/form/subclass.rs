@@ -17,6 +17,7 @@ use super::value::RefValue;
 use super::{FormContext, FormState, Lookup};
 use borealis_content::expr::SupportsExpr;
 use borealis_content::{Element, Rule, Ruleset};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 /// The subclass form's id.
@@ -199,17 +200,23 @@ impl ClassRename {
     /// saved now); `None` when neither changed or either has no subclass choice.
     #[must_use]
     pub fn between(before: &[Element], after: &[Element]) -> Option<Self> {
-        let choice_of = |els: &[Element]| -> Option<ClassChoice> {
-            let lookup = super::WithElements {
-                base: &super::NoLookup,
-                extra: els,
-            };
-            els.iter()
-                .find(|e| e.ty == "Class")
-                .and_then(|c| class_choice(c, &lookup))
-        };
-        let (old, new) = (choice_of(before)?, choice_of(after)?);
+        let (old, new) = (choice_among(before)?, choice_among(after)?);
         (old.tag != new.tag || old.class_name != new.class_name).then_some(Self { old, new })
+    }
+
+    /// The first save of a class that subclasses may know by an earlier provisional id (`was`: the class renamed
+    /// before its first save, spec 5.3 ids follow the name until then): they follow it to its id, tag and name.
+    /// `after` is the class and its children as saved; `None` when the id did not change.
+    #[must_use]
+    pub fn from_provisional(was: &ProvisionalClass, after: &[Element]) -> Option<Self> {
+        let new = choice_among(after)?;
+        let old = ClassChoice {
+            class_id: was.id.clone(),
+            class_name: was.name.clone(),
+            tag: was.tag.clone(),
+            ..new.clone()
+        };
+        (old.class_id != new.class_id).then_some(Self { old, new })
     }
 
     /// A subclass element of this class: it names the class (`data.class`) or, with no `data.class`, carries the
@@ -238,6 +245,9 @@ impl ClassRename {
             next.data
                 .insert("class_name".into(), json!(self.new.class_name));
         }
+        if next.data.get("class").and_then(Value::as_str) == Some(self.old.class_id.as_str()) {
+            next.data.insert("class".into(), json!(self.new.class_id));
+        }
         next
     }
 
@@ -257,13 +267,48 @@ impl ClassRename {
         if form.fields.get(TAG).and_then(Value::as_str) == Some(self.old.tag.as_str()) {
             next.fields.insert(TAG.into(), json!(self.new.tag));
         }
-        if class.name == self.old.class_name {
+        if class.name == self.old.class_name || class.id.trim() == self.old.class_id {
             let mut renamed = class.clone();
+            renamed.id.clone_from(&self.new.class_id);
             renamed.name.clone_from(&self.new.class_name);
             next.fields.insert(PARENT.into(), json!(renamed));
         }
         (next != *form).then_some(next)
     }
+}
+
+/// A new class's provisional id (the id its first save would give it now, from its name), with its name and the tag
+/// its subclass choice offers: what a subclass draft that picked the class before its first save holds (spec 4.7).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProvisionalClass {
+    pub id: String,
+    pub name: String,
+    pub tag: String,
+}
+
+impl ProvisionalClass {
+    /// The provisional class of a new class form's elements (the class, then its children, with the ids they would
+    /// get now); `None` when they hold no class with a subclass choice.
+    #[must_use]
+    pub fn of(elements: &[Element]) -> Option<Self> {
+        choice_among(elements).map(|c| Self {
+            id: c.class_id,
+            name: c.class_name,
+            tag: c.tag,
+        })
+    }
+}
+
+/// The subclass choice of the class among `els` (the class and its children), its features looked up among them.
+fn choice_among(els: &[Element]) -> Option<ClassChoice> {
+    let lookup = super::WithElements {
+        base: &super::NoLookup,
+        extra: els,
+    };
+    els.iter()
+        .find(|e| e.ty == "Class")
+        .and_then(|c| class_choice(c, &lookup))
 }
 
 /// The saved subclasses among `pack` of a class saved again with another subclass tag (renamed: a 2024 class offers

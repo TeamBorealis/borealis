@@ -10,7 +10,7 @@
 
 use crate::error::{ApiError, ApiResult};
 use crate::homebrew_files::write_atomic;
-use borealis_authoring::form::{CopyExtras, FormState};
+use borealis_authoring::form::{CopyExtras, FormState, ProvisionalClass};
 use borealis_authoring::pack::CopiedFrom;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -53,6 +53,10 @@ pub struct DraftFile {
     /// options (spec 11).
     #[serde(default, skip_serializing_if = "CopyExtras::is_empty")]
     pub copy: CopyExtras,
+    /// A new class: the provisional ids it was offered under (to a subclass's class picker) before its first save; a
+    /// subclass that picked one follows the class to its saved id (P3).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub provisional: Vec<ProvisionalClass>,
 }
 
 #[derive(Debug, Clone)]
@@ -301,6 +305,7 @@ mod tests {
             updated_at: at.into(),
             copied_from: None,
             copy: CopyExtras::default(),
+            provisional: Vec::new(),
         }
     }
 

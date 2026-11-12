@@ -21,10 +21,10 @@ use crate::state::{AppState, ContentHub, BUNDLED_PACKS};
 use borealis_authoring::check::{issue_problems, Problem};
 use borealis_authoring::form::{
     add_child_in, assign_ids, child_form, copy_child, copy_element, data_json, data_tree,
-    drop_lost_spellcasting, element_tree_to_form, kind, merge_ui, new_background_form,
-    new_child_key, new_class_form, new_creature_form, refresh_blocks, to_ui, write_copy,
-    CatalogBlockCodec, ClassRename, Copy, CopyExtras, FormContext, FormState, WithElements,
-    BACKGROUND_KIND, CLASS_KIND, CREATURE_KIND, SUBCLASS_KIND,
+    drop_lost_spellcasting, element_tree_to_form, form_to_elements, kind, merge_ui,
+    new_background_form, new_child_key, new_class_form, new_creature_form, refresh_blocks, to_ui,
+    write_copy, CatalogBlockCodec, ClassRename, Copy, CopyExtras, FormContext, FormState,
+    ProvisionalClass, WithElements, BACKGROUND_KIND, CLASS_KIND, CREATURE_KIND, SUBCLASS_KIND,
 };
 use borealis_authoring::pack::{
     bump_patch, descendants, digest, pack_edition, source_name, with_elements, without_elements,
@@ -153,6 +153,7 @@ impl AppState {
             updated_at: now(),
             copied_from,
             copy,
+            provisional: Vec::new(),
         }
     }
 
@@ -302,6 +303,7 @@ impl AppState {
             updated_at: now(),
             copied_from: None,
             copy: CopyExtras::default(),
+            provisional: Vec::new(),
         };
         self.hb_drafts.hold(draft.clone())?;
         self.hb_view(&draft, &pack)
@@ -347,9 +349,17 @@ impl AppState {
         };
         let mut merged = merge_ui(&stored.form, ui);
         keep_read_only(&stored.form, &mut merged);
+        let form = refresh_blocks(&merged, &cx);
+        // a new class: the id a subclass's class picker offers it under now (P3)
+        let provisional = if stored.element_id.is_none() && form.kind == CLASS_KIND {
+            self.hb_provisional(&hub, &pack, &form, &cx, &stored.provisional)?
+        } else {
+            stored.provisional.clone()
+        };
         let draft = DraftFile {
-            form: refresh_blocks(&merged, &cx),
+            form,
             updated_at: now(),
+            provisional,
             ..stored
         };
         self.hb_drafts.put(&self.paths.data, draft.clone())?;
@@ -434,10 +444,17 @@ impl AppState {
         } else {
             None
         };
+        // a new class renamed before this first save: subclasses of its provisional ids follow it to its id (P3)
+        let first_save: Vec<ClassRename> = draft
+            .provisional
+            .iter()
+            .filter_map(|p| ClassRename::from_provisional(p, &elements))
+            .collect();
         let followed: Vec<Element> = rename
-            .as_ref()
-            .map(|r| r.follow_pack(&elements, &content.elements))
-            .unwrap_or_default();
+            .iter()
+            .chain(&first_save)
+            .flat_map(|r| r.follow_pack(&elements, &content.elements))
+            .collect();
         let others = match &rename {
             Some(r) => self.hb_followers(&draft.pack_id, r, &elements)?,
             None => Vec::new(),
@@ -494,7 +511,7 @@ impl AppState {
             }
         }
         self.hb_drafts.remove(&self.paths.data, draft_id)?;
-        if let Some(r) = &rename {
+        for r in rename.iter().chain(&first_save) {
             self.hb_follow_drafts(r);
         }
         Ok(HomebrewSaveResult {
@@ -649,6 +666,25 @@ impl AppState {
                 Some((other, write, ids))
             })
             .collect())
+    }
+
+    /// `known` with the provisional class of a new class draft's `form` added (the id its first save would give it now,
+    /// as the subclass class picker offers it, [`Self::hb_unsaved_elements`]). A form that can't be written yet adds
+    /// nothing (the picker does not offer it either).
+    fn hb_provisional(
+        &self,
+        hub: &ContentHub,
+        pack: &CreatorPack,
+        form: &FormState,
+        cx: &FormContext<'_>,
+        known: &[ProvisionalClass],
+    ) -> ApiResult<Vec<ProvisionalClass>> {
+        let mut ids = self.hb_ids(hub, pack)?;
+        let now = form_to_elements(&assign_ids(form, &mut ids), cx)
+            .ok()
+            .and_then(|els| ProvisionalClass::of(&els))
+            .filter(|p| !known.contains(p));
+        Ok(known.iter().cloned().chain(now).collect())
     }
 
     /// The edited subclass drafts of a renamed class take its new tag and name (a draft of a saved subclass keeps its

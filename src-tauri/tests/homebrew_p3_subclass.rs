@@ -1,6 +1,8 @@
 //! P3 bugs (homebrew creator, 1.5.0, HC11) through the real `AppState`: a class's subclasses follow it wherever they
 //! are. A renamed class's subclasses saved in another homebrew pack, and the edited drafts of its subclasses, take its
-//! new tag ("<Class> Subclass") and name, so the class keeps offering them.
+//! new tag ("<Class> Subclass") and name, so the class keeps offering them. A subclass (draft or saved) that picked a
+//! class before its first save, by the provisional id the class had then, follows the class to the id it is saved
+//! with when it was renamed in between.
 
 use borealis_content::Ruleset as ContentRuleset;
 use borealis_engine::commands::{self, slot_key};
@@ -224,4 +226,75 @@ fn a_renamed_class_s_subclasses_in_other_packs_and_drafts_take_its_new_tag() {
         app.saved(&isles, &own)["supports"],
         json!(["Cinder Knight Subclass"])
     );
+}
+
+#[test]
+fn a_subclass_of_a_class_renamed_before_its_first_save_follows_it_to_its_id() {
+    // Arrange: a class not saved yet, and a subclass draft that picked it by its provisional id
+    let app = App::new();
+    let isles = app.pack("Ember Isles", "EI");
+    let class = app.class_draft(&isles, "Gloom Knight");
+    let provisional = "ID_EI_CLASS_GLOOM_KNIGHT";
+    let sub = app.subclass_draft(&isles, "Order of Dusk", provisional, "Gloom Knight");
+    assert_eq!(
+        sub.form.fields["subclassTag"],
+        json!("Gloom Knight Subclass")
+    );
+
+    // Act: the class renamed, then saved for the first time
+    let class = app.update(&class, &[("name", json!("Dusk Knight"))]);
+    let class_id = app.save(&class);
+    assert_eq!(class_id, "ID_EI_CLASS_DUSK_KNIGHT");
+
+    // Assert: the subclass draft names the saved class, with its tag, and saves them
+    let reopened = app
+        .state
+        .homebrew_open_draft(&isles, None, Some(&sub.draft_id))
+        .unwrap();
+    assert_eq!(reopened.form.fields["parentClass"]["id"], json!(class_id));
+    assert_eq!(
+        reopened.form.fields["parentClass"]["name"],
+        json!("Dusk Knight")
+    );
+    assert_eq!(
+        reopened.form.fields["subclassTag"],
+        json!("Dusk Knight Subclass")
+    );
+    let sub_id = app.save(&reopened);
+    let saved = app.saved(&isles, &sub_id);
+    assert_eq!(saved["data"]["class"], json!(class_id));
+    assert_eq!(saved["supports"], json!(["Dusk Knight Subclass"]));
+    let hub = app.state.hub().unwrap();
+    assert!(offered_subclasses(&hub.engine, &class_id).contains(&sub_id));
+}
+
+#[test]
+fn a_subclass_saved_before_its_class_follows_the_class_renamed_before_its_first_save() {
+    // Arrange: a subclass saved while its class (picked by its provisional id) is not saved yet
+    let app = App::new();
+    let isles = app.pack("Ember Isles", "EI");
+    let class = app.class_draft(&isles, "Gloom Knight");
+    let sub = app.subclass_draft(
+        &isles,
+        "Order of Dusk",
+        "ID_EI_CLASS_GLOOM_KNIGHT",
+        "Gloom Knight",
+    );
+    let sub_id = app.save(&sub);
+    assert_eq!(
+        app.saved(&isles, &sub_id)["data"]["class"],
+        json!("ID_EI_CLASS_GLOOM_KNIGHT")
+    );
+
+    // Act: the class renamed, then saved for the first time
+    let class = app.update(&class, &[("name", json!("Dusk Knight"))]);
+    let class_id = app.save(&class);
+
+    // Assert: the saved subclass names the class's id, name and tag, and the class offers it
+    let saved = app.saved(&isles, &sub_id);
+    assert_eq!(saved["data"]["class"], json!(class_id));
+    assert_eq!(saved["data"]["class_name"], json!("Dusk Knight"));
+    assert_eq!(saved["supports"], json!(["Dusk Knight Subclass"]));
+    let hub = app.state.hub().unwrap();
+    assert!(offered_subclasses(&hub.engine, &class_id).contains(&sub_id));
 }
