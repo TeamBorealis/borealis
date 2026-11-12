@@ -89,9 +89,11 @@ describe('hc-wb25 homebrew creator on a phone (web mock)', { tags: ['homebrew'] 
 
     // The pinned row reaches the page's bottom edge, at the end of the form and in the middle of it: no strip of the form
     // shows between the row and the status line under the page.
+    // At the end of the form the row sits where the form ends, and the page rounds the form's height to whole pixels,
+    // so its bottom can stop less than a pixel short of the edge (nothing of the form is below it there): allow that.
     const reaches = (_: null) => {
       const page = document.querySelector('.aur-content')!.getBoundingClientRect();
-      return document.querySelector('.hb-commands.eq-pin')!.getBoundingClientRect().bottom >= page.bottom;
+      return document.querySelector('.hb-commands.eq-pin')!.getBoundingClientRect().bottom > page.bottom - 1;
     };
     expectEqual('the pinned row on the status line (end of the form)', 'true', String(await ctx.browser.evaluate(reaches, null)));
     await ctx.browser.evaluate((_: null) => { const c = document.querySelector('.aur-content')!; c.scrollTop = c.scrollHeight / 3; return true; }, null);
