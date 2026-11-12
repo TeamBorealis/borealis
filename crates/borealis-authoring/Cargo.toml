@@ -17,8 +17,9 @@ borealis-engine.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 
-# Tests only (spec 18.2): the local regression corpora converted the way the app converts them (the Aurora migrator
-# and the 5etools importer; deterministic, no AI either).
+# Tests only (spec 18.2): random forms (proptest, MIT OR Apache-2.0), and the local regression corpora converted the
+# way the app converts them (the Aurora migrator and the 5etools importer; deterministic, no AI either).
 [dev-dependencies]
 borealis-import-5etools = { path = "../borealis-import-5etools" }
 borealis-migrate.workspace = true
+proptest = { version = "1.12.0", default-features = false, features = ["std"] }
