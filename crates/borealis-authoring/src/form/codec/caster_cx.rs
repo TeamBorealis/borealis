@@ -182,6 +182,15 @@ pub(crate) fn sync_class(element: &mut Element, class: &FormState) {
     } else {
         Vec::new()
     };
+    set_columns(element, columns);
+    if let Some(Value::Object(summary)) = element.data.get_mut("spellcasting") {
+        write_summary(summary, &cx, child, cantrips.iter().any(|c| *c > 0));
+    }
+}
+
+/// The class table (`data.progression`) with its spellcasting columns replaced by `columns`; the class's own counters
+/// stay, and an empty table goes.
+fn set_columns(element: &mut Element, columns: Vec<(String, Value)>) {
     let mut table: Map<String, Value> = element
         .data
         .get("progression")
@@ -197,9 +206,20 @@ pub(crate) fn sync_class(element: &mut Element, class: &FormState) {
             .data
             .insert("progression".into(), Value::Object(table));
     }
-    if let Some(Value::Object(summary)) = element.data.get_mut("spellcasting") {
-        write_summary(summary, &cx, child, cantrips.iter().any(|c| *c > 0));
+}
+
+/// A class saved without the Spellcasting feature it had (the feature deleted, not its section turned off): its class
+/// table loses the spellcasting columns that feature wrote, as turning the section off does ([`sync_class`]), since the
+/// engine reads `prepared` and the pact columns. `removed` are the class's saved children this save deletes. A class
+/// with a child that still gives spellcasting, or whose deleted children gave none, is left as it is.
+pub fn drop_lost_spellcasting(element: &mut Element, class: &FormState, removed: &[&Element]) {
+    if class.kind != super::super::kinds::CLASS_KIND
+        || class.children.iter().any(had_section)
+        || !removed.iter().any(|e| e.spellcasting.is_some())
+    {
+        return;
     }
+    set_columns(element, Vec::new());
 }
 
 fn write_summary(

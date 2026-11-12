@@ -20,10 +20,10 @@ use crate::state::{AppState, ContentHub, BUNDLED_PACKS};
 use borealis_authoring::check::{issue_problems, Problem};
 use borealis_authoring::form::{
     add_child_in, assign_ids, child_form, copy_child, copy_element, data_json, data_tree,
-    element_tree_to_form, follow_class, kind, merge_ui, new_background_form, new_child_key,
-    new_class_form, new_creature_form, refresh_blocks, to_ui, write_copy, CatalogBlockCodec, Copy,
-    CopyExtras, FormContext, FormState, WithElements, BACKGROUND_KIND, CLASS_KIND, CREATURE_KIND,
-    SUBCLASS_KIND,
+    drop_lost_spellcasting, element_tree_to_form, follow_class, kind, merge_ui,
+    new_background_form, new_child_key, new_class_form, new_creature_form, refresh_blocks, to_ui,
+    write_copy, CatalogBlockCodec, Copy, CopyExtras, FormContext, FormState, WithElements,
+    BACKGROUND_KIND, CLASS_KIND, CREATURE_KIND, SUBCLASS_KIND,
 };
 use borealis_authoring::pack::{
     bump_patch, descendants, digest, pack_edition, source_name, with_elements, without_elements,
@@ -403,7 +403,7 @@ impl AppState {
                     .collect(),
             )
         })?;
-        let elements: Vec<Element> = written.iter().map(|w| w.element.clone()).collect();
+        let mut elements: Vec<Element> = written.iter().map(|w| w.element.clone()).collect();
         let saved: Vec<String> = elements.iter().map(|e| e.id.clone()).collect();
         let dropped: HashSet<&str> = draft
             .base_ids
@@ -411,6 +411,15 @@ impl AppState {
             .map(String::as_str)
             .filter(|id| !saved.iter().any(|s| s == id))
             .collect();
+        // a class whose Spellcasting feature is deleted loses that feature's class table columns
+        if let Some(class) = elements.first_mut() {
+            let removed: Vec<&Element> = Self::hb_base(&pack, &draft.base_ids)
+                .into_iter()
+                .flatten()
+                .filter(|e| dropped.contains(e.id.as_str()))
+                .collect();
+            drop_lost_spellcasting(class, &form, &removed);
+        }
         let (content, trashed) = without_elements(&pack.disk.content, &dropped);
         // a renamed class keeps offering the pack's saved subclasses: they take its new tag (spec 4.7)
         let followed: Vec<Element> = if form.kind == CLASS_KIND {

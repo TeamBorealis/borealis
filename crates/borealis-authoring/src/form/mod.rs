@@ -46,6 +46,7 @@ pub use block_codec::CatalogBlockCodec;
 pub(crate) use block_codec::INCOMPLETE;
 pub use bulk::{bulk_patched, tag_field, with_tag, BulkChange};
 pub use child_refs::{add_child, add_child_in, child_form, new_child_key, ChildEntry, ParentInfo};
+pub use codec::caster_cx::drop_lost_spellcasting;
 pub use codec::{
     feat_parameter_words, feat_params, param_key, ArmorClassValue, BackgroundField, CasterField,
     ChallengeValue, Characteristic, ChoiceRow, ClassField, CreatureField, FeatGrant, FeatureField,
