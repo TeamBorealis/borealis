@@ -286,7 +286,8 @@ export class MockHomebrew {
   }
 
   listDrafts(): HomebrewDraftSummary[] {
-    return [...this.drafts.values()].filter((d) => this.touched.has(d.draftId)).map((d) => ({ draftId: d.draftId, packId: d.packId, elementId: d.elementId, kind: d.form.kind, name: String(d.form.fields.name ?? ""), updatedAt: d.updatedAt }));
+    return [...this.drafts.values()].filter((d) => this.touched.has(d.draftId)).map((d) => ({ draftId: d.draftId, packId: d.packId, elementId: d.elementId, kind: d.form.kind, name: String(d.form.fields.name ?? ""),
+      edition: listEdition(d.form), updatedAt: d.updatedAt }));
   }
 
   deleteElements(packId: string, elementIds: string[]): HomebrewDeleteResult {

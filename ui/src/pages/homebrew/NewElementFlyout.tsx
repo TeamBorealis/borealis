@@ -27,8 +27,10 @@ const STARTS: { id: StartFrom; label: string; description: string }[] = [
  * A radio group of option cards (WAI-ARIA radio group): one Tab stop, the chosen card; the arrow keys (and Home / End)
  * choose the next card and move focus to it (WB-26: each of the 38 kinds was a Tab stop and the arrows did nothing).
  */
-function RadioCards({ labelledBy, describedBy, options, value, onChange }: {
+function RadioCards({ labelledBy, describedBy, options, value, onChange, onPicked }: {
   labelledBy: string; describedBy?: string; options: readonly { id: string; label: string; description: string }[]; value: string; onChange: (id: string) => void;
+  /** A card was clicked or tapped (not an arrow key: those move through the cards). */
+  onPicked?: () => void;
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const at = Math.max(0, options.findIndex((o) => o.id === value));
@@ -50,7 +52,7 @@ function RadioCards({ labelledBy, describedBy, options, value, onChange }: {
     <div className="v4-opts hb-kind-cards" role="radiogroup" aria-labelledby={labelledBy} aria-describedby={describedBy}>
       {options.map((o, i) => (
         <button key={o.id} ref={(el) => { refs.current[i] = el; }} type="button" role="radio" aria-checked={o.id === value} tabIndex={i === at ? 0 : -1}
-          className="v4-opt hb-kind-card" onClick={() => onChange(o.id)} onKeyDown={(e) => onKey(e, i)}>
+          className="v4-opt hb-kind-card" onClick={() => { onChange(o.id); onPicked?.(); }} onKeyDown={(e) => onKey(e, i)}>
           <span className="hb-kind-name">{o.label}</span>
           <span className="hb-kind-desc">{o.description}</span>
         </button>
@@ -58,6 +60,8 @@ function RadioCards({ labelledBy, describedBy, options, value, onChange }: {
     </div>
   );
 }
+
+const NAME_ID = "hb-new-name";
 
 /** Kinds offered by New element, in the CATEGORIES order: main forms, small types, then the expert form. Child kinds are
  * made inside their parent (a class's features). */
@@ -83,6 +87,8 @@ export function NewElementFlyout({ kinds, initialKind, onCreate, onClose }: {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const kind = offered.find((k) => k.id === kindId) ?? null;
+  // H10MQ: a kind far down the list scrolls the Name box away; picked with no name yet, the name is the next step
+  const toName = () => { if (!name.trim()) document.getElementById(NAME_ID)?.focus(); };
   const run = async (copy?: CopyChoice) => {
     if (!kindId) return;
     setBusy(true);
@@ -103,8 +109,8 @@ export function NewElementFlyout({ kinds, initialKind, onCreate, onClose }: {
       <form className="v4-new" onSubmit={(e) => { e.preventDefault(); void create(); }} onKeyDown={enterCreates(() => { if (!busy && kindId) create(); })}>
         <Expander flyout title="Element">
           <p className="sub">Choose what to make, then give it a name. You can rename it at any time.</p>
-          <label className="v4-fl" id="hb-new-name-label" htmlFor="hb-new-name">Name</label>
-          <TextBox light id="hb-new-name" aria-labelledby="hb-new-name-label" value={name} placeholder="Unnamed" data-autofocus onChange={(e) => setName(e.target.value)} />
+          <label className="v4-fl" id="hb-new-name-label" htmlFor={NAME_ID}>Name</label>
+          <TextBox light id={NAME_ID} aria-labelledby="hb-new-name-label" value={name} placeholder="Unnamed" data-autofocus onChange={(e) => setName(e.target.value)} />
           {error && <Alert tone="danger" role="alert">{error}</Alert>}
         </Expander>
         <section className="aur-expander flyout-variant v4-plain" aria-labelledby="hb-kinds-title">
@@ -112,7 +118,7 @@ export function NewElementFlyout({ kinds, initialKind, onCreate, onClose }: {
           <div className="aur-expander-body">
             {/* HC10 Q5: a description line under KIND and START FROM, as under the creator's fields */}
             <p className="hb-field-help" id="hb-kinds-help">What to make. Features and traits go inside their element.</p>
-            <RadioCards labelledBy="hb-kinds-title" describedBy="hb-kinds-help" options={offered} value={kindId} onChange={setKindId} />
+            <RadioCards labelledBy="hb-kinds-title" describedBy="hb-kinds-help" options={offered} value={kindId} onChange={setKindId} onPicked={toName} />
           </div>
         </section>
         <section className="aur-expander flyout-variant v4-plain" aria-labelledby="hb-start-title">

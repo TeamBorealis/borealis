@@ -105,24 +105,31 @@ export function PackWorkspace() {
 
   const offered = useMemo(() => creatableKinds(kinds.data ?? []), [kinds.data]);
   const rows = useMemo(() => elements.data ?? [], [elements.data]);
-  const counts = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const r of rows) m.set(r.kind, (m.get(r.kind) ?? 0) + 1);
-    return m;
-  }, [rows]);
-  const kindOf = useCallback((id: string | undefined): HomebrewKindDescriptor | null => (kinds.data ?? []).find((k) => k.id === id) ?? null, [kinds.data]);
-  const openKind = kindOf(draft.form?.kind);
-  const listKind = kindOf(kindPick ?? undefined) ?? openKind ?? offered.find((k) => counts.has(k.id)) ?? offered[0] ?? null;
   const openId = draft.view?.elementId ?? null;
   const openDraftId = draft.view?.draftId ?? null;
-  // The editor moved (another element, a save, a new element): the draft it left was sent first, so read the list again.
-  useEffect(() => { drafts.reload(); }, [openDraftId]); // eslint-disable-line react-hooks/exhaustive-deps
   const newDrafts = useMemo(
     () => (drafts.data ?? []).filter((d) => d.packId === packId && d.elementId === null && d.draftId !== openDraftId && !closed.has(d.draftId)),
     [drafts.data, packId, openDraftId, closed],
   );
+  // The never-saved element on screen, if any: listed under its kind like the new drafts left in the list.
+  const openNewKind = draft.form && !openId ? draft.form.kind : null;
+  const counts = useMemo(() => {
+    const m = new Map<string, number>();
+    const add = (kind: string) => m.set(kind, (m.get(kind) ?? 0) + 1);
+    rows.forEach((r) => add(r.kind));
+    // H10MQ: a new element counts in its kind from the start ("Weapons (1)"), as the list shows it, not after its first save
+    newDrafts.forEach((d) => add(d.kind));
+    if (openNewKind) add(openNewKind);
+    return m;
+  }, [rows, newDrafts, openNewKind]);
+  const kindOf = useCallback((id: string | undefined): HomebrewKindDescriptor | null => (kinds.data ?? []).find((k) => k.id === id) ?? null, [kinds.data]);
+  const openKind = kindOf(draft.form?.kind);
+  const listKind = kindOf(kindPick ?? undefined) ?? openKind ?? offered.find((k) => counts.has(k.id)) ?? offered[0] ?? null;
+  // The editor moved (another element, a save, a new element): the draft it left was sent first, so read the list again.
+  useEffect(() => { drafts.reload(); }, [openDraftId]); // eslint-disable-line react-hooks/exhaustive-deps
   const unsaved = draft.form && !openId && draft.form.kind === listKind?.id
-    ? { name: typeof draft.form.fields.name === "string" && draft.form.fields.name.trim() ? draft.form.fields.name.trim() : `New ${listKind.label.toLowerCase()}` }
+    ? { name: typeof draft.form.fields.name === "string" && draft.form.fields.name.trim() ? draft.form.fields.name.trim() : `New ${listKind.label.toLowerCase()}`,
+      edition: editionOf(draft.form) }
     : null;
 
   // Status line (spec 8.3): "2 problems" while an element is open; "Checking..." while the engine checks run.

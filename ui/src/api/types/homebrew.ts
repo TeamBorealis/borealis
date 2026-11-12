@@ -716,6 +716,8 @@ export interface HomebrewDraftSummary {
   elementId: string | null;
   kind: HomebrewKindId;
   name: string;
+  /** Its Edition field (null = the pack's), shown in the element list for a new element. */
+  edition: Ruleset | null;
   updatedAt: string;
 }
 

@@ -112,7 +112,13 @@ html.phone .hb-dcheck-desc { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); c
 .hb-flyout-text { width: 100%; min-height: 60px; resize: vertical; background: #fff; color: #161616; border: 0; font: inherit; font-size: var(--fs-md); padding: 4px 6px; }
 .hb-kind-cards { display: flex; flex-direction: column; gap: 6px; } /* Aurora New Character option panels: 6 px apart */
 .hb-kind-card { display: block; width: 100%; height: auto; min-height: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; border-radius: 0; }
-.hb-kind-card[aria-checked="true"] { background: var(--accent-80); border-style: solid; }
+/* the chosen card (H10MQ: the accent tint alone was faint on the dark flyout): a solid light border and a check, as on phones */
+.hb-kind-card { position: relative; padding-right: 32px; }
+.hb-kind-card[aria-checked="true"] { background: var(--accent-80); border-style: solid; border-color: #7f7f7f; }
+.hb-kind-card[aria-checked="true"]::after {
+  content: ""; position: absolute; right: 12px; top: 50%; width: 5px; height: 10px; margin-top: -7px;
+  border: solid #d5d5d5; border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
 .hb-kind-name { display: block; color: #d5d5d5; font-weight: 600; text-transform: uppercase; font-size: 11px; }
 .hb-kind-desc { display: block; margin-top: 6px; font-size: 11px; font-weight: 300; color: var(--text-secondary); }
 

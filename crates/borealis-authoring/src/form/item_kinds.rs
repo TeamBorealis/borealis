@@ -386,7 +386,7 @@ fn weapon() -> KindDef {
         )
         .picker(&["Mastery Property"])
         .section(WEAPON)
-        .help("The mastery property a character with Weapon Mastery can use (2024)."),
+        .help("The mastery properties a character with Weapon Mastery can use (2024)."),
         field(
             "weaponGroups",
             "Weapon groups",

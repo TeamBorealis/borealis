@@ -867,7 +867,7 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
           "data.mastery_id",
           "data.mastery_ids"
         ],
-        "help": "The mastery property a character with Weapon Mastery can use (2024).",
+        "help": "The mastery properties a character with Weapon Mastery can use (2024).",
         "section": "Weapon",
         "picker": {
           "types": [

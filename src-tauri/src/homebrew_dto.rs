@@ -301,6 +301,8 @@ pub struct HomebrewDraftSummary {
     pub element_id: Option<String>,
     pub kind: String,
     pub name: String,
+    /// Its Edition field (`None` = the pack's), shown in the element list for a new element.
+    pub edition: Option<Ruleset>,
     pub updated_at: String,
 }
 

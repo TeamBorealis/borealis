@@ -243,6 +243,7 @@ fn pack_element_and_draft_types_match_the_ts_contract() {
             element_id: None,
             kind: "spell".into(),
             name: "Ember".into(),
+            edition: Some(borealis_lib::dto::Ruleset::Dnd2024),
             updated_at: "2026-11-10T10:00:00Z".into(),
         },
     );

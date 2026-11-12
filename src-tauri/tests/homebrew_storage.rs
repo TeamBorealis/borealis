@@ -197,6 +197,26 @@ fn a_new_pack_has_its_book_creator_json_and_loads() {
     assert!(app.state.homebrew_list_elements(&id).unwrap().is_empty());
 }
 
+/// H10MQ: the element list shows a never-saved element's edition (not "New") beside its name, from the draft summary.
+#[test]
+fn a_new_element_s_draft_summary_carries_its_edition() {
+    let app = App::new();
+    let pack = app.create("Gloom Hollow", "GH");
+    let fresh = app
+        .state
+        .homebrew_new_draft(&pack, "language", None, None, None)
+        .unwrap();
+    let named = app.edit(&fresh, |f| {
+        f.fields.insert("name".into(), json!("Gloomspeak"));
+    });
+    let edition = |app: &App| app.state.homebrew_list_drafts().unwrap()[0].edition;
+    assert_eq!(edition(&app), None, "the pack's edition");
+    app.edit(&named, |f| {
+        f.fields.insert("edition".into(), json!("dnd2014"));
+    });
+    assert_eq!(edition(&app), Some(Ruleset::Dnd2014));
+}
+
 #[test]
 fn a_draft_is_written_by_its_first_edit_and_saved_with_a_frozen_id() {
     let app = App::new();

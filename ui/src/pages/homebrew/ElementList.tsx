@@ -11,6 +11,8 @@ import { filterRows, isSearching, type ListFilter, nextSelection } from "./searc
 /** The row of an open element that has not been saved yet (it has no id until its first save). */
 export interface UnsavedRow {
   name: string;
+  /** Its Edition field (null = the pack's). */
+  edition: HomebrewElementSummary["edition"];
 }
 
 const editionText = (e: HomebrewElementSummary["edition"]): string => (e === "dnd2014" ? "2014" : e === "dnd2024" ? "2024" : "Pack");
@@ -126,16 +128,16 @@ export function ElementList({ kind, kinds, rows, unsaved, drafts, onOpenDraft, o
             {unsaved && !searching && (
               <tr className="sel" aria-current="true">
                 {selectMode && <td />}
-                <td className="grow"><span className="ap-name hb-new-name">{unsaved.name}</span><RowDetail parts={["New", "Not saved yet"]} /></td>
-                <td className="hide-narrow">New</td>
+                <td className="grow"><span className="ap-name hb-new-name">{unsaved.name}</span><RowDetail parts={[editionText(unsaved.edition), "Not saved yet"]} /></td>
+                <td className="hide-narrow">{editionText(unsaved.edition)}</td>
                 <td className="hide-narrow"><span className="hb-mark-draft" title="Not saved yet"><Icon name="pen" /></span></td>
               </tr>
             )}
             {newDrafts.map((d) => (
               <tr key={d.draftId}>
                 {selectMode && <td />}
-                <td className="grow"><button type="button" className="ap-name" onClick={() => onOpenDraft(d)}>{newName(d)}</button><RowDetail parts={["New", "Not saved yet"]} /></td>
-                <td className="hide-narrow">New</td>
+                <td className="grow"><button type="button" className="ap-name" onClick={() => onOpenDraft(d)}>{newName(d)}</button><RowDetail parts={[editionText(d.edition), "Not saved yet"]} /></td>
+                <td className="hide-narrow">{editionText(d.edition)}</td>
                 <td className="hide-narrow"><span className="hb-mark-draft" title="Not saved yet"><Icon name="pen" /></span></td>
               </tr>
             ))}

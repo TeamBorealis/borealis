@@ -76,6 +76,8 @@ describe('hc-p2a homebrew children inside children and class option groups (web 
     await autosaved(ctx);
 
     await pressKey(ctx, 'Control+s');
+    // the saved row (a new element counts in its kind before its first save, H10MQ)
+    await expect(ctx.screen.getByRole('button', 'Emberkin')).toBeVisible();
     await kindCount(ctx, /Species \(1\)/, 'Species (1)');
     await ctx.screen.getByRole('button', 'Emberkin').tap();
     await waitValue(ctx, NAME, 'Emberkin');
@@ -106,6 +108,7 @@ describe('hc-p2a homebrew children inside children and class option groups (web 
     await autosaved(ctx);
 
     await pressKey(ctx, 'Control+s');
+    await expect(ctx.screen.getByRole('button', 'Wanderer')).toBeVisible();
     await kindCount(ctx, /Backgrounds \(1\)/, 'Backgrounds (1)');
     await ctx.screen.getByRole('button', 'Wanderer').tap();
     await waitValue(ctx, NAME, 'Wanderer');
@@ -137,6 +140,7 @@ describe('hc-p2a homebrew children inside children and class option groups (web 
     await autosaved(ctx);
 
     await pressKey(ctx, 'Control+s');
+    await expect(ctx.screen.getByRole('button', 'Ember Knight')).toBeVisible();
     await kindCount(ctx, /Classes \(1\)/, 'Classes (1)');
   });
 });

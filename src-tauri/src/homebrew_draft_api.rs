@@ -573,6 +573,12 @@ impl AppState {
                     .and_then(Value::as_str)
                     .unwrap_or_default()
                     .to_string(),
+                edition: d
+                    .form
+                    .fields
+                    .get("edition")
+                    .and_then(|e| serde_json::from_value(e.clone()).ok())
+                    .filter(|r| *r != Ruleset::Any),
                 draft_id: d.draft_id,
                 pack_id: d.pack_id,
                 element_id: d.element_id,
