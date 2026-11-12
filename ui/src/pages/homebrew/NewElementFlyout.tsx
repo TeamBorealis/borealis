@@ -27,8 +27,8 @@ const STARTS: { id: StartFrom; label: string; description: string }[] = [
  * A radio group of option cards (WAI-ARIA radio group): one Tab stop, the chosen card; the arrow keys (and Home / End)
  * choose the next card and move focus to it (WB-26: each of the 38 kinds was a Tab stop and the arrows did nothing).
  */
-function RadioCards({ labelledBy, options, value, onChange }: {
-  labelledBy: string; options: readonly { id: string; label: string; description: string }[]; value: string; onChange: (id: string) => void;
+function RadioCards({ labelledBy, describedBy, options, value, onChange }: {
+  labelledBy: string; describedBy?: string; options: readonly { id: string; label: string; description: string }[]; value: string; onChange: (id: string) => void;
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const at = Math.max(0, options.findIndex((o) => o.id === value));
@@ -47,7 +47,7 @@ function RadioCards({ labelledBy, options, value, onChange }: {
     go(to);
   };
   return (
-    <div className="v4-opts hb-kind-cards" role="radiogroup" aria-labelledby={labelledBy}>
+    <div className="v4-opts hb-kind-cards" role="radiogroup" aria-labelledby={labelledBy} aria-describedby={describedBy}>
       {options.map((o, i) => (
         <button key={o.id} ref={(el) => { refs.current[i] = el; }} type="button" role="radio" aria-checked={o.id === value} tabIndex={i === at ? 0 : -1}
           className="v4-opt hb-kind-card" onClick={() => onChange(o.id)} onKeyDown={(e) => onKey(e, i)}>
@@ -110,13 +110,16 @@ export function NewElementFlyout({ kinds, initialKind, onCreate, onClose }: {
         <section className="aur-expander flyout-variant v4-plain" aria-labelledby="hb-kinds-title">
           <div className="aur-expander-head"><h2 className="aur-expander-toggle" id="hb-kinds-title"><span className="aur-expander-title">Kind</span></h2></div>
           <div className="aur-expander-body">
-            <RadioCards labelledBy="hb-kinds-title" options={offered} value={kindId} onChange={setKindId} />
+            {/* HC10 Q5: a description line under KIND and START FROM, as under the creator's fields */}
+            <p className="hb-field-help" id="hb-kinds-help">What to make. Features and traits go inside their element.</p>
+            <RadioCards labelledBy="hb-kinds-title" describedBy="hb-kinds-help" options={offered} value={kindId} onChange={setKindId} />
           </div>
         </section>
         <section className="aur-expander flyout-variant v4-plain" aria-labelledby="hb-start-title">
           <div className="aur-expander-head"><h2 className="aur-expander-toggle" id="hb-start-title"><span className="aur-expander-title">Start from</span></h2></div>
           <div className="aur-expander-body">
-            <RadioCards labelledBy="hb-start-title" options={STARTS} value={start} onChange={(id) => setStart(id as StartFrom)} />
+            <p className="hb-field-help" id="hb-start-help">Blank is empty; a copy fills the form, the original stays.</p>
+            <RadioCards labelledBy="hb-start-title" describedBy="hb-start-help" options={STARTS} value={start} onChange={(id) => setStart(id as StartFrom)} />
             {start !== "blank" && kind?.id === "class" && (
               <label className="hb-inline-check"><CheckBox checked={deep} onChange={(e) => setDeep(e.target.checked)} />Copy its features and subclasses too</label>
             )}
