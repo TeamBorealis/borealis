@@ -79,6 +79,7 @@ export function FieldView({ field, value, problems, onChange, kindId, idPrefix =
   const shown = BUILDERS.has(field.control) ? own.filter((p) => p.path === `fields.${field.key}`) : own;
   const domId = fieldDomId(`${idPrefix}${field.key}`);
   const inputId = `${domId}-input`;
+  const labelId = `${domId}-label`;
   const msgId = shown.length > 0 ? `${domId}-msg` : undefined;
   const wide = WIDE.has(field.control);
   // the help line describes the control (WB-28) until the field's problems take its place
@@ -97,13 +98,13 @@ export function FieldView({ field, value, problems, onChange, kindId, idPrefix =
   }
   return (
     <div className={`mg-f hb-field ${wide ? "hb-wide" : ""} ${severity ? `hb-${severity}` : ""}`} id={domId} data-field={field.key}>
-      <label htmlFor={inputId}>
+      <label id={labelId} htmlFor={inputId}>
         {severity && <Icon name={severity === "error" ? "x" : "alert"} />}
         {field.label}{field.required ? <span className="hb-req" aria-hidden="true"> *</span> : null}
       </label>
       {field.readOnly
         ? <p id={inputId} className="hb-readonly" tabIndex={-1}>{(Array.isArray(value) ? value.join(", ") : text(value)) || "-"}</p>
-        : <Control field={field} value={value} onChange={onChange} id={inputId} describedBy={msgId ?? helpId} invalid={severity === "error"} problems={problems} kindId={kindId} childEditing={childEditing} />}
+        : <Control field={field} value={value} onChange={onChange} id={inputId} labelledBy={labelId} describedBy={msgId ?? helpId} invalid={severity === "error"} problems={problems} kindId={kindId} childEditing={childEditing} />}
       {msgId && <div id={msgId} className="hb-field-msg">{shown.map((p, i) => <p key={i}>{p.message}</p>)}</div>}
       {helpId && <p className="hb-field-help" id={helpId}>{field.help}</p>}
       {note && <p className="hb-field-help hb-edition-note" role="note">{note}</p>}
@@ -122,18 +123,21 @@ function OpenCombo({ field, id, value, onChange }: { field: HomebrewFieldSpec; i
 
 interface ControlProps {
   field: HomebrewFieldSpec; value: unknown; onChange: FieldViewProps["onChange"]; id: string; describedBy: string | undefined; invalid: boolean;
+  /** The field's visible label: text boxes and selects also name themselves by it with `aria-labelledby`, which WebKit's
+   * macOS tree reads (a `<label htmlFor>` alone left a Name box nameless and an empty select out of the tree, IDpnY). */
+  labelledBy: string;
   problems: readonly HomebrewProblem[]; kindId?: string; childEditing?: ChildEditing;
 }
 
-function Control({ field, value, onChange, id, describedBy, invalid, problems, kindId, childEditing }: ControlProps): ReactNode {
+function Control({ field, value, onChange, id, labelledBy, describedBy, invalid, problems, kindId, childEditing }: ControlProps): ReactNode {
   const env = useCreatorEnv();
   const label = field.label;
   const builderProblems = relativeProblems(problems, `fields.${field.key}`);
   switch (field.control) {
     case "text":
-      return <TextBox id={id} value={text(value)} aria-describedby={describedBy} invalid={invalid} aria-required={field.required || undefined} onChange={(e) => onChange(e.target.value, true)} />;
+      return <TextBox id={id} value={text(value)} aria-labelledby={labelledBy} aria-describedby={describedBy} invalid={invalid} aria-required={field.required || undefined} onChange={(e) => onChange(e.target.value, true)} />;
     case "multiline":
-      return <textarea id={id} className="hb-multiline" value={text(value)} aria-describedby={describedBy} aria-invalid={invalid || undefined} onChange={(e) => onChange(e.target.value, true)} />;
+      return <textarea id={id} className="hb-multiline" value={text(value)} aria-labelledby={labelledBy} aria-describedby={describedBy} aria-invalid={invalid || undefined} onChange={(e) => onChange(e.target.value, true)} />;
     case "number":
       return (
         <span id={id} className="hb-number" aria-describedby={describedBy}>
@@ -142,8 +146,8 @@ function Control({ field, value, onChange, id, describedBy, invalid, problems, k
       );
     case "combo":
       if (field.allowCustom) return <OpenCombo field={field} id={id} value={text(value)} onChange={(v) => onChange(v, true)} />;
-      if (!field.choices?.length) return <TextBox id={id} value={text(value)} aria-describedby={describedBy} invalid={invalid} onChange={(e) => onChange(e.target.value, true)} />;
-      return <ComboBox id={id} options={withCurrent(field.choices, text(value))} value={text(value)} aria-describedby={describedBy} onChange={(v) => onChange(v, false)} />;
+      if (!field.choices?.length) return <TextBox id={id} value={text(value)} aria-labelledby={labelledBy} aria-describedby={describedBy} invalid={invalid} onChange={(e) => onChange(e.target.value, true)} />;
+      return <ComboBox id={id} options={withCurrent(field.choices, text(value))} value={text(value)} aria-labelledby={labelledBy} aria-describedby={describedBy} onChange={(v) => onChange(v, false)} />;
     case "toggle":
       return <span id={id}><ToggleSwitch label={label} checked={value === true} onChange={(v) => onChange(v, false)} /></span>;
     case "tags": case "chips":

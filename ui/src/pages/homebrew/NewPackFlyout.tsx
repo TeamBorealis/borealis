@@ -64,26 +64,26 @@ export function NewPackFlyout({ onCreated, onClose }: { onCreated: (pack: Conten
       <form className="v4-new" onSubmit={(e) => { e.preventDefault(); void create(); }} onKeyDown={enterCreates(() => { if (!busy) void create(); })}>
         <Expander flyout title="Pack details">
           <p className="sub">Your own elements live in a pack. It loads like any other pack and travels with your other devices.</p>
-          <label className="v4-fl" htmlFor="hb-pack-name">Name</label>
-          <TextBox light id="hb-pack-name" value={name} placeholder="My homebrew" data-autofocus onChange={(e) => setName(e.target.value)} />
+          <label className="v4-fl" id="hb-pack-name-label" htmlFor="hb-pack-name">Name</label>
+          <TextBox light id="hb-pack-name" aria-labelledby="hb-pack-name-label" value={name} placeholder="My homebrew" data-autofocus onChange={(e) => setName(e.target.value)} />
           <div className="v4-row">
             <div>
-              <label className="v4-fl" htmlFor="hb-pack-code">Code</label>
-              <TextBox light id="hb-pack-code" value={shownCode} maxLength={8} aria-describedby="hb-pack-code-hint" invalid={shownCode !== "" && !codeOk}
+              <label className="v4-fl" id="hb-pack-code-label" htmlFor="hb-pack-code">Code</label>
+              <TextBox light id="hb-pack-code" aria-labelledby="hb-pack-code-label" value={shownCode} maxLength={8} aria-describedby="hb-pack-code-hint" invalid={shownCode !== "" && !codeOk}
                 onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} />
             </div>
             <div>
-              <label className="v4-fl" htmlFor="hb-pack-edition">Edition</label>
-              <ComboBox light id="hb-pack-edition" options={EDITIONS} value={edition} onChange={(v) => setEdition(v as BookRuleset)} />
+              <label className="v4-fl" id="hb-pack-edition-label" htmlFor="hb-pack-edition">Edition</label>
+              <ComboBox light id="hb-pack-edition" aria-labelledby="hb-pack-edition-label" options={EDITIONS} value={edition} onChange={(v) => setEdition(v as BookRuleset)} />
             </div>
           </div>
           <p className="sub hint" id="hb-pack-code-hint">2 to 8 capital letters or digits. It names the pack's elements inside Borealis and can't be changed later.</p>
-          <label className="v4-fl" htmlFor="hb-pack-author">Author</label>
-          <TextBox light id="hb-pack-author" value={author} onChange={(e) => setAuthor(e.target.value)} />
-          <label className="v4-fl" htmlFor="hb-pack-desc">Description</label>
-          <textarea id="hb-pack-desc" className="hb-flyout-text" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <label className="v4-fl" htmlFor="hb-pack-license">Licence</label>
-          <ComboBox light id="hb-pack-license" options={LICENSES} value={license} onChange={setLicense} />
+          <label className="v4-fl" id="hb-pack-author-label" htmlFor="hb-pack-author">Author</label>
+          <TextBox light id="hb-pack-author" aria-labelledby="hb-pack-author-label" value={author} onChange={(e) => setAuthor(e.target.value)} />
+          <label className="v4-fl" id="hb-pack-desc-label" htmlFor="hb-pack-desc">Description</label>
+          <textarea id="hb-pack-desc" aria-labelledby="hb-pack-desc-label" className="hb-flyout-text" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <label className="v4-fl" id="hb-pack-license-label" htmlFor="hb-pack-license">Licence</label>
+          <ComboBox light id="hb-pack-license" aria-labelledby="hb-pack-license-label" options={LICENSES} value={license} onChange={setLicense} />
           {error && <Alert tone="danger" role="alert">{error}</Alert>}
         </Expander>
       </form>

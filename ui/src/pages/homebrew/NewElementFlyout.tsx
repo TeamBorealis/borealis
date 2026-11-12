@@ -103,8 +103,8 @@ export function NewElementFlyout({ kinds, initialKind, onCreate, onClose }: {
       <form className="v4-new" onSubmit={(e) => { e.preventDefault(); void create(); }} onKeyDown={enterCreates(() => { if (!busy && kindId) create(); })}>
         <Expander flyout title="Element">
           <p className="sub">Choose what to make, then give it a name. You can rename it at any time.</p>
-          <label className="v4-fl" htmlFor="hb-new-name">Name</label>
-          <TextBox light id="hb-new-name" value={name} placeholder="Unnamed" data-autofocus onChange={(e) => setName(e.target.value)} />
+          <label className="v4-fl" id="hb-new-name-label" htmlFor="hb-new-name">Name</label>
+          <TextBox light id="hb-new-name" aria-labelledby="hb-new-name-label" value={name} placeholder="Unnamed" data-autofocus onChange={(e) => setName(e.target.value)} />
           {error && <Alert tone="danger" role="alert">{error}</Alert>}
         </Expander>
         <section className="aur-expander flyout-variant v4-plain" aria-labelledby="hb-kinds-title">
