@@ -127,6 +127,14 @@ export class MockHomebrew {
 
   kinds(): HomebrewKindDescriptor[] { return KINDS; }
 
+  /** A homebrew pack removed in Additional content (`remove_pack`): its elements and drafts go with it. */
+  forgetPack(packId: string): void {
+    if (!this.packs.delete(packId)) return;
+    for (const [id, d] of this.drafts) {
+      if (d.packId === packId) { this.drafts.delete(id); this.touched.delete(id); }
+    }
+  }
+
   createPack(req: HomebrewPackRequest): ContentPack {
     const name = req.name.trim();
     if (!name) throw apiError("invalid_argument", "Give the pack a name.");

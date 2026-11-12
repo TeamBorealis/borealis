@@ -684,7 +684,7 @@ export class MockApi implements Api {
   async cancelImportPreview({ previewId }: { previewId: string }) { await this.tick(); this.homebrew.cancelFile(previewId); this.previews.cancel(previewId); }
   async takeOpenedFiles() { await this.tick(); const out = this.openedFiles; this.openedFiles = []; return out; }
   async setPackEnabled(a: { packId: string; enabled: boolean }) { await this.tick(); return this.content.setEnabled(a.packId, a.enabled); }
-  async removePack({ packId }: { packId: string }) { await this.tick(); return this.content.remove(packId); }
+  async removePack({ packId }: { packId: string }) { await this.tick(); this.homebrew.forgetPack(packId); return this.content.remove(packId); }
   async listSources() { await this.tick(); return this.content.sources(); }
   async setSourceEdition(a: { sourceId: string; edition: BookRuleset }) { await this.tick(); return this.content.setSourceEdition(a.sourceId, a.edition); }
   async listIndexes() { await this.tick(); return this.content.listIndexes(); }
