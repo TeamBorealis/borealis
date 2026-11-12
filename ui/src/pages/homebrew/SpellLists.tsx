@@ -9,6 +9,7 @@ import { Band } from "../spells/TwoPane";
 import { refusalText } from "./BulkActions";
 import { SpellPickerGrid } from "./pickers/SpellPickerGrid";
 import { nextSelection } from "./search";
+import { keepChecks, keptChecks } from "./keptLists";
 import { useMessageBox } from "./useMessageBox";
 
 /** How many declared lists the list chooser reads (classes are few; one page holds them all). */
@@ -21,6 +22,8 @@ const expandedOf = (value: string): string | null => (value.startsWith(EXPANDED)
 export interface SpellListsHandle {
   pending: () => number;
   save: () => Promise<void>;
+  /** Drop the unsaved checks (Discard when leaving: they are not kept for the next visit). */
+  discard: () => void;
 }
 
 export interface SpellListsProps {
@@ -57,10 +60,12 @@ export function SpellLists({ packId, narrow, described, onDescribe, handle, onSa
     const page = await api.homebrewReferenceOptions({ target: { types: ["Expanded Spell List"] }, query: "", filters: {}, page: { offset: 0, limit: LIST_PAGE } });
     return page.items.map((r) => ({ value: `${EXPANDED}${r.id}`, label: `${r.name} (expanded list)` }));
   }, [api]);
-  const [list, setList] = useState("");
+  // checks left unsaved when the workspace was left come back (P3)
+  const [list, setList] = useState(() => keptChecks(api, packId)?.list ?? "");
   const [other, setOther] = useState("");
   const [view, setView] = useState<HomebrewSpellListView | null>(null);
-  const [pending, setPending] = useState<ReadonlyMap<string, boolean>>(new Map());
+  const [pending, setPending] = useState<ReadonlyMap<string, boolean>>(() => keptChecks(api, packId)?.pending ?? new Map());
+  useEffect(() => { keepChecks(api, packId, list, pending); }, [api, packId, list, pending]);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [anchor, setAnchor] = useState<string | null>(null);
   const [text, setText] = useState("");
@@ -121,9 +126,12 @@ export function SpellLists({ packId, narrow, described, onDescribe, handle, onSa
   }, [api, packId, view, pending, onSaved]);
 
   useEffect(() => {
-    handle.current = { pending: () => pending.size, save };
+    handle.current = {
+      pending: () => pending.size, save,
+      discard: () => { keepChecks(api, packId, "", new Map()); setPending(new Map()); },
+    };
     return () => { handle.current = null; };
-  }, [handle, pending, save]);
+  }, [handle, pending, save, api, packId]);
 
   const choose = async (name: string) => {
     if (pending.size > 0) {

@@ -111,6 +111,57 @@ describe("WB-23 workspace (mock)", () => {
     expect(within(where).getAllByText("Lists it · Class")).toHaveLength(2); // Cleric, its own list, and Wizard by the append
   });
 
+  it("SPELL LISTS keeps unsaved checks when the workspace is left, and shows them on return (P3)", async () => {
+    // Arrange: two checks on the Wizard list, not saved
+    const user = userEvent.setup();
+    const api = new MockApi({ creatorEnabled: true });
+    const pack = await api.homebrewCreatePack({ request: PACK });
+    const set = vi.spyOn(api, "homebrewSetSpellList");
+    renderApp(`/homebrew/${pack.id}`, { api });
+    await user.click(await screen.findByRole("button", { name: "Spell Lists" }));
+    let view = await screen.findByRole("region", { name: "Spell lists" });
+    await user.selectOptions(within(view).getByRole("combobox", { name: "Spell list" }), "Wizard");
+    let grid = await within(view).findByRole("table", { name: "Spells" });
+    for (const name of ["Bless", "Guidance"]) await user.click(within(grid).getByRole("checkbox", { name: `Choose ${name}` }));
+
+    // Act: leave for All packs (no question asked) and open the pack again
+    await user.click(screen.getByRole("button", { name: "All packs" }));
+    const packs = await screen.findByRole("grid", { name: "Homebrew packs" });
+    await user.click(await within(packs).findByText("Ember Isles"));
+    await user.click(screen.getByRole("button", { name: "Open pack" }));
+
+    // Assert: SPELL LISTS is open on the Wizard list with the two checks waiting for Save
+    view = await screen.findByRole("region", { name: "Spell lists" });
+    grid = await within(view).findByRole("table", { name: "Spells" });
+    expect((within(view).getByRole("combobox", { name: "Spell list" }) as HTMLSelectElement).value).toBe("Wizard");
+    await waitFor(() => expect(within(view).getByRole("status").textContent).toContain("(2 not saved)"));
+    expect((within(grid).getByRole("checkbox", { name: "Choose Bless" }) as HTMLInputElement).checked).toBe(true);
+    expect(set).not.toHaveBeenCalled();
+    await user.click(within(view).getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(set).toHaveBeenCalledWith(expect.objectContaining({ listTag: "Wizard", add: ["bless", "guidance"], remove: [] })));
+    // saved: leaving and coming back opens the pack on its elements again
+    await user.click(screen.getByRole("button", { name: "All packs" }));
+    await user.click(await within(await screen.findByRole("grid", { name: "Homebrew packs" })).findByText("Ember Isles"));
+    await user.click(screen.getByRole("button", { name: "Open pack" }));
+    expect(await screen.findByRole("navigation", { name: "Element kinds" })).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Spell lists" })).toBeNull();
+
+    // checks discarded when leaving SPELL LISTS for a kind are not kept either
+    await user.click(screen.getByRole("button", { name: "Spell Lists" }));
+    view = await screen.findByRole("region", { name: "Spell lists" });
+    await user.selectOptions(within(view).getByRole("combobox", { name: "Spell list" }), "Wizard");
+    grid = await within(view).findByRole("table", { name: "Spells" });
+    await user.click(within(grid).getByRole("checkbox", { name: "Choose Cure Wounds" }));
+    await user.click(within(screen.getByRole("navigation", { name: "Element kinds" })).getByRole("button", { name: /^Spells/ }));
+    await user.click(within(await screen.findByRole("dialog", { name: "Unsaved changes" })).getByRole("button", { name: "Discard" }));
+    await waitFor(() => expect(screen.queryByRole("region", { name: "Spell lists" })).toBeNull());
+    await user.click(screen.getByRole("button", { name: "All packs" }));
+    await user.click(await within(await screen.findByRole("grid", { name: "Homebrew packs" })).findByText("Ember Isles"));
+    await user.click(screen.getByRole("button", { name: "Open pack" }));
+    expect(await screen.findByRole("navigation", { name: "Element kinds" })).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Spell lists" })).toBeNull();
+  });
+
   it("DATA shows the stored element and copies it as JSON; Keys lists every binding of the map", async () => {
     const user = userEvent.setup();
     const api = new MockApi({ creatorEnabled: true });

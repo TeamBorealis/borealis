@@ -13,6 +13,7 @@ import { BulkActions, type BulkDone } from "./BulkActions";
 import { Categories, ElementList, type ExtraCategory, KindChips } from "./ElementList";
 import { KeysDialog } from "./KeysDialog";
 import { EMPTY_FILTER, type ListFilter } from "./search";
+import { keptChecks } from "./keptLists";
 import { SpellLists, type SpellListsHandle } from "./SpellLists";
 import { WhereUsed } from "./WhereUsed";
 import { useCreatorKeys } from "./keymap";
@@ -71,7 +72,8 @@ export function PackWorkspace() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   /** The workspace shows a kind's elements, or the pack's SPELL LISTS (spec 12.4). */
-  const [pane, setPane] = useState<"elements" | "lists">("elements");
+  // unsaved SPELL LISTS checks kept from the last visit open SPELL LISTS again (P3)
+  const [pane, setPane] = useState<"elements" | "lists">(() => (keptChecks(api, packId) ? "lists" : "elements"));
   const [described, setDescribed] = useState<string | null>(null);
   const [keysOpen, setKeysOpen] = useState(false);
   /** Bumped after every write: WHERE USED reads again. */
@@ -220,6 +222,7 @@ export function PackWorkspace() {
       });
       if (r === "cancel") return false;
       if (r === "save") await lists.current?.save();
+      else lists.current?.discard();
     }
     setPane("elements");
     return true;
@@ -404,7 +407,7 @@ export function PackWorkspace() {
       {whereUsed(described)}
     </>
   );
-  const spellLists = <SpellLists packId={packId} narrow={narrow} described={described} onDescribe={setDescribed} handle={lists} onSaved={() => setWritten((n) => n + 1)} />;
+  const spellLists = <SpellLists key={packId} packId={packId} narrow={narrow} described={described} onDescribe={setDescribed} handle={lists} onSaved={() => setWritten((n) => n + 1)} />;
   const editor = openKind && draft.form
     ? <Editor kind={openKind} kinds={kinds.data ?? []} draft={draft} tab={tab} onTab={setTab} narrow={narrow} preview={preview} tryItOpen={tryItOpen}
       actions={{ onSave: () => void save(), onTryIt: tryIt, onTryItClose: () => setTryItOpen(false), onDuplicate: () => void duplicate(), onJump: jump, onNewChild: newChild, onConfirmRemove: confirmRemove,
