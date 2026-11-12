@@ -559,3 +559,49 @@ fn the_class_form_finds_the_characters_that_use_a_saved_feature_before_it_goes()
         .unwrap()
         .is_empty());
 }
+
+/// Hy610: a deep copy of the SRD Elf offers its copied lineage options by id; an option made inside the copied trait
+/// joins that choice through the trait's Lineage options field, nothing to add by hand.
+#[test]
+fn an_option_made_inside_a_copied_lineage_trait_joins_its_choice() {
+    let app = App::new();
+    let pack = app.pack("Ember Isles", "EI", Ruleset::Dnd2024);
+    let v = app
+        .state
+        .homebrew_new_draft(
+            &pack,
+            "species",
+            Some("ID_2024_SPECIES_ELF"),
+            None,
+            Some(true),
+        )
+        .unwrap();
+    let lineage = v
+        .form
+        .children
+        .iter()
+        .find(|c| c.fields.get("name") == Some(&json!("Elven Lineage")))
+        .expect("the copied Elven Lineage")
+        .key
+        .clone();
+    let v = app.child(&pack, "speciesTraitOption", &v, Some(&lineage));
+    let moon = last_child(&v.form, &lineage);
+    let mut form = v.form.clone();
+    set(&mut form, &moon, "name", json!("Moon Elf"));
+    let v = app.update(&v, &form);
+    let entries = form_mut(&mut v.form.clone(), &lineage).fields["lineage"].clone();
+    assert_eq!(entries.as_array().unwrap().len(), 4, "{entries}");
+    app.save(&v);
+    let trait_el = app.saved(&pack, "ID_EI_TRAIT_ELF_COPY_ELVEN_LINEAGE");
+    let offered: Vec<String> = trait_el["rules"][0]["supports"]
+        .as_str()
+        .unwrap()
+        .split('|')
+        .map(str::to_string)
+        .collect();
+    assert_eq!(offered.len(), 4, "{offered:?}");
+    assert!(
+        offered.contains(&"ID_EI_TRAIT_OPTION_ELVEN_LINEAGE_MOON_ELF".to_string()),
+        "{offered:?}"
+    );
+}
