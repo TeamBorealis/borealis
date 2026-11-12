@@ -6,6 +6,7 @@
 //! (`assign_ids`, spec 5.3) over every loaded id and the pack's retired ids; until then previews use provisional ids.
 
 use crate::compendium::element_detail;
+use crate::content_dto::PackKind;
 use crate::content_packs::EventSink;
 use crate::error::{ApiError, ApiResult};
 use crate::homebrew_drafts::{new_draft_id, DraftFile, HB_DRAFT_FORMAT};
@@ -20,9 +21,9 @@ use crate::state::{AppState, ContentHub, BUNDLED_PACKS};
 use borealis_authoring::check::{issue_problems, Problem};
 use borealis_authoring::form::{
     add_child_in, assign_ids, child_form, copy_child, copy_element, data_json, data_tree,
-    drop_lost_spellcasting, element_tree_to_form, follow_class, kind, merge_ui,
-    new_background_form, new_child_key, new_class_form, new_creature_form, refresh_blocks, to_ui,
-    write_copy, CatalogBlockCodec, Copy, CopyExtras, FormContext, FormState, WithElements,
+    drop_lost_spellcasting, element_tree_to_form, kind, merge_ui, new_background_form,
+    new_child_key, new_class_form, new_creature_form, refresh_blocks, to_ui, write_copy,
+    CatalogBlockCodec, ClassRename, Copy, CopyExtras, FormContext, FormState, WithElements,
     BACKGROUND_KIND, CLASS_KIND, CREATURE_KIND, SUBCLASS_KIND,
 };
 use borealis_authoring::pack::{
@@ -422,15 +423,24 @@ impl AppState {
         }
         let (content, trashed) = without_elements(&pack.disk.content, &dropped);
         // a renamed class keeps offering the pack's saved subclasses: they take its new tag (spec 4.7)
-        let followed: Vec<Element> = if form.kind == CLASS_KIND {
+        // (and so do its subclasses in the user's other homebrew packs, and the drafts of its subclasses)
+        let rename = if form.kind == CLASS_KIND {
             let before: Vec<Element> = Self::hb_base(&pack, &draft.base_ids)
                 .into_iter()
                 .flatten()
                 .cloned()
                 .collect();
-            follow_class(&before, &elements, &content.elements)
+            ClassRename::between(&before, &elements)
         } else {
-            Vec::new()
+            None
+        };
+        let followed: Vec<Element> = rename
+            .as_ref()
+            .map(|r| r.follow_pack(&elements, &content.elements))
+            .unwrap_or_default();
+        let others = match &rename {
+            Some(r) => self.hb_followers(&draft.pack_id, r, &elements)?,
+            None => Vec::new(),
         };
         let at = now();
         let mut creator = pack.creator.with_retired(dropped.iter().copied());
@@ -465,8 +475,12 @@ impl AppState {
             .iter()
             .cloned()
             .chain(followed.iter().map(|e| e.id.clone()))
+            .chain(others.iter().flat_map(|(_, _, ids)| ids.iter().cloned()))
             .collect();
-        match self.hb_commit(&pack, &next, &checked, sink) {
+        let writes: Vec<(&CreatorPack, &PackWrite)> = std::iter::once((&pack, &next))
+            .chain(others.iter().map(|(p, w, _)| (p, w)))
+            .collect();
+        match self.hb_commit_all(&writes, &checked, sink) {
             Ok(()) => {}
             Err(CommitError::Api(e)) => return Err(e),
             Err(CommitError::Problems(issues)) => {
@@ -480,6 +494,9 @@ impl AppState {
             }
         }
         self.hb_drafts.remove(&self.paths.data, draft_id)?;
+        if let Some(r) = &rename {
+            self.hb_follow_drafts(r);
+        }
         Ok(HomebrewSaveResult {
             pack: self.hb_pack_dto(&draft.pack_id)?,
             element_ids: saved,
@@ -596,6 +613,70 @@ impl AppState {
 }
 
 /// The form and its children name the pack's book as their source.
+impl AppState {
+    /// The user's other homebrew packs that hold subclasses of a renamed class (`pack_id`'s), each with its write (the
+    /// subclasses with the class's new tag, version bumped) and the ids it changes. Packs the creator can't edit are
+    /// left out.
+    fn hb_followers(
+        &self,
+        pack_id: &str,
+        rename: &ClassRename,
+        class: &[Element],
+    ) -> ApiResult<Vec<(CreatorPack, PackWrite, Vec<String>)>> {
+        let others: Vec<String> = self
+            .list_packs()?
+            .into_iter()
+            .filter(|p| p.kind == PackKind::Homebrew && p.id != pack_id)
+            .map(|p| p.id)
+            .collect();
+        Ok(others
+            .iter()
+            .filter_map(|id| self.hb_pack(id).ok())
+            .filter_map(|other| {
+                let followed = rename.follow_pack(class, &other.disk.content.elements);
+                if followed.is_empty() {
+                    return None;
+                }
+                let ids = followed.iter().map(|e| e.id.clone()).collect();
+                let mut manifest = other.disk.manifest.clone();
+                manifest.version = bump_patch(&manifest.version);
+                let write = PackWrite {
+                    manifest,
+                    content: with_elements(&other.disk.content, &followed),
+                    creator: other.creator.clone(),
+                    trashed: Vec::new(),
+                };
+                Some((other, write, ids))
+            })
+            .collect())
+    }
+
+    /// The edited subclass drafts of a renamed class take its new tag and name (a draft of a saved subclass keeps its
+    /// tag until the class is picked again). A draft that can't be rewritten is left as it is (logged): the save stands.
+    fn hb_follow_drafts(&self, rename: &ClassRename) {
+        let drafts = match self.hb_drafts.list(&self.paths.data) {
+            Ok(d) => d,
+            Err(e) => {
+                tracing::warn!("subclass drafts not read after a class rename: {e}");
+                return;
+            }
+        };
+        for draft in drafts {
+            let Some(form) = rename.follow_draft(&draft.form) else {
+                continue;
+            };
+            let next = DraftFile {
+                form,
+                updated_at: now(),
+                ..draft
+            };
+            if let Err(e) = self.hb_drafts.put(&self.paths.data, next) {
+                tracing::warn!("a subclass draft did not take its class's new tag: {e}");
+            }
+        }
+    }
+}
+
 fn with_source(form: &mut FormState, source: &str) {
     if kind(&form.kind).is_some_and(|k| k.field("source").is_some()) {
         form.fields.insert("source".into(), json!(source));

@@ -187,53 +187,111 @@ pub(crate) fn stored_class(sub: &Element, lookup: &dyn Lookup) -> Option<ClassCh
     named.or_else(|| class_offering(sub, lookup))
 }
 
-/// The pack's saved subclasses of a class saved again with another subclass tag (renamed: a 2024 class offers
+/// What a class save changed for its subclasses: its subclass tag and name before and after (spec 4.7).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClassRename {
+    old: ClassChoice,
+    new: ClassChoice,
+}
+
+impl ClassRename {
+    /// The class's choice tag or name changed between `before` (the class and its children as stored) and `after` (as
+    /// saved now); `None` when neither changed or either has no subclass choice.
+    #[must_use]
+    pub fn between(before: &[Element], after: &[Element]) -> Option<Self> {
+        let choice_of = |els: &[Element]| -> Option<ClassChoice> {
+            let lookup = super::WithElements {
+                base: &super::NoLookup,
+                extra: els,
+            };
+            els.iter()
+                .find(|e| e.ty == "Class")
+                .and_then(|c| class_choice(c, &lookup))
+        };
+        let (old, new) = (choice_of(before)?, choice_of(after)?);
+        (old.tag != new.tag || old.class_name != new.class_name).then_some(Self { old, new })
+    }
+
+    /// A subclass element of this class: it names the class (`data.class`) or, with no `data.class`, carries the
+    /// 2024 tag the class wrote from its own name (a 2014 label may be shared with another class).
+    fn names_class(&self, sub: &Element) -> bool {
+        let own_tag =
+            self.old.tag == format!("{} Subclass", super::codec::tag_word(&self.old.class_name));
+        sub.ty == "Archetype"
+            && sub.supports.contains(&self.old.tag)
+            && match sub.data.get("class").and_then(Value::as_str) {
+                Some(id) => id == self.old.class_id || id == self.new.class_id,
+                None => own_tag,
+            }
+    }
+
+    /// The saved subclass with the new tag and class name.
+    fn followed(&self, sub: &Element) -> Element {
+        let mut next = sub.clone();
+        for t in &mut next.supports {
+            if *t == self.old.tag {
+                t.clone_from(&self.new.tag);
+            }
+        }
+        if next.data.get("class_name").and_then(Value::as_str) == Some(self.old.class_name.as_str())
+        {
+            next.data
+                .insert("class_name".into(), json!(self.new.class_name));
+        }
+        next
+    }
+
+    /// A subclass draft's form that picked this class, with the new tag and the class's new name (a draft of a saved
+    /// subclass keeps its tag until its class is picked again, so it would no longer be offered). `None` for any other
+    /// form, or one that needs no change.
+    #[must_use]
+    pub fn follow_draft(&self, form: &FormState) -> Option<FormState> {
+        if form.kind != SUBCLASS_KIND {
+            return None;
+        }
+        let class = picked(form)?;
+        if class.id.trim() != self.old.class_id && class.id.trim() != self.new.class_id {
+            return None;
+        }
+        let mut next = form.clone();
+        if form.fields.get(TAG).and_then(Value::as_str) == Some(self.old.tag.as_str()) {
+            next.fields.insert(TAG.into(), json!(self.new.tag));
+        }
+        if class.name == self.old.class_name {
+            let mut renamed = class.clone();
+            renamed.name.clone_from(&self.new.class_name);
+            next.fields.insert(PARENT.into(), json!(renamed));
+        }
+        (next != *form).then_some(next)
+    }
+}
+
+/// The saved subclasses among `pack` of a class saved again with another subclass tag (renamed: a 2024 class offers
 /// "<Class> Subclass"; or a 2014 label changed), with the new tag, so the class keeps offering them (spec 4.7: a
-/// subclass carries the tag its class's choice offers, and follows its class).
+/// subclass carries the tag its class's choice offers, and follows its class). `pack` is any homebrew pack's elements:
+/// the class's own, or another that holds subclasses of it.
 ///
-/// `before` is the class and its children as stored, `after` as they are saved now, `pack` the pack's elements. A
-/// subclass follows when it names the class (`data.class`) or, with no `data.class`, carries the 2024 tag the class
-/// wrote from its own name (a 2014 label may be shared with another class). Its `data.class_name` follows the name.
-/// Each subclass returned replaces its stored copy.
+/// `before` is the class and its children as stored, `after` as they are saved now. Each subclass returned replaces
+/// its stored copy.
 #[must_use]
 pub fn follow_class(before: &[Element], after: &[Element], pack: &[Element]) -> Vec<Element> {
-    let choice_of = |els: &[Element]| -> Option<ClassChoice> {
-        let lookup = super::WithElements {
-            base: &super::NoLookup,
-            extra: els,
-        };
-        els.iter()
-            .find(|e| e.ty == "Class")
-            .and_then(|c| class_choice(c, &lookup))
-    };
-    let (Some(old), Some(new)) = (choice_of(before), choice_of(after)) else {
-        return Vec::new();
-    };
-    if old.tag == new.tag && old.class_name == new.class_name {
-        return Vec::new();
+    ClassRename::between(before, after)
+        .map(|r| r.follow_pack(after, pack))
+        .unwrap_or_default()
+}
+
+impl ClassRename {
+    /// [`follow_class`] for a known rename: the subclasses among `pack` (not among `after`, the class and its children
+    /// as saved now) that take the new tag.
+    #[must_use]
+    pub fn follow_pack(&self, after: &[Element], pack: &[Element]) -> Vec<Element> {
+        pack.iter()
+            .filter(|e| !after.iter().any(|a| a.id == e.id))
+            .filter(|e| self.names_class(e))
+            .map(|e| self.followed(e))
+            .filter(|sub| pack.iter().all(|e| e != sub))
+            .collect()
     }
-    let own_tag = old.tag == format!("{} Subclass", super::codec::tag_word(&old.class_name));
-    pack.iter()
-        .filter(|e| e.ty == "Archetype" && !after.iter().any(|a| a.id == e.id))
-        .filter(|e| e.supports.contains(&old.tag))
-        .filter(|e| match e.data.get("class").and_then(Value::as_str) {
-            Some(id) => id == old.class_id || id == new.class_id,
-            None => own_tag,
-        })
-        .map(|e| {
-            let mut sub = e.clone();
-            for t in &mut sub.supports {
-                if *t == old.tag {
-                    t.clone_from(&new.tag);
-                }
-            }
-            if sub.data.get("class_name").and_then(Value::as_str) == Some(old.class_name.as_str()) {
-                sub.data.insert("class_name".into(), json!(new.class_name));
-            }
-            sub
-        })
-        .filter(|sub| pack.iter().all(|e| e != sub))
-        .collect()
 }
 
 /// The class picked in a subclass form, as it is now.
