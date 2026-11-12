@@ -9,7 +9,7 @@
 //! changed since (`draftSession.ts`).
 
 use crate::error::ApiResult;
-use crate::homebrew_draft_api::{saved_ids, wire_problem};
+use crate::homebrew_draft_api::{draft_elements, saved_ids, wire_problem};
 use crate::homebrew_drafts::DraftFile;
 use crate::homebrew_dto::HomebrewProblem;
 use crate::homebrew_packs::CreatorPack;
@@ -103,8 +103,10 @@ impl AppState {
             Ruleset::Dnd2014 => Ruleset::Dnd2014,
             _ => Ruleset::Dnd2024,
         };
-        let ruleset = borealis_authoring::form::form_to_elements(&form, &cx)
-            .ok()
+        // as a save writes it: an unsaved copy's grants name its own copied features (H8mmg)
+        let written = draft_elements(&form, &draft.copy, &cx, &mut ids);
+        let ruleset = written
+            .as_ref()
             .and_then(|els| els.first().and_then(|e| e.ruleset))
             .filter(|r| *r != Ruleset::Any)
             .unwrap_or(ruleset);
@@ -114,6 +116,7 @@ impl AppState {
             ruleset,
             pack_name: DRAFT_FILE,
             form: &form,
+            written: written.as_deref(),
             cx: &cx,
         })
         .into_iter()

@@ -36,6 +36,9 @@ pub struct DeepInput<'a> {
     pub pack_name: &'a str,
     /// The draft's form, with the ids its elements have or would get now.
     pub form: &'a FormState,
+    /// The form's elements as a save writes them (a copy's grants re-pointed to its copied features); `None` writes
+    /// the form.
+    pub written: Option<&'a [Element]>,
     /// The form context over the loaded content.
     pub cx: &'a FormContext<'a>,
 }
@@ -58,8 +61,12 @@ const BALANCED: [&str; 6] = ["Spell", "Feat", "Magic Item", "Race", "Species", "
 /// reports why).
 #[must_use]
 pub fn deep_problems(input: &DeepInput<'_>) -> Vec<Problem> {
-    let Ok(elements) = form_to_elements(input.form, input.cx) else {
-        return Vec::new();
+    let elements = match input.written {
+        Some(written) => written.to_vec(),
+        None => match form_to_elements(input.form, input.cx) {
+            Ok(elements) => elements,
+            Err(_) => return Vec::new(),
+        },
     };
     let ids: HashSet<String> = elements.iter().map(|e| e.id.clone()).collect();
     let store = input

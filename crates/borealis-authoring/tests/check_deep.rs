@@ -39,6 +39,7 @@ fn srd_2024_classes_and_subclasses_check_clean() {
             ruleset: Ruleset::Dnd2024,
             pack_name: "copy",
             form: &form,
+            written: None,
             cx: &cx,
         }) {
             assert!(!p.message.contains("ID_"), "{p:?}");

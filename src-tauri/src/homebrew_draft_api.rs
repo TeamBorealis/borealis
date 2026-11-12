@@ -5,7 +5,7 @@
 //! (`merge_ui`), so ids and kept bytes never travel and can't be forged. Ids are given on the first save
 //! (`assign_ids`, spec 5.3) over every loaded id and the pack's retired ids; until then previews use provisional ids.
 
-use crate::compendium::element_detail;
+use crate::compendium::element_detail_with;
 use crate::content_dto::PackKind;
 use crate::content_packs::EventSink;
 use crate::error::{ApiError, ApiResult};
@@ -26,6 +26,7 @@ use borealis_authoring::form::{
     write_copy, CatalogBlockCodec, ClassRename, Copy, CopyExtras, FormContext, FormState,
     ProvisionalClass, WithElements, BACKGROUND_KIND, CLASS_KIND, CREATURE_KIND, SUBCLASS_KIND,
 };
+use borealis_authoring::ids::IdGenerator;
 use borealis_authoring::pack::{
     bump_patch, descendants, digest, pack_edition, source_name, with_elements, without_elements,
     CopiedFrom, CreatorElement, SOURCE_TYPE,
@@ -37,6 +38,23 @@ use std::time::SystemTime;
 
 fn now() -> String {
     rfc3339(SystemTime::now())
+}
+
+/// The elements a draft's form saves, as a save writes them (spec 11: a copy's grants name its own copied features,
+/// not the originals), for the live preview, the DATA view and the deep check before the first save (H8mmg). Only the
+/// form's own elements (the companions a copy saves with it are not on screen); while a companion can't be written yet,
+/// the form's elements as it writes them alone. `None` when the form can't make its elements.
+pub(crate) fn draft_elements(
+    form: &FormState,
+    copy: &CopyExtras,
+    cx: &FormContext<'_>,
+    ids: &mut IdGenerator,
+) -> Option<Vec<Element>> {
+    let own = form.flatten().len();
+    write_copy(form, copy, cx, ids)
+        .ok()
+        .map(|written| written.into_iter().take(own).map(|w| w.element).collect())
+        .or_else(|| form_to_elements(form, cx).ok())
 }
 
 /// A problem as the UI gets it. `saved` are the draft's saved element ids: a problem of an element that has none yet
@@ -113,11 +131,10 @@ impl AppState {
             .into_iter()
             .map(|p| wire_problem(p, &saved))
             .collect();
-        let elements = borealis_authoring::form::form_to_elements(&provisional, &cx).ok();
+        let elements = draft_elements(&provisional, &draft.copy, &cx, &mut ids);
         let preview = elements
             .as_ref()
-            .and_then(|els| els.first())
-            .map(|e| element_detail(&hub.store, e));
+            .and_then(|els| els.first().map(|e| element_detail_with(&hub.store, els, e)));
         let (json, tree) = elements.as_ref().map_or_else(
             || (String::new(), Vec::new()),
             |els| (data_json(els), data_tree(&provisional, els, &cx)),

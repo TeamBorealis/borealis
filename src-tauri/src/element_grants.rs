@@ -27,13 +27,34 @@ struct Entry<'a> {
     element: Option<&'a Element>,
 }
 
+/// Where a grant's element is looked up: elements not loaded yet (a creator draft's own, H8mmg) first, then the store.
+struct Find<'a> {
+    store: &'a ContentStore,
+    own: &'a [Element],
+}
+
+impl<'a> Find<'a> {
+    fn element(&self, id: &str) -> Option<&'a Element> {
+        self.own
+            .iter()
+            .find(|e| e.id == id)
+            .or_else(|| self.store.element(id))
+    }
+}
+
 /// What choosing `el` grants, by level (stable within a level). Only the element's own rules: a
 /// class's multiclass node (a bare "Multiclass" grant and proficiencies the class already gives)
-/// applies only when the class is taken as a multiclass (A6).
-pub(crate) fn grants(store: &ContentStore, el: &Element) -> Vec<ElementGrant> {
+/// applies only when the class is taken as a multiclass (A6). Elements that are not loaded yet are
+/// named from `own` (a creator draft's features, written with it).
+pub(crate) fn grants_with(
+    store: &ContentStore,
+    own: &[Element],
+    el: &Element,
+) -> Vec<ElementGrant> {
+    let find = Find { store, own };
     let mut out: Vec<ElementGrant> = Vec::new();
     for rule in &el.rules {
-        let Some(entry) = entry(store, rule) else {
+        let Some(entry) = entry(&find, rule) else {
             continue;
         };
         let level = entry.level.unwrap_or(FIRST_LEVEL).max(FIRST_LEVEL);
@@ -51,10 +72,10 @@ pub(crate) fn grants(store: &ContentStore, el: &Element) -> Vec<ElementGrant> {
     out
 }
 
-fn entry<'a>(store: &'a ContentStore, rule: &Rule) -> Option<Entry<'a>> {
+fn entry<'a>(find: &Find<'a>, rule: &Rule) -> Option<Entry<'a>> {
     match rule {
         Rule::Grant(g) => {
-            let element = store.element(&g.id);
+            let element = find.element(&g.id);
             Some(Entry {
                 name: element.map_or_else(|| g.id.clone(), |e| e.name.clone()),
                 level: g.level,
@@ -69,7 +90,7 @@ fn entry<'a>(store: &'a ContentStore, rule: &Rule) -> Option<Entry<'a>> {
                 element: None,
             })
         }
-        Rule::Custom(c) => custom_entry(store, c),
+        Rule::Custom(c) => custom_entry(find, c),
         Rule::Stat(_) | Rule::Unknown(_) => None,
     }
 }
@@ -85,7 +106,7 @@ fn text_of(el: &Element) -> String {
 
 /// B9: the custom rules that give the character something to have or to choose, named the way
 /// the builder asks for them ("Magic Initiate (Cleric)", "Choose: Ability Scores (Acolyte)").
-fn custom_entry<'a>(store: &'a ContentStore, c: &CustomRule) -> Option<Entry<'a>> {
+fn custom_entry<'a>(find: &Find<'a>, c: &CustomRule) -> Option<Entry<'a>> {
     let text = |key: &str| {
         c.fields
             .get(key)
@@ -101,7 +122,7 @@ fn custom_entry<'a>(store: &'a ContentStore, c: &CustomRule) -> Option<Entry<'a>
     match c.kind.as_str() {
         "grant_feat" => {
             let id = text("feat")?;
-            let element = store.element(id);
+            let element = find.element(id);
             let name = element.map_or_else(|| id.to_string(), |e| e.name.clone());
             let params: Vec<&str> = c
                 .fields

@@ -227,13 +227,23 @@ impl AppState {
 /// (the element itself need not be in it: the homebrew creator previews a draft this way).
 #[must_use]
 pub(crate) fn element_detail(store: &ContentStore, el: &Element) -> ElementDetail {
+    element_detail_with(store, &[], el)
+}
+
+/// [`element_detail`] of an element not loaded yet (a creator draft's), its grants named from `own` (the elements
+/// written with it) before the store.
+pub(crate) fn element_detail_with(
+    store: &ContentStore,
+    own: &[Element],
+    el: &Element,
+) -> ElementDetail {
     let mut html = description_html(el);
     html.push_str(&mastery_html(store, el));
     ElementDetail {
         summary: summary(store, el),
         description_html: html,
         facts: facts(store, el),
-        grants: crate::element_grants::grants(store, el),
+        grants: crate::element_grants::grants_with(store, own, el),
     }
 }
 

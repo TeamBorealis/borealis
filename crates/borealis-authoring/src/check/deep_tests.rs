@@ -42,6 +42,7 @@ fn run(root: &Element, children: &[Element]) -> Vec<Problem> {
         ruleset: Ruleset::Dnd2024,
         pack_name: "mine",
         form: &form,
+        written: None,
         cx: &cx,
     })
 }
