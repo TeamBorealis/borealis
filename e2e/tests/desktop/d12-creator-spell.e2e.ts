@@ -24,11 +24,16 @@ function enableCreator(): void {
 }
 
 /**
- * A native select, chosen as a keyboard user does: a click on its label focuses it (the macOS tree lists a select with
- * no value yet under no name, so the label is what can be found), typing picks the first option that starts so.
+ * A native select, chosen as a keyboard user does: a click on its label focuses it, typing picks the first option that
+ * starts so. The label's text node, not the select: since IDpnY the select is named by its label in the macOS tree
+ * (with no value yet too; a raw `element14` node the engine's role map does not name, as every select is), and a click
+ * on it opens its menu.
  */
 async function chooseByLabel(ctx: TestFixtures, label: string, typed: string): Promise<void> {
-  await ctx.screen.getByText(label, { exact: true }).last().tap();
+  // the label's two text nodes, then the select it names: the label's last text node is the one before the select
+  const named = ctx.screen.getByText(label, { exact: true });
+  await expect(named.first()).toBeVisible(SLOW);
+  await named.nth((await named.count()) - 2).tap();
   await settle(800);
   await typeText(ctx, typed);
   await settle(800);
@@ -50,7 +55,8 @@ desktopSuite('d12', 'Creator: a spell made in Homebrew is offered by a new Wizar
   }
   await screen.getByRole('button', 'New pack').first().tap();
   await expect(screen.getByText(/^new pack$/i).first()).toBeVisible(SLOW);
-  await screen.getByPlaceholder('My homebrew').fill(PACK);
+  // the Name boxes are named by their label in the macOS tree (IDpnY), not only by their placeholder
+  await screen.getByRole('textbox', /^name$/i).fill(PACK);
   await screen.getByRole('button', 'Create').tap();
   // the pack's workspace: its (empty) element list offers New element
   await expect(screen.getByText('No spells in this pack yet.').first()).toBeVisible(SLOW);
@@ -58,7 +64,7 @@ desktopSuite('d12', 'Creator: a spell made in Homebrew is offered by a new Wizar
   // New element: a spell (the first kind), named.
   await screen.getByRole('button', 'New element').first().tap();
   await expect(screen.getByText(/^new element$/i).first()).toBeVisible(SLOW);
-  await screen.getByPlaceholder('Unnamed').fill(SPELL);
+  await screen.getByRole('textbox', /^name$/i).fill(SPELL);
   await screen.getByRole('button', 'Create').tap();
   await expect(screen.getByRole('button', /Problems \(1\)/)).toBeVisible(SLOW);
   // a new spell is 1st level; the school is the one thing it still needs
