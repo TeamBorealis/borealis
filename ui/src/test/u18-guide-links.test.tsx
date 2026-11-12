@@ -15,6 +15,7 @@ const URL = {
   fiveTools: "https://borealisbuilder.com/guides/import-5etools-data",
   move: "https://borealisbuilder.com/guides/move-characters-between-devices",
   print: "https://borealisbuilder.com/guides/print-character-sheet",
+  creator: "https://borealisbuilder.com/guides/homebrew-creator",
 } as const;
 
 afterEach(() => { vi.restoreAllMocks(); });
@@ -41,8 +42,8 @@ async function openFile(user: ReturnType<typeof userEvent.setup>, entry: string)
 }
 
 describe("U18 guide buttons", () => {
-  it("the five guides are on the open_link list with their exact addresses", () => {
-    expect(Object.values(GUIDES).map((g) => g.url)).toEqual([URL.create, URL.aurora, URL.fiveTools, URL.move, URL.print]);
+  it("the six guides are on the open_link list with their exact addresses", () => {
+    expect(Object.values(GUIDES).map((g) => g.url)).toEqual([URL.create, URL.aurora, URL.fiveTools, URL.move, URL.print, URL.creator]);
     for (const url of Object.values(URL)) expect(EXTERNAL_LINKS).toContain(url);
   });
 

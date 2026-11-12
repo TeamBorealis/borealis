@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { BookRuleset, ContentPack } from "../../api/contract";
-import { Alert, Button, ComboBox, Expander, Flyout, TextBox } from "../../components";
+import { Alert, Button, ComboBox, Expander, Flyout, GuideLink, TextBox } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { errorMessage } from "../../state/useAsync";
 import { enterCreates } from "./flyoutKeys";
@@ -59,7 +59,7 @@ export function NewPackFlyout({ onCreated, onClose }: { onCreated: (pack: Conten
     }
   };
   return (
-    <Flyout title="New pack" onClose={onClose}
+    <Flyout title="New pack" onClose={onClose} headAction={<GuideLink guide="homebrew-creator" />}
       footer={<div className="v4-foot"><Button data-testid="create-pack" disabled={busy} onClick={() => void create()}>Create</Button><Button onClick={onClose}>Cancel</Button></div>}>
       <form className="v4-new" onSubmit={(e) => { e.preventDefault(); void create(); }} onKeyDown={enterCreates(() => { if (!busy) void create(); })}>
         <Expander flyout title="Pack details">

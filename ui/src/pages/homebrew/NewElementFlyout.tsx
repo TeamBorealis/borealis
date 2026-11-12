@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useRef, useState } from "react";
 import type { HomebrewKindDescriptor, HomebrewRef } from "../../api/contract";
-import { Alert, Button, Expander, Flyout, TextBox } from "../../components";
+import { Alert, Button, Expander, Flyout, GuideLink, TextBox } from "../../components";
 import { CheckBox } from "../../components/controls";
 import { errorMessage } from "../../state/useAsync";
 import { ReferencePicker } from "./pickers/ReferencePicker";
@@ -98,7 +98,7 @@ export function NewElementFlyout({ kinds, initialKind, onCreate, onClose }: {
     if (id) void run({ copyFrom: id, deepCopy: deep });
   };
   return (
-    <Flyout title="New element" onClose={onClose}
+    <Flyout title="New element" onClose={onClose} headAction={<GuideLink guide="homebrew-creator" />}
       footer={<div className="v4-foot"><Button data-testid="create-element" disabled={busy || !kindId} onClick={create}>{start === "blank" ? "Create" : "Choose..."}</Button><Button onClick={onClose}>Cancel</Button></div>}>
       <form className="v4-new" onSubmit={(e) => { e.preventDefault(); void create(); }} onKeyDown={enterCreates(() => { if (!busy && kindId) create(); })}>
         <Expander flyout title="Element">

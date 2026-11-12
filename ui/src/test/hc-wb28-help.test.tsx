@@ -1,6 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockApi } from "./hc-wb10-harness";
 import { renderApp } from "./utils";
 
@@ -52,5 +52,29 @@ describe("field help is read with its field (WB-28)", () => {
     expect(ids.map((id) => document.getElementById(id)?.textContent ?? "")).toEqual([
       "Written from the prerequisite while left empty or as written; type to reword it.",
     ]);
+  });
+});
+
+describe("the creator's guide button (decision U18)", () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+  const GUIDE = "https://borealisbuilder.com/guides/homebrew-creator";
+
+  it.each(["New pack", "New element"])("%s has the Homebrew Creator guide in its title box", async (title) => {
+    // Arrange
+    const user = userEvent.setup();
+    const api = mockApi();
+    const pack = await api.homebrewCreatePack({ request: { name: "Ember Isles", code: "EMB", edition: "dnd2024" } });
+    renderApp(title === "New pack" ? "/homebrew" : `/homebrew/${pack.id}`, { api });
+    await user.click((await screen.findAllByRole("button", { name: title === "New pack" ? "New pack" : /^New( element)?$/ }))[0]!);
+    const flyout = await screen.findByRole("dialog", { name: title });
+    const open = vi.spyOn(api, "openLink");
+
+    // Act
+    const button = within(flyout).getByRole("button", { name: "Guide: Make your own homebrew" });
+    await user.click(button);
+
+    // Assert
+    expect(flyout.querySelector(".flyout-head")?.contains(button)).toBe(true);
+    expect(open).toHaveBeenCalledWith({ url: GUIDE });
   });
 });

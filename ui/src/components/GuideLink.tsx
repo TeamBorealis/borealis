@@ -10,6 +10,7 @@ export const GUIDES = {
   "import-5etools-data": { url: LINKS.guideImport5etools, title: "Import 5etools-format data" },
   "move-characters-between-devices": { url: LINKS.guideMoveCharacters, title: "Move characters between devices" },
   "print-character-sheet": { url: LINKS.guidePrintSheet, title: "Print or save a character sheet" },
+  "homebrew-creator": { url: LINKS.guideHomebrewCreator, title: "Make your own homebrew" },
 } as const;
 
 export type GuideId = keyof typeof GUIDES;

@@ -20,6 +20,8 @@ export const LINKS = {
   guideImport5etools: "https://borealisbuilder.com/guides/import-5etools-data",
   guideMoveCharacters: "https://borealisbuilder.com/guides/move-characters-between-devices",
   guidePrintSheet: "https://borealisbuilder.com/guides/print-character-sheet",
+  /** The creator's New pack and New element flyouts (WB-28). */
+  guideHomebrewCreator: "https://borealisbuilder.com/guides/homebrew-creator",
 } as const;
 
 export const EXTERNAL_LINKS: readonly string[] = Object.values(LINKS);
