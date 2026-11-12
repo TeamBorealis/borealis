@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import type { HomebrewDraftView, HomebrewElementSummary, HomebrewForm, HomebrewKindDescriptor, HomebrewProblem } from "../../api/contract";
+import type { HomebrewDraftSummary, HomebrewDraftView, HomebrewElementSummary, HomebrewForm, HomebrewKindDescriptor, HomebrewProblem } from "../../api/contract";
 import { Button, Icon, useToast } from "../../components";
 import { useNarrow } from "../../components/shell/useNarrow";
 import { useApi } from "../../state/ApiContext";
@@ -59,6 +59,8 @@ export function PackWorkspace() {
   const packs = useAsync(() => api.listPacks(), [api]);
   const elements = useAsync(() => api.homebrewListElements({ packId }), [api, packId]);
   const draft = useDraft(api);
+  /** The device's drafts: a new element never saved is listed from its draft (spec 10.1, item IDpe8). */
+  const drafts = useAsync(() => api.homebrewListDrafts(), [api, packId]);
   const { ask, box } = useMessageBox();
   const [kindPick, setKindPick] = useState<string | null>(null);
   const [tab, setTab] = useState("general");
@@ -107,6 +109,13 @@ export function PackWorkspace() {
   const openKind = kindOf(draft.form?.kind);
   const listKind = kindOf(kindPick ?? undefined) ?? openKind ?? offered.find((k) => counts.has(k.id)) ?? offered[0] ?? null;
   const openId = draft.view?.elementId ?? null;
+  const openDraftId = draft.view?.draftId ?? null;
+  // The editor moved (another element, a save, a new element): the draft it left was sent first, so read the list again.
+  useEffect(() => { drafts.reload(); }, [openDraftId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const newDrafts = useMemo(
+    () => (drafts.data ?? []).filter((d) => d.packId === packId && d.elementId === null && d.draftId !== openDraftId),
+    [drafts.data, packId, openDraftId],
+  );
   const unsaved = draft.form && !openId && draft.form.kind === listKind?.id
     ? { name: typeof draft.form.fields.name === "string" && draft.form.fields.name.trim() ? draft.form.fields.name.trim() : `New ${listKind.label.toLowerCase()}` }
     : null;
@@ -156,20 +165,38 @@ export function PackWorkspace() {
     if (PACK_CHANGED.has(reason)) onPackChanged.current();
   }), [api]);
 
+  /** Spec 10.1: reopening an element with a draft asks "Unsaved changes from <time>: Keep editing / Discard". */
+  const askUnsaved = (saved: HomebrewDraftSummary | undefined) => ask({
+    title: "Unsaved changes", cancelId: "cancel",
+    message: saved ? `Unsaved changes from ${timeOf(saved.updatedAt)}.` : "This element has unsaved changes.",
+    buttons: [{ id: "keep", label: "Keep editing" }, { id: "discard", label: "Discard" }, { id: "cancel", label: "Cancel" }],
+  });
+
   const openElement = async (row: HomebrewElementSummary) => {
     if (row.id === openId) { setMobileView("editor"); return; }
     try {
       if (row.hasDraft) {
         const saved = (await api.homebrewListDrafts()).find((d) => d.elementId === row.id);
-        const r = await ask({
-          title: "Unsaved changes", cancelId: "cancel",
-          message: saved ? `Unsaved changes from ${timeOf(saved.updatedAt)}.` : "This element has unsaved changes.",
-          buttons: [{ id: "keep", label: "Keep editing" }, { id: "discard", label: "Discard" }, { id: "cancel", label: "Cancel" }],
-        });
+        const r = await askUnsaved(saved);
         if (r === "cancel") return;
         if (r === "discard" && saved) { await api.homebrewDiscardDraft({ draftId: saved.draftId }); elements.reload(); }
       }
       await show(await settleBase(await api.homebrewOpenDraft({ packId, elementId: row.id })));
+    } catch (e) { toast.push(errorMessage(e), "error"); }
+  };
+
+  /** A new element that was never saved: Keep editing resumes its draft by id; Discard drops it (item IDpe8). */
+  const openNewDraft = async (saved: HomebrewDraftSummary) => {
+    try {
+      const r = await askUnsaved(saved);
+      if (r === "cancel") return;
+      if (r === "discard") {
+        await api.homebrewDiscardDraft({ draftId: saved.draftId });
+        drafts.reload();
+        packs.reload();
+        return;
+      }
+      await show(await api.homebrewOpenDraft({ packId, draftId: saved.draftId }));
     } catch (e) { toast.push(errorMessage(e), "error"); }
   };
 
@@ -380,7 +407,7 @@ export function PackWorkspace() {
   const chosen = rows.filter((r) => selected.has(r.id));
   const list = (
     <div className="hb-list-col">
-      <ElementList kind={listKind} kinds={offered} rows={rows} unsaved={unsaved} openId={openId} filter={filter} filterRef={filterRef} onFilter={setFilter}
+      <ElementList kind={listKind} kinds={offered} rows={rows} unsaved={unsaved} drafts={newDrafts} onOpenDraft={(d) => void openNewDraft(d)} openId={openId} filter={filter} filterRef={filterRef} onFilter={setFilter}
         onOpen={(r) => void openElement(r)} onNew={() => setNewOpen(true)} onDuplicate={() => void duplicate()}
         selected={selected} onSelect={setSelected} selectMode={selectMode} onSelectMode={(on) => { setSelectMode(on); if (!on) setSelected(new Set()); }} />
       {(chosen.length > 1 || (selectMode && chosen.length > 0)) && (

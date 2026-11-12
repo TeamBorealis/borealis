@@ -1126,6 +1126,15 @@ fn flow_8_a_draft_edited_when_the_app_is_killed_is_restored() {
     std::mem::forget(state);
 
     let state = AppState::new(paths(data.path())).unwrap();
+    // the workspace lists a never-saved element from its summary (item IDpe8): this pack, no element, its kind
+    let summaries = state.homebrew_list_drafts().unwrap();
+    let new_one = summaries
+        .iter()
+        .find(|d| d.draft_id == fresh.draft_id)
+        .expect("the never-saved draft is listed after the restart");
+    assert_eq!(new_one.pack_id, pack);
+    assert_eq!(new_one.element_id, None);
+    assert_eq!(new_one.kind, "spell");
     let mut listed: Vec<(String, String)> = state
         .homebrew_list_drafts()
         .unwrap()

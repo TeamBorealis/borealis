@@ -1,5 +1,5 @@
 import { type MouseEvent, type RefObject, useState } from "react";
-import type { HomebrewElementSummary, HomebrewKindDescriptor } from "../../api/contract";
+import type { HomebrewDraftSummary, HomebrewElementSummary, HomebrewKindDescriptor } from "../../api/contract";
 import { Icon, RowDetail } from "../../components";
 import { Band } from "../spells/TwoPane";
 import { Glyph } from "../equipment/Glyph";
@@ -69,6 +69,9 @@ export interface ElementListProps {
   /** Every element of the pack: the list shows the kind's, or every kind's while searching. */
   rows: readonly HomebrewElementSummary[];
   unsaved: UnsavedRow | null;
+  /** The pack's other new elements that were never saved: their drafts stay on the device (spec 10.1, item IDpe8). */
+  drafts: readonly HomebrewDraftSummary[];
+  onOpenDraft: (draft: HomebrewDraftSummary) => void;
   openId: string | null;
   filter: ListFilter;
   filterRef: RefObject<HTMLInputElement>;
@@ -89,7 +92,7 @@ export interface ElementListProps {
  * duplicate, select, the filter box Ctrl+F focuses and "has problems"). The filter searches every kind of the pack by name,
  * kind, tag and text (spec 12.3); rows found in another kind say their kind.
  */
-export function ElementList({ kind, kinds, rows, unsaved, openId, filter, filterRef, onFilter, onOpen, onNew, onDuplicate, selected, onSelect, selectMode, onSelectMode }: ElementListProps) {
+export function ElementList({ kind, kinds, rows, unsaved, drafts, onOpenDraft, openId, filter, filterRef, onFilter, onOpen, onNew, onDuplicate, selected, onSelect, selectMode, onSelectMode }: ElementListProps) {
   const [anchor, setAnchor] = useState<string | null>(null);
   const phone = usePhone();
   const searching = isSearching(filter);
@@ -109,6 +112,8 @@ export function ElementList({ kind, kinds, rows, unsaved, openId, filter, filter
     onOpen(r);
   };
   const inKind = rows.filter((r) => r.kind === kind?.id).length;
+  const newDrafts = searching ? [] : drafts.filter((d) => d.kind === kind?.id);
+  const newName = (d: HomebrewDraftSummary) => d.name.trim() || `New ${kind?.label.toLowerCase() ?? "element"}`;
   return (
     <div className="hb-elements">
       <Band title={searching ? "Found" : kind?.pluralLabel ?? "Elements"} />
@@ -126,6 +131,14 @@ export function ElementList({ kind, kinds, rows, unsaved, openId, filter, filter
                 <td className="hide-narrow"><span className="hb-mark-draft" title="Not saved yet"><Icon name="pen" /></span></td>
               </tr>
             )}
+            {newDrafts.map((d) => (
+              <tr key={d.draftId}>
+                {selectMode && <td />}
+                <td className="grow"><button type="button" className="ap-name" onClick={() => onOpenDraft(d)}>{newName(d)}</button><RowDetail parts={["New", "Not saved yet"]} /></td>
+                <td className="hide-narrow">New</td>
+                <td className="hide-narrow"><span className="hb-mark-draft" title="Not saved yet"><Icon name="pen" /></span></td>
+              </tr>
+            ))}
             {shown.map((r) => {
               const n = r.problems.errors + r.problems.warnings;
               const chosen = selected.has(r.id);
@@ -146,7 +159,7 @@ export function ElementList({ kind, kinds, rows, unsaved, openId, filter, filter
                 </tr>
               );
             })}
-            {shown.length === 0 && !(unsaved && !searching) && (
+            {shown.length === 0 && newDrafts.length === 0 && !(unsaved && !searching) && (
               <tr className="ap-empty-row"><td colSpan={selectMode ? 4 : 3}>{!searching && inKind === 0 ? `No ${kind?.pluralLabel.toLowerCase() ?? "elements"} in this pack yet.` : "Nothing matches the filter."}</td></tr>
             )}
           </tbody>
