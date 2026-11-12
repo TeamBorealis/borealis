@@ -1,5 +1,5 @@
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
-import type { HomebrewFieldSpec, HomebrewForm, HomebrewKindDescriptor, HomebrewProblem, HomebrewTab, Ruleset } from "../../api/contract";
+import type { HomebrewDraftView, HomebrewFieldSpec, HomebrewForm, HomebrewKindDescriptor, HomebrewProblem, HomebrewTab, Ruleset } from "../../api/contract";
 import { Icon, TabControl, ToggleSwitch } from "../../components";
 import { PreservedList } from "./blocks/BlockDialog";
 import { CasterSection } from "./caster/CasterSection";
@@ -67,11 +67,18 @@ export function editionOf(form: HomebrewForm | null): Ruleset | null {
   return e === "dnd2014" || e === "dnd2024" ? e : null;
 }
 
+/** A feat's "Prerequisite as shown": left empty or as it was read, the save writes it from the condition (WB-13). */
+const isWrittenPrerequisite = (f: HomebrewFieldSpec, form: HomebrewForm): boolean => form.kind === "feat" && f.key === "prerequisiteText";
+
 /** A field's value: a `blocks` field is the form's block list (spec 6), a read-only one the backend's last answer (a
- * subclass's tag and levels come from its class, WB-18), every other field its `fields` entry. */
-const valueOf = (f: HomebrewFieldSpec, form: HomebrewForm, answer: HomebrewForm | null | undefined): unknown => {
+ * subclass's tag and levels come from its class, WB-18), every other field its `fields` entry. A feat's prerequisite
+ * sentence, while not edited since the last autosave, is what the save writes: the live preview's, so it follows the
+ * condition as it is edited; typed over, it is the author's text. */
+const valueOf = (f: HomebrewFieldSpec, form: HomebrewForm, view: HomebrewDraftView | null | undefined): unknown => {
+  const answer = view?.form;
   if (f.control === "blocks") return form.blocks;
   if (f.readOnly && answer && f.key in answer.fields) return answer.fields[f.key];
+  if (isWrittenPrerequisite(f, form) && view?.preview && answer && form.fields[f.key] === answer.fields[f.key]) return view.preview.prerequisites ?? "";
   return form.fields[f.key];
 };
 
@@ -196,7 +203,7 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
                 {title && <h3 className="hb-section-title">{title}</h3>}
                 <div className="mg-grid two">
                   {list.map((f) => (
-                    <FieldView key={f.key} field={f} value={valueOf(f, form, draft.view?.form)} problems={draft.problems} kindId={kind.id} childEditing={childEditing}
+                    <FieldView key={f.key} field={f} value={valueOf(f, form, draft.view)} problems={draft.problems} kindId={kind.id} childEditing={childEditing}
                       note={otherEdition(f, edition) ? editionNote(f) : undefined} onChange={(v, typing) => setValue(f, v, typing)} />
                   ))}
                 </div>

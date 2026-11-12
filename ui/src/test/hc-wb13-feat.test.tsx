@@ -75,4 +75,36 @@ describe("WB-13 feat form (mock)", () => {
     const rows = await api.homebrewReferenceOptions({ target: { types: ["Feat"] }, query: "ember heart", filters: {}, page: { offset: 0, limit: 10 } });
     expect(rows.items).toEqual([expect.objectContaining({ name: "Ember Heart", type: "Feat", prerequisites: "Level 4+" })]);
   });
+  it("the prerequisite as shown follows the condition live, as written, until it is reworded", async () => {
+    const user = userEvent.setup();
+    const api = new MockApi({ creatorEnabled: true });
+    const pack = await api.homebrewCreatePack({ request: PACK });
+    const update = vi.spyOn(api, "homebrewUpdateDraft");
+    renderApp(`/homebrew/${pack.id}`, { api });
+    await user.click(await screen.findByRole("button", { name: "New element" }));
+    const flyout = await screen.findByRole("dialog", { name: "New element" });
+    await user.click(within(flyout).getByRole("radio", { name: /^Feat/ }));
+    await user.type(within(flyout).getByLabelText("Name"), "Iron Grip");
+    await user.click(within(flyout).getByRole("button", { name: "Create" }));
+    const shown = async () => (await screen.findByRole("textbox", { name: /^Prerequisite as shown/ })) as HTMLInputElement;
+    expect((await shown()).value).toBe("");
+
+    await user.click(within(editor()).getByRole("button", { name: "Add condition" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Prerequisite, part 1: test" }), "characterLevel");
+    // the sentence the save writes shows in the field once the edit is autosaved, not after save and reopen
+    await waitFor(async () => expect((await shown()).value).toBe("Level 4+"));
+    const last = (): HomebrewForm => update.mock.lastCall![0].form;
+    expect(last().fields.prerequisiteText).toBe("");
+
+    // reworded, it is the author's text and stays
+    await user.type(await shown(), " (a strong grip)");
+    await waitFor(() => expect(last().fields.prerequisiteText).toBe("Level 4+ (a strong grip)"));
+    expect((await shown()).value).toBe("Level 4+ (a strong grip)");
+    const pane = screen.getAllByRole("complementary", { name: "Description" }).at(-1)!;
+    await waitFor(() => expect(pane.textContent).toContain("Level 4+ (a strong grip)"));
+    // cleared, it follows the condition again
+    await user.clear(await shown());
+    await waitFor(() => expect(last().fields.prerequisiteText).toBe(""));
+    await waitFor(async () => expect((await shown()).value).toBe("Level 4+"));
+  });
 });
