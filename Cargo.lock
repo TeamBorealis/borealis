@@ -704,6 +704,8 @@ version = "1.4.0"
 dependencies = [
  "borealis-content",
  "borealis-engine",
+ "borealis-import-5etools",
+ "borealis-migrate",
  "serde",
  "serde_json",
 ]

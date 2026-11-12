@@ -16,3 +16,9 @@ borealis-content.workspace = true
 borealis-engine.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+
+# Tests only (spec 18.2): the local regression corpora converted the way the app converts them (the Aurora migrator
+# and the 5etools importer; deterministic, no AI either).
+[dev-dependencies]
+borealis-import-5etools = { path = "../borealis-import-5etools" }
+borealis-migrate.workspace = true
