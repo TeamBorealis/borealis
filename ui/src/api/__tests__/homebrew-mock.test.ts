@@ -17,6 +17,14 @@ describe("homebrew creator contract (WB-00)", () => {
     expect((await new MockApi({ creatorEnabled: false }).getSettings()).creatorEnabled).toBe(false);
   });
 
+  it("keeps the build's creator switch when settings are saved (HC11 option C: a stored off is ignored)", async () => {
+    const on = new MockApi();
+    const off = new MockApi({ creatorEnabled: false });
+    expect((await on.saveSettings({ patch: { creatorEnabled: false } })).creatorEnabled).toBe(true);
+    expect((await off.saveSettings({ patch: { creatorEnabled: true } })).creatorEnabled).toBe(false);
+    expect((await off.restoreDefaultSettings()).creatorEnabled).toBe(false);
+  });
+
   it("creates a pack that lists with the user's packs", async () => {
     const api = new MockApi();
     const pack = await api.homebrewCreatePack({ request: PACK });

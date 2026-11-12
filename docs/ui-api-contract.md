@@ -402,8 +402,10 @@ The 1.5.0 creator (decisions HC1-HC4; `specs/homebrew-creator-spec.md` is the so
 (drafts), `homebrew_refs.rs` (picker rows) and `homebrew_creator.rs` (catalogs); the AI path keeps `homebrew_api.rs`.
 Commands that write packs run through `commands_content.rs::blocking`.
 
-**Feature switch (HC3).** `AppSettings.creatorEnabled` (default `true` from 1.5.0, HC9; no settings control) shows START > HOMEBREW and the
-creator's entry points; with it off the UI never reaches these commands (the web mock: `?creator=0`).
+**Feature switch (HC3).** `AppSettings.creatorEnabled` (read-only, no settings control) shows START > HOMEBREW and the
+creator's entry points; with it off the UI never reaches these commands (the web mock: `?creator=0`). The build decides it
+(`settings.rs` `CREATOR_ENABLED`, on from 1.5.0, HC9; the kill switch): it is pinned like `mobile`, so a value in the settings
+file or a patch is ignored (HC11 option C: builds whose default was off wrote `false` on every settings save).
 
 **Not implemented yet.** Until a command's work item lands (spec section 21), it rejects with `requirement_failed` and
 `details: { notImplemented: "<command>" }`. Implemented in the backend: the catalogs and kinds, packs, the element list,

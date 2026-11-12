@@ -170,8 +170,9 @@ pub struct AppSettings {
     pub check_app_updates: bool,
     /// Local search (local-search-spec.md section 9).
     pub search: SearchSettings,
-    /// HC3: the homebrew creator is shown (START > HOMEBREW and its entry points). On by default from 1.5.0
-    /// (HC9); no settings control. A settings file that says `false` still hides it (the web mock: `?creator=0`).
+    /// HC3: the homebrew creator is shown (START > HOMEBREW and its entry points). Read-only for the UI: the build's
+    /// [`CREATOR_ENABLED`] (on from 1.5.0, HC9), pinned like `mobile`, so a stored or patched value is ignored
+    /// (HC11 option C). No settings control; the web mock turns it off with `?creator=0`.
     pub creator_enabled: bool,
 }
 
@@ -292,10 +293,15 @@ impl Default for AppSettings {
             show_import_notice: true,
             check_app_updates: true,
             search: SearchSettings::default(),
-            creator_enabled: true,
+            creator_enabled: CREATOR_ENABLED,
         }
     }
 }
+
+/// HC3/HC11: the homebrew creator shows in this build (START > HOMEBREW and its entry points). The kill switch: set it
+/// to `false` and every build hides the creator again. Pinned like `mobile`, so the `creatorEnabled` a settings file
+/// holds is never read (HC11 option C: builds from main between the 2026-11-16 merge and the switch-on wrote `false`).
+pub const CREATOR_ENABLED: bool = true;
 
 /// This build runs on a phone or tablet (no claude/codex CLI there, so no AI at all).
 pub const IS_MOBILE: bool = cfg!(any(target_os = "android", target_os = "ios"));
@@ -313,13 +319,14 @@ const PORTRAIT_SIZES: std::ops::RangeInclusive<u32> = 125..=175;
 
 impl AppSettings {
     /// Pins the platform-owned fields: `mobile` comes from the build target, `store_build` from the
-    /// build's distribution, `ai_available` from the build, and the AI assistant is always off in a
+    /// build's distribution, `ai_available` and `creator_enabled` from the build, and the AI assistant is always off in a
     /// build without the AI CLI integration (phones, the Mac App Store).
     #[must_use]
     fn normalized(mut self) -> Self {
         self.mobile = IS_MOBILE;
         self.store_build = crate::distribution::is_store_build();
         self.ai_available = crate::distribution::HAS_AI_CLI;
+        self.creator_enabled = CREATOR_ENABLED;
         if !self.ai_available {
             self.ai.enabled = false;
         }
@@ -514,21 +521,64 @@ mod default_tests {
         std::fs::remove_dir_all(&dir).ok();
     }
 
-    #[test]
-    fn the_creator_is_on_by_default_and_for_files_without_the_field_but_a_stored_off_stays_off() {
-        // Arrange: a 1.4.x settings file (no creatorEnabled) and one that says false
-        assert!(AppSettings::default().creator_enabled);
-        let dir = std::env::temp_dir().join(format!("borealis-creator-{}", std::process::id()));
+    /// HC11 option C: the build decides whether the creator shows. A settings file from a build whose default was off
+    /// (main between the 2026-11-16 merge and the switch-on) says `"creatorEnabled": false`; 1.5.0 ignores it.
+    fn creator_dir(tag: &str) -> std::path::PathBuf {
+        let dir =
+            std::env::temp_dir().join(format!("borealis-creator-{tag}-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn a_fresh_settings_file_shows_the_creator() {
+        // Arrange: no file, and a 1.4.x file without the field
+        let dir = creator_dir("fresh");
         let old = dir.join("old.json");
-        let off = dir.join("off.json");
         std::fs::write(&old, r#"{"playerName":"Old"}"#).unwrap();
+        // Act
+        let (fresh, from_old) = (
+            AppSettings::load(&dir.join("none.json")),
+            AppSettings::load(&old),
+        );
+        // Assert
+        assert_eq!(CREATOR_ENABLED, AppSettings::default().creator_enabled);
+        assert!(fresh.creator_enabled);
+        assert!(from_old.creator_enabled);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn a_stored_creator_off_from_an_earlier_build_is_ignored() {
+        // Arrange: what a build with the default off wrote on any settings save
+        let dir = creator_dir("off");
+        let off = dir.join("settings.json");
         std::fs::write(&off, r#"{"playerName":"Old","creatorEnabled":false}"#).unwrap();
         // Act
-        let (from_old, from_off) = (AppSettings::load(&old), AppSettings::load(&off));
-        // Assert: HC9, the creator shows after an upgrade from 1.4.x; HC3, a file that says off is kept
-        assert!(from_old.creator_enabled);
-        assert!(!from_off.creator_enabled);
+        let loaded = AppSettings::load(&off);
+        let patched = loaded
+            .patched(&serde_json::json!({"creatorEnabled": false}))
+            .unwrap();
+        // Assert: the rest of the file is kept; the creator follows the build
+        assert_eq!(loaded.player_name, "Old");
+        assert!(loaded.creator_enabled);
+        assert!(patched.creator_enabled);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn the_creator_stays_on_through_a_save_and_load() {
+        // Arrange
+        let dir = creator_dir("round-trip");
+        let file = dir.join("settings.json");
+        // Act
+        AppSettings::default().save(&file).unwrap();
+        let loaded = AppSettings::load(&file);
+        // Assert: the UI still reads the field
+        assert!(std::fs::read_to_string(&file)
+            .unwrap()
+            .contains(r#""creatorEnabled": true"#));
+        assert!(loaded.creator_enabled);
         std::fs::remove_dir_all(&dir).ok();
     }
 

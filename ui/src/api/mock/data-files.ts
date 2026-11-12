@@ -59,7 +59,7 @@ export class MockDataFiles {
    */
   restore(s: AppSettings): AppSettings {
     return {
-      ...DEFAULT_SETTINGS, ai: s.ai, mobile: s.mobile, storeBuild: s.storeBuild, aiAvailable: s.aiAvailable, defaultRuleset: s.defaultRuleset, autosave: s.autosave,
+      ...DEFAULT_SETTINGS, ai: s.ai, mobile: s.mobile, storeBuild: s.storeBuild, aiAvailable: s.aiAvailable, creatorEnabled: s.creatorEnabled, defaultRuleset: s.defaultRuleset, autosave: s.autosave,
       documentsDir: s.documentsDir, secondaryContentDir: s.secondaryContentDir, portraitLibraryDir: s.portraitLibraryDir, vaultDir: s.vaultDir,
     };
   }

@@ -137,6 +137,8 @@ export class MockApi implements Api {
   private codexOnly: boolean;
   private mobile: boolean;
   private storeBuild: boolean;
+  /** The build's creator switch (HC11 option C): pinned like `storeBuild`, so a settings save never changes it. */
+  private creatorOn: boolean;
   /** The build has the AI CLI integration (not on phones or in the Mac App Store build). */
   private aiCli: boolean;
   /** Imports the user agreed to run on Codex (asked once per import). */
@@ -153,7 +155,8 @@ export class MockApi implements Api {
     setClasslessEdition(opts.classlessEdition ?? null);
     setBackgroundAbilityList(opts.backgroundAbilityList ?? false);
     setMockDeities(opts.deities ?? []);
-    this.settings = { ...this.settings, creatorEnabled: opts.creatorEnabled ?? true };
+    this.creatorOn = opts.creatorEnabled ?? true;
+    this.settings = { ...this.settings, creatorEnabled: this.creatorOn };
     this.content = new ContentService((p) => this.emit("content:progress", p), () => this.emit("content:reloaded", { reason: "content changed" }), (p) => this.emit("import5etools:progress", p));
     this.ai = new MockAi((e) => this.emit("ai:event", e), { chunkDelayMs: opts.aiChunkDelayMs ?? 25, available: opts.aiAvailable ?? true });
     this.setup = new MockAiSetup((e) => this.emit("aisetup:event", e), opts.aiSetup);
@@ -739,7 +742,7 @@ export class MockApi implements Api {
         throw apiError("invalid_argument", "Choose folders with the folder button; they cannot be set directly.");
       }
     }
-    this.settings = { ...this.settings, ...patch, sheet: { ...this.settings.sheet, ...(patch.sheet ?? {}), cardsNewPage: { ...this.settings.sheet.cardsNewPage, ...(patch.sheet?.cardsNewPage ?? {}) } }, ai: { ...this.settings.ai, ...(patch.ai ?? {}) }, mobile: this.mobile, storeBuild: this.storeBuild, aiAvailable: this.aiCli };
+    this.settings = { ...this.settings, ...patch, sheet: { ...this.settings.sheet, ...(patch.sheet ?? {}), cardsNewPage: { ...this.settings.sheet.cardsNewPage, ...(patch.sheet?.cardsNewPage ?? {}) } }, ai: { ...this.settings.ai, ...(patch.ai ?? {}) }, mobile: this.mobile, storeBuild: this.storeBuild, aiAvailable: this.aiCli, creatorEnabled: this.creatorOn };
     if (!this.aiCli) this.settings = { ...this.settings, ai: { ...this.settings.ai, enabled: false } };
     return this.settings;
   }
