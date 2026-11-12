@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MockApi } from "../api/mock";
 import { renderApp } from "./utils";
 
@@ -92,5 +92,25 @@ describe("a never-saved element's draft (IDpe8, spec 10.1)", () => {
     // Assert: the spell list shows only this pack's spell draft
     expect(screen.queryByRole("button", { name: "Quick Study" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Far Away" })).toBeNull();
+  });
+
+  it("once saved, it is not listed again while the drafts are read anew", async () => {
+    // Arrange: resume the draft, then let every later read of the drafts return the list from before the save (slow)
+    const user = userEvent.setup();
+    const api = mock();
+    const { packId } = await packWithDrafts(api);
+    renderApp(`/homebrew/${packId}`, { api });
+    await user.click(await screen.findByRole("button", { name: "Half Done" }));
+    await user.click(within(await screen.findByRole("dialog", { name: "Unsaved changes" })).getByRole("button", { name: "Keep editing" }));
+    await waitFor(() => expect(nameBox().value).toBe("Half Done"));
+    const before = await api.homebrewListDrafts();
+    vi.spyOn(api, "homebrewListDrafts").mockResolvedValue(before);
+
+    // Act
+    await user.click(within(screen.getByRole("region", { name: "Element editor" })).getByRole("button", { name: "Save" }));
+
+    // Assert: the saved row only, no "Not saved yet" row of the same element
+    await waitFor(() => expect(screen.getByRole("contentinfo", { name: "Status" }).textContent).toContain("Saved 'Half Done'"));
+    expect(screen.getAllByRole("button", { name: "Half Done" })).toHaveLength(1);
   });
 });

@@ -61,6 +61,9 @@ export function PackWorkspace() {
   const draft = useDraft(api);
   /** The device's drafts: a new element never saved is listed from its draft (spec 10.1, item IDpe8). */
   const drafts = useAsync(() => api.homebrewListDrafts(), [api, packId]);
+  /** Drafts this page saved or discarded: gone at once, while the list of drafts is still being read anew. */
+  const [closed, setClosed] = useState<ReadonlySet<string>>(new Set());
+  const closeDraft = (draftId: string) => setClosed((prev) => new Set([...prev, draftId]));
   const { ask, box } = useMessageBox();
   const [kindPick, setKindPick] = useState<string | null>(null);
   const [tab, setTab] = useState("general");
@@ -113,8 +116,8 @@ export function PackWorkspace() {
   // The editor moved (another element, a save, a new element): the draft it left was sent first, so read the list again.
   useEffect(() => { drafts.reload(); }, [openDraftId]); // eslint-disable-line react-hooks/exhaustive-deps
   const newDrafts = useMemo(
-    () => (drafts.data ?? []).filter((d) => d.packId === packId && d.elementId === null && d.draftId !== openDraftId),
-    [drafts.data, packId, openDraftId],
+    () => (drafts.data ?? []).filter((d) => d.packId === packId && d.elementId === null && d.draftId !== openDraftId && !closed.has(d.draftId)),
+    [drafts.data, packId, openDraftId, closed],
   );
   const unsaved = draft.form && !openId && draft.form.kind === listKind?.id
     ? { name: typeof draft.form.fields.name === "string" && draft.form.fields.name.trim() ? draft.form.fields.name.trim() : `New ${listKind.label.toLowerCase()}` }
@@ -192,6 +195,7 @@ export function PackWorkspace() {
       if (r === "cancel") return;
       if (r === "discard") {
         await api.homebrewDiscardDraft({ draftId: saved.draftId });
+        closeDraft(saved.draftId);
         drafts.reload();
         packs.reload();
         return;
@@ -281,8 +285,10 @@ export function PackWorkspace() {
   const save = async () => {
     if (!draft.form) return;
     const name = typeof draft.form.fields.name === "string" ? draft.form.fields.name.trim() : "";
+    const savedDraft = draft.view?.draftId;
     try {
       const result = await draft.save();
+      if (savedDraft) closeDraft(savedDraft);
       const id = result.elementIds[0];
       if (id) draft.rebase(await api.homebrewOpenDraft({ packId, elementId: id }));
       elements.reload();
