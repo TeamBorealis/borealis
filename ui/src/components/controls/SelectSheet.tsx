@@ -66,8 +66,10 @@ export function SelectSheet({ id, value, options, onChange, disabled, className,
 
   return (
     <>
+      {/* No aria-haspopup: with it iOS WebKit drops the button trait, so VoiceOver and XCTest found no "Category" button
+          (mobile e2e m9). Without it the trigger is a button, as the native select it replaces. */}
       <button ref={button} type="button" id={id} className={`ph-select ${className ?? ""}`.trim()} disabled={disabled}
-        aria-haspopup="dialog" aria-expanded={title !== null} aria-label={ariaLabel} aria-invalid={invalid || undefined}
+        aria-expanded={title !== null} aria-label={ariaLabel} aria-invalid={invalid || undefined}
         aria-describedby={[valueId, describedBy].filter(Boolean).join(" ")} onClick={show} onKeyDown={onTriggerKey}>
         <span id={valueId} className="ph-select-value">{current?.label ?? ""}</span>
         <svg className="ph-select-arrow" width="12" height="7" viewBox="0 0 12 7" aria-hidden="true"><path d="M0 0h12L6 7z" /></svg>

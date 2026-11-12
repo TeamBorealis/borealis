@@ -66,7 +66,9 @@ describe("ComboBox on a phone", () => {
     expect(document.querySelector("select")).toBeNull();
     const button = trigger();
     expect(button.textContent).toBe("Adventuring Gear (40)");
-    expect(button.getAttribute("aria-haspopup")).toBe("dialog");
+    // No aria-haspopup: iOS WebKit then drops the button trait, and VoiceOver and XCTest see "other", not a button
+    // (the native select it replaces is a button; mobile e2e m9). aria-expanded still says whether the sheet is open.
+    expect(button.hasAttribute("aria-haspopup")).toBe(false);
     expect(button.getAttribute("aria-expanded")).toBe("false");
     expect(screen.getByRole("button", { name: "Category", description: "Adventuring Gear (40)" })).toBe(button);
   });
