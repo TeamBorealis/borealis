@@ -64,6 +64,7 @@ fn own_fields() -> Vec<FieldDef> {
             Control::Chips,
             class(ClassField::PrimaryAbilities),
         )
+        .help("The abilities the class relies on most, shown with the class.")
         .choices(ABILITY_CHOICES, false)
         .section("Class")
         .default("[]"),
@@ -133,6 +134,7 @@ fn own_fields() -> Vec<FieldDef> {
                 levelled: true,
             },
         )
+        .help("What the class gives at each level. Add a feature with the Plus on its level.")
         .picker(FEATURE)
         .default("[]"),
         field("table", "Class table", LEVELS, Control::ClassTable, class(ClassField::Table))
@@ -145,6 +147,7 @@ fn own_fields() -> Vec<FieldDef> {
             Control::Check,
             class(ClassField::Multiclass),
         )
+        .help("Off: a character can only start in this class, never add it later.")
         .default("true"),
         field(
             "mcRequirements",
@@ -235,6 +238,7 @@ pub(super) fn class_feature_kind() -> KindDef {
             Control::Numbers,
             Codec::Feature(FeatureField::Asi),
         )
+        .help("The class levels this feature gives an ability score improvement (or a feat) at.")
         .range(1, 20)
         .default("[]"),
         field(
@@ -253,6 +257,7 @@ pub(super) fn class_feature_kind() -> KindDef {
             Control::Check,
             Codec::Feature(FeatureField::EpicBoon),
         )
+        .help("At this level the character chooses an Epic Boon feat.")
         .editions(ONLY_2024)
         .default("false"),
     ]

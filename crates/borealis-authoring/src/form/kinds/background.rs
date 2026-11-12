@@ -161,9 +161,12 @@ fn characteristics(tab: &'static str, editions: &'static [Ruleset]) -> Vec<Field
             Characteristic::PersonalityTrait,
         )
         .help("The character picks this many; numbered 1, 2, 3... in order."),
-        characteristic("ideals", "Ideals", Characteristic::Ideal),
-        characteristic("bonds", "Bonds", Characteristic::Bond),
-        characteristic("flaws", "Flaws", Characteristic::Flaw),
+        characteristic("ideals", "Ideals", Characteristic::Ideal)
+            .help("The character picks one; numbered 1, 2, 3... in order."),
+        characteristic("bonds", "Bonds", Characteristic::Bond)
+            .help("The character picks one; numbered 1, 2, 3... in order."),
+        characteristic("flaws", "Flaws", Characteristic::Flaw)
+            .help("The character picks one; numbered 1, 2, 3... in order."),
     ]
     .map(|f| {
         FieldDef { tab, ..f }

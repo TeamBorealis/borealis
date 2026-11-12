@@ -45,7 +45,8 @@ fn own_fields() -> Vec<FieldDef> {
             Control::Condition,
             feat(FeatField::Prerequisite),
         )
-        .section(PREREQUISITE),
+        .section(PREREQUISITE)
+        .help("What a character needs to take the feat, such as a level or an ability score. Leave it empty for none."),
         field(
             "prerequisiteText",
             "Prerequisite as shown",

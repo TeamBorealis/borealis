@@ -112,6 +112,7 @@ pub(super) fn subclass_kind() -> KindDef {
             Control::Number,
             sub(SubclassField::LevelGained),
         )
+        .help("The class level the subclass is chosen at.")
         .read_only()
         .range(1, 20)
         .section("Subclass"),

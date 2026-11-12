@@ -175,25 +175,29 @@ fn speeds(defaults: bool) -> Vec<FieldDef> {
             "Fly speed",
             sp(SpeciesField::Speed(Movement::Fly)),
             SPEED,
-        ),
+        )
+        .help("In feet; 0 for none."),
         feet(
             "swimSpeed",
             "Swim speed",
             sp(SpeciesField::Speed(Movement::Swim)),
             SPEED,
-        ),
+        )
+        .help("In feet; 0 for none."),
         feet(
             "climbSpeed",
             "Climb speed",
             sp(SpeciesField::Speed(Movement::Climb)),
             SPEED,
-        ),
+        )
+        .help("In feet; 0 for none."),
         feet(
             "burrowSpeed",
             "Burrow speed",
             sp(SpeciesField::Speed(Movement::Burrow)),
             SPEED,
-        ),
+        )
+        .help("In feet; 0 for none."),
     ]
 }
 
@@ -211,19 +215,22 @@ fn senses() -> Vec<FieldDef> {
             "Blindsight",
             sp(SpeciesField::Sense(Sense::Blindsight)),
             SENSES,
-        ),
+        )
+        .help("Range in feet; 0 for none."),
         feet(
             "tremorsense",
             "Tremorsense",
             sp(SpeciesField::Sense(Sense::Tremorsense)),
             SENSES,
-        ),
+        )
+        .help("Range in feet; 0 for none."),
         feet(
             "truesight",
             "Truesight",
             sp(SpeciesField::Sense(Sense::Truesight)),
             SENSES,
-        ),
+        )
+        .help("Range in feet; 0 for none."),
     ]
 }
 
@@ -235,6 +242,7 @@ fn languages(defaults: bool) -> Vec<FieldDef> {
         Control::References,
         sp(SpeciesField::Languages),
     )
+    .help("The languages every member knows. A choice of more is the number below.")
     .picker(&["Language"])
     .section(LANGUAGES);
     vec![
@@ -353,6 +361,7 @@ fn names() -> Vec<FieldDef> {
             sp(SpeciesField::Names(k)),
         )
         .section(NAMES)
+        .help("Names suggested for this race, one per chip.")
     })
     .collect()
 }

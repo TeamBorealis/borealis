@@ -208,6 +208,7 @@ fn inventory_flags() -> Vec<FieldDef> {
             Control::Check,
             Codec::SetterFlag("stackable"),
         )
+        .help("Several of it share one inventory row with a count (arrows, rations).")
         .section(INVENTORY),
         field(
             "consumable",
@@ -216,6 +217,7 @@ fn inventory_flags() -> Vec<FieldDef> {
             Control::Check,
             Codec::SetterFlag("consumable"),
         )
+        .help("Using it uses one up (a potion, a scroll).")
         .section(INVENTORY),
         field(
             "container",
@@ -224,6 +226,7 @@ fn inventory_flags() -> Vec<FieldDef> {
             Control::Check,
             Codec::SetterFlag("stash"),
         )
+        .help("Other items can be put inside it (a backpack, a pouch).")
         .section(INVENTORY),
         field(
             "capacity",
@@ -371,6 +374,7 @@ fn weapon() -> KindDef {
             Control::References,
             item(ItemField::WeaponProperties),
         )
+        .help("Its weapon properties, such as Finesse or Light.")
         .picker(&["Weapon Property"])
         .section(WEAPON),
         field(
@@ -443,6 +447,7 @@ fn armor() -> KindDef {
             Control::Number,
             item(ItemField::Strength),
         )
+        .help("The Strength score needed to wear it without losing 10 feet of speed; 0 for none.")
         .range(0, 30)
         .section(ARMOR),
         field(
@@ -507,6 +512,7 @@ fn magic_item() -> KindDef {
             Control::Combo,
             item(ItemField::Rarity),
         )
+        .help("Common to artifact; shown with the item and in the Compendium.")
         .choices(RARITIES, true)
         .section(MAGIC),
         field(
@@ -516,6 +522,7 @@ fn magic_item() -> KindDef {
             Control::Check,
             item(ItemField::Attunement),
         )
+        .help("Its magic works only for a character attuned to it (at most three items).")
         .section(MAGIC),
         field(
             "attunementBy",

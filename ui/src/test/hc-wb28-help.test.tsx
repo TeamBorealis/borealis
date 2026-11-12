@@ -35,3 +35,22 @@ describe("New element: KIND and START FROM explain themselves (H-aK8)", () => {
     expect(help!.compareDocumentPosition(radios) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
+
+describe("field help is read with its field (WB-28)", () => {
+  it("a field's help line describes its control, until a problem takes its place", async () => {
+    // Arrange: a new spell in a pack
+    const user = userEvent.setup();
+    const flyout = await openNewElement();
+    await user.type(within(flyout).getByLabelText("Name"), "Ember Bolt");
+    await user.click(within(flyout).getByRole("button", { name: "Create" }));
+    const shown = await screen.findByRole("textbox", { name: /^Prerequisite as shown/ });
+
+    // Act
+    const ids = (shown.getAttribute("aria-describedby") ?? "").split(" ").filter(Boolean);
+
+    // Assert
+    expect(ids.map((id) => document.getElementById(id)?.textContent ?? "")).toEqual([
+      "Written from the prerequisite while left empty or as written; type to reword it.",
+    ]);
+  });
+});

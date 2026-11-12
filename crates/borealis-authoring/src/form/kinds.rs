@@ -436,6 +436,28 @@ const EDITIONS: &[(&str, &str)] = &[
     ("dnd2024", "2024"),
     ("any", "Either edition"),
 ];
+// Help lines of the parts every form shares (spec 3.2, WB-28): a kind that words a part its own way says so itself.
+pub(crate) const HELP_EDITION: &str =
+    "The rules it is written for: the pack's edition unless you pick one.";
+pub(crate) const HELP_TAGS: &str =
+    "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.";
+pub(crate) const HELP_REQUIREMENTS: &str =
+    "What a character needs before it is offered. Leave it empty for none.";
+pub(crate) const HELP_PREREQUISITE_TEXT: &str =
+    "Written from the prerequisite while left empty or as written; type to reword it.";
+pub(crate) const HELP_ALLOW_DUPLICATE: &str = "A character may take it again from another choice.";
+pub(crate) const HELP_KEYWORDS: &str = "Extra words that describe it, such as fire or healing.";
+pub(crate) const HELP_RULES: &str =
+    "What it does to a character: each rule gives something, offers a choice or changes a number.";
+pub(crate) const HELP_DESCRIPTION: &str =
+    "The text shown in the description pane and the Compendium.";
+pub(crate) const HELP_SHEET: &str =
+    "How it shows on the character sheet: a short name, its uses, its action and lines by level.";
+pub(crate) const HELP_COMPENDIUM: &str =
+    "Turn it off for a helper element that players never look up on its own.";
+pub(crate) const HELP_MAPS_TO: &str =
+    "The same element in the other edition, used when content of one edition is adapted to the other.";
+
 /// GENERAL fields before the kind's own.
 pub(crate) fn head() -> Vec<FieldDef> {
     vec![
@@ -447,7 +469,8 @@ pub(crate) fn head() -> Vec<FieldDef> {
             Control::Combo,
             Codec::Edition,
         )
-        .choices(EDITIONS, false),
+        .choices(EDITIONS, false)
+        .help(HELP_EDITION),
         field("source", "Source", GENERAL, Control::Text, Codec::Source)
             .read_only()
             .expert(),
@@ -457,7 +480,7 @@ pub(crate) fn head() -> Vec<FieldDef> {
 /// The parts every form shares after the kind's own fields (spec 3.2).
 pub(crate) fn tail() -> Vec<FieldDef> {
     vec![
-        field("tags", "Tags", GENERAL, Control::Tags, Codec::Tags),
+        field("tags", "Tags", GENERAL, Control::Tags, Codec::Tags).help(HELP_TAGS),
         field(
             "summary",
             "Summary line",
@@ -472,50 +495,57 @@ pub(crate) fn tail() -> Vec<FieldDef> {
             GENERAL,
             Control::Condition,
             Codec::Requirements,
-        ),
+        )
+        .help(HELP_REQUIREMENTS),
         field(
             "prerequisiteText",
             "Prerequisite as shown",
             GENERAL,
             Control::Text,
             Codec::PrerequisiteText,
-        ),
+        )
+        .help(HELP_PREREQUISITE_TEXT),
         field(
             "allowDuplicate",
             "Can be taken more than once",
             GENERAL,
             Control::Check,
             Codec::SetterFlag("allow duplicate"),
-        ),
+        )
+        .help(HELP_ALLOW_DUPLICATE),
         field(
             "keywords",
             "Keywords",
             GENERAL,
             Control::Chips,
             Codec::SetterChips("keywords"),
-        ),
-        field("rules", "Rules", RULES, Control::Blocks, Codec::Blocks),
+        )
+        .help(HELP_KEYWORDS),
+        field("rules", "Rules", RULES, Control::Blocks, Codec::Blocks).help(HELP_RULES),
         field(
             "description",
             "Description",
             DESCRIPTION,
             Control::RichText,
             Codec::Description,
-        ),
+        )
+        .help(HELP_DESCRIPTION),
         field(
             "sheet",
             "On the character sheet",
             DESCRIPTION,
             Control::Sheet,
             Codec::Sheet,
-        ),
+        )
+        .help(HELP_SHEET),
         field(
             "compendium",
             "Show in Compendium",
             DESCRIPTION,
             Control::Check,
             Codec::Compendium,
-        ),
+        )
+        .help(HELP_COMPENDIUM),
         field(
             "mapsTo",
             "2014/2024 counterpart",
@@ -523,7 +553,8 @@ pub(crate) fn tail() -> Vec<FieldDef> {
             Control::MapsTo,
             Codec::MapsTo,
         )
-        .expert(),
+        .expert()
+        .help(HELP_MAPS_TO),
     ]
 }
 

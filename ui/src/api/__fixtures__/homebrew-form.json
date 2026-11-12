@@ -395,6 +395,7 @@
             }
           ],
           "control": "combo",
+          "help": "The rules it is written for: the pack's edition unless you pick one.",
           "key": "edition",
           "label": "Edition",
           "required": false,
@@ -466,6 +467,7 @@
             "supports"
           ],
           "control": "tags",
+          "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
           "key": "tags",
           "label": "Tags",
           "required": false,
@@ -487,6 +489,7 @@
             "requirements"
           ],
           "control": "condition",
+          "help": "What a character needs before it is offered. Leave it empty for none.",
           "key": "requirements",
           "label": "Prerequisite",
           "required": false,
@@ -497,6 +500,7 @@
             "prerequisite"
           ],
           "control": "text",
+          "help": "Written from the prerequisite while left empty or as written; type to reword it.",
           "key": "prerequisiteText",
           "label": "Prerequisite as shown",
           "required": false,
@@ -507,6 +511,7 @@
             "setter:allow duplicate"
           ],
           "control": "check",
+          "help": "A character may take it again from another choice.",
           "key": "allowDuplicate",
           "label": "Can be taken more than once",
           "required": false,
@@ -517,6 +522,7 @@
             "setter:keywords"
           ],
           "control": "chips",
+          "help": "Extra words that describe it, such as fire or healing.",
           "key": "keywords",
           "label": "Keywords",
           "required": false,
@@ -527,6 +533,7 @@
             "rules"
           ],
           "control": "blocks",
+          "help": "What it does to a character: each rule gives something, offers a choice or changes a number.",
           "key": "rules",
           "label": "Rules",
           "required": false,
@@ -537,6 +544,7 @@
             "description"
           ],
           "control": "richText",
+          "help": "The text shown in the description pane and the Compendium.",
           "key": "description",
           "label": "Description",
           "required": false,
@@ -547,6 +555,7 @@
             "sheet"
           ],
           "control": "sheet",
+          "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level.",
           "key": "sheet",
           "label": "On the character sheet",
           "required": false,
@@ -557,6 +566,7 @@
             "compendium.display"
           ],
           "control": "check",
+          "help": "Turn it off for a helper element that players never look up on its own.",
           "key": "compendium",
           "label": "Show in Compendium",
           "required": false,
@@ -568,6 +578,7 @@
           ],
           "control": "mapsTo",
           "expert": true,
+          "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
           "key": "mapsTo",
           "label": "2014/2024 counterpart",
           "required": false,
@@ -635,6 +646,7 @@
             }
           ],
           "control": "combo",
+          "help": "The rules it is written for: the pack's edition unless you pick one.",
           "key": "edition",
           "label": "Edition",
           "required": false,
@@ -732,6 +744,7 @@
             "supports"
           ],
           "control": "tags",
+          "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
           "key": "tags",
           "label": "Tags",
           "required": false,
@@ -753,6 +766,7 @@
             "requirements"
           ],
           "control": "condition",
+          "help": "What a character needs before it is offered. Leave it empty for none.",
           "key": "requirements",
           "label": "Prerequisite",
           "required": false,
@@ -763,6 +777,7 @@
             "prerequisite"
           ],
           "control": "text",
+          "help": "Written from the prerequisite while left empty or as written; type to reword it.",
           "key": "prerequisiteText",
           "label": "Prerequisite as shown",
           "required": false,
@@ -773,6 +788,7 @@
             "setter:allow duplicate"
           ],
           "control": "check",
+          "help": "A character may take it again from another choice.",
           "key": "allowDuplicate",
           "label": "Can be taken more than once",
           "required": false,
@@ -783,6 +799,7 @@
             "setter:keywords"
           ],
           "control": "chips",
+          "help": "Extra words that describe it, such as fire or healing.",
           "key": "keywords",
           "label": "Keywords",
           "required": false,
@@ -793,6 +810,7 @@
             "rules"
           ],
           "control": "blocks",
+          "help": "What it does to a character: each rule gives something, offers a choice or changes a number.",
           "key": "rules",
           "label": "Rules",
           "required": false,
@@ -803,6 +821,7 @@
             "description"
           ],
           "control": "richText",
+          "help": "The text shown in the description pane and the Compendium.",
           "key": "description",
           "label": "Description",
           "required": false,
@@ -813,6 +832,7 @@
             "sheet"
           ],
           "control": "sheet",
+          "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level.",
           "key": "sheet",
           "label": "On the character sheet",
           "required": false,
@@ -823,6 +843,7 @@
             "compendium.display"
           ],
           "control": "check",
+          "help": "Turn it off for a helper element that players never look up on its own.",
           "key": "compendium",
           "label": "Show in Compendium",
           "required": false,
@@ -834,6 +855,7 @@
           ],
           "control": "mapsTo",
           "expert": true,
+          "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
           "key": "mapsTo",
           "label": "2014/2024 counterpart",
           "required": false,

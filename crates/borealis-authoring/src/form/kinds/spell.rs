@@ -197,6 +197,7 @@ fn own_fields() -> Vec<FieldDef> {
             Control::Check,
             spell(SpellField::MaterialConsumed),
         )
+        .help("The material is gone after the casting; a costly one must be found again.")
         .section(COMPONENTS),
         field(
             "spellLists",

@@ -75,6 +75,7 @@ pub(crate) fn caster_fields() -> Vec<FieldDef> {
     let counts = "Spells by level";
     vec![
         field("casts", "Gives spellcasting", SPELLCASTING, Control::Check, caster(CasterField::Casts))
+        .help("Turn it on for the spellcasting below: an ability, a spell list, slots and spells by level.")
             .section(main)
             .default("false"),
         field("casterName", "Spellcasting name", SPELLCASTING, Control::Text, caster(CasterField::Name))
@@ -87,6 +88,7 @@ pub(crate) fn caster_fields() -> Vec<FieldDef> {
             .choices(ABILITIES, false)
             .default("\"\""),
         field("preparation", "Spells", SPELLCASTING, Control::Combo, caster(CasterField::Preparation))
+        .help("How it gets its spells: prepared each day from a list or a spellbook, or a fixed number known.")
             .section(main)
             .choices(PREPARATION, false)
             .default("\"prepared\""),
@@ -99,6 +101,7 @@ pub(crate) fn caster_fields() -> Vec<FieldDef> {
             .default("false")
             .help("On gaining a level, one spell it knows can be replaced with another."),
         field("casterType", "Caster type", SPELLCASTING, Control::Combo, caster(CasterField::Type))
+        .help("How its spell slots grow: like a Wizard (full), a Paladin (half), a third, pact magic or your own table.")
             .section(slots)
             .choices(CASTER_TYPES, false)
             .default("\"\""),
@@ -112,6 +115,7 @@ pub(crate) fn caster_fields() -> Vec<FieldDef> {
             Control::Combo,
             caster(CasterField::Multiclass),
         )
+        .help("How its levels add to other classes' levels for the shared multiclass spell slots.")
         .section(slots)
         .choices(MULTICLASS, false)
         .default("\"auto\""),
@@ -142,6 +146,7 @@ pub(crate) fn caster_fields() -> Vec<FieldDef> {
             Control::Combo,
             caster(CasterField::PreparedChange),
         )
+        .help("When the character may swap the spells it has prepared.")
         .section(counts)
         .editions(ONLY_2024)
         .choices(PREPARED_CHANGE, false)

@@ -68,7 +68,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -470,6 +471,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "data.material_cost.consumed"
         ],
+        "help": "The material is gone after the casting; a costly one must be found again.",
         "section": "Components"
       },
       {
@@ -506,6 +508,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "section": "Details"
       },
       {
@@ -517,6 +520,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "section": "Details"
       },
       {
@@ -528,6 +532,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:allow duplicate"
         ],
+        "help": "A character may take it again from another choice.",
         "section": "Details"
       },
       {
@@ -539,6 +544,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -549,7 +555,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -559,7 +566,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -569,7 +577,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -579,7 +588,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -590,6 +600,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -663,7 +674,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -720,6 +732,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "requirements",
           "data.prerequisite"
         ],
+        "help": "What a character needs to take the feat, such as a level or an ability score. Leave it empty for none.",
         "section": "Prerequisite"
       },
       {
@@ -769,6 +782,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "spellcasting"
         ],
+        "help": "Turn it on for the spellcasting below: an ability, a spell list, slots and spells by level.",
         "section": "Spellcasting",
         "default": false
       },
@@ -848,6 +862,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "spellcasting.prepare",
           "spellcasting.list.known"
         ],
+        "help": "How it gets its spells: prepared each day from a list or a spellbook, or a fixed number known.",
         "section": "Spellcasting",
         "default": "prepared"
       },
@@ -917,6 +932,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "rules:stat <name>:spellcasting:slots:N",
           "rules:pact_magic"
         ],
+        "help": "How its spell slots grow: like a Wizard (full), a Paladin (half), a third, pact magic or your own table.",
         "section": "Spell slots",
         "default": ""
       },
@@ -987,6 +1003,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:grant ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_*"
         ],
+        "help": "How its levels add to other classes' levels for the shared multiclass spell slots.",
         "section": "Spell slots",
         "default": "auto"
       },
@@ -1132,6 +1149,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:prepared_spell_change"
         ],
+        "help": "When the character may swap the spells it has prepared.",
         "section": "Spells by level",
         "default": "",
         "editions": [
@@ -1147,6 +1165,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -1170,6 +1189,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -1180,7 +1200,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -1190,7 +1211,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -1200,7 +1222,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -1210,7 +1233,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -1221,6 +1245,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       },
       {
@@ -1309,7 +1334,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -1331,7 +1357,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -1352,7 +1379,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -1362,7 +1390,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -1372,7 +1401,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -1382,7 +1412,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -1392,7 +1423,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -1402,7 +1434,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -1412,7 +1445,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -1422,7 +1456,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -1433,6 +1468,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -1522,7 +1558,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -1602,6 +1639,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "data.primary_abilities"
         ],
+        "help": "The abilities the class relies on most, shown with the class.",
         "section": "Class",
         "default": []
       },
@@ -1728,6 +1766,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:grant Class Feature (level)"
         ],
+        "help": "What the class gives at each level. Add a feature with the Plus on its level.",
         "picker": {
           "types": [
             "Class Feature"
@@ -1756,6 +1795,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "multiclass"
         ],
+        "help": "Off: a character can only start in this class, never add it later.",
         "default": true
       },
       {
@@ -1838,6 +1878,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -1861,6 +1902,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "section": "Details"
       },
       {
@@ -1872,6 +1914,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "section": "Details"
       },
       {
@@ -1883,6 +1926,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -1904,7 +1948,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -1914,7 +1959,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -1924,7 +1970,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -1935,6 +1982,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -2010,7 +2058,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -2034,6 +2083,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "rules:select_feat Ability Score Improvement (<Class> N)",
           "rules:select Improvement Option (<Class> N)"
         ],
+        "help": "The class levels this feature gives an ability score improvement (or a feat) at.",
         "section": "Made by the class",
         "min": 1,
         "max": 20,
@@ -2061,6 +2111,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:select_feat Epic Boon (<Class>)"
         ],
+        "help": "At this level the character chooses an Epic Boon feat.",
         "section": "Made by the class",
         "default": false,
         "editions": [
@@ -2076,6 +2127,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "spellcasting"
         ],
+        "help": "Turn it on for the spellcasting below: an ability, a spell list, slots and spells by level.",
         "section": "Spellcasting",
         "default": false
       },
@@ -2155,6 +2207,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "spellcasting.prepare",
           "spellcasting.list.known"
         ],
+        "help": "How it gets its spells: prepared each day from a list or a spellbook, or a fixed number known.",
         "section": "Spellcasting",
         "default": "prepared"
       },
@@ -2224,6 +2277,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "rules:stat <name>:spellcasting:slots:N",
           "rules:pact_magic"
         ],
+        "help": "How its spell slots grow: like a Wizard (full), a Paladin (half), a third, pact magic or your own table.",
         "section": "Spell slots",
         "default": ""
       },
@@ -2294,6 +2348,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:grant ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_*"
         ],
+        "help": "How its levels add to other classes' levels for the shared multiclass spell slots.",
         "section": "Spell slots",
         "default": "auto"
       },
@@ -2439,6 +2494,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:prepared_spell_change"
         ],
+        "help": "When the character may swap the spells it has prepared.",
         "section": "Spells by level",
         "default": "",
         "editions": [
@@ -2453,7 +2509,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -2474,7 +2531,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -2484,7 +2542,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -2494,7 +2553,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -2504,7 +2564,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -2514,7 +2575,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -2524,7 +2586,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -2534,7 +2597,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -2544,7 +2608,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -2555,6 +2620,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -2632,7 +2698,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -2688,6 +2755,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "data.level_gained"
         ],
+        "help": "The class level the subclass is chosen at.",
         "readOnly": true,
         "section": "Subclass",
         "min": 1,
@@ -2733,6 +2801,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -2756,6 +2825,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "section": "Details"
       },
       {
@@ -2767,6 +2837,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "section": "Details"
       },
       {
@@ -2778,6 +2849,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -2788,7 +2860,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -2798,7 +2871,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -2808,7 +2882,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -2818,7 +2893,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -2829,6 +2905,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -2904,7 +2981,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -2927,6 +3005,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "spellcasting"
         ],
+        "help": "Turn it on for the spellcasting below: an ability, a spell list, slots and spells by level.",
         "section": "Spellcasting",
         "default": false
       },
@@ -3006,6 +3085,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "spellcasting.prepare",
           "spellcasting.list.known"
         ],
+        "help": "How it gets its spells: prepared each day from a list or a spellbook, or a fixed number known.",
         "section": "Spellcasting",
         "default": "prepared"
       },
@@ -3075,6 +3155,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "rules:stat <name>:spellcasting:slots:N",
           "rules:pact_magic"
         ],
+        "help": "How its spell slots grow: like a Wizard (full), a Paladin (half), a third, pact magic or your own table.",
         "section": "Spell slots",
         "default": ""
       },
@@ -3145,6 +3226,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:grant ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_*"
         ],
+        "help": "How its levels add to other classes' levels for the shared multiclass spell slots.",
         "section": "Spell slots",
         "default": "auto"
       },
@@ -3290,6 +3372,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:prepared_spell_change"
         ],
+        "help": "When the character may swap the spells it has prepared.",
         "section": "Spells by level",
         "default": "",
         "editions": [
@@ -3324,7 +3407,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -3345,7 +3429,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -3355,7 +3440,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -3365,7 +3451,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -3375,7 +3462,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -3385,7 +3473,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -3395,7 +3484,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -3405,7 +3495,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -3415,7 +3506,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -3426,6 +3518,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -3495,7 +3588,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -3722,6 +3816,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "section": "Option"
       },
       {
@@ -3733,6 +3828,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -3756,6 +3852,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -3766,7 +3863,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -3776,7 +3874,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -3786,7 +3885,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -3796,7 +3896,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -3807,6 +3908,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -3875,7 +3977,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -4028,6 +4131,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:fly"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -4041,6 +4145,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:swim"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -4054,6 +4159,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:climb"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -4067,6 +4173,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:burrow"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -4095,6 +4202,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense blindsight"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -4108,6 +4216,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense tremorsense"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -4121,6 +4230,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense truesight"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -4152,6 +4262,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -4175,6 +4286,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "section": "Details"
       },
       {
@@ -4186,6 +4298,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "section": "Details"
       },
       {
@@ -4197,6 +4310,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:allow duplicate"
         ],
+        "help": "A character may take it again from another choice.",
         "section": "Details"
       },
       {
@@ -4208,6 +4322,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -4218,7 +4333,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -4228,7 +4344,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -4238,7 +4355,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -4248,7 +4366,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -4259,6 +4378,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -4327,7 +4447,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -4559,6 +4680,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:fly"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -4572,6 +4694,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:swim"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -4585,6 +4708,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:climb"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -4598,6 +4722,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:burrow"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -4626,6 +4751,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense blindsight"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -4639,6 +4765,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense tremorsense"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -4652,6 +4779,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense truesight"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -4665,6 +4793,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:grant Language"
         ],
+        "help": "The languages every member knows. A choice of more is the number below.",
         "section": "Languages",
         "picker": {
           "types": [
@@ -4721,6 +4850,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:names type=male"
         ],
+        "help": "Names suggested for this race, one per chip.",
         "section": "Random names"
       },
       {
@@ -4732,6 +4862,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:names type=female"
         ],
+        "help": "Names suggested for this race, one per chip.",
         "section": "Random names"
       },
       {
@@ -4743,6 +4874,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:names type=family"
         ],
+        "help": "Names suggested for this race, one per chip.",
         "section": "Random names"
       },
       {
@@ -4754,6 +4886,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -4777,6 +4910,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "section": "Details"
       },
       {
@@ -4788,6 +4922,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "section": "Details"
       },
       {
@@ -4799,6 +4934,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:allow duplicate"
         ],
+        "help": "A character may take it again from another choice.",
         "section": "Details"
       },
       {
@@ -4810,6 +4946,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -4820,7 +4957,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -4830,7 +4968,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -4840,7 +4979,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -4850,7 +4990,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -4861,6 +5002,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -4929,7 +5071,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -5058,6 +5201,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:fly"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -5071,6 +5215,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:swim"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -5084,6 +5229,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:climb"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -5097,6 +5243,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:burrow"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -5125,6 +5272,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense blindsight"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -5138,6 +5286,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense tremorsense"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -5151,6 +5300,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense truesight"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -5164,6 +5314,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:grant Language"
         ],
+        "help": "The languages every member knows. A choice of more is the number below.",
         "section": "Languages",
         "picker": {
           "types": [
@@ -5213,6 +5364,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -5236,6 +5388,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "section": "Details"
       },
       {
@@ -5247,6 +5400,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "section": "Details"
       },
       {
@@ -5258,6 +5412,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:allow duplicate"
         ],
+        "help": "A character may take it again from another choice.",
         "section": "Details"
       },
       {
@@ -5269,6 +5424,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -5279,7 +5435,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -5289,7 +5446,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -5299,7 +5457,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -5309,7 +5468,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -5320,6 +5480,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -5388,7 +5549,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -5517,6 +5679,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:fly"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -5530,6 +5693,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:swim"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -5543,6 +5707,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:climb"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -5556,6 +5721,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:stat innate speed:burrow"
         ],
+        "help": "In feet; 0 for none.",
         "section": "Speed",
         "min": 0,
         "max": 1000
@@ -5584,6 +5750,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense blindsight"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -5597,6 +5764,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense tremorsense"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -5610,6 +5778,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:sense truesight"
         ],
+        "help": "Range in feet; 0 for none.",
         "section": "Senses",
         "min": 0,
         "max": 1000
@@ -5623,6 +5792,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rule:grant Language"
         ],
+        "help": "The languages every member knows. A choice of more is the number below.",
         "section": "Languages",
         "picker": {
           "types": [
@@ -5672,6 +5842,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -5695,6 +5866,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "section": "Details"
       },
       {
@@ -5706,6 +5878,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "section": "Details"
       },
       {
@@ -5717,6 +5890,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:allow duplicate"
         ],
+        "help": "A character may take it again from another choice.",
         "section": "Details"
       },
       {
@@ -5728,6 +5902,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -5738,7 +5913,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -5748,7 +5924,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -5758,7 +5935,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -5768,7 +5946,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -5779,6 +5958,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -5853,7 +6033,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -5984,7 +6165,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -6005,7 +6187,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -6015,7 +6198,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -6025,7 +6209,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -6035,7 +6220,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -6045,7 +6231,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -6055,7 +6242,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -6065,7 +6253,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -6075,7 +6264,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -6086,6 +6276,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -6157,7 +6348,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -6246,7 +6438,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -6267,7 +6460,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -6277,7 +6471,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -6287,7 +6482,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -6297,7 +6493,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -6307,7 +6504,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -6317,7 +6515,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -6327,7 +6526,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -6337,7 +6537,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -6348,6 +6549,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -6425,7 +6627,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -6655,6 +6858,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:select List"
         ],
+        "help": "The character picks one; numbered 1, 2, 3... in order.",
         "section": "Suggested characteristics",
         "default": {
           "count": 1,
@@ -6673,6 +6877,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:select List"
         ],
+        "help": "The character picks one; numbered 1, 2, 3... in order.",
         "section": "Suggested characteristics",
         "default": {
           "count": 1,
@@ -6691,6 +6896,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:select List"
         ],
+        "help": "The character picks one; numbered 1, 2, 3... in order.",
         "section": "Suggested characteristics",
         "default": {
           "count": 1,
@@ -6741,6 +6947,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -6764,6 +6971,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "section": "Details"
       },
       {
@@ -6775,6 +6983,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "section": "Details"
       },
       {
@@ -6786,6 +6995,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -6807,7 +7017,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -6817,7 +7028,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -6827,7 +7039,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -6838,6 +7051,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -6910,7 +7124,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -6932,7 +7147,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -6953,7 +7169,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -6963,7 +7180,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -6973,7 +7191,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -6983,7 +7202,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -6993,7 +7213,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -7003,7 +7224,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -7013,7 +7235,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -7023,7 +7246,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -7034,6 +7258,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -7105,7 +7330,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -7144,7 +7370,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -7165,7 +7392,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -7175,7 +7403,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -7185,7 +7414,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -7195,7 +7425,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -7205,7 +7436,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -7215,7 +7447,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -7225,7 +7458,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -7235,7 +7469,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -7246,6 +7481,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -7317,7 +7553,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -7356,6 +7593,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:select List"
         ],
+        "help": "The character picks one; numbered 1, 2, 3... in order.",
         "section": "Suggested characteristics",
         "default": {
           "count": 1,
@@ -7371,6 +7609,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:select List"
         ],
+        "help": "The character picks one; numbered 1, 2, 3... in order.",
         "section": "Suggested characteristics",
         "default": {
           "count": 1,
@@ -7386,6 +7625,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:select List"
         ],
+        "help": "The character picks one; numbered 1, 2, 3... in order.",
         "section": "Suggested characteristics",
         "default": {
           "count": 1,
@@ -7400,7 +7640,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -7421,7 +7662,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -7431,7 +7673,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -7441,7 +7684,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -7451,7 +7695,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -7461,7 +7706,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -7471,7 +7717,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -7481,7 +7728,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -7491,7 +7739,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -7502,6 +7751,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -7583,7 +7833,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -8205,6 +8456,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "data.skills"
         ],
+        "help": "Only the skills it is proficient in, with their whole bonus.",
         "section": "Ability scores",
         "default": {}
       },
@@ -8503,6 +8755,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "data.senses"
         ],
+        "help": "Its special senses, such as darkvision, with their range in feet.",
         "section": "Senses and languages",
         "default": {
           "passive_perception": null
@@ -8607,6 +8860,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "data.legendary"
         ],
+        "help": "Actions it takes at the end of other creatures' turns, with how many it has each round.",
         "default": null
       },
       {
@@ -8618,6 +8872,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "data.lair_actions"
         ],
+        "help": "What happens in its lair, and when.",
         "default": null
       },
       {
@@ -8629,6 +8884,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "data.regional_effects"
         ],
+        "help": "How the land around its lair changes, and how long the change lasts.",
         "default": null
       },
       {
@@ -8652,6 +8908,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -8675,6 +8932,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -8696,7 +8954,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "compendium",
@@ -8706,7 +8965,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -8717,6 +8977,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -8786,7 +9047,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -8857,7 +9119,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -8878,7 +9141,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -8888,7 +9152,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -8898,7 +9163,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -8908,7 +9174,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -8918,7 +9185,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -8928,7 +9196,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -8938,7 +9207,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -8948,7 +9218,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -8959,6 +9230,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -9028,7 +9300,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -9067,7 +9340,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -9088,7 +9362,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -9098,7 +9373,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -9108,7 +9384,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -9118,7 +9395,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -9128,7 +9406,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -9138,7 +9417,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -9148,7 +9428,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -9158,7 +9439,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -9169,6 +9451,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -9238,7 +9521,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -9273,7 +9557,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -9294,7 +9579,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -9304,7 +9590,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -9314,7 +9601,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -9324,7 +9612,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -9334,7 +9623,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -9344,7 +9634,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -9354,7 +9645,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -9364,7 +9656,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -9375,6 +9668,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -9444,7 +9738,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -9466,7 +9761,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -9487,7 +9783,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -9497,7 +9794,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -9507,7 +9805,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -9517,7 +9816,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -9527,7 +9827,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -9537,7 +9838,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -9547,7 +9849,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -9557,7 +9860,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -9568,6 +9872,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -9637,7 +9942,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -9722,7 +10028,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -9732,7 +10039,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -9742,7 +10050,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -9752,7 +10061,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -9762,7 +10072,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -9772,7 +10083,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -9782,7 +10094,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -9792,7 +10105,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -9803,6 +10117,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -9872,7 +10187,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -9966,7 +10282,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -9987,7 +10304,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -9997,7 +10315,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -10007,7 +10326,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -10017,7 +10337,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -10027,7 +10348,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -10037,7 +10359,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -10047,7 +10370,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -10057,7 +10381,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -10068,6 +10393,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -10137,7 +10463,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -10159,7 +10486,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -10180,7 +10508,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -10190,7 +10519,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -10200,7 +10530,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -10210,7 +10541,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -10220,7 +10552,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -10230,7 +10563,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -10240,7 +10574,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -10250,7 +10585,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -10261,6 +10597,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -10330,7 +10667,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -10352,7 +10690,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -10373,7 +10712,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -10383,7 +10723,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -10393,7 +10734,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -10403,7 +10745,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -10413,7 +10756,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -10423,7 +10767,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -10433,7 +10778,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -10443,7 +10789,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -10454,6 +10801,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -10523,7 +10871,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -10555,7 +10904,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -10576,7 +10926,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -10586,7 +10937,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -10596,7 +10948,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -10606,7 +10959,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -10616,7 +10970,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -10626,7 +10981,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -10636,7 +10992,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -10646,7 +11003,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -10657,6 +11015,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -10726,7 +11085,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -10760,7 +11120,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -10781,7 +11142,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -10791,7 +11153,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -10801,7 +11164,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -10811,7 +11175,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -10821,7 +11186,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -10831,7 +11197,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -10841,7 +11208,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -10851,7 +11219,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -10862,6 +11231,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -10931,7 +11301,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -10953,7 +11324,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -10974,7 +11346,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -10984,7 +11357,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -10994,7 +11368,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -11004,7 +11379,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -11014,7 +11390,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -11024,7 +11401,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -11034,7 +11412,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -11044,7 +11423,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -11055,6 +11435,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -11124,7 +11505,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -11146,7 +11528,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -11167,7 +11550,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -11177,7 +11561,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -11187,7 +11572,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -11197,7 +11583,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -11207,7 +11594,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -11217,7 +11605,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -11227,7 +11616,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -11237,7 +11627,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -11248,6 +11639,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -11317,7 +11709,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -11339,7 +11732,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -11360,7 +11754,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -11370,7 +11765,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -11380,7 +11776,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -11390,7 +11787,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -11400,7 +11798,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -11410,7 +11809,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -11420,7 +11820,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -11430,7 +11831,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -11441,6 +11843,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -11509,7 +11912,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -11579,7 +11983,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -11589,7 +11994,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -11599,7 +12005,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -11609,7 +12016,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -11619,7 +12027,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -11629,7 +12038,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -11639,7 +12049,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -11649,7 +12060,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -11660,6 +12072,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -11729,7 +12142,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -11751,7 +12165,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -11772,7 +12187,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -11782,7 +12198,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -11792,7 +12209,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -11802,7 +12220,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -11812,7 +12231,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -11822,7 +12242,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -11832,7 +12253,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -11842,7 +12264,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -11853,6 +12276,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -11922,7 +12346,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -11944,7 +12369,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -11965,7 +12391,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -11975,7 +12402,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -11985,7 +12413,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -11995,7 +12424,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -12005,7 +12435,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -12015,7 +12446,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -12025,7 +12457,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -12035,7 +12468,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -12046,6 +12480,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -12115,7 +12550,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -12193,7 +12629,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -12203,7 +12640,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -12213,7 +12651,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -12223,7 +12662,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -12233,7 +12673,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -12243,7 +12684,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -12253,7 +12695,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -12263,7 +12706,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -12274,6 +12718,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -12343,7 +12788,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -12660,6 +13106,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:stackable"
         ],
+        "help": "Several of it share one inventory row with a count (arrows, rations).",
         "section": "In the inventory"
       },
       {
@@ -12671,6 +13118,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:consumable"
         ],
+        "help": "Using it uses one up (a potion, a scroll).",
         "section": "In the inventory"
       },
       {
@@ -12682,6 +13130,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:stash"
         ],
+        "help": "Other items can be put inside it (a backpack, a pouch).",
         "section": "In the inventory"
       },
       {
@@ -12728,6 +13177,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -12751,6 +13201,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "expert": true,
         "section": "Details"
       },
@@ -12763,6 +13214,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "expert": true,
         "section": "Details"
       },
@@ -12775,6 +13227,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:allow duplicate"
         ],
+        "help": "A character may take it again from another choice.",
         "expert": true,
         "section": "Details"
       },
@@ -12787,6 +13240,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -12797,7 +13251,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -12807,7 +13262,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -12817,7 +13273,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -12827,7 +13284,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -12838,6 +13296,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -12907,7 +13366,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -13105,6 +13565,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports:Weapon Property",
           "data.properties"
         ],
+        "help": "Its weapon properties, such as Finesse or Light.",
         "section": "Weapon",
         "picker": {
           "types": [
@@ -13316,6 +13777,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -13339,6 +13801,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "expert": true,
         "section": "Details"
       },
@@ -13351,6 +13814,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "expert": true,
         "section": "Details"
       },
@@ -13363,6 +13827,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:allow duplicate"
         ],
+        "help": "A character may take it again from another choice.",
         "expert": true,
         "section": "Details"
       },
@@ -13375,6 +13840,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -13385,7 +13851,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -13395,7 +13862,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -13405,7 +13873,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -13415,7 +13884,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -13426,6 +13896,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -13495,7 +13966,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -13683,6 +14155,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "setter:strength",
           "data.strength_requirement"
         ],
+        "help": "The Strength score needed to wear it without losing 10 feet of speed; 0 for none.",
         "section": "Armor",
         "min": 0,
         "max": 30
@@ -13863,6 +14336,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -13886,6 +14360,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "expert": true,
         "section": "Details"
       },
@@ -13898,6 +14373,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "expert": true,
         "section": "Details"
       },
@@ -13910,6 +14386,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:allow duplicate"
         ],
+        "help": "A character may take it again from another choice.",
         "expert": true,
         "section": "Details"
       },
@@ -13922,6 +14399,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -13932,7 +14410,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -13942,7 +14421,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -13952,7 +14432,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -13962,7 +14443,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -13973,6 +14455,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -14042,7 +14525,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -14261,6 +14745,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "data.rarity_text",
           "data.rarities"
         ],
+        "help": "Common to artifact; shown with the item and in the Compendium.",
         "section": "Magic"
       },
       {
@@ -14273,6 +14758,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "setter:attunement",
           "data.requires_attunement"
         ],
+        "help": "Its magic works only for a character attuned to it (at most three items).",
         "section": "Magic"
       },
       {
@@ -14484,6 +14970,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -14507,6 +14994,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "expert": true,
         "section": "Details"
       },
@@ -14519,6 +15007,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "expert": true,
         "section": "Details"
       },
@@ -14531,6 +15020,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:allow duplicate"
         ],
+        "help": "A character may take it again from another choice.",
         "expert": true,
         "section": "Details"
       },
@@ -14543,6 +15033,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -14553,7 +15044,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -14563,7 +15055,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -14573,7 +15066,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -14583,7 +15077,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -14594,6 +15089,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -14663,7 +15159,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -14859,6 +15356,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -14882,6 +15380,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "expert": true,
         "section": "Details"
       },
@@ -14894,6 +15393,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "expert": true,
         "section": "Details"
       },
@@ -14906,6 +15406,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:allow duplicate"
         ],
+        "help": "A character may take it again from another choice.",
         "expert": true,
         "section": "Details"
       },
@@ -14918,6 +15419,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -14928,7 +15430,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -14938,7 +15441,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -14948,7 +15452,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -14958,7 +15463,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -14969,6 +15475,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -15040,7 +15547,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -15093,6 +15601,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
         "section": "Details"
       },
       {
@@ -15116,6 +15625,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "requirements"
         ],
+        "help": "What a character needs before it is offered. Leave it empty for none.",
         "expert": true,
         "section": "Details"
       },
@@ -15128,6 +15638,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "prerequisite"
         ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it.",
         "expert": true,
         "section": "Details"
       },
@@ -15140,6 +15651,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:allow duplicate"
         ],
+        "help": "A character may take it again from another choice.",
         "expert": true,
         "section": "Details"
       },
@@ -15152,6 +15664,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:keywords"
         ],
+        "help": "Extra words that describe it, such as fire or healing.",
         "section": "Details"
       },
       {
@@ -15162,7 +15675,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -15172,7 +15686,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -15182,7 +15697,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -15192,7 +15708,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -15203,6 +15720,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]
@@ -15270,7 +15788,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "bindings": [
           "ruleset"
-        ]
+        ],
+        "help": "The rules it is written for: the pack's edition unless you pick one."
       },
       {
         "key": "source",
@@ -15367,7 +15886,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
       },
       {
         "key": "summary",
@@ -15388,7 +15908,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "requirements"
-        ]
+        ],
+        "help": "What a character needs before it is offered. Leave it empty for none."
       },
       {
         "key": "prerequisiteText",
@@ -15398,7 +15919,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "prerequisite"
-        ]
+        ],
+        "help": "Written from the prerequisite while left empty or as written; type to reword it."
       },
       {
         "key": "allowDuplicate",
@@ -15408,7 +15930,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:allow duplicate"
-        ]
+        ],
+        "help": "A character may take it again from another choice."
       },
       {
         "key": "keywords",
@@ -15418,7 +15941,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "setter:keywords"
-        ]
+        ],
+        "help": "Extra words that describe it, such as fire or healing."
       },
       {
         "key": "rules",
@@ -15428,7 +15952,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules"
-        ]
+        ],
+        "help": "What it does to a character: each rule gives something, offers a choice or changes a number."
       },
       {
         "key": "description",
@@ -15438,7 +15963,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "description"
-        ]
+        ],
+        "help": "The text shown in the description pane and the Compendium."
       },
       {
         "key": "sheet",
@@ -15448,7 +15974,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "sheet"
-        ]
+        ],
+        "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level."
       },
       {
         "key": "compendium",
@@ -15458,7 +15985,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "compendium.display"
-        ]
+        ],
+        "help": "Turn it off for a helper element that players never look up on its own."
       },
       {
         "key": "mapsTo",
@@ -15469,6 +15997,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "maps_to"
         ],
+        "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
         "expert": true
       }
     ]

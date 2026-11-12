@@ -81,9 +81,10 @@ export function FieldView({ field, value, problems, onChange, kindId, idPrefix =
   const inputId = `${domId}-input`;
   const msgId = shown.length > 0 ? `${domId}-msg` : undefined;
   const wide = WIDE.has(field.control);
+  // the help line describes the control (WB-28) until the field's problems take its place
+  const helpId = !msgId && field.help ? `${domId}-help` : undefined;
   if (field.control === "check" && !field.readOnly) {
     // Aurora's DescriptionCheckBox (spec 13.4, U7): the box with its name beside it, the help indented under the name
-    const helpId = !msgId && field.help ? `${domId}-help` : undefined;
     return (
       <div className={`mg-f hb-field hb-check-field ${severity ? `hb-${severity}` : ""}`} id={domId} data-field={field.key}>
         <DescCheck id={inputId} checked={value === true} describedBy={[helpId, msgId].filter(Boolean).join(" ") || undefined}
@@ -102,9 +103,9 @@ export function FieldView({ field, value, problems, onChange, kindId, idPrefix =
       </label>
       {field.readOnly
         ? <p id={inputId} className="hb-readonly" tabIndex={-1}>{(Array.isArray(value) ? value.join(", ") : text(value)) || "-"}</p>
-        : <Control field={field} value={value} onChange={onChange} id={inputId} describedBy={msgId} invalid={severity === "error"} problems={problems} kindId={kindId} childEditing={childEditing} />}
+        : <Control field={field} value={value} onChange={onChange} id={inputId} describedBy={msgId ?? helpId} invalid={severity === "error"} problems={problems} kindId={kindId} childEditing={childEditing} />}
       {msgId && <div id={msgId} className="hb-field-msg">{shown.map((p, i) => <p key={i}>{p.message}</p>)}</div>}
-      {!msgId && field.help && <p className="hb-field-help">{field.help}</p>}
+      {helpId && <p className="hb-field-help" id={helpId}>{field.help}</p>}
       {note && <p className="hb-field-help hb-edition-note" role="note">{note}</p>}
     </div>
   );

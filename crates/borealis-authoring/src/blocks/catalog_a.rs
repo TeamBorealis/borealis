@@ -115,13 +115,17 @@ pub(super) const CORE: &[BlockSpec] = &[
             f("name", "Label", C::Text)
                 .req()
                 .help("Characters that already made this choice keep it only while the label stays the same."),
-            f("number", "How many", COUNT),
-            f("supports", "From", C::TagFilter),
-            f("optional", "May stay empty", C::Check),
-            f("default", "Suggested pick", C::Reference { types: &[] }),
+            f("number", "How many", COUNT).help("How many the player picks at once."),
+            f("supports", "From", C::TagFilter)
+                .help("The elements offered: those with these tags, such as Fighting Style or Wizard."),
+            f("optional", "May stay empty", C::Check).help("The player can leave the choice open without a warning."),
+            f("default", "Suggested pick", C::Reference { types: &[] })
+                .help("Shown first as the suggestion; the player can still pick another."),
             f("spellcasting", "Spells of", CLASS).help("For spells: the owning class."),
             f("prepared", "Always prepared", C::Check).help("For spells."),
-            f("allow_replace", "Can be replaced later", C::Check).expert(),
+            f("allow_replace", "Can be replaced later", C::Check)
+                .expert()
+                .help("A spell picked here can be swapped for another when the character gains a level."),
         ],
     )),
     common(gated(
@@ -130,7 +134,9 @@ pub(super) const CORE: &[BlockSpec] = &[
         G::Basic,
         &[
             f("type", "List", C::Auto),
-            f("name", "Label", C::Text).req(),
+            f("name", "Label", C::Text)
+                .req()
+                .help("The choice's name on the build page. Characters keep their pick only while it stays the same."),
             f("number", "How many", COUNT),
             f(
                 "items",
@@ -159,10 +165,14 @@ pub(super) const CORE: &[BlockSpec] = &[
                 },
             )
             .help("Bonuses with the same stacking name don't add up; the highest counts."),
-            f("equipped", "Only while wearing or holding", C::Equipped),
-            f("maximum", "At most", C::StatValue),
-            f("alt", "Shown in the breakdown as", C::Text),
-            f("inline", "Text value", C::Check).expert(),
+            f("equipped", "Only while wearing or holding", C::Equipped)
+                .help("The change counts only while the character wears or holds what you pick, such as no armor."),
+            f("maximum", "At most", C::StatValue).help("The number never goes above this, a number or another statistic."),
+            f("alt", "Shown in the breakdown as", C::Text)
+                .help("The name of this change where the sheet explains how a number is made up."),
+            f("inline", "Text value", C::Check)
+                .expert()
+                .help("The value is text shown as written (a die such as 1d6), not a number added up."),
         ],
     )),
 ];

@@ -314,6 +314,7 @@ fn statistics() -> Vec<FieldDef> {
             Control::Bonuses,
             cf(CreatureField::Skills),
         )
+        .help("Only the skills it is proficient in, with their whole bonus.")
         .choices(SKILLS, false)
         .section("Ability scores")
         .default("{}"),
@@ -359,6 +360,7 @@ fn statistics() -> Vec<FieldDef> {
             Control::Senses,
             cf(CreatureField::Senses),
         )
+        .help("Its special senses, such as darkvision, with their range in feet.")
         .section("Senses and languages")
         .default("{\"passive_perception\":null}"),
         field(
@@ -436,6 +438,7 @@ fn entries() -> Vec<FieldDef> {
             Control::Legendary,
             cf(CreatureField::Legendary),
         )
+        .help("Actions it takes at the end of other creatures' turns, with how many it has each round.")
         .default("null"),
         field(
             "lairActions",
@@ -444,6 +447,7 @@ fn entries() -> Vec<FieldDef> {
             Control::Lair,
             cf(CreatureField::LairActions),
         )
+        .help("What happens in its lair, and when.")
         .default("null"),
         field(
             "regionalEffects",
@@ -452,6 +456,7 @@ fn entries() -> Vec<FieldDef> {
             Control::Lair,
             cf(CreatureField::RegionalEffects),
         )
+        .help("How the land around its lair changes, and how long the change lasts.")
         .default("null"),
         field(
             "flavour",

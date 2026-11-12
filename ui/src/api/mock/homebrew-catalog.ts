@@ -106,7 +106,8 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "max": 99.0,
         "bindings": [
           "number"
-        ]
+        ],
+        "help": "How many the player picks at once."
       },
       {
         "key": "supports",
@@ -116,7 +117,8 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "required": false,
         "bindings": [
           "supports"
-        ]
+        ],
+        "help": "The elements offered: those with these tags, such as Fighting Style or Wizard."
       },
       {
         "key": "optional",
@@ -126,7 +128,8 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "required": false,
         "bindings": [
           "optional"
-        ]
+        ],
+        "help": "The player can leave the choice open without a warning."
       },
       {
         "key": "default",
@@ -139,7 +142,8 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         },
         "bindings": [
           "default"
-        ]
+        ],
+        "help": "Shown first as the suggestion; the player can still pick another."
       },
       {
         "key": "spellcasting",
@@ -173,6 +177,7 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "bindings": [
           "allow_replace"
         ],
+        "help": "A spell picked here can be swapped for another when the character gains a level.",
         "expert": true
       }
     ]
@@ -206,7 +211,8 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "required": true,
         "bindings": [
           "name"
-        ]
+        ],
+        "help": "The choice's name on the build page. Characters keep their pick only while it stays the same."
       },
       {
         "key": "number",
@@ -329,7 +335,8 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "required": false,
         "bindings": [
           "equipped"
-        ]
+        ],
+        "help": "The change counts only while the character wears or holds what you pick, such as no armor."
       },
       {
         "key": "maximum",
@@ -339,7 +346,8 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "required": false,
         "bindings": [
           "maximum"
-        ]
+        ],
+        "help": "The number never goes above this, a number or another statistic."
       },
       {
         "key": "alt",
@@ -349,7 +357,8 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "required": false,
         "bindings": [
           "alt"
-        ]
+        ],
+        "help": "The name of this change where the sheet explains how a number is made up."
       },
       {
         "key": "inline",
@@ -360,6 +369,7 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "bindings": [
           "inline"
         ],
+        "help": "The value is text shown as written (a die such as 1d6), not a number added up.",
         "expert": true
       }
     ]
