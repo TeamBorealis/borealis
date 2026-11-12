@@ -13850,8 +13850,9 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:slot"
         ],
-        "help": "Only items worn or held can be equipped.",
-        "section": "In the inventory"
+        "help": "Armor is worn on the body, a shield held in the off hand. Only items worn or held can be equipped.",
+        "section": "In the inventory",
+        "default": "body"
       },
       {
         "key": "tags",
