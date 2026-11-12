@@ -3,6 +3,7 @@ import { expect } from 'e2e';
 import { bootToHome, expectEqual } from '../support/index.js';
 import { pressKey } from '../support/flows-b.js';
 import { clickCss, dblClickCss, statusMsg, waitFor, type Ctx } from '../support/flows-a.js';
+import { LOAD_MS, waitPackList, waitValue, waitWorkspace } from '../support/creator.js';
 
 // Homebrew WB-09 (spec 2, 10.2, 12.2, 13.1-13.3): START > HOMEBREW on the web mock with the creator switched on
 // (`?creator=1`). Open a pack -> its workspace -> edit an element -> undo. And the switch: without `?creator=1` (the 1.4.x
@@ -13,22 +14,19 @@ const NAME = '#hb-f-name-input';
 const inputValue = (ctx: Ctx, css: string): Promise<string> =>
   ctx.browser.evaluate((sel: string) => (document.querySelector(sel) as HTMLInputElement | null)?.value ?? '', css);
 
-async function waitValue(ctx: Ctx, css: string, want: string): Promise<void> {
-  await waitFor(ctx, ({ sel, v }: { sel: string; v: string }) => (document.querySelector(sel) as HTMLInputElement | null)?.value === v, { sel: css, v: want }, `${css} = "${want}"`);
-}
-
 /** START > HOMEBREW > NEW PACK "Ember Isles", then back to the pack list. */
 async function makePack(ctx: Ctx): Promise<void> {
   await ctx.screen.getByRole('link', 'Homebrew').tap();
-  await expect(ctx.screen.getByRole('grid', 'Homebrew packs')).toBeVisible();
+  // the creator's routes load lazily: wait on the rendered screen, not a fixed budget (HvB30, slow under load)
+  await waitPackList(ctx);
   await ctx.screen.getByRole('button', 'New pack').tap();
   await expect(ctx.screen.getByRole('dialog', 'New pack')).toBeVisible();
   await ctx.browser.locator('#hb-pack-name').fill('Ember Isles');
   expectEqual('code suggested from the name', 'EI', await inputValue(ctx, '#hb-pack-code'));
   await ctx.screen.getByRole('button', 'Create').tap();
-  await expect(ctx.screen.getByRole('heading', 'Homebrew: Ember Isles')).toBeAttached();
+  await waitWorkspace(ctx, 'Ember Isles');
   await ctx.screen.getByRole('button', 'All packs').tap();
-  await expect(ctx.screen.getByRole('grid', 'Homebrew packs')).toBeVisible();
+  await waitPackList(ctx);
 }
 
 describe('hc-wb09 homebrew creator shell (web mock)', { tags: ['homebrew'] }, () => {
@@ -38,7 +36,7 @@ describe('hc-wb09 homebrew creator shell (web mock)', { tags: ['homebrew'] }, ()
 
     // Open the pack from the grid (double-click, as the Sources grid opens).
     await dblClickCss(ctx, '[aria-label="Homebrew packs"] [role=row][aria-selected]');
-    await expect(ctx.screen.getByRole('heading', 'Homebrew: Ember Isles')).toBeAttached();
+    await waitWorkspace(ctx, 'Ember Isles');
     await expect(ctx.screen.getByRole('navigation', 'Element kinds')).toBeVisible();
 
     // New element: a spell named Ember Bolt.
@@ -47,7 +45,7 @@ describe('hc-wb09 homebrew creator shell (web mock)', { tags: ['homebrew'] }, ()
     await ctx.browser.locator('#hb-new-name').fill('Ember Bolt');
     await ctx.screen.getByRole('button', 'Create').tap();
     await expect(ctx.screen.getByRole('region', 'Element editor')).toBeVisible();
-    await waitValue(ctx, NAME, 'Ember Bolt');
+    await waitValue(ctx, NAME, 'Ember Bolt', LOAD_MS);
 
     // Edit: the name, then a combo (a separate undo step).
     await ctx.browser.locator(NAME).fill('Ember Lance');
@@ -59,7 +57,7 @@ describe('hc-wb09 homebrew creator shell (web mock)', { tags: ['homebrew'] }, ()
     expectEqual('school undone', '', await inputValue(ctx, '#hb-f-school-input'));
     expectEqual('name kept after one undo', 'Ember Lance', await inputValue(ctx, NAME));
     await pressKey(ctx, 'Control+z');
-    await waitValue(ctx, NAME, 'Ember Bolt');
+    await waitValue(ctx, NAME, 'Ember Bolt', LOAD_MS);
 
     // Redo by Ctrl+Shift+Z, then Ctrl+S saves the element (on this route it never saves a character).
     await pressKey(ctx, 'Control+Shift+z');
@@ -81,10 +79,11 @@ describe('hc-wb09 homebrew creator shell (web mock)', { tags: ['homebrew'] }, ()
     await makePack(ctx);
     await clickCss(ctx, '[aria-label="Homebrew packs"] [role=row][aria-selected]');
     await ctx.screen.getByRole('button', 'Open pack').tap();
+    await waitWorkspace(ctx, 'Ember Isles');
     await ctx.screen.getByRole('button', 'New element').first().tap();
     await ctx.browser.locator('#hb-new-name').fill('Ember Bolt');
     await ctx.screen.getByRole('button', 'Create').tap();
-    await waitValue(ctx, NAME, 'Ember Bolt');
+    await waitValue(ctx, NAME, 'Ember Bolt', LOAD_MS);
     // A new spell asks for its school (WB-11); choose it so the name is the one problem.
     await ctx.browser.locator('#hb-f-school-input').selectOption('Evocation');
 
