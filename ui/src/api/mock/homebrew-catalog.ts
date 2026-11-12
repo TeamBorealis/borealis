@@ -665,6 +665,16 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
     "onlyIf": true,
     "fields": [
       {
+        "key": "id",
+        "label": "Name",
+        "tab": "rules",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "id"
+        ]
+      },
+      {
         "key": "radius_feet",
         "label": "Radius (feet)",
         "tab": "rules",
@@ -2829,6 +2839,16 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         "max": 9.0,
         "bindings": [
           "cast_level"
+        ]
+      },
+      {
+        "key": "ability",
+        "label": "Spellcasting ability",
+        "tab": "rules",
+        "control": "abilitySource",
+        "required": false,
+        "bindings": [
+          "ability"
         ]
       },
       {

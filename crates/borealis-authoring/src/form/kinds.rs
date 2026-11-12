@@ -26,6 +26,21 @@ pub use class::{new_class_form, CLASS_FEATURE_KIND, CLASS_KIND};
 pub use creature::{new_creature_form, CREATURE_KIND};
 pub use subclass::CLASS_OPTION_KIND;
 
+/// A `data.damage_type` field: the damage type an option stands for (a dragon's ancestry, a damage-type choice). The
+/// engine reads it from the option a choice picked (`spell_damage_bonus`: Elemental Affinity adds to that type).
+pub(super) fn damage_type_field(section: &'static str) -> FieldDef {
+    field(
+        "damageType",
+        "Damage type",
+        GENERAL,
+        Control::Combo,
+        Codec::DataText("damage_type"),
+    )
+    .choices(creature::DAMAGE_TYPES, true)
+    .section(section)
+    .help("The damage type this option stands for: features that add to damage of the chosen type read it.")
+}
+
 /// The generic form (spec 4.12), also the form of every type no other kind writes.
 pub const OTHER_KIND: &str = "other";
 

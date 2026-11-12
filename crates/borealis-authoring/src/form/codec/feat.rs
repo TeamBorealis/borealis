@@ -137,10 +137,11 @@ pub(crate) fn read(field: FeatField, r: &mut Reader<'_>, cx: &FormContext<'_>) -
         FeatField::Repeatable => {
             let setter = r.take_setter(ALLOW_DUPLICATE);
             let data = r.take_data(REPEATABLE);
-            // `data.repeatable` is `{allowed}` (feats) or a plain boolean (the 2024 SRD's invocations)
+            // the engine reads `data.repeatable.allowed` (`custom_rules::is_repeatable`); the plain boolean the 2024
+            // SRD's invocations carry is a display mirror the engine does not read, so it reads as off (what a
+            // character gets), and stays as stored while the field is unchanged
             let on = setter.and_then(|(_, s)| s.as_bool()) == Some(true)
-                || data.and_then(|d| d.get(ALLOWED)).and_then(Value::as_bool) == Some(true)
-                || data.and_then(Value::as_bool) == Some(true);
+                || data.and_then(|d| d.get(ALLOWED)).and_then(Value::as_bool) == Some(true);
             memo(
                 json!(on),
                 json!({
@@ -340,9 +341,15 @@ fn write_repeatable(
         out.setters(s, &slots.setters);
     }
     match data {
-        // a plain boolean keeps its shape
+        // a plain boolean (a mirror the engine does not read) turned on takes the engine's shape; off, it keeps its
+        // shape
+        Some(Value::Bool(_)) if on => {
+            out.element
+                .data
+                .insert(REPEATABLE.into(), json!({ ALLOWED: true }));
+        }
         Some(Value::Bool(_)) => {
-            out.element.data.insert(REPEATABLE.into(), json!(on));
+            out.element.data.insert(REPEATABLE.into(), json!(false));
         }
         Some(d) => {
             let mut entries = owned(d);

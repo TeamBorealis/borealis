@@ -111,7 +111,7 @@ const SKILLS: &[(&str, &str)] = &[
     ("stealth", "Stealth"),
     ("survival", "Survival"),
 ];
-const DAMAGE_TYPES: &[(&str, &str)] = &[
+pub(super) const DAMAGE_TYPES: &[(&str, &str)] = &[
     ("acid", "Acid"),
     ("bludgeoning", "Bludgeoning"),
     ("cold", "Cold"),

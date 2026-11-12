@@ -429,6 +429,7 @@ pub(super) const CUSTOM: &[BlockSpec] = &[
                 ]),
             ),
             f("cast_level", "Cast at spell level", SPELL_LEVEL),
+            f("ability", "Spellcasting ability", C::AbilitySource),
             f(
                 "resource_cost",
                 "Costs resource points",

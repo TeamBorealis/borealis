@@ -3297,6 +3297,26 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ]
       },
       {
+        "key": "expandedSpells",
+        "label": "Spells added to the class's list",
+        "tab": "rules",
+        "control": "references",
+        "required": false,
+        "bindings": [
+          "spellcasting.name",
+          "spellcasting.extend",
+          "spellcasting.extends"
+        ],
+        "help": "These spells count as spells of the class's list for this character (an expanded spell list).",
+        "picker": {
+          "types": [
+            "Spell"
+          ],
+          "multiple": true
+        },
+        "default": []
+      },
+      {
         "key": "tags",
         "label": "Tags",
         "tab": "general",
@@ -3613,6 +3633,73 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "section": "Option",
         "default": false
+      },
+      {
+        "key": "damageType",
+        "label": "Damage type",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "acid",
+            "label": "Acid"
+          },
+          {
+            "value": "bludgeoning",
+            "label": "Bludgeoning"
+          },
+          {
+            "value": "cold",
+            "label": "Cold"
+          },
+          {
+            "value": "fire",
+            "label": "Fire"
+          },
+          {
+            "value": "force",
+            "label": "Force"
+          },
+          {
+            "value": "lightning",
+            "label": "Lightning"
+          },
+          {
+            "value": "necrotic",
+            "label": "Necrotic"
+          },
+          {
+            "value": "piercing",
+            "label": "Piercing"
+          },
+          {
+            "value": "poison",
+            "label": "Poison"
+          },
+          {
+            "value": "psychic",
+            "label": "Psychic"
+          },
+          {
+            "value": "radiant",
+            "label": "Radiant"
+          },
+          {
+            "value": "slashing",
+            "label": "Slashing"
+          },
+          {
+            "value": "thunder",
+            "label": "Thunder"
+          }
+        ],
+        "allowCustom": true,
+        "bindings": [
+          "data.damage_type"
+        ],
+        "help": "The damage type this option stands for: features that add to damage of the chosen type read it.",
+        "section": "Option"
       },
       {
         "key": "requirements",
@@ -5801,6 +5888,95 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ]
       },
       {
+        "key": "save",
+        "label": "Saving throw",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "strength",
+            "label": "Strength"
+          },
+          {
+            "value": "dexterity",
+            "label": "Dexterity"
+          },
+          {
+            "value": "constitution",
+            "label": "Constitution"
+          },
+          {
+            "value": "intelligence",
+            "label": "Intelligence"
+          },
+          {
+            "value": "wisdom",
+            "label": "Wisdom"
+          },
+          {
+            "value": "charisma",
+            "label": "Charisma"
+          }
+        ],
+        "bindings": [
+          "data.save"
+        ],
+        "help": "The saving throw against the trait's breath weapon (its damage is the trait's damage scaling rule).",
+        "section": "Breath weapon"
+      },
+      {
+        "key": "saveDc",
+        "label": "Save DC",
+        "tab": "general",
+        "control": "text",
+        "required": false,
+        "bindings": [
+          "data.dc"
+        ],
+        "help": "A formula: 8+constitution+proficiency.",
+        "section": "Breath weapon"
+      },
+      {
+        "key": "castingAbility",
+        "label": "Spellcasting ability",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "Strength",
+            "label": "Strength"
+          },
+          {
+            "value": "Dexterity",
+            "label": "Dexterity"
+          },
+          {
+            "value": "Constitution",
+            "label": "Constitution"
+          },
+          {
+            "value": "Intelligence",
+            "label": "Intelligence"
+          },
+          {
+            "value": "Wisdom",
+            "label": "Wisdom"
+          },
+          {
+            "value": "Charisma",
+            "label": "Charisma"
+          }
+        ],
+        "bindings": [
+          "spellcasting.name",
+          "spellcasting.ability"
+        ],
+        "help": "The ability the trait's spells are cast with (a 2014 race's cantrip). 2024 traits say it on each spell they give.",
+        "section": "Spells"
+      },
+      {
         "key": "tags",
         "label": "Tags",
         "tab": "general",
@@ -5994,6 +6170,73 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         ],
         "expert": true,
         "readOnly": true
+      },
+      {
+        "key": "damageType",
+        "label": "Damage type",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "acid",
+            "label": "Acid"
+          },
+          {
+            "value": "bludgeoning",
+            "label": "Bludgeoning"
+          },
+          {
+            "value": "cold",
+            "label": "Cold"
+          },
+          {
+            "value": "fire",
+            "label": "Fire"
+          },
+          {
+            "value": "force",
+            "label": "Force"
+          },
+          {
+            "value": "lightning",
+            "label": "Lightning"
+          },
+          {
+            "value": "necrotic",
+            "label": "Necrotic"
+          },
+          {
+            "value": "piercing",
+            "label": "Piercing"
+          },
+          {
+            "value": "poison",
+            "label": "Poison"
+          },
+          {
+            "value": "psychic",
+            "label": "Psychic"
+          },
+          {
+            "value": "radiant",
+            "label": "Radiant"
+          },
+          {
+            "value": "slashing",
+            "label": "Slashing"
+          },
+          {
+            "value": "thunder",
+            "label": "Thunder"
+          }
+        ],
+        "allowCustom": true,
+        "bindings": [
+          "data.damage_type"
+        ],
+        "help": "The damage type this option stands for: features that add to damage of the chosen type read it.",
+        "section": "Option"
       },
       {
         "key": "tags",

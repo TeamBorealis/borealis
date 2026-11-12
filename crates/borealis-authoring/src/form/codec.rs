@@ -20,6 +20,7 @@ mod background_values;
 mod caster;
 pub(crate) mod caster_cx;
 mod caster_read;
+mod casting;
 mod class;
 mod class_feature;
 pub(crate) use class_feature::tag_word;
@@ -38,6 +39,7 @@ pub use background_values::{
     FEAT_PARAMETER_PICKER,
 };
 pub use caster::{CasterField, LevelCounts};
+pub use casting::CastingField;
 pub(crate) use class::ABILITY_CHOICES;
 pub use class::{ClassField, ProficiencyGroup, SkillChoice, TableColumn};
 pub use class_feature::FeatureField;
@@ -120,6 +122,8 @@ pub enum Codec {
     Feature(FeatureField),
     /// A spellcasting section field (spec 4.6): the `spellcasting` node and the section's rules.
     Caster(CasterField),
+    /// A spellcasting node that is no section: a trait's casting ability, a subclass feature's expanded spell list.
+    Casting(CastingField),
     /// A subclass field (spec 4.7: its class, the tag that class offers it by) or a class option's group (4.8).
     Subclass(SubclassField),
     /// A small type's field (spec 4.10): what a proficiency covers, a condition's listing, a rules text's group.
@@ -175,6 +179,7 @@ impl Codec {
             Self::Class(f) => f.bindings(),
             Self::Feature(f) => f.bindings(),
             Self::Caster(f) => f.bindings(),
+            Self::Casting(f) => f.bindings(),
             Self::Subclass(f) => f.bindings(),
             Self::Small(f) => f.bindings(),
             Self::Background(f) => f.bindings(),
@@ -472,6 +477,7 @@ pub(crate) fn read(codec: Codec, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Op
         Codec::Class(f) => class::read(f, r, cx),
         Codec::Feature(f) => class_feature::read(f, r),
         Codec::Caster(f) => caster::read(f, r),
+        Codec::Casting(f) => casting::read(f, r, cx),
         Codec::Subclass(f) => subclass::read(f, r, cx),
         Codec::Background(f) => background::read(f, r, cx),
         Codec::Creature(f) => creature::read(f, r),
@@ -550,6 +556,7 @@ pub(crate) fn write(
         Codec::Class(f) => return class::write(f, value, memo, path, out, cx),
         Codec::Feature(f) => return class_feature::write(f, value, memo, path, out),
         Codec::Caster(f) => return caster::write(f, value, memo, path, out),
+        Codec::Casting(f) => return casting::write(f, value, memo, path, out),
         Codec::Subclass(f) => return subclass::write(f, value, memo, path, out, cx),
         Codec::Background(f) => return background::write(f, value, memo, path, out, cx),
         Codec::Creature(f) => return creature::write(f, value, memo, path, out),
@@ -665,6 +672,7 @@ pub(crate) fn write(
         | Codec::Class(_)
         | Codec::Feature(_)
         | Codec::Caster(_)
+        | Codec::Casting(_)
         | Codec::Subclass(_)
         | Codec::Background(_)
         | Codec::Creature(_)
@@ -745,6 +753,7 @@ fn write_raw(codec: Codec, m: &FieldMemo, out: &mut Out, path: &str) -> Result<(
         | Codec::Class(_)
         | Codec::Feature(_)
         | Codec::Caster(_)
+        | Codec::Casting(_)
         | Codec::Subclass(_)
         | Codec::Background(_)
         | Codec::Creature(_)

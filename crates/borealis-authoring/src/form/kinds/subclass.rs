@@ -9,7 +9,7 @@
 //! * **Class option** (`Option`): the group a class's choice offers it by, the class it belongs to, the level
 //!   requirement (the condition builder, `[warlock:2]`), whether it can be taken again, rules.
 
-use super::super::codec::{Codec, FeatField, SubclassField};
+use super::super::codec::{CastingField, Codec, FeatField, SubclassField};
 use super::super::subclass::{
     LEVELS as FEATURE_LEVELS, LEVEL_GAINED, PARENT, SUBCLASS_FEATURE_KIND, SUBCLASS_KIND, TAG,
 };
@@ -168,9 +168,24 @@ pub(super) fn subclass_feature_kind() -> KindDef {
         fields: head()
             .into_iter()
             .chain(super::caster::caster_fields())
+            .chain(std::iter::once(expanded_spells()))
             .chain(tail())
             .collect(),
     }
+}
+
+/// A subclass feature's expanded spell list: spells added to its class's list (a 2014 patron's).
+fn expanded_spells() -> FieldDef {
+    field(
+        "expandedSpells",
+        "Spells added to the class's list",
+        RULES,
+        Control::References,
+        Codec::Casting(CastingField::Expanded),
+    )
+    .picker(&["Spell"])
+    .default("[]")
+    .help("These spells count as spells of the class's list for this character (an expanded spell list).")
 }
 
 /// The class option form.
@@ -207,6 +222,7 @@ pub(super) fn class_option_kind() -> KindDef {
         )
         .section("Option")
         .default("false"),
+        super::damage_type_field("Option"),
     ];
     // the level requirement goes with the option's own fields
     let is_prerequisite = |f: &FieldDef| matches!(f.key, "requirements" | "prerequisiteText");

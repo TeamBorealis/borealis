@@ -898,6 +898,7 @@ export const MOCK_COPY_SOURCES: MockCopySource[] = [
                   "type": "doc"
                 },
                 "edition": "dnd2024",
+                "expandedSpells": [],
                 "keywords": [],
                 "known": {
                   "levels": [
@@ -1022,6 +1023,7 @@ export const MOCK_COPY_SOURCES: MockCopySource[] = [
                   "type": "doc"
                 },
                 "edition": "dnd2024",
+                "expandedSpells": [],
                 "keywords": [],
                 "known": {
                   "levels": [
@@ -1146,6 +1148,7 @@ export const MOCK_COPY_SOURCES: MockCopySource[] = [
                   "type": "doc"
                 },
                 "edition": "dnd2024",
+                "expandedSpells": [],
                 "keywords": [],
                 "known": {
                   "levels": [
@@ -1270,6 +1273,7 @@ export const MOCK_COPY_SOURCES: MockCopySource[] = [
                   "type": "doc"
                 },
                 "edition": "dnd2024",
+                "expandedSpells": [],
                 "keywords": [],
                 "known": {
                   "levels": [
@@ -1420,6 +1424,7 @@ export const MOCK_COPY_SOURCES: MockCopySource[] = [
                   "type": "doc"
                 },
                 "edition": "dnd2024",
+                "expandedSpells": [],
                 "keywords": [],
                 "known": {
                   "levels": [

@@ -322,7 +322,10 @@ fn an_srd_invocation_reads_its_group_class_level_and_repeatable() {
         assert_eq!(form.kind, "classOption");
         assert_eq!(form.fields["group"], "Eldritch Invocation");
         assert_eq!(form.fields["className"], "Warlock");
-        assert_eq!(form.fields["repeatable"], true, "a plain boolean");
+        assert_eq!(
+            form.fields["repeatable"], false,
+            "the engine reads `data.repeatable.allowed`, not the plain boolean"
+        );
         assert_eq!(form.fields["tags"], json!([]));
         assert_eq!(form.fields["requirements"]["original"], "[warlock:2]");
         assert_eq!(
@@ -336,14 +339,18 @@ fn an_srd_invocation_reads_its_group_class_level_and_repeatable() {
             form_to_elements(&assign(&form), cx).unwrap(),
             vec![e.clone()]
         );
-        // an edit keeps the boolean's shape and the mirrors no field holds
+        // an edit keeps the mirrors no field holds; off is how it reads, so the stored boolean stays
         let off = form
             .with_field("repeatable", json!(false))
             .with_field("group", json!("Pact Secret"));
         let out = form_to_elements(&assign(&off), cx).unwrap();
-        assert_eq!(out[0].data["repeatable"], json!(false));
+        assert_eq!(out[0].data["repeatable"], json!(true));
         assert_eq!(out[0].data["min_warlock_level"], 2);
         assert_eq!(out[0].supports, vec!["Pact Secret".to_string()]);
+        // turned on, it takes the shape the engine reads
+        let on = form.with_field("repeatable", json!(true));
+        let out = form_to_elements(&assign(&on), cx).unwrap();
+        assert_eq!(out[0].data["repeatable"], json!({"allowed": true}));
     });
 }
 

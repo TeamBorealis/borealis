@@ -532,6 +532,7 @@ pub(super) const CUSTOM: &[BlockSpec] = &[
         "Aura",
         G::Defence,
         &[
+            f("id", "Name", C::Text),
             f("radius_feet", "Radius (feet)", FEET),
             f(
                 "radius_by_level",

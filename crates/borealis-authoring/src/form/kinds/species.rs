@@ -6,7 +6,9 @@
 //! is its rule blocks. A Sub Race or Race Variant names its race by the tag the race's choice offers it by. Traits and
 //! lineage options are made inside their parent (child kinds).
 
-use super::super::codec::{Codec, Movement, NameKind, Sense, SpeciesField};
+use super::super::codec::{
+    CastingField, Codec, Movement, NameKind, Sense, SpeciesField, ABILITY_CHOICES,
+};
 use super::{
     field, head, tail, Control, FieldDef, KindDef, KindGroup, BOTH, GENERAL, ONLY_2024, TABS,
 };
@@ -286,6 +288,55 @@ fn lineage() -> FieldDef {
     .help("The player chooses one when the trait is gained (a lineage or an ancestry). Make each option here.")
 }
 
+/// The saving throw of a breath weapon (`data.save`, `data.dc`): the engine reads both for the trait's breath
+/// attack (`breath.rs`, with the trait's `damage_scaling` rule).
+const SAVES: &[(&str, &str)] = &[
+    ("strength", "Strength"),
+    ("dexterity", "Dexterity"),
+    ("constitution", "Constitution"),
+    ("intelligence", "Intelligence"),
+    ("wisdom", "Wisdom"),
+    ("charisma", "Charisma"),
+];
+
+fn breath_weapon() -> [FieldDef; 2] {
+    [
+        field(
+            "save",
+            "Saving throw",
+            GENERAL,
+            Control::Combo,
+            Codec::DataText("save"),
+        )
+        .choices(SAVES, false)
+        .section("Breath weapon")
+        .help("The saving throw against the trait's breath weapon (its damage is the trait's damage scaling rule)."),
+        field(
+            "saveDc",
+            "Save DC",
+            GENERAL,
+            Control::Text,
+            Codec::DataText("dc"),
+        )
+        .section("Breath weapon")
+        .help("A formula: 8+constitution+proficiency."),
+    ]
+}
+
+/// A 2014 trait's cantrip casting ability (`spellcasting {name, ability}`, counted under the race's name).
+fn casting_ability() -> FieldDef {
+    field(
+        "castingAbility",
+        "Spellcasting ability",
+        GENERAL,
+        Control::Combo,
+        Codec::Casting(CastingField::Ability),
+    )
+    .choices(ABILITY_CHOICES, false)
+    .section("Spells")
+    .help("The ability the trait's spells are cast with (a 2014 race's cantrip). 2024 traits say it on each spell they give.")
+}
+
 fn names() -> Vec<FieldDef> {
     [
         ("maleNames", "Male names", NameKind::Male),
@@ -450,6 +501,8 @@ pub(super) fn species_kinds() -> Vec<KindDef> {
             fields: head()
                 .into_iter()
                 .chain(std::iter::once(lineage()))
+                .chain(breath_weapon())
+                .chain(std::iter::once(casting_ability()))
                 .chain(tail())
                 .collect(),
             ..child_kind(
@@ -462,14 +515,21 @@ pub(super) fn species_kinds() -> Vec<KindDef> {
                 BOTH,
             )
         },
-        child_kind(
-            "speciesTraitOption",
-            "Species trait option",
-            "Species trait options",
-            "One option of a species' lineage or ancestry choice, edited inside the species.",
-            &["Species Trait Option"],
-            &["species", "racialTrait"],
-            ONLY_2024,
-        ),
+        KindDef {
+            fields: head()
+                .into_iter()
+                .chain(std::iter::once(super::damage_type_field("Option")))
+                .chain(tail())
+                .collect(),
+            ..child_kind(
+                "speciesTraitOption",
+                "Species trait option",
+                "Species trait options",
+                "One option of a species' lineage or ancestry choice, edited inside the species.",
+                &["Species Trait Option"],
+                &["species", "racialTrait"],
+                ONLY_2024,
+            )
+        },
     ]
 }

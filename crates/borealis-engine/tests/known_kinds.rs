@@ -269,8 +269,7 @@ fn gated_resources_follow_their_level() {
 /// only shrinks: a new unread field fails `bundled_content_uses_only_registered_kinds_and_fields`
 /// until it has a reader or a documented reason, and cannot slip in as a new `GAP` without
 /// editing this list (review).
-const PINNED_GAPS: [(&str, &str); 12] = [
-    ("grant_spell", "ability"),
+const PINNED_GAPS: [(&str, &str); 11] = [
     ("martial_arts", "dexterous_attacks"),
     ("martial_arts", "monk_weapons"),
     ("movement_mode", "requires_resource"),

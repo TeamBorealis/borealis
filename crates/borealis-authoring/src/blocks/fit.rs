@@ -132,10 +132,18 @@ pub fn value_fits(control: &Control, v: &Value) -> bool {
                         && m.len() == 2
                 })
         }
+        // `{param}`, maybe with the abilities that choice offers (`choice`, which the engine reads only without a
+        // `param`): the 2024 SRD lineages store both
         Control::AbilitySource => {
             v.as_str().is_some_and(|s| ABILITIES.contains(&s))
-                || v.as_object()
-                    .is_some_and(|m| m.len() == 1 && m.get("param").is_some_and(Value::is_string))
+                || v.as_object().is_some_and(|m| {
+                    m.get("param").is_some_and(Value::is_string)
+                        && m.iter().all(|(k, x)| match k.as_str() {
+                            "param" => true,
+                            "choice" => strings_fit(x, |s| ABILITIES.contains(&s)),
+                            _ => false,
+                        })
+                })
         }
         Control::AbilityChoice => int_in(v, 1, 6) || strings_fit(v, |s| ABILITIES.contains(&s)),
         Control::Splits => v.as_array().is_some_and(|a| {
