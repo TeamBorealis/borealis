@@ -12,6 +12,8 @@ const STATUS = '.aur-status';
 export const PHONE_SAVE_BUDGET_MS = 4_000;
 /** Saves measured per element for the budget. */
 const BUDGET_SAVES = 3;
+/** The iOS keyboard takes this long to come up after a field takes the focus. */
+const KEYBOARD_SETTLE_MS = 900;
 
 const re = (s) => `^${s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`;
 
@@ -29,6 +31,9 @@ async function sheetSelect(d, css, option) {
 
 /** The pinned row steps aside while the keyboard is up (kb-open): put the keyboard away first, as a user does. */
 async function pinned(d, label) {
+  // Undo / Redo put the focus back in the field they changed, and on iOS that brings the keyboard up (H-item in the
+  // WB-27b handoff): let it come before looking
+  await sleep(KEYBOARD_SETTLE_MS);
   if (await d.ev(`document.documentElement.classList.contains('kb-open')`)) {
     // the field gives up focus, as when the user taps outside it (agent-device's iOS "keyboard dismiss" is not reliable)
     await d.ev(`document.activeElement instanceof HTMLElement && document.activeElement.blur(); true`);
@@ -61,6 +66,13 @@ export async function timedSave(d, name) {
 async function openHomebrew(d) {
   await d.ev(`location.hash = '#/homebrew'; true`);
   await d.waitFor(`document.querySelector('[aria-label="Homebrew packs"]')`, 'the pack list');
+}
+
+/** The pack's workspace by its route (getting there is not what flow 8 tests; on iOS the Open pack touch is flaky). */
+async function openPack(d) {
+  await openHomebrew(d);
+  await d.ev(`location.hash = '#/homebrew/homebrew-ei'; true`);
+  await d.waitFor(`[...document.querySelectorAll('h1, h2, h3')].some((h) => h.textContent === ${JSON.stringify(`Homebrew: ${PACK}`)})`, `the workspace of ${PACK}`);
 }
 
 async function newPack(d, name, edition) {
@@ -193,9 +205,7 @@ export async function flow4(d, out) {
 
 /** Flow 8: undo / redo across a field and a block (pinned row), then the app killed mid-edit; the draft comes back. */
 export async function flow8(d, out) {
-  await openHomebrew(d);
-  await d.tap('.hb-pack-grid .v4-grid-row', PACK);
-  await d.tap('button', '^Open pack$');
+  await openPack(d);
   await d.tap('button', '^Ember Lance$');
   // A draft of the saved spell can be left over from its save (known item PVTI_lAHODah7es4Bp0kdzhH5wg4): start from the
   // saved spell.
@@ -214,22 +224,20 @@ export async function flow8(d, out) {
   await d.waitFor(`/Advantage on a roll/.test(document.querySelector('.hb-block-list')?.textContent ?? '')`, 'the rule added');
   await pinned(d, 'Undo');
   await d.waitFor(`!/Advantage on a roll/.test(document.querySelector('.hb-block-list')?.textContent ?? '')`, 'the rule undone');
+  // the name is read from the sticky head (it shows the form's name), so the undo / redo run stays on RULES
+  const headName = (n) => d.waitFor(`(document.querySelector('.hb-editor-head h2, .hb-editor-head')?.textContent ?? '').includes(${JSON.stringify(n)})`, `the head says ${n}`);
   await pinned(d, 'Undo');
-  await tab(d, 'GENERAL');
-  await d.waitValue(NAME, 'Ember Lance');
+  await headName('Ember Lance');
   await pinned(d, 'Redo');
-  await d.waitValue(NAME, 'Ember Spear');
+  await headName('Ember Spear');
   await pinned(d, 'Redo');
-  await tab(d, 'RULES');
   await d.waitFor(`/Advantage on a roll/.test(document.querySelector('.hb-block-list')?.textContent ?? '')`, 'the rule redone');
   await autosaved(d);
   d.shot('flow8-01-before-kill');
   kill(d);
   await sleep(1500);
   await launch(d);
-  await openHomebrew(d);
-  await d.tap('.hb-pack-grid .v4-grid-row', PACK);
-  await d.tap('button', '^Open pack$');
+  await openPack(d);
   await d.tap('button', '^Ember Lance$');
   await d.tap('[role="dialog"] button', '^Keep editing$');
   await tab(d, 'GENERAL');

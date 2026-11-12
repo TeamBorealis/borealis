@@ -31,9 +31,12 @@ const AFTER_TAP_MS = 600;
 /** A target must read the same rectangle twice this far apart before it is touched (at most STILL_READS_MAX reads). */
 const STILL_POLL_MS = 200;
 const STILL_READS_MAX = 25;
+/** How long a touch has to reach its target, and how often it is made. */
+const CLICK_WAIT_MS = 3_000;
+const TAP_TRIES = 4;
 /** iOS: tries of one XCTest press, and the pause between them. */
-const PRESS_TRIES = 4;
-const PRESS_RETRY_MS = 4_000;
+const PRESS_TRIES = 5;
+const PRESS_RETRY_MS = 8_000;
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const env = { ...process.env, DEVELOPER_DIR };
@@ -51,7 +54,14 @@ const HELPERS = `(() => {
       return all.filter((e) => re.test((e.getAttribute('aria-label') ?? '').trim()) || re.test((e.textContent ?? '').trim())).pop() ?? null;
     },
     rect(sel, text) { const e = this.q(sel, text); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; },
-    reveal(sel, text) { const e = this.q(sel, text); if (!e) return false; e.scrollIntoView({ block: 'center', behavior: 'instant' }); return true; },
+    reveal(sel, text) {
+      const e = this.q(sel, text); if (!e) return false;
+      // the pinned row is always on screen; scrolling "to" it scrolls the form to its end, and on iOS the touch right
+      // after a scroll only stops the scroll
+      if (e.closest('.eq-pin')) return true;
+      e.scrollIntoView({ block: 'center', behavior: 'instant' });
+      return true;
+    },
     fill(sel, v) {
       const e = document.querySelector(sel); if (!e) throw new Error('no ' + sel);
       const proto = e.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : e.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
@@ -176,13 +186,17 @@ async function ios(evidence) {
         throw new Error(r.error);
       }
     },
+    /** After the app was killed: the XCTest session still follows the old process, so it is closed (connect opens anew). */
+    endSession() { try { ad('close'); } catch { /* no session */ } },
     async touch(x, y) {
       // XCTest's press can time out on its main-thread watchdog while the machine is loaded: the tap did not happen, so
       // it is tried again (at most PRESS_TRIES times) before the step fails
       for (let attempt = 1; ; attempt += 1) {
         try { ad('press', String(Math.round(x)), String(Math.round(y))); return; } catch (e) {
-          if (attempt >= PRESS_TRIES || !/timed out|watchdog|still finishing/.test(String(e?.stderr ?? e))) throw e;
+          if (attempt >= PRESS_TRIES || !/timed out|watchdog|still finishing|deadline exceeded/.test(String(e?.stderr ?? e))) throw e;
           await sleep(PRESS_RETRY_MS);
+          // a runner that missed its deadline twice is started afresh (the app keeps running)
+          if (attempt >= 2) { try { ad('close'); } catch { /* already gone */ } ad('open', BUNDLE); }
         }
       }
     },
@@ -224,7 +238,20 @@ export async function device(platform, evidence) {
         r = next;
       }
       if (!r) throw new Error(`${sel} ${text ?? ''} went away before the tap`);
-      await d.touch(r.x + r.w / 2, r.y + r.h / 2);
+      // a touch the device drops (seen with XCTest presses on the simulator) is made again: the page records whether
+      // the target got its click
+      for (let attempt = 1; ; attempt += 1) {
+        await ev(`(() => { window.__dv.clicked = false;
+          window.__dv.q(${arg(sel)}, ${arg(text)})?.addEventListener('click', () => { window.__dv.clicked = true; }, { capture: true, once: true });
+          return true; })()`);
+        await d.touch(r.x + r.w / 2, r.y + r.h / 2);
+        const end = Date.now() + CLICK_WAIT_MS;
+        let clicked = false;
+        while (!clicked && Date.now() < end) { await sleep(POLL_MS); clicked = await ev('window.__dv.clicked === true').catch(() => true); }
+        // the click can also take the target away (a sheet closes): a missing target counts as clicked
+        if (clicked || !(await ev(`window.__dv.q(${arg(sel)}, ${arg(text)}) !== null`).catch(() => false))) break;
+        if (attempt >= TAP_TRIES) throw new Error(`the touch on ${sel} ${text ?? ''} never reached it`);
+      }
       await sleep(AFTER_TAP_MS);
     },
     async fill(sel, value) { await t.waitFor(`document.querySelector(${arg(sel)})`, sel); await ev(`window.__dv.fill(${arg(sel)}, ${arg(value)})`); await sleep(POLL_MS); },

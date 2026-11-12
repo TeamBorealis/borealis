@@ -75,8 +75,10 @@ export async function launch(d) {
 export function kill(d) {
   if (d.platform === 'android') d.adb('shell', 'am', 'force-stop', BUNDLE);
   else {
+    d.endSession();
     const pid = d.simctl('spawn', d.udid, 'launchctl', 'list').toString().split('\n').find((l) => l.includes(`UIKitApplication:${BUNDLE}`))?.split('\t')[0];
-    if (pid && pid !== '-') d.simctl('spawn', d.udid, 'kill', '-9', pid);
+    // a simulator app is a process of this Mac: killed by its PID, as the system kills an app it reclaims
+    if (pid && pid !== '-') process.kill(Number(pid), 'SIGKILL');
     else d.simctl('terminate', d.udid, BUNDLE);
   }
 }
