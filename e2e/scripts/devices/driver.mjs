@@ -130,7 +130,7 @@ async function android(evidence) {
     },
     /** Real keyboard input into the focused field (adb input text: spaces as %s). */
     async type(text) { adb('shell', 'input', 'text', text.replace(/ /g, '%s')); },
-    async hideKeyboard() { adb('shell', 'input', 'keyevent', '111'); },
+    async hideKeyboard() { adb('shell', 'input', 'keyevent', 'KEYCODE_BACK'); },
     shot(name) { writeFileSync(join(evidence, `${name}.png`), adb('exec-out', 'screencap', '-p')); },
     close() { cdp?.close(); },
   };

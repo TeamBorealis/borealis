@@ -27,7 +27,15 @@ async function sheetSelect(d, css, option) {
   await d.waitFor(`!document.querySelector('.select-sheet-list')`, 'the sheet closed');
 }
 
-const pinned = (d, label) => d.tap(`.hb-commands.eq-pin button[aria-label="${label}"]`);
+/** The pinned row steps aside while the keyboard is up (kb-open): put the keyboard away first, as a user does. */
+async function pinned(d, label) {
+  if (await d.ev(`document.documentElement.classList.contains('kb-open')`)) {
+    // the field gives up focus, as when the user taps outside it (agent-device's iOS "keyboard dismiss" is not reliable)
+    await d.ev(`document.activeElement instanceof HTMLElement && document.activeElement.blur(); true`);
+    await d.waitFor(`!document.documentElement.classList.contains('kb-open')`, 'the keyboard put away');
+  }
+  await d.tap(`.hb-commands.eq-pin button[aria-label="${label}"]`);
+}
 const autosaved = (d) => d.waitFor(`/All changes kept/i.test(document.querySelector('.hb-autosave')?.textContent ?? '')`, 'autosave');
 const tab = (d, name) => d.tap('[role="tab"]', re(name));
 
@@ -109,7 +117,7 @@ export async function flow1(d, out) {
 }
 
 /** Flow 3: a half-caster class; the LEVELS row sheet at 3; Try it's ladder clean to 20; then as a second class. */
-export async function flow3(d) {
+export async function flow3(d, out) {
   await backToList(d);
   await newElement(d, '^Class\\s*A class', 'Gloom Knight');
   await sheetSelect(d, '#hb-f-hitDie-input', 'd10');
@@ -136,7 +144,7 @@ export async function flow3(d) {
   await d.tap('button', '^Add starting equipment$');
   await d.waitValue('#hb-package-name', 'Starting Equipment (Gloom Knight)');
   d.shot('flow3-02-class');
-  await timedSave(d, 'Gloom Knight');
+  out.saves.push({ what: 'class (new)', ms: await timedSave(d, 'Gloom Knight') });
   await tryIt(d);
   await d.waitFor(`document.querySelectorAll('.hb-try-ladder tr[data-level]').length === 20`, '20 ladder rows', 60_000);
   await check(d, `document.querySelectorAll('.hb-try-ladder .hb-try-problem').length === 0`, 'the ladder is clean');
@@ -149,7 +157,7 @@ export async function flow3(d) {
 }
 
 /** Flow 4: a species with a lineage choice and darkvision (the trial offers the lineage); a 2014 race and subrace. */
-export async function flow4(d) {
+export async function flow4(d, out) {
   await newPack(d, 'Stone Coast', 'Both editions');
   await newElement(d, '^Species', 'Emberkin');
   await d.fill('[data-field="darkvision"] input[role="spinbutton"]', '60');
@@ -166,7 +174,7 @@ export async function flow4(d) {
   await d.tap('[role="dialog"]:has([data-child="n1"]) button', '^Done$');
   await d.waitFor(`!document.querySelector('[data-child="n1"]')`, 'the trait sheet closed');
   d.shot('flow4-01-species');
-  await timedSave(d, 'Emberkin');
+  out.saves.push({ what: 'species (new)', ms: await timedSave(d, 'Emberkin') });
   await tryIt(d);
   await d.waitFor(`/Cinder/.test(document.querySelector('.hb-try')?.textContent ?? '')`, 'the lineage choice offers its options');
   d.shot('flow4-02-try-it-lineage');
@@ -174,21 +182,28 @@ export async function flow4(d) {
   await backToList(d);
   await newElement(d, '^Race\\s*A 2014', 'Stonefolk');
   await d.fill('[data-field="constitution"] input[role="spinbutton"]', '2');
-  await timedSave(d, 'Stonefolk');
+  out.saves.push({ what: 'race (new)', ms: await timedSave(d, 'Stonefolk') });
   await backToList(d);
   await newElement(d, '^Subrace', 'Ash Stonefolk');
   await d.fill('#hb-f-parent-input', 'Stonefolk');
   await d.fill('[data-field="charisma"] input[role="spinbutton"]', '1');
-  await timedSave(d, 'Ash Stonefolk');
+  out.saves.push({ what: 'subrace (new)', ms: await timedSave(d, 'Ash Stonefolk') });
   d.shot('flow4-03-subrace');
 }
 
 /** Flow 8: undo / redo across a field and a block (pinned row), then the app killed mid-edit; the draft comes back. */
-export async function flow8(d) {
+export async function flow8(d, out) {
   await openHomebrew(d);
   await d.tap('.hb-pack-grid .v4-grid-row', PACK);
   await d.tap('button', '^Open pack$');
   await d.tap('button', '^Ember Lance$');
+  // A draft of the saved spell can be left over from its save (known item PVTI_lAHODah7es4Bp0kdzhH5wg4): start from the
+  // saved spell.
+  await sleep(1500);
+  if (await d.ev(`[...document.querySelectorAll('[role="dialog"] button')].some((b) => b.textContent === 'Discard')`)) {
+    out.leftoverDraft = true;
+    await d.tap('[role="dialog"] button', '^Discard$');
+  }
   await d.waitValue(NAME, 'Ember Lance');
   await d.fill(NAME, 'Ember Spear');
   await tab(d, 'RULES');
@@ -200,10 +215,12 @@ export async function flow8(d) {
   await pinned(d, 'Undo');
   await d.waitFor(`!/Advantage on a roll/.test(document.querySelector('.hb-block-list')?.textContent ?? '')`, 'the rule undone');
   await pinned(d, 'Undo');
+  await tab(d, 'GENERAL');
   await d.waitValue(NAME, 'Ember Lance');
   await pinned(d, 'Redo');
   await d.waitValue(NAME, 'Ember Spear');
   await pinned(d, 'Redo');
+  await tab(d, 'RULES');
   await d.waitFor(`/Advantage on a roll/.test(document.querySelector('.hb-block-list')?.textContent ?? '')`, 'the rule redone');
   await autosaved(d);
   d.shot('flow8-01-before-kill');
@@ -215,6 +232,7 @@ export async function flow8(d) {
   await d.tap('button', '^Open pack$');
   await d.tap('button', '^Ember Lance$');
   await d.tap('[role="dialog"] button', '^Keep editing$');
+  await tab(d, 'GENERAL');
   await d.waitValue(NAME, 'Ember Spear');
   await tab(d, 'RULES');
   await d.waitFor(`/Advantage on a roll/.test(document.querySelector('.hb-block-list')?.textContent ?? '')`, 'the rule restored');
@@ -233,14 +251,17 @@ export async function budget(d, out) {
   await d.tap('[role="dialog"] button', 'Wizard.*SRD 5\\.2\\.1');
   await d.tap('[role="dialog"] button', '^Choose$');
   await d.waitValue(NAME, 'Wizard (copy)');
-  out.classFeatures = await d.ev(`document.querySelectorAll('.hb-level-rows .hb-feature-name, [data-field="levels"] .hb-feature-name').length`);
   for (let i = 1; i <= BUDGET_SAVES; i += 1) {
     const name = `Ember Wizard ${i}`;
     await d.fill(NAME, name);
     out.saves.push({ what: 'deep-copied 2024 Wizard class', ms: await timedSave(d, name) });
   }
   await backToList(d);
+  await d.tap('button', '^Spells \\(\\d+\\)$');
   await d.tap('button', '^Ember (Lance|Spear)$');
+  await sleep(1500);
+  if (await d.ev(`[...document.querySelectorAll('[role="dialog"] button')].some((b) => b.textContent === 'Keep editing')`)) await d.tap('[role="dialog"] button', '^Keep editing$');
+  await tab(d, 'GENERAL');
   for (let i = 1; i <= BUDGET_SAVES; i += 1) {
     const name = `Ember Lance ${i}`;
     await d.fill(NAME, name);
