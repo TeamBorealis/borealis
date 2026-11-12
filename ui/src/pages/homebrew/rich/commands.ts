@@ -199,9 +199,20 @@ export function tableAt(state: EditorState): { table: PMNode; pos: number; row: 
 export const NEW_TABLE_ROWS = 3;
 export const NEW_TABLE_COLUMNS = 2;
 
+/** A new heading cell's text (P3: an empty header cell is an empty `th` in the preview and DATA until the author types). */
+export const columnHeading = (index: number): string => `Column ${index + 1}`;
+const headingCell = (index: number): PMNode => nodes.table_header.create(null, richSchema.text(columnHeading(index)));
+/** The first "Column N" a row's cells do not use yet, as an index (a column added between others). */
+const freeHeading = (cells: readonly PMNode[]): number => {
+  const used = new Set(cells.map((c) => c.textContent));
+  let i = 0;
+  while (used.has(columnHeading(i))) i += 1;
+  return i;
+};
+
 function newTable(): PMNode {
   const row = (head: boolean) =>
-    nodes.table_row.create({ head }, Array.from({ length: NEW_TABLE_COLUMNS }, () => (head ? nodes.table_header : nodes.table_cell).create()));
+    nodes.table_row.create({ head }, Array.from({ length: NEW_TABLE_COLUMNS }, (_, i) => (head ? headingCell(i) : nodes.table_cell.create())));
   return nodes.table.create({ joined: false, sections: true }, Array.from({ length: NEW_TABLE_ROWS }, (_, i) => row(i === 0)));
 }
 
@@ -216,14 +227,16 @@ function topLevelSlot(state: EditorState): { from: number; to: number } | null {
   return { from: $from.after(1), to: $from.after(1) };
 }
 
-/** Insert a table (header row + body rows) after the current top-level block; the cursor goes to its first cell. */
+/** Insert a table (header row + body rows) after the current top-level block; the first heading is selected, so typing
+ * replaces it. */
 export const insertTable: Command = (state, dispatch) => {
   if (tableAt(state)) return false;
   const slot = topLevelSlot(state);
   if (!slot) return false;
   if (dispatch) {
     const tr = state.tr.replaceWith(slot.from, slot.to, newTable());
-    dispatch(tr.setSelection(TextSelection.near(tr.doc.resolve(slot.from + 3))).scrollIntoView());
+    const first = slot.from + 3;
+    dispatch(tr.setSelection(TextSelection.create(tr.doc, first, first + columnHeading(0).length)).scrollIntoView());
   }
   return true;
 };
@@ -257,7 +270,7 @@ export const addTableColumn: Command = (state, dispatch) => {
       const index = Math.min(at.col + 1, cells.length);
       const like = cells[Math.min(at.col, cells.length - 1)];
       const type = like ? like.type : row.attrs.head ? nodes.table_header : nodes.table_cell;
-      cells.splice(index, 0, type.create());
+      cells.splice(index, 0, type === nodes.table_header ? headingCell(freeHeading(cells)) : type.create());
       rows.push(row.copy(Fragment.fromArray(cells)));
     });
     const tr = state.tr.replaceWith(at.pos, at.pos + at.table.nodeSize, at.table.copy(Fragment.fromArray(rows)));

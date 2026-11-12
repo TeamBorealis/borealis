@@ -104,10 +104,21 @@ describe("commands", () => {
     const table = run(stateOf(docOf(para("")), 1), insertTable);
     const broke = run(stateOf(table, 3), breakInCell);
     const t = broke.content?.[0];
-    expect(t?.type === "table" && t.content?.[0]?.content?.[0]).toEqual({ type: "table_header", content: [{ type: "hard_break" }] });
+    expect(t?.type === "table" && t.content?.[0]?.content?.[0]).toEqual({ type: "table_header", content: [{ type: "hard_break" }, { type: "text", text: "Column 1" }] });
     expect(applyCommand(stateOf(docOf(para("x")), 1), breakInCell).applied).toBe(false);
     const hard = run(stateOf(docOf(para("ab")), 2), insertHardBreak);
     expect(hard.content?.[0]).toEqual({ ...para("a"), content: [{ type: "text", text: "a" }, { type: "hard_break" }, { type: "text", text: "b" }] });
+  });
+
+  it("a new table's headings read Column 1, Column 2, the first selected so typing replaces it (no empty th, P3)", () => {
+    const inserted = applyCommand(stateOf(docOf(para("")), 1), insertTable).state;
+    const t = inserted.doc.toJSON().content[0];
+    const heads = t.content[0].content.map((c: DocJson) => c.content);
+    expect(heads).toEqual([[{ type: "text", text: "Column 1" }], [{ type: "text", text: "Column 2" }]]);
+    expect(inserted.doc.textBetween(inserted.selection.from, inserted.selection.to)).toBe("Column 1");
+    const coled = applyCommand(inserted, addTableColumn).state.doc.toJSON().content[0];
+    expect(coled.content[0].content.map((c: { content?: { text?: string }[] }) => c.content?.[0]?.text)).toEqual(["Column 1", "Column 3", "Column 2"]);
+    expect(coled.content[1].content.map((c: DocJson) => c.content)).toEqual([undefined, undefined, undefined]);
   });
 
   it("a new table has a header row; rows and columns are added; the table is deleted", () => {
