@@ -11,6 +11,7 @@ use super::super::{FieldMemo, FormProblem, Slots};
 use super::{
     decode, decode_raw, edited_setter, memo, present, raw_setters, stored, to_json, Reader,
 };
+use borealis_content::Ruleset;
 use serde_json::{json, Map, Value};
 
 /// One component check box (`data.components` key, engine setter).
@@ -48,6 +49,9 @@ const AMOUNT: &str = "amount";
 const CURRENCY: &str = "currency";
 const CONSUMED: &str = "consumed";
 const GOLD: &str = "gp";
+/// The school setter's attribute that names a ritual in 2024 content (`<set name="school" addition="ritual">`).
+const ADDITION: &str = "addition";
+const RITUAL: &str = "ritual";
 const LEVELS: std::ops::RangeInclusive<u8> = 0..=9;
 
 /// A spell field (`Codec::Spell`).
@@ -437,9 +441,34 @@ pub(crate) fn write(
                     out.element.data.insert(field.data_key().into(), json!(on));
                 }
             }
+            if field == SpellField::Ritual {
+                let is_2024 = data.is_some() || out.element.ruleset == Some(Ruleset::Dnd2024);
+                ritual_addition(on, is_2024, out);
+            }
         }
     }
     Ok(())
+}
+
+/// Keep the 2024 school setter's `addition="ritual"` in step with an edited Ritual (the school is written first): on
+/// adds it to a 2024 spell's school with no addition, off takes it away. An addition of the author's own words stays.
+fn ritual_addition(on: bool, is_2024: bool, out: &mut Out) {
+    let Some(school) = out.setter_mut(SpellField::School.setter().unwrap_or_default()) else {
+        return;
+    };
+    let current = school
+        .attributes
+        .get(ADDITION)
+        .map(|a| a.trim().to_string());
+    match current {
+        None if on && is_2024 => {
+            school.attributes.insert(ADDITION.into(), RITUAL.into());
+        }
+        Some(a) if !on && a.eq_ignore_ascii_case(RITUAL) => {
+            school.attributes.remove(ADDITION);
+        }
+        _ => {}
+    }
 }
 
 #[cfg(test)]

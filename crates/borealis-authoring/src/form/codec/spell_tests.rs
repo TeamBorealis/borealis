@@ -340,3 +340,85 @@ fn validator_locations_point_at_the_spell_fields() {
         );
     });
 }
+
+/// The school setter's `addition` as written.
+fn school_addition(e: &Element) -> Option<String> {
+    e.setters
+        .iter()
+        .find(|s| s.name == "school")
+        .and_then(|s| s.attributes.get("addition").cloned())
+}
+
+/// A 2024 ritual as the SRD writes it: `isRitual` and the school setter's `addition="ritual"` agree.
+fn ritual_2024() -> Element {
+    let mut e = spell_2024();
+    for s in &mut e.setters {
+        if s.name == "isRitual" {
+            s.value = "true".into();
+        }
+    }
+    e.data.insert("ritual".into(), json!(true));
+    e
+}
+
+#[test]
+fn the_ritual_toggle_updates_the_2024_school_setter_s_ritual_addition() {
+    with_cx(|cx| {
+        // off: the addition goes with it, the rest of the school setter stays
+        let f = element_to_form(&ritual_2024(), cx);
+        assert_eq!(
+            one(&f, cx),
+            ritual_2024(),
+            "unchanged, it writes back as stored"
+        );
+        let off = one(&f.clone().with_field("ritual", json!(false)), cx);
+        assert_eq!(off.setter_value("isRitual"), Some("false"));
+        assert_eq!(
+            school_addition(&off),
+            None,
+            "Ritual off takes the addition away"
+        );
+        assert_eq!(off.setter_value("school"), Some("Necromancy"));
+        // on again: it comes back
+        let back = element_to_form(&off, cx).with_field("ritual", json!(true));
+        let back = one(&back, cx);
+        assert_eq!(school_addition(&back).as_deref(), Some("ritual"));
+        assert_eq!(
+            back,
+            ritual_2024(),
+            "toggled off and on, the spell is as it was"
+        );
+        // a new 2024 spell made a ritual writes the SRD's shape
+        let mut n = kind("spell").unwrap().new_form("e");
+        n.memo.id = Some("ID_EI_SPELL_RITE".into());
+        let n = n
+            .with_field("name", json!("Rite"))
+            .with_field("edition", json!("dnd2024"))
+            .with_field("school", json!("Divination"))
+            .with_field("ritual", json!(true));
+        assert_eq!(school_addition(&one(&n, cx)).as_deref(), Some("ritual"));
+        let n = n.with_field("ritual", json!(false));
+        assert_eq!(school_addition(&one(&n, cx)), None);
+    });
+}
+
+#[test]
+fn the_ritual_toggle_leaves_a_2014_school_and_another_addition_alone() {
+    with_cx(|cx| {
+        // 2014 content marks a ritual with isRitual alone
+        let f = element_to_form(&spell_2014(), cx).with_field("ritual", json!(true));
+        let out = one(&f, cx);
+        assert_eq!(out.setter_value("isRitual"), Some("true"));
+        assert_eq!(school_addition(&out), None);
+        // an addition that is the author's own text is never touched
+        let mut own = ritual_2024();
+        for s in &mut own.setters {
+            if s.name == "school" {
+                s.attributes.insert("addition".into(), "ritual only".into());
+            }
+        }
+        let f = element_to_form(&own, cx);
+        let off = one(&f.with_field("ritual", json!(false)), cx);
+        assert_eq!(school_addition(&off).as_deref(), Some("ritual only"));
+    });
+}
