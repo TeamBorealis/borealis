@@ -9,9 +9,9 @@ const AXE_SOURCE = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 
 /**
  * Rules left out of the check, each for a recorded reason (never a blanket disable):
- * - `color-contrast`: Borealis matches Aurora's colours (U7), and several of Aurora's text colours fail WCAG AA. Whether
- *   to depart from Aurora is the user's decision (WB-26 Q7, board item PVTI_lAHODah7es4Bp0kdzhH-aRk); once decided, this
- *   line goes and the colours are fixed or the exception is recorded per colour.
+ * - `color-contrast`: Borealis keeps Aurora's colours even where they fail WCAG AA contrast (decisions U7 and HC10 Q7,
+ *   2026-11-12: strict U7, this rule stays excluded by this documented exception). Only this one rule is left out; every
+ *   other contrast-independent rule still fails the run.
  */
 export const AXE_EXCLUDED_RULES: readonly string[] = ['color-contrast'];
 

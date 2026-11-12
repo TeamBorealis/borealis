@@ -7,7 +7,7 @@ import { addRule, LOAD_MS, NAME, newElement, newPack, trialLevel, waitPackList, 
 
 // Homebrew WB-27 (spec 18.5, board item H-aZY): axe-core over every creator screen in the web e2e run, on the desktop
 // target (1355x847) and the phone variant (`?mock=mobile`, 390x844). A critical or serious violation fails the run;
-// `support/axe.ts` lists the one rule left out (Aurora's colours, pending WB-26 Q7). Deterministic: no model.
+// `support/axe.ts` lists the one rule left out (Aurora's colours, decisions U7 / HC10). Deterministic: no model.
 
 const PACK = 'Ember Isles';
 const PHONE = { width: 390, height: 844 } as const;
