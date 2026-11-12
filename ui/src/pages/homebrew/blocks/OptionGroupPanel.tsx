@@ -29,12 +29,19 @@ export function groupFilter(tag: string): HomebrewExprValue<HomebrewTagFilter> {
   return { value: { shape: "model", model: { specific: false, root: { node: "row", row: { row: "tag", tag } } } } };
 }
 
+/** An option made in the panel: saved to the pack at once. */
+export interface MadeOption {
+  id: string;
+  name: string;
+}
+
 /**
  * A class's "Lets the player choose" a class option (spec 4.8), in one flow: the group (the tag its options carry, which
  * the choice offers), the options of that group already loaded or saved, and a new option by name. A new option is saved
- * to the pack at once (group, the class's name and edition): open it under Class options to give it rules.
+ * to the pack at once (group, the class's name and edition): open it under Class options to give it rules. `onMade`
+ * tells the dialog, which deletes them again when it is cancelled (P3).
  */
-export function OptionGroupPanel({ fields, onFields }: { fields: Fields; onFields: (next: Fields) => void }) {
+export function OptionGroupPanel({ fields, onFields, onMade }: { fields: Fields; onFields: (next: Fields) => void; onMade?: (option: MadeOption) => void }) {
   const api = useApi();
   const env = useCreatorEnv();
   const groupId = useId();
@@ -82,8 +89,10 @@ export function OptionGroupPanel({ fields, onFields }: { fields: Fields; onField
         ...(env.edition ? { edition: env.edition } : {}),
       };
       await api.homebrewUpdateDraft({ draftId, form: { ...fresh.form, fields: next } });
-      await api.homebrewSaveDraft({ draftId });
+      const saved = await api.homebrewSaveDraft({ draftId });
       draftId = null;
+      const id = saved.elementIds[0];
+      if (id) onMade?.({ id, name: n });
       setName("");
       setMade((m) => m + 1);
       env.onPackChanged?.();

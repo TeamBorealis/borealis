@@ -152,6 +152,38 @@ describe("P2a children inside children, option groups, editions, removal (mock)"
     expect(listed.filter((e) => e.kind === "classOption").map((e) => e.name)).toEqual(["Ash Guard"]);
   });
 
+  it("Cancel on the choice's dialog deletes the options made in it (P3), after asking", async () => {
+    // Arrange: a new choice of class options, an option made in its dialog (saved to the pack at once)
+    const user = userEvent.setup();
+    const api = new MockApi({ creatorEnabled: true });
+    const { pack, last } = await newElement(user, api, "dnd2024", /^Class A class/, "Ember Knight");
+    await user.click(within(editor()).getByRole("tab", { name: "RULES" }));
+    await user.click(screen.getByRole("button", { name: "Add rule" }));
+    await user.click(within(await screen.findByRole("dialog", { name: "Add a rule" })).getByRole("button", { name: "Lets the player choose ..." }));
+    const dialog = await screen.findByRole("dialog", { name: "New rule: Lets the player choose ..." });
+    await user.type(within(dialog).getByRole("combobox", { name: "What to choose" }), "Option");
+    const panel = await within(dialog).findByRole("region", { name: "Class options of this choice" });
+    await user.type(within(panel).getByRole("textbox", { name: "Group" }), "Ember Style");
+    for (const name of ["Ash Guard", "Cinder Step"]) {
+      await user.type(within(panel).getByRole("textbox", { name: "New option" }), name);
+      await user.click(within(panel).getByRole("button", { name: "Add option" }));
+      await waitFor(() => expect(within(panel).getByRole("list", { name: "Options of Ember Style" }).textContent).toContain(name));
+    }
+    const options = async () => (await api.homebrewListElements({ packId: pack.id })).filter((e) => e.kind === "classOption").map((e) => e.name);
+    expect(await options()).toEqual(["Ash Guard", "Cinder Step"]);
+
+    // Act
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    const ask = await screen.findByRole("dialog", { name: "Discard changes?" });
+    expect(ask.textContent).toContain("Ash Guard and Cinder Step");
+    await user.click(within(ask).getByRole("button", { name: "Discard" }));
+
+    // Assert: no rule, and the options are gone from the pack
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "New rule: Lets the player choose ..." })).toBeNull());
+    await waitFor(async () => expect(await options()).toEqual([]));
+    expect(last().blocks.some((b) => b.kind === "select")).toBe(false);
+  });
+
   it("removing a feature that characters use asks first; Cancel keeps it", async () => {
     const user = userEvent.setup();
     const api = new MockApi({ creatorEnabled: true });

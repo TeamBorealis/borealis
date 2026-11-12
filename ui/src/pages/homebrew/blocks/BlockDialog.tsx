@@ -6,7 +6,10 @@ import { asExprValue } from "../builders/words";
 import { useCreatorEnv, WithExpert } from "../env";
 import { FieldList } from "./BlockFieldControl";
 import { NumbersControl } from "./valueControls";
-import { OPTION_TYPE, OptionGroupPanel } from "./OptionGroupPanel";
+import { type MadeOption, OPTION_TYPE, OptionGroupPanel } from "./OptionGroupPanel";
+import { useApi } from "../../../state/ApiContext";
+import { setStatus } from "../../../state/status";
+import { errorMessage } from "../../../state/useAsync";
 import { fallbackSentence } from "./sentence";
 import { type Fields, cleanFields, isEmptyValue, missingRequired, withAutoType } from "./values";
 
@@ -24,6 +27,11 @@ export interface BlockDialogProps {
   onCancel: () => void;
   /** "Also gained again at levels" (a class feature's block, spec 4.5): the levels its copies are written at. */
   repeat?: boolean;
+}
+
+/** "A", "A and B", "A, B and C". */
+export function namesText(names: readonly string[]): string {
+  return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
 /** "Kept from the original" (spec 3.4): read-only parts in plain words, each with Remove. Nothing can be added. */
@@ -53,13 +61,16 @@ export function PreservedList({ parts, onRemove, label = "Kept from the original
  */
 export function BlockDialog({ spec, block, isNew, problems, onOk, onCancel, repeat = false }: BlockDialogProps) {
   const env = useCreatorEnv();
+  const api = useApi();
   const confirm = useConfirm();
   const levelId = useId();
+  // class options made in this dialog (saved at once): Cancel deletes them again (P3)
+  const [made, setMade] = useState<readonly MadeOption[]>([]);
   const [fields, setFields] = useState<Fields>(block.fields);
   const [preserved, setPreserved] = useState(block.preserved ?? []);
   const [expert, setExpert] = useState(env.expert);
   const [tried, setTried] = useState(false);
-  const dirty = JSON.stringify(fields) !== JSON.stringify(block.fields) || preserved.length !== (block.preserved ?? []).length;
+  const dirty = JSON.stringify(fields) !== JSON.stringify(block.fields) || preserved.length !== (block.preserved ?? []).length || made.length > 0;
   const missing = missingRequired(spec.fields, fields);
   const local: HomebrewBuilderProblem[] = tried ? missing.map((f) => ({ path: f.key, message: `Fill in ${f.label.toLowerCase()}.` })) : [];
   const all = [...local, ...problems];
@@ -74,7 +85,20 @@ export function BlockDialog({ spec, block, isNew, problems, onOk, onCancel, repe
     onOk({ ...next, sentence: fallbackSentence(spec, next, env) });
   };
   const cancel = async () => {
-    if (dirty && (await confirm({ title: "Discard changes?", body: "Discard the changes made to this rule?", confirmLabel: "Discard", danger: true })) !== "confirm") return;
+    const names = made.map((o) => o.name);
+    const body = names.length > 0
+      ? `Discard the changes made to this rule? The ${names.length === 1 ? "option" : "options"} made here (${namesText(names)}) ${names.length === 1 ? "is" : "are"} deleted from the pack too.`
+      : "Discard the changes made to this rule?";
+    if (dirty && (await confirm({ title: "Discard changes?", body, confirmLabel: "Discard", danger: true })) !== "confirm") return;
+    if (made.length > 0 && env.packId) {
+      try {
+        await api.homebrewDeleteElements({ packId: env.packId, elementIds: made.map((o) => o.id), confirm: true });
+        env.onPackChanged?.();
+        setStatus(`Deleted ${namesText(names)} from the pack.`);
+      } catch (e) {
+        setStatus(errorMessage(e));
+      }
+    }
     onCancel();
   };
   const level = typeof fields.level === "number" ? fields.level : 1;
@@ -105,7 +129,7 @@ export function BlockDialog({ spec, block, isNew, problems, onOk, onCancel, repe
           {spec.fields.length === 0 && <p className="hb-field-help">This rule has nothing to fill in.</p>}
           <FieldList fields={spec.fields} values={fields} onValues={setValues} path="" problems={all} />
           {/* a choice of class options makes its group and options in one flow (spec 4.8) */}
-          {spec.kind === "select" && fields.type === OPTION_TYPE && <OptionGroupPanel fields={fields} onFields={setFields} />}
+          {spec.kind === "select" && fields.type === OPTION_TYPE && <OptionGroupPanel fields={fields} onFields={setFields} onMade={(o) => setMade((m) => [...m, o])} />}
           {spec.onlyIf && (
             <div className="mg-f hb-field hb-bf-wide" data-field="requirements">
               <label>Only if</label>
