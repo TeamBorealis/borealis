@@ -7,6 +7,29 @@ html:not(.phone) .hb-levels th:nth-child(1), html:not(.phone) .hb-levels th[scop
 html:not(.phone) .hb-levels thead th:nth-child(2), html:not(.phone) .hb-levels tbody td:nth-child(2) { width: 82px; }
 .hb-levels td, .hb-levels th { vertical-align: middle; white-space: normal; }
 .hb-levels thead th .hb-chip-x { margin-left: 4px; vertical-align: middle; }
+/* HC10 Q3 (U7: Aurora's DataGrid keeps its header): the header row is moved down while the grid scrolls past
+   (usePinnedHead; the frame scrolls sideways, which captures position: sticky). It paints over the rows, the level
+   numbers included (their row headers are the grid's own sticky cells). */
+.hb-levels thead th { z-index: 2; }
+.hb-levels tbody th { position: static; }
+/* Phones: the grid stays a grid (not the phone's one-line rows): the header row, a level per row, 44 px rows, sideways
+   scroll in its frame. Tokens from mobile-facelift-spec 3.3-3.5. */
+html.phone .hb-levels-wrap { border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .hb-levels-wrap .ap-grid { display: table; width: max-content; min-width: 100%; border-collapse: collapse; }
+html.phone .hb-levels-wrap .ap-grid thead { display: table-header-group; }
+html.phone .hb-levels-wrap .ap-grid tbody { display: table-row-group; }
+html.phone .hb-levels-wrap .ap-grid tbody tr { display: table-row; min-height: 0; padding: 0; cursor: default; }
+html.phone .hb-levels-wrap .ap-grid tbody tr:active { background: none; }
+html.phone .hb-levels-wrap .ap-grid th, html.phone .hb-levels-wrap .ap-grid td {
+  display: table-cell; height: var(--ph-hit); padding: 0 8px; text-align: center; vertical-align: middle; white-space: nowrap;
+  font: 400 var(--ph-t-sub)/1.2 var(--ph-font-ui); color: var(--ph-text);
+}
+html.phone .hb-levels-wrap .ap-grid thead th {
+  height: auto; padding: 8px; background: var(--ph-surface); box-shadow: inset 0 -1px 0 var(--ph-line);
+  font: 600 var(--ph-t-caption)/1.2 var(--ph-font-ui); color: var(--ph-text-2); text-transform: uppercase;
+}
+html.phone .hb-levels-wrap .ap-grid tbody th { background: none; font-weight: 600; }
+html.phone .hb-levels-wrap .hb-counter input { width: 48px; min-height: 36px; text-align: center; }
 .hb-level-features { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 26px; }
 .hb-feature-chip { display: inline-flex; align-items: center; gap: 2px; }
 .hb-feature-name { background: none; border: 0; padding: 0 2px; color: var(--text-body); font: inherit; cursor: pointer; text-align: left; }

@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 import type { HomebrewFieldSpec, HomebrewForm, HomebrewLevelCounts, HomebrewProblem, Ruleset } from "../../../api/contract";
 import { CheckBox } from "../../../components";
 import { FieldView } from "../FieldView";
 import { problemsFor } from "../problems";
 import "../class/class.css";
 import "./caster.css";
+import { usePinnedHead } from "../class/pinnedHead";
 import {
   type CasterType, type SlotGrid, LEVEL_COUNT, gridOf, levelsOf, slotGrid, topSlotLevel, withCell, withLevels,
 } from "./slots";
@@ -112,8 +113,11 @@ function CasterTable({ type, custom, columns, form, problems, idPrefix, onCount,
     problemsFor({ key } as HomebrewFieldSpec, problems).map((p) => p.message));
   const setCount = (key: string, levels: number[], level: number, n: number) =>
     onCount(key, withLevels(form.fields[key], levels.map((x, i) => (i === level - 1 ? n : x))));
+  const gridFrame = useRef<HTMLDivElement>(null);
+  // HC10 Q3: the header row stays in view while the grid scrolls past
+  usePinnedHead(gridFrame, [shownSlots, columns.length]);
   return (
-    <div className="hb-levels-wrap" id={`hb-f-${idPrefix}slotTable`}>
+    <div className="hb-levels-wrap" id={`hb-f-${idPrefix}slotTable`} ref={gridFrame}>
       <table className="ap-grid hb-levels hb-caster-table" aria-label="Spell slots and spells by level">
         <thead>
           <tr>

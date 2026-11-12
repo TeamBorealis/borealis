@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useCreatorEnv } from "../env";
 import type { HomebrewForm, HomebrewTableColumn } from "../../../api/contract";
 import { Button, Dialog, Icon, NumericUpDown, TextBox } from "../../../components";
@@ -8,6 +8,7 @@ import { setStatus } from "../../../state/status";
 import { NumbersControl } from "../blocks/valueControls";
 import { ChildDialog, type ChildEditing, childKind, removeChecked } from "./ChildDialog";
 import "./class.css";
+import { usePinnedHead } from "./pinnedHead";
 import { isSpellcastingColumn } from "../caster/slots";
 import {
   LEVELS, cellValue, childOf, columnsOf, counterColumns, entriesOf, entryName, fullColumn, generatedOf, nameOf, proficiencyBonus,
@@ -47,6 +48,9 @@ export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing
   const columns = isClass ? columnsOf(form) : [];
   // the spellcasting columns (a 2024 class's cantrips, prepared spells and slots) are the SPELLCASTING tab's
   const counters = counterColumns(columns).filter(({ column }) => !isSpellcastingColumn(column.key));
+  const gridFrame = useRef<HTMLDivElement>(null);
+  // HC10 Q3: the header row stays in view while the grid scrolls past (phones list the levels as rows instead)
+  usePinnedHead(gridFrame, [phone, counters.length]);
   const feature = childKind(editing, featureType);
   const marked = new Set(isClass ? [] : numbers(env.answer?.fields[SUBCLASS_LEVELS_FIELD] ?? form.fields[SUBCLASS_LEVELS_FIELD]));
 
@@ -124,7 +128,7 @@ export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing
             ))}
           </ul>
         ) : (
-        <div className="hb-levels-wrap">
+        <div className="hb-levels-wrap" ref={gridFrame}>
           <table className="ap-grid hb-levels" aria-label="Features by level">
             <thead>
               <tr>
