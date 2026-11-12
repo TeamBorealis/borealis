@@ -14,67 +14,24 @@
 //! Exceptions would be listed with their reason in `EXCEPTIONS` (T6: an asserted, reviewed list); it is empty. The
 //! counts are printed (`--nocapture`) and written to `target/form_identity.txt`.
 
+mod support;
+
 use borealis_authoring::expr_build::condition::ConditionContext;
 use borealis_authoring::form::{
     element_group_to_form, element_to_form, form_to_element, form_to_elements, kind_for_element,
     merge_ui, to_ui, CatalogBlockCodec, FormContext, FormState, RefInfo,
 };
 use borealis_authoring::pack::granted_children;
-use borealis_content::{ContentFile, Element, PackFileKind, PackManifest};
+use borealis_content::Element;
 use serde_json::Value;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write as _;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use support::{bundled, forgetful, values};
 
 /// Elements that cannot round trip, with the reason. Reviewed: none.
 const EXCEPTIONS: &[(&str, &str)] = &[];
-
-fn content_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content")
-}
-
-/// (pack, element) for every element of every bundled pack, in pack and file order.
-fn bundled() -> Vec<(String, Element)> {
-    let mut dirs: Vec<PathBuf> = fs::read_dir(content_dir())
-        .expect("content dir")
-        .map(|e| e.expect("entry").path())
-        .filter(|p| p.join("pack.json").exists())
-        .collect();
-    dirs.sort();
-    let mut out = Vec::new();
-    for dir in dirs {
-        let pack = dir
-            .file_name()
-            .expect("name")
-            .to_string_lossy()
-            .into_owned();
-        let manifest = PackManifest::from_json_str(
-            &fs::read_to_string(dir.join("pack.json")).expect("pack.json"),
-        )
-        .expect("manifest");
-        for file in manifest
-            .files
-            .iter()
-            .filter(|f| f.kind == PackFileKind::Content)
-        {
-            let text = fs::read_to_string(dir.join(&file.path)).expect("file");
-            let content =
-                ContentFile::from_json_str(&text).unwrap_or_else(|e| panic!("{}: {e}", file.path));
-            assert!(
-                content.appends.is_empty(),
-                "bundled appends are covered by unit tests only"
-            );
-            out.extend(content.elements.into_iter().map(|e| (pack.clone(), e)));
-        }
-    }
-    assert!(
-        out.len() >= 4000,
-        "the bundled packs are there ({} elements)",
-        out.len()
-    );
-    out
-}
 
 struct Corpus {
     elements: Vec<(String, Element)>,
@@ -139,45 +96,6 @@ fn check_identity(
         ));
     }
     Ok(())
-}
-
-/// A builder value (`{value: {shape: ...}, original?}`) without the text it was read from, anywhere in `v`.
-fn without_originals(v: &Value) -> Value {
-    match v {
-        Value::Object(m) => {
-            let is_expr = m
-                .get("value")
-                .and_then(Value::as_object)
-                .is_some_and(|x| x.contains_key("shape"));
-            Value::Object(
-                m.iter()
-                    .filter(|(k, _)| !(is_expr && k.as_str() == "original"))
-                    .map(|(k, x)| (k.clone(), without_originals(x)))
-                    .collect(),
-            )
-        }
-        Value::Array(items) => Value::Array(items.iter().map(without_originals).collect()),
-        other => other.clone(),
-    }
-}
-
-fn fields_without_originals(fields: &BTreeMap<String, Value>) -> BTreeMap<String, Value> {
-    fields
-        .iter()
-        .map(|(k, v)| (k.clone(), without_originals(v)))
-        .collect()
-}
-
-/// The form with all stored text forgotten (the id kept): every field and block writes canonically.
-fn forgetful(form: &FormState) -> FormState {
-    let mut f = form.clone();
-    f.memo.fields.clear();
-    f.fields = fields_without_originals(&f.fields);
-    for b in &mut f.blocks {
-        b.memo = None;
-        b.fields = fields_without_originals(&b.fields);
-    }
-    f
 }
 
 /// Where `a` and `b` differ in JSON shape (object keys, list lengths, value types; strings may differ in spelling):
@@ -255,23 +173,6 @@ fn count_builders(v: &Value, out: &mut BTreeMap<String, usize>) {
         Value::Array(items) => items.iter().for_each(|x| count_builders(x, out)),
         _ => {}
     }
-}
-
-/// What a form's values are, stored text aside: fields, and each block's kind, values and kept parts.
-fn values(form: &FormState) -> Value {
-    let blocks: Vec<Value> = form
-        .blocks
-        .iter()
-        .map(|b| {
-            let kept: Vec<&str> = b.preserved.iter().map(|p| p.key.as_str()).collect();
-            serde_json::json!({
-                "kind": b.kind,
-                "fields": fields_without_originals(&b.fields),
-                "kept": kept,
-            })
-        })
-        .collect();
-    serde_json::json!({ "fields": fields_without_originals(&form.fields), "blocks": blocks })
 }
 
 #[test]
