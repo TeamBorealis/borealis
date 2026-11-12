@@ -13,6 +13,7 @@ import "../equipment/equipment.css";
 import { FieldView } from "./FieldView";
 import { ProblemsPanel } from "./ProblemsPanel";
 import { TryIt } from "./TryIt";
+import { PROPERTIES_FIELD, WEAPON_KIND, withWeaponProperties } from "./weaponHands";
 import type { DraftController } from "./useDraft";
 import type { AutosaveState } from "./draftSession";
 
@@ -132,6 +133,8 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
   const hasExpert = kind.fields.some((f) => f.expert);
   const setValue = (f: HomebrewFieldSpec, v: unknown, typing: boolean) => {
     if (f.control === "blocks") draft.edit((cur) => ({ ...cur, blocks: v as HomebrewForm["blocks"] }));
+    // a weapon's slot follows its Two-Handed property, in the same undo step (P3)
+    else if (form.kind === WEAPON_KIND && f.key === PROPERTIES_FIELD) draft.edit((cur) => ({ ...cur, fields: withWeaponProperties(cur.fields, v) }));
     else draft.setField(f.key, v, typing);
   };
   const expertSwitch = <span className="hb-expert"><ToggleSwitch label="Expert fields" checked={expert} onChange={setExpert} onLabel="Expert" offLabel="Expert" /></span>;
