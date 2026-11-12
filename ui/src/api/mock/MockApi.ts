@@ -92,7 +92,7 @@ export interface MockApiOptions {
   contentNotices?: boolean;
   /** B-191: Deity element names the content offers (Manage > Deity lists them; default none, as the SRD). */
   deities?: readonly string[];
-  /** HC3: the homebrew creator is switched on (`?creator=1`); off by default, as in 1.4.x builds. */
+  /** HC3: the homebrew creator is switched on; on by default from 1.5.0 (HC9), `?creator=0` turns it off. */
   creatorEnabled?: boolean;
 }
 
@@ -153,7 +153,7 @@ export class MockApi implements Api {
     setClasslessEdition(opts.classlessEdition ?? null);
     setBackgroundAbilityList(opts.backgroundAbilityList ?? false);
     setMockDeities(opts.deities ?? []);
-    this.settings = { ...this.settings, creatorEnabled: opts.creatorEnabled ?? false };
+    this.settings = { ...this.settings, creatorEnabled: opts.creatorEnabled ?? true };
     this.content = new ContentService((p) => this.emit("content:progress", p), () => this.emit("content:reloaded", { reason: "content changed" }), (p) => this.emit("import5etools:progress", p));
     this.ai = new MockAi((e) => this.emit("ai:event", e), { chunkDelayMs: opts.aiChunkDelayMs ?? 25, available: opts.aiAvailable ?? true });
     this.setup = new MockAiSetup((e) => this.emit("aisetup:event", e), opts.aiSetup);

@@ -50,7 +50,7 @@ describe("B-221 Notes on phones and tablets: entries and the vault setting", () 
     const user = userEvent.setup();
     renderApp("/characters", { api: await withVault() });
     const sub = await screen.findByRole("navigation", { name: "Start sections" });
-    expect(within(sub).getAllByRole("link").map((l) => l.textContent)).toEqual(["Character Collection", "Sources", "Additional Content", "Notes"]);
+    expect(within(sub).getAllByRole("link").map((l) => l.textContent)).toEqual(["Character Collection", "Sources", "Additional Content", "Homebrew", "Notes"]);
     await user.click(screen.getByRole("menuitem", { name: "View" }));
     expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toContain("Notes");
   });

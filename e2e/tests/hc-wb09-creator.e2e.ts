@@ -6,8 +6,8 @@ import { clickCss, dblClickCss, statusMsg, waitFor, type Ctx } from '../support/
 import { LOAD_MS, waitPackList, waitValue, waitWorkspace } from '../support/creator.js';
 
 // Homebrew WB-09 (spec 2, 10.2, 12.2, 13.1-13.3): START > HOMEBREW on the web mock with the creator switched on
-// (`?creator=1`). Open a pack -> its workspace -> edit an element -> undo. And the switch: without `?creator=1` (the 1.4.x
-// default) the HOMEBREW sub-tab is not there and its route goes back to the characters. Deterministic: no model.
+// (`?creator=1`). Open a pack -> its workspace -> edit an element -> undo. And the switch: with `?creator=0` (on is the
+// default from 1.5.0) the HOMEBREW sub-tab is not there and its route goes back to the characters. Deterministic: no model.
 
 const NAME = '#hb-f-name-input';
 
@@ -97,11 +97,11 @@ describe('hc-wb09 homebrew creator shell (web mock)', { tags: ['homebrew'] }, ()
     await waitFor(ctx, (sel: string) => document.activeElement === document.querySelector(sel), NAME, 'focus on the name field');
   });
 
-  test('switch off (no ?creator=1): no HOMEBREW sub-tab, and /homebrew goes back to the characters', async (ctx) => {
-    await bootToHome(ctx, '/#/characters');
+  test('switch off (?creator=0): no HOMEBREW sub-tab, and /homebrew goes back to the characters', async (ctx) => {
+    await bootToHome(ctx, '/?creator=0#/characters');
     await expect(ctx.screen.getByRole('link', 'Notes')).toBeVisible();
     await expect(ctx.screen.getByRole('link', 'Homebrew')).toBeHidden();
-    await ctx.app.open('/#/homebrew');
+    await ctx.app.open('/?creator=0#/homebrew');
     await expect(ctx.screen.getByRole('heading', 'Characters')).toBeAttached();
     await expect(ctx.screen.getByRole('grid', 'Homebrew packs')).toBeHidden();
   });

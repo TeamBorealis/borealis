@@ -170,8 +170,8 @@ pub struct AppSettings {
     pub check_app_updates: bool,
     /// Local search (local-search-spec.md section 9).
     pub search: SearchSettings,
-    /// HC3: the homebrew creator is shown (START > HOMEBREW and its entry points). Off until 1.5.0; no settings
-    /// control, so 1.4.x looks unchanged (dev builds and the web mock turn it on in the UI).
+    /// HC3: the homebrew creator is shown (START > HOMEBREW and its entry points). On by default from 1.5.0
+    /// (HC9); no settings control. A settings file that says `false` still hides it (the web mock: `?creator=0`).
     pub creator_enabled: bool,
 }
 
@@ -292,7 +292,7 @@ impl Default for AppSettings {
             show_import_notice: true,
             check_app_updates: true,
             search: SearchSettings::default(),
-            creator_enabled: false,
+            creator_enabled: true,
         }
     }
 }
@@ -511,6 +511,24 @@ mod default_tests {
         assert_eq!(loaded.player_name, "Old");
         assert!(!loaded.ai.enabled);
         assert_eq!(loaded.ai.provider, "claude");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn the_creator_is_on_by_default_and_for_files_without_the_field_but_a_stored_off_stays_off() {
+        // Arrange: a 1.4.x settings file (no creatorEnabled) and one that says false
+        assert!(AppSettings::default().creator_enabled);
+        let dir = std::env::temp_dir().join(format!("borealis-creator-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let old = dir.join("old.json");
+        let off = dir.join("off.json");
+        std::fs::write(&old, r#"{"playerName":"Old"}"#).unwrap();
+        std::fs::write(&off, r#"{"playerName":"Old","creatorEnabled":false}"#).unwrap();
+        // Act
+        let (from_old, from_off) = (AppSettings::load(&old), AppSettings::load(&off));
+        // Assert: HC9, the creator shows after an upgrade from 1.4.x; HC3, a file that says off is kept
+        assert!(from_old.creator_enabled);
+        assert!(!from_off.creator_enabled);
         std::fs::remove_dir_all(&dir).ok();
     }
 

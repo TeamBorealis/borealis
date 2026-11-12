@@ -61,7 +61,7 @@ describe("B-102 Notes: navigation and the vault setting", () => {
     const user = userEvent.setup();
     renderApp("/characters", { api: await withVault() });
     const sub = await screen.findByRole("navigation", { name: "Start sections" });
-    expect(within(sub).getAllByRole("link").map((l) => l.textContent)).toEqual(["Character Collection", "Sources", "Additional Content", "Notes"]);
+    expect(within(sub).getAllByRole("link").map((l) => l.textContent)).toEqual(["Character Collection", "Sources", "Additional Content", "Homebrew", "Notes"]);
     await user.click(screen.getByRole("menuitem", { name: "View" }));
     const items = screen.getAllByRole("menuitem").map((m) => m.textContent);
     expect(items.indexOf("Notes")).toBe(items.indexOf("Additional Content") + 1);

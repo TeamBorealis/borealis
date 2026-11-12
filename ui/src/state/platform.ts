@@ -15,14 +15,14 @@ export interface Platform {
   storeBuild: boolean;
   /** Settings have been read, so `mobile` and `aiEnabled` are real (redirects wait for it). */
   ready: boolean;
-  /** The homebrew creator is shown (HC3: hidden until 1.5.0). The single gate for every creator entry; false until settings
-   * are read, so a 1.4.x build never flashes it. */
+  /** The homebrew creator is shown (HC3; on by default from 1.5.0). The single gate for every creator entry; false until
+   * settings are read, so a build with the setting off never flashes it. */
   creatorEnabled: boolean;
 }
 
 /**
- * HC3 (spec section 2): the creator shows when the `creatorEnabled` setting is on (off by default in 1.4.x; the web mock turns it
- * on with `?creator=1`), and always in a development build of the app (`tauri dev`). A plain `vite` page (the web mock, the
+ * HC3 (spec section 2): the creator shows when the `creatorEnabled` setting is on (on by default from 1.5.0, HC9; the web mock
+ * turns it off with `?creator=0`), and always in a development build of the app (`tauri dev`). A plain `vite` page (the web mock, the
  * web e2e) is not a development build of the app: it follows the setting, so the switch-off state stays testable there.
  */
 export function creatorOn(setting: boolean, devBuild: boolean = import.meta.env.DEV && isTauri()): boolean {

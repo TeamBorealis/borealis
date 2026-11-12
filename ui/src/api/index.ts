@@ -36,7 +36,7 @@ export function createApi(): Api {
   const sampleCompanions = new URLSearchParams(window.location.search).get("mockCompanions") === "1";
   // `?mockAbilityOptions=1`: 2024 backgrounds offer their ability increases as one list of options, as the engine does (B5 web e2e).
   const backgroundAbilityList = new URLSearchParams(window.location.search).get("mockAbilityOptions") === "1";
-  // `?creator=1`: the homebrew creator is switched on (HC3: hidden until 1.5.0).
-  const creatorEnabled = new URLSearchParams(window.location.search).get("creator") === "1";
+  // `?creator=0`: the homebrew creator is switched off (HC3; on by default from 1.5.0, HC9).
+  const creatorEnabled = new URLSearchParams(window.location.search).get("creator") !== "0";
   return new MockApi({ creatorEnabled, aiChunkDelayMs: 30, mobile, macAppStore, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic, classlessEdition, contentNotices, sampleCompanions, backgroundAbilityList });
 }

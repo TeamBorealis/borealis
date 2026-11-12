@@ -12,9 +12,9 @@ describe("homebrew creator contract (WB-00)", () => {
     for (const [method, command] of creator) expect(command).toBe(method.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`));
   });
 
-  it("keeps the creator switched off unless asked (HC3)", async () => {
-    expect((await new MockApi().getSettings()).creatorEnabled).toBe(false);
-    expect((await new MockApi({ creatorEnabled: true }).getSettings()).creatorEnabled).toBe(true);
+  it("has the creator switched on unless switched off (HC3, on by default from 1.5.0: HC9)", async () => {
+    expect((await new MockApi().getSettings()).creatorEnabled).toBe(true);
+    expect((await new MockApi({ creatorEnabled: false }).getSettings()).creatorEnabled).toBe(false);
   });
 
   it("creates a pack that lists with the user's packs", async () => {

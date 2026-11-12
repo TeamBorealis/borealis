@@ -7,7 +7,7 @@ import { ROUTES } from "../routes";
 import { creatorOn } from "../state/platform";
 import { renderApp } from "./utils";
 
-// Homebrew WB-09, HC3 (spec section 2): the creator renders only while `creatorEnabled` is on. Off (the 1.4.x default),
+// Homebrew WB-09, HC3 (spec section 2): the creator renders only while `creatorEnabled` is on. Off (a settings file that says so; on by default from 1.5.0),
 // nothing creator-related renders anywhere: no START > HOMEBREW sub-tab, no File menu entry, no More page row, no
 // "Edit in Homebrew" pack action, and the creator's routes go back to the characters.
 
