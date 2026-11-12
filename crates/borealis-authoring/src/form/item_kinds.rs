@@ -456,7 +456,13 @@ fn armor() -> KindDef {
         proficiency(ARMOR),
     ];
     own.extend(cost_and_weight());
-    own.push(slot());
+    // armor is worn: a new one starts on the body, so a character can put it on (the engine equips only items worn or
+    // held somewhere); a shield's maker moves it to the off hand
+    own.push(
+        slot()
+            .default("\"body\"")
+            .help("Armor is worn on the body, a shield held in the off hand. Only items worn or held can be equipped."),
+    );
     kind(
         "armor",
         "Armor",
