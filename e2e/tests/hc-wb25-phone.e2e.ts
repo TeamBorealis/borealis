@@ -5,6 +5,7 @@ import { describe, test } from '@e2e-dev/web';
 import { expect } from 'e2e';
 import { expectEqual, settledBox } from '../support/index.js';
 import { rawTextOf, textOf, waitFor, type Ctx } from '../support/flows-a.js';
+import { catchDownloads, takeDownload } from '../support/creator.js';
 
 // Homebrew WB-25, the phone pass (spec 16) on the web mock at phone size (`?creator=1&mock=mobile`, 390x844):
 // 1. the editor keeps the element's name and the sub-tab strip on screen while the form scrolls, the pinned Undo / Redo /
@@ -69,34 +70,6 @@ async function sheetSelect(ctx: Ctx, css: string, option: string): Promise<void>
 
 /** The pinned commands row (spec 16, PH2). */
 const pinned = (ctx: Ctx, label: string) => ctx.browser.locator(`.hb-commands.eq-pin button[aria-label="${label}"]`);
-
-/** Keep the next download in the page instead of saving it (the bytes of the blob the link points at). */
-async function catchDownloads(ctx: Ctx): Promise<void> {
-  await ctx.browser.evaluate((_: null) => {
-    const w = window as unknown as { __hbBlob?: Blob; __hbName?: string };
-    // the web view of a phone shares the file; this browser has no share sheet, so the page falls back to a download
-    Object.defineProperty(navigator, 'share', { value: undefined, configurable: true });
-    const create = URL.createObjectURL.bind(URL);
-    URL.createObjectURL = (b: Blob | MediaSource) => { if (b instanceof Blob) w.__hbBlob = b; return create(b); };
-    const click = HTMLAnchorElement.prototype.click;
-    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
-      if (this.download) { w.__hbName = this.download; return; }
-      click.call(this);
-    };
-    return true;
-  }, null);
-}
-
-async function takeDownload(ctx: Ctx): Promise<{ name: string; base64: string }> {
-  await waitFor(ctx, (_: null) => (window as unknown as { __hbName?: string }).__hbName !== undefined, null, 'the pack file download');
-  return ctx.browser.evaluate(async (_: null) => {
-    const w = window as unknown as { __hbBlob: Blob; __hbName: string };
-    const bytes = new Uint8Array(await w.__hbBlob.arrayBuffer());
-    let s = '';
-    for (const b of bytes) s += String.fromCharCode(b);
-    return { name: w.__hbName, base64: btoa(s) };
-  }, null);
-}
 
 describe('hc-wb25 homebrew creator on a phone (web mock)', { tags: ['homebrew'] }, () => {
   test('the sticky head, the pinned row flush on the status line, and multi-select rows that check with a tap', async (ctx) => {

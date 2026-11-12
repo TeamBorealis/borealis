@@ -6,6 +6,7 @@ import { expect } from 'e2e';
 import { bootToHome, expectEqual } from '../support/index.js';
 import { pressKey } from '../support/flows-b.js';
 import { waitFor, type Ctx } from '../support/flows-a.js';
+import { catchDownloads, takeDownload } from '../support/creator.js';
 
 // Homebrew WB-24 (spec 14.2, 18.4 flow 9 on the web mock, desktop 1355x847, `?creator=1`): export a pack as a
 // `.borealis-pack.zip` (the web view downloads the bytes the backend answers), then import that file back through the
@@ -13,34 +14,6 @@ import { waitFor, type Ctx } from '../support/flows-a.js';
 // opens in the creator with its element, and the original stays. Deterministic: no model.
 
 const NAME = '#hb-f-name-input';
-
-interface Download { name: string; base64: string }
-
-/** Keep the next download in the page instead of saving it (the bytes of the blob the link points at). */
-async function catchDownloads(ctx: Ctx): Promise<void> {
-  await ctx.browser.evaluate((_: null) => {
-    const w = window as unknown as { __hbBlob?: Blob; __hbName?: string };
-    const create = URL.createObjectURL.bind(URL);
-    URL.createObjectURL = (b: Blob | MediaSource) => { if (b instanceof Blob) w.__hbBlob = b; return create(b); };
-    const click = HTMLAnchorElement.prototype.click;
-    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
-      if (this.download) { w.__hbName = this.download; return; }
-      click.call(this);
-    };
-    return true;
-  }, null);
-}
-
-async function takeDownload(ctx: Ctx): Promise<Download> {
-  await waitFor(ctx, (_: null) => (window as unknown as { __hbName?: string }).__hbName !== undefined, null, 'the pack file download');
-  return ctx.browser.evaluate(async (_: null) => {
-    const w = window as unknown as { __hbBlob: Blob; __hbName: string };
-    const bytes = new Uint8Array(await w.__hbBlob.arrayBuffer());
-    let s = '';
-    for (const b of bytes) s += String.fromCharCode(b);
-    return { name: w.__hbName, base64: btoa(s) };
-  }, null);
-}
 
 const packRows = (ctx: Ctx): Promise<string[]> =>
   ctx.browser.evaluate((_: null) => [...document.querySelectorAll('.hb-pack-grid .v4-grid-row .nm')].map((n) => n.firstChild?.textContent ?? ''), null);
