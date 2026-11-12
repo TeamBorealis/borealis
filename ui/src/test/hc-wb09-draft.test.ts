@@ -327,6 +327,30 @@ describe("WB-09 draft session: autosave, undo, conflicts", () => {
     expect(updates[1]!.args).toEqual({ draftId: "d2", form: form("Ember") });
   });
 
+  it("after Save the element reopened in the backend's words is what is on screen: nothing is autosaved again", async () => {
+    // Arrange: the real backend reads a saved element back with its own order and values (P3 bug: a saved weapon then
+    // showed "Unsaved changes" and stayed listed as an unsaved draft)
+    const { s, updates, answerNext } = await opened();
+    s.setField("level", 2);
+    vi.advanceTimersByTime(300);
+    await answerNext();
+    await s.save();
+    const reopened: HomebrewForm = { kind: "spell", fields: { level: 2, name: "Ember", slot: "onehand" }, blocks: [], children: [], preserved: [] };
+
+    // Act
+    s.rebase(view("d2", reopened, [], "ID_TST_SPELL_EMBER"));
+    vi.advanceTimersByTime(1000);
+
+    // Assert: the form is the reopened one, saved, and no update went out for it
+    expect(s.getSnapshot().autosave).toBe("saved");
+    expect(s.form).toEqual(reopened);
+    expect(updates).toHaveLength(1);
+    // Undo still steps back over the save
+    s.undo();
+    vi.advanceTimersByTime(300);
+    expect(updates[1]!.args).toEqual({ draftId: "d2", form: form("Ember") });
+  });
+
   it("Save refused by the backend (errors) keeps the draft open and reports why", async () => {
     // Arrange
     const { s, api } = await opened([problem("Give it a name.")]);

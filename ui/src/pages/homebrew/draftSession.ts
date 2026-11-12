@@ -74,6 +74,8 @@ export class DraftSession {
   private token = 0;
   /** The draft was saved (and so deleted on the backend): edits wait for `rebase` before they are sent. */
   private detached = false;
+  /** The form a Save wrote (what was on screen when it was autosaved and saved); null when nothing was saved since. */
+  private savedForm: HomebrewForm | null = null;
   private readonly opts: Required<DraftSessionOptions>;
 
   constructor(private readonly api: DraftApi, opts: DraftSessionOptions = {}) {
@@ -100,19 +102,25 @@ export class DraftSession {
     this.clearTimers();
     this.token += 1;
     this.detached = false;
+    this.savedForm = null;
     this.acked = view?.form ?? null;
     this.set({ ...EMPTY, view, history: view ? startHistory(view.form, this.opts.now()) : null });
   }
 
   /**
    * Continues with a new draft of the same element (after Save, the backend deletes the saved draft and the element is
-   * opened again): the history stays, so Undo still steps back over the save.
+   * opened again): the history stays, so Undo still steps back over the save. Unless it was edited since the save, the
+   * form on screen becomes the element as the backend reads it back (its order and normalised values: the same element),
+   * so nothing is autosaved and no draft of the just-saved element is left.
    */
   rebase(view: HomebrewDraftView): void {
     this.token += 1;
     this.detached = false;
     this.acked = view.form;
-    const history = this.snap.history ?? startHistory(view.form, this.opts.now());
+    const before = this.snap.history;
+    const unedited = before !== null && this.savedForm !== null && sameForm(before.present, this.savedForm);
+    this.savedForm = null;
+    const history = before === null ? startHistory(view.form, this.opts.now()) : unedited ? { ...before, present: view.form, group: null } : before;
     this.set({ ...this.snap, view, history, error: null, engineProblems: [], autosave: sameForm(history.present, view.form) ? "saved" : "pending" });
     if (this.dirty()) this.schedule();
     else this.scheduleCheck();
@@ -163,7 +171,9 @@ export class DraftSession {
     this.set({ ...this.snap, saving: true });
     try {
       if (!(await this.flush())) throw new Error(this.snap.error ?? "The draft could not be autosaved.");
+      const saved = this.form;
       const result = await this.api.homebrewSaveDraft({ draftId });
+      this.savedForm = saved;
       this.detached = true;
       this.clearTimers();
       this.set({ ...this.snap, saving: false, error: null });
