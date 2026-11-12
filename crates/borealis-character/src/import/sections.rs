@@ -223,10 +223,15 @@ pub(super) fn read_dependencies(build: &XmlElement, ctx: &mut Ctx<'_>) {
     let Some(sum) = build.child("sum") else {
         return;
     };
+    let regranted = build
+        .child("elements")
+        .map(|tree| regranted(tree, ctx))
+        .unwrap_or_default();
     for e in sum.elements().filter(|e| e.name == "element") {
         let id = e.attr("id").unwrap_or("");
         if id.is_empty()
             || ctx.uni.get(id).is_some()
+            || regranted.contains(id)
             || ctx.report.missing_content.iter().any(|m| m.id == id)
         {
             continue;
@@ -238,4 +243,41 @@ pub(super) fn read_dependencies(build: &XmlElement, ctx: &mut Ctx<'_>) {
             context: "dependency".into(),
         });
     }
+}
+
+/// Ids the element tree shows as granted (an `id` node, not a chosen `registered` one) by an
+/// installed element whose rules do not name them. Aurora saves what its own install granted at
+/// the time: an add-on that appended a weapon to a "martial weapons" proficiency puts that
+/// weapon's proficiency under it in every character with the grant. The installed parent decides
+/// its grants again from the current content, so these are not content the character lacks.
+/// A grant the parent names itself, one under a parent that is not installed, and anything placed
+/// straight under a `Level` node (which grants nothing itself) are still reported.
+fn regranted(tree: &XmlElement, ctx: &Ctx<'_>) -> std::collections::HashSet<String> {
+    fn names(rules: &[borealis_content::rules::Rule], id: &str) -> bool {
+        rules.iter().any(|r| match r {
+            borealis_content::rules::Rule::Grant(g) => g.id.split(',').any(|g| g.trim() == id),
+            _ => false,
+        })
+    }
+    fn walk(
+        node: &XmlElement,
+        parent: Option<&str>,
+        ctx: &Ctx<'_>,
+        out: &mut std::collections::HashSet<String>,
+    ) {
+        for c in node.elements().filter(|c| c.name == "element") {
+            let chosen = c.attr("registered").filter(|v| !v.is_empty());
+            let id = c.attr("id").filter(|v| !v.is_empty());
+            if let (None, Some(id), Some(p)) = (chosen, id, parent.and_then(|p| ctx.uni.get(p))) {
+                if ctx.uni.get(id).is_none() && !names(&p.el.rules, id) {
+                    out.insert(id.to_string());
+                }
+            }
+            let grants = c.attr("type") != Some("Level");
+            walk(c, chosen.or(id).filter(|_| grants), ctx, out);
+        }
+    }
+    let mut out = std::collections::HashSet::new();
+    walk(tree, None, ctx, &mut out);
+    out
 }
