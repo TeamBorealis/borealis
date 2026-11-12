@@ -422,3 +422,69 @@ fn a_stored_empty_spell_list_tag_writes_back_as_stored() {
         assert_eq!(sc2.list.unwrap().supports, sc2.name.unwrap());
     });
 }
+
+#[test]
+fn choices_kept_beside_the_section_follow_its_name_when_the_class_is_renamed() {
+    with_cx(|cx| {
+        let form = warden(
+            Ruleset::Dnd2024,
+            &[
+                ("casterType", json!("full")),
+                ("spellList", json!("Wizard")),
+                ("preparation", json!("spellbook")),
+            ],
+        );
+        let mut out = form_to_elements(&form, cx).expect("writes");
+        // the SRD Wizard's shape: spellbook choices the section does not write, counted under the class's name
+        let at = out.iter().position(|e| e.spellcasting.is_some()).unwrap();
+        let mut feature = serde_json::to_value(&out[at]).unwrap();
+        let rules = feature["rules"].as_array_mut().unwrap();
+        rules.push(
+            json!({"kind": "select", "type": "Spell", "name": "Spellbook (Warden 1)", "number": 6,
+            "spellcasting": "Warden", "supports": "$(spellcasting:list), 1"}),
+        );
+        rules.push(
+            json!({"kind": "select", "type": "Spell", "name": "Spellbook (Warden)", "level": 2,
+            "spellcasting": "Warden", "supports": "$(spellcasting:list), 1"}),
+        );
+        rules.push(json!({"kind": "select", "type": "Spell", "name": "Spell (Sage)", "spellcasting": "Sage",
+            "supports": "Sage"}));
+        out[at] = serde_json::from_value(feature).unwrap();
+        let group =
+            crate::form::element_group_to_form(&out[0], &out[1..].iter().collect::<Vec<_>>(), cx);
+        assert_eq!(form_to_elements(&group, cx).unwrap(), out, "unchanged");
+
+        // the class renamed (as a copy is: "Warden (copy)"): the section is counted under the new name, and so are
+        // the choices it gave under the old one
+        let mut renamed = group.clone();
+        renamed.fields.insert("name".into(), json!("Warden (copy)"));
+        let written = form_to_elements(&renamed, cx).expect("writes");
+        let f = spellcasting(&written);
+        assert_eq!(f["spellcasting"]["name"], json!("Warden (copy)"));
+        let selects: Vec<(String, String)> = rules_of(&f, "select")
+            .into_iter()
+            .filter(|r| r["name"].as_str().unwrap().starts_with("Spell"))
+            .map(|r| {
+                (
+                    r["name"].as_str().unwrap().to_string(),
+                    r["spellcasting"].as_str().unwrap().to_string(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            selects,
+            [
+                (
+                    "Spellbook (Warden (copy) 1)".to_string(),
+                    "Warden (copy)".to_string()
+                ),
+                (
+                    "Spellbook (Warden (copy))".to_string(),
+                    "Warden (copy)".to_string()
+                ),
+                ("Spell (Sage)".to_string(), "Sage".to_string()),
+            ],
+            "another casting's choice is left alone"
+        );
+    });
+}

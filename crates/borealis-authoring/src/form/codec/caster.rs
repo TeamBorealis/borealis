@@ -285,6 +285,12 @@ pub(crate) fn write(
             if let Some(sc) = node(out) {
                 sc.name = Some(cx.name.clone());
             }
+            // the name it was stored with, when the class (or the name field) changed it
+            let stored = memo
+                .and_then(|m| m.raw.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty() && *s != cx.name);
+            out.caster_renamed = stored.map(|s| (s.to_string(), cx.name.clone()));
         }
         CasterField::Ability => {
             let stored = raw.and_then(|r| serde_json::from_value::<Option<String>>(r.clone()).ok());

@@ -32,6 +32,9 @@ pub(crate) struct Out {
     pub(crate) first_class_only: Option<String>,
     /// The spellcasting section, for a kind that has one (spec 4.6).
     pub(crate) caster: Option<super::codec::caster_cx::CasterCx>,
+    /// The section's name as stored and as written, when they differ (a copy, a renamed class): the choices the
+    /// element gave under the stored name follow it ([`follow_caster_name`]).
+    pub(crate) caster_renamed: Option<(String, String)>,
 }
 
 /// A rule a field writes (an armor's base AC, its stealth disadvantage).
@@ -60,6 +63,7 @@ impl Out {
             multiclass_id: None,
             first_class_only: None,
             caster: None,
+            caster_renamed: None,
         }
     }
 
@@ -406,7 +410,11 @@ fn write_traced(
     if !problems.is_empty() {
         return Err(problems);
     }
+    let caster_renamed = out.caster_renamed.take();
     let (mut element, origins) = out.finish();
+    if let Some((old, new)) = caster_renamed {
+        follow_caster_name(&mut element, &old, &new);
+    }
     if kind.id == super::kinds::CLASS_KIND {
         super::codec::caster_cx::sync_class(&mut element, form);
     }
@@ -417,6 +425,26 @@ fn write_traced(
         child_refs::patch_child(&mut element, form, p);
     }
     Ok((element, origins))
+}
+
+/// The choices an element gives under its spellcasting section's stored name (`old`) that the section does not write
+/// itself (the SRD Wizard's "Spellbook (Wizard 1)" selects) are counted under its new name, as the section's own are: a
+/// deep copy's spellbook choices name the copy, not the original's casting (which the copy's character never has, so
+/// they offered nothing). Their names follow too ("Spellbook (Wizard (copy) 1)"). Choices of another casting stay.
+fn follow_caster_name(element: &mut Element, old: &str, new: &str) {
+    for rule in &mut element.rules {
+        let Rule::Select(s) = rule else {
+            continue;
+        };
+        if s.spellcasting.as_deref() != Some(old) {
+            continue;
+        }
+        s.spellcasting = Some(new.to_string());
+        s.name = s
+            .name
+            .replace(&format!("({old} "), &format!("({new} "))
+            .replace(&format!("({old})"), &format!("({new})"));
+    }
 }
 
 /// Every element a form writes: the element, then each child's (depth first). Problems carry form paths
