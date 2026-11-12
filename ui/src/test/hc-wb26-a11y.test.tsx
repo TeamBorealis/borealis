@@ -41,9 +41,10 @@ describe("WB-26 aria-haspopup (iOS VoiceOver: a button with it is not a button)"
     // Arrange: every component source (tests excluded)
     const sources = import.meta.glob(["../**/*.tsx", "!../**/*.test.tsx", "!../test/**"], { query: "?raw", import: "default", eager: true }) as Record<string, string>;
     // Act
-    const carrying = Object.entries(sources).filter(([, text]) => /aria-haspopup/.test(text)).map(([file]) => file.replace(/^\.\.\//, ""));
-    // Assert: the MenuBar's top items are role=menuitem on desktop only; SelectSheet's arrives fixed from main (d05b7020)
-    expect(carrying.filter((f) => f !== "components/controls/SelectSheet.tsx")).toEqual(["components/shell/MenuBar.tsx"]);
+    const carrying = Object.entries(sources).filter(([, text]) => /aria-haspopup\s*=/.test(text)).map(([file]) => file.replace(/^\.\.\//, ""));
+    // Assert: the MenuBar's top items are role=menuitem on desktop only. SelectSheet's came off on main (d05b7020) and
+    // is checked here too since the merge (its comment names the attribute, so the match is on the attribute itself).
+    expect(carrying).toEqual(["components/shell/MenuBar.tsx"]);
   });
 
   it("the Explain trigger, a picker's Pick button and the statistic picker's button are plain buttons", async () => {
