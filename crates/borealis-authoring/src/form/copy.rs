@@ -6,7 +6,7 @@
 //! it replaces, its earlier type name and its source reference.
 //!
 //! A **deep copy** copies what the element is made of too, with the ids cleared: a class's features, its starting
-//! equipment and (2024 shape) its subclasses with their features; a species' or race's traits and their lineage options;
+//! equipment and its subclasses with their features (a 2014 class's copy offers them by a tag of its own); a species' or race's traits and their lineage options;
 //! a background's feature, variants and package; a subclass's or feat's own features. Subclasses are separate elements:
 //! they travel as the copy's **companions** and are saved with it ([`write_copy`]). After the ids are given, every
 //! place a copied element names an original names its copy ([`CopyExtras::links`]), and a lineage choice offers the
@@ -16,7 +16,7 @@
 
 use super::child_refs::ChildEntry;
 use super::read::{element_group_keyed, read_one};
-use super::subclass::{class_choice, refresh_subclass, PARENT, SUBCLASS_KIND};
+use super::subclass::{class_choice, class_offering, refresh_subclass, PARENT, SUBCLASS_KIND};
 use super::ui::assign_ids;
 use super::value::RefValue;
 use super::write::form_to_elements;
@@ -289,24 +289,53 @@ fn lineage_options(
     }
 }
 
-/// A class's subclasses, when the copy offers its own (the 2024 shape: "<Class> Subclass", written from the copy's
-/// name; a 2014 class offers its subclasses by a label the original shares, so its copy keeps offering the originals).
+/// The field of a class's subclass choice (a class feature's, spec 4.5).
+const SUBCLASS_LABEL: &str = "subclassLabel";
+
+/// A class's subclasses, copied: the copy offers them by its own tag ("<Class> Subclass", written from the copy's
+/// name). A 2024 class offers that tag already; a 2014 class offers its subclasses by a label the original shares
+/// ("Arcane Tradition"), so its copied choice takes the copy's own tag too ([`own_choice_tag`]) and only the
+/// subclasses of this class are copied (they name it, or the label is offered by this class first).
 fn subclasses(class: &Element, cx: &FormContext<'_>, links: &mut Vec<CopyLink>) -> Vec<FormState> {
     let Some(choice) = class_choice(class, cx.lookup) else {
         return Vec::new();
     };
-    if !choice.tag.ends_with(" Subclass") {
-        return Vec::new();
-    }
+    let shared_label = !choice.tag.ends_with(" Subclass");
     let mut out = Vec::new();
     for sub in cx.lookup.loaded_of_type("Archetype") {
         if !sub.supports.contains(&choice.tag) || !same_edition(sub.ruleset, class.ruleset) {
+            continue;
+        }
+        if shared_label && !of_class(sub, class, cx.lookup) {
             continue;
         }
         let key = format!("s{}", out.len() + 1);
         out.push(group(sub, &key, cx, links));
     }
     out
+}
+
+/// `sub` belongs to `class`: it names the class (`data.class`), or names none and the class is the one whose choice
+/// offers it.
+fn of_class(sub: &Element, class: &Element, lookup: &dyn Lookup) -> bool {
+    match sub.data.get("class").and_then(Value::as_str) {
+        Some(id) => id == class.id,
+        None => class_offering(sub, lookup).is_some_and(|c| c.class_id == class.id),
+    }
+}
+
+/// The copied class's subclass choice (on the class or one of its features) offers the copy's own tag (P3 Hy6pc): true
+/// when a 2014 choice was found and changed.
+fn own_choice_tag(form: &mut FormState) -> bool {
+    if form
+        .memo
+        .fields
+        .get_mut(SUBCLASS_LABEL)
+        .is_some_and(super::codec::own_subclass_tag)
+    {
+        return true;
+    }
+    form.children.iter_mut().any(own_choice_tag)
 }
 
 /// A copy of the loaded element `el` (spec 11): see the module documentation. `deep` copies its children (and a class's
@@ -328,7 +357,11 @@ pub fn copy_element(el: &Element, cx: &FormContext<'_>, deep: bool) -> Copy {
             }
         }
         if el.ty == "Class" {
-            extras.companions = subclasses(el, cx, &mut extras.links);
+            let shared_label =
+                class_choice(el, cx.lookup).is_some_and(|c| !c.tag.ends_with(" Subclass"));
+            if !shared_label || own_choice_tag(&mut form) {
+                extras.companions = subclasses(el, cx, &mut extras.links);
+            }
         }
     }
     strip(&mut form);

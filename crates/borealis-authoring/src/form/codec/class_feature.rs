@@ -6,7 +6,9 @@
 //!   improvement options per level (`"Improvement Option (<Class> N)"`, supports `Improvement Option,<Class>,N`: the
 //!   engine makes those options for every class by name).
 //! * **Subclass choice**: a `select` of type `Archetype` named with its label ("Sacred Oath"); supports
-//!   `"<Class> Subclass"` (2024) or the label (2014, also gated at the feature's level).
+//!   `"<Class> Subclass"` (2024) or the label (2014, also gated at the feature's level). A deep copy of a 2014 class
+//!   keeps the 2014 shape with a tag of its own, `"<Class> Subclass"` (P3 Hy6pc: the label is shared with the
+//!   original, which would offer the copied subclasses).
 //! * **Epic boon**: a `select_feat` of category Epic Boon (`"Epic Boon (<Class>)"`) at the feature's level.
 //!
 //! The class's name, edition and the feature's level come from the parent ([`super::super::ParentInfo`]); a rule
@@ -38,6 +40,8 @@ const ASI_FEAT: &str = "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT";
 enum Shape {
     /// 2014 (Aurora's).
     Old,
+    /// 2014, gated at the feature's level, offering `"<Class> Subclass"` (a copied 2014 class's own tag).
+    OldOwn,
     /// 2024 (SRD 5.2.1).
     New,
 }
@@ -61,7 +65,7 @@ fn asi_rule(shape: Shape, class: &str, level: u32) -> Rule {
     let v = match shape {
         Shape::New => json!({"kind": "select_feat", "level": level,
             "name": format!("Ability Score Improvement ({class} {level})"), "category": "General", "default": ASI_FEAT}),
-        Shape::Old => json!({"kind": "select", "type": "Class Feature",
+        Shape::Old | Shape::OldOwn => json!({"kind": "select", "type": "Class Feature",
             "name": format!("Improvement Option ({class} {level})"), "level": level,
             "supports": format!("Improvement Option,{class},{level}")}),
     };
@@ -86,6 +90,10 @@ fn subclass_rule(shape: Shape, class: &str, label: &str, level: u32) -> Rule {
             "supports": format!("{} Subclass", tag_word(class))}),
         Shape::Old => {
             json!({"kind": "select", "type": "Archetype", "name": label, "level": level, "supports": label})
+        }
+        Shape::OldOwn => {
+            json!({"kind": "select", "type": "Archetype", "name": label, "level": level,
+            "supports": format!("{} Subclass", tag_word(class))})
         }
     };
     serde_json::from_value(v).expect("a valid rule")
@@ -138,7 +146,12 @@ fn recognise(field: FeatureField, rule: &Rule) -> Option<(Shape, String, u32, St
                 Some((Shape::Old, String::new(), level_of(&v)?, name.to_string()))
             } else {
                 let class = supports.strip_suffix(" Subclass")?;
-                Some((Shape::New, class.to_string(), 0, name.to_string()))
+                match level_of(&v) {
+                    Some(level) => {
+                        Some((Shape::OldOwn, class.to_string(), level, name.to_string()))
+                    }
+                    None => Some((Shape::New, class.to_string(), 0, name.to_string())),
+                }
             }
         }
         FeatureField::EpicBoon => {
@@ -184,7 +197,8 @@ pub(crate) fn read(field: FeatureField, r: &mut Reader<'_>) -> FieldMemo {
     };
     let raw = json!({
         "class": first.map(|f| f.1.clone()),
-        "old": first.map(|f| f.0 == Shape::Old),
+        "old": first.map(|f| f.0 != Shape::New),
+        "own": first.map(|f| f.0 == Shape::OldOwn),
         "level": first.map(|f| f.2),
     });
     FieldMemo {
@@ -217,9 +231,11 @@ pub(crate) fn write(
         .or_else(|| stored_class.map(str::to_string))
         .unwrap_or_default();
     let old = raw.and_then(|r| r.get("old")).and_then(Value::as_bool);
+    let own = raw.and_then(|r| r.get("own")).and_then(Value::as_bool) == Some(true);
     // the stored shape, else the class's edition (a class without one is a 2014 class, as the SRD stores them)
     let edition = parent.as_ref().map_or(out.element.ruleset, |p| p.edition);
     let shape = match old {
+        Some(true) if own => Shape::OldOwn,
         Some(true) => Shape::Old,
         Some(false) => Shape::New,
         None if edition == Some(Ruleset::Dnd2024) => Shape::New,
@@ -260,7 +276,7 @@ pub(crate) fn write(
             if label.is_empty() {
                 Vec::new()
             } else {
-                if shape == Shape::New {
+                if shape != Shape::Old {
                     needs_class()?;
                 }
                 vec![subclass_rule(shape, &class, &label, level.unwrap_or(3))]
@@ -277,4 +293,17 @@ pub(crate) fn write(
     };
     out.field_rules(rules.into_iter().map(|r| (0, r)), &slots, path);
     Ok(())
+}
+
+/// A deep copy of a 2014 class (P3 Hy6pc): its subclass choice, read in the 2014 shape (offering its label), offers the
+/// copy's own tag instead (`"<Class> Subclass"`, written from the copy's name). False when `memo` is no 2014 choice.
+pub(crate) fn own_subclass_tag(memo: &mut FieldMemo) -> bool {
+    let old = memo.raw.get("old").and_then(Value::as_bool) == Some(true);
+    if !old || memo.value.as_str().is_none_or(str::is_empty) {
+        return false;
+    }
+    if let Some(raw) = memo.raw.as_object_mut() {
+        raw.insert("own".into(), json!(true));
+    }
+    true
 }

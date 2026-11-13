@@ -224,6 +224,96 @@ fn a_deep_class_copy_copies_its_features_package_and_subclasses() {
     });
 }
 
+/// A 2014 class whose subclass choice is a feature at level 2 offering its label ("Arcane Tradition", the 2014 SRD
+/// shape); two subclasses of it (one naming the class, one only carrying the label, as the 2014 SRD's do) and one of
+/// another class under the same label.
+fn mage() -> Vec<Element> {
+    vec![
+        el(
+            json!({"id": "ID_Y_CLASS_MAGE", "name": "Mage", "type": "Class", "source": "Y", "ruleset": "dnd2014",
+            "setters": [{"name": "hd", "value": "d6"}],
+            "rules": [{"kind": "grant", "id": "ID_Y_CLASS_FEATURE_MAGE_TRADITION", "type": "Class Feature", "level": 2}]}),
+        ),
+        el(
+            json!({"id": "ID_Y_CLASS_FEATURE_MAGE_TRADITION", "name": "Arcane Tradition", "type": "Class Feature",
+            "source": "Y", "ruleset": "dnd2014",
+            "rules": [{"kind": "select", "type": "Archetype", "name": "Arcane Tradition", "level": 2,
+                       "supports": "Arcane Tradition"}]}),
+        ),
+        el(
+            json!({"id": "ID_Y_ARCHETYPE_EMBERS", "name": "School of Embers", "type": "Archetype", "source": "Y",
+            "ruleset": "dnd2014", "supports": ["Arcane Tradition"], "data": {"class": "ID_Y_CLASS_MAGE"},
+            "rules": [{"kind": "grant", "id": "ID_Y_ARCHETYPE_FEATURE_EMBERS_SPARK", "type": "Archetype Feature", "level": 2}]}),
+        ),
+        el(
+            json!({"id": "ID_Y_ARCHETYPE_FEATURE_EMBERS_SPARK", "name": "Spark", "type": "Archetype Feature", "source": "Y",
+            "ruleset": "dnd2014"}),
+        ),
+        el(
+            json!({"id": "ID_Y_ARCHETYPE_FROST", "name": "School of Frost", "type": "Archetype", "source": "Y",
+            "ruleset": "dnd2014", "supports": ["Arcane Tradition"]}),
+        ),
+        el(
+            json!({"id": "ID_Y_ARCHETYPE_MIST", "name": "Path of Mist", "type": "Archetype", "source": "Y",
+            "ruleset": "dnd2014", "supports": ["Arcane Tradition"], "data": {"class": "ID_Y_CLASS_SEER"}}),
+        ),
+    ]
+}
+
+/// Hy6pc (WB-22 difference 1): a 2014 class's deep copy offers its subclasses by a tag of its own (written from its
+/// name, as a 2024 copy's) at the same level and under the same label, and copies its subclasses with that tag, so the
+/// original class never offers the copies and the copy never offers the originals.
+#[test]
+fn a_deep_copy_of_a_2014_class_copies_its_subclasses_under_its_own_tag() {
+    let content = mage();
+    with(&content, |cx| {
+        // Arrange
+        let copy = copy_element(&content[0], cx, true);
+        let names: Vec<&str> = copy
+            .extras
+            .companions
+            .iter()
+            .map(|c| c.fields["name"].as_str().unwrap_or_default())
+            .collect();
+        assert_eq!(
+            names,
+            ["School of Embers", "School of Frost"],
+            "not another class's"
+        );
+
+        // Act
+        let mut g = ids(&content);
+        let form = assign_ids(&copy.form, &mut g);
+        let out = write_copy(&form, &copy.extras, cx, &mut g).expect("writes");
+
+        // Assert
+        let choice = written(&out, "ID_HB_CLASS_FEATURE_MAGE_COPY_ARCANE_TRADITION");
+        let expected: Rule = serde_json::from_value(json!({"kind": "select", "type": "Archetype",
+            "name": "Arcane Tradition", "level": 2, "supports": "Mage copy Subclass"}))
+        .unwrap();
+        assert_eq!(choice.rules, [expected]);
+        for id in [
+            "ID_HB_SUBCLASS_SCHOOL_OF_EMBERS",
+            "ID_HB_SUBCLASS_SCHOOL_OF_FROST",
+        ] {
+            let sub = written(&out, id);
+            assert_eq!(sub.supports, ["Mage copy Subclass"], "{id}");
+        }
+        let embers = written(&out, "ID_HB_SUBCLASS_SCHOOL_OF_EMBERS");
+        assert_eq!(embers.data["class"], json!("ID_HB_CLASS_MAGE_COPY"));
+        let text =
+            serde_json::to_string(&out.iter().map(|w| &w.element).collect::<Vec<_>>()).unwrap();
+        assert!(!text.contains("ID_Y_"), "no original is named: {text}");
+
+        // the copied choice reads back as the subclass choice and writes the same rule (the field keeps its shape)
+        let read = read_one(choice, "e".to_string(), cx);
+        assert_eq!(read.fields["subclassLabel"], json!("Arcane Tradition"));
+        assert!(read.blocks.is_empty(), "taken by the field, not a block");
+        let again = form_to_elements(&read, cx).expect("writes");
+        assert_eq!(again[0].rules, choice.rules);
+    });
+}
+
 /// A 2024 species with a darkvision trait and a lineage trait whose choice offers two options by tag.
 fn elf() -> Vec<Element> {
     vec![

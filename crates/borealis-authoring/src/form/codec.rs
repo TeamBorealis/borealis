@@ -23,7 +23,7 @@ mod caster_read;
 mod casting;
 mod class;
 mod class_feature;
-pub(crate) use class_feature::tag_word;
+pub(crate) use class_feature::{own_subclass_tag, tag_word};
 mod class_mc;
 mod creature;
 mod creature_values;
