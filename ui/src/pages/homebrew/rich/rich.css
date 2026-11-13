@@ -56,13 +56,15 @@ html.phone .rich-toolbar { flex-wrap: nowrap; overflow-x: auto; justify-content:
 html.phone .rich-toolbar button { flex: 0 0 auto; min-width: var(--ph-hit); padding: 4px 8px; }
 html.phone .rich-toolbar button[aria-pressed="true"] { background: var(--ph-accent-soft); }
 html.phone .rich-toolbar button[aria-disabled="true"] { color: var(--ph-text-3); opacity: 0.6; }
-html.phone .rich-docked .rich-toolbar { position: sticky; top: 0; z-index: 2; }
-html.phone.kb-open .rich-docked .rich-toolbar { position: fixed; left: var(--ph-gutter); right: var(--ph-gutter); top: auto; bottom: calc(var(--kb) + 8px); z-index: 30; }
+html.phone .rich-docked > .rich-toolbar { position: sticky; top: 0; z-index: 2; }
+html.phone.kb-open .rich-docked > .rich-toolbar { position: fixed; left: var(--ph-gutter); right: var(--ph-gutter); top: auto; bottom: calc(var(--kb) + 8px); z-index: 30; }
 html.phone .rich-edit { min-height: 96px; padding: 10px 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text); font: 400 var(--ph-t-body)/1.35 var(--ph-font-ui); }
 html.phone .rich-edit:focus { border-color: var(--ph-accent); outline: 2px solid var(--ph-accent); outline-offset: -1px; }
 html.phone .rich-kept-remove { min-height: var(--ph-hit); padding: 0 12px; color: var(--ph-accent); font: 500 var(--ph-t-foot)/1.2 var(--ph-font-ui); text-transform: none; }
 html.phone .rich-lint { font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); }
 html.phone .rich-lint .hb-tool { min-height: var(--ph-hit); }
-/* Phones: a table cell edited in a sheet (spec 16). */
+/* Phones: a table cell edited in a sheet (spec 16) with Bold and Italic (HC12): the description toolbar's buttons in the
+   sheet's flow (never docked), the cell's text in the description's edit area. */
+.rich-cell-tools { margin: 2px 0 4px; }
 .rich-cell-nav { display: flex; gap: 8px; margin-top: 12px; }
 .rich-cell-nav .btn { flex: 1 1 0; }

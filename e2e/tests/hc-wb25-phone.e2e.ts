@@ -13,7 +13,9 @@ import { catchDownloads, takeDownload } from '../support/creator.js';
 //    row checks and clears with a tap on its name (a check box, not a ring);
 // 2. the device-check flow: a pack, a spell with a rule block made through the sheets (U22 select), a weapon, Save,
 //    Try it (the full-height sheet), then Export (Share) and Import pack as a copy, with the copy opened in the creator;
-// 3. the class LEVELS rows with a sheet per level.
+// 3. the class LEVELS rows with a sheet per level;
+// 4. (HC12) a description table cell edited in the cell sheet with Bold and Italic: the marks reach the description and
+//    its preview, a cell with marks opens in the sheet as it is, Cancel writes nothing, Undo takes back one cell write.
 // Deterministic: no model.
 
 const NAME = '#hb-f-name-input';
@@ -211,5 +213,80 @@ describe('hc-wb25 homebrew creator on a phone (web mock)', { tags: ['homebrew'] 
     await expect(ctx.screen.getByRole('button', 'Add a feature at level 4')).toBeVisible();
     await ctx.screen.getByRole('button', 'Close').last().tap();
     await expect(ctx.screen.getByRole('dialog', 'Level 4')).toBeHidden();
+  });
+
+  test('the cell sheet: Bold and Italic on table cells, Cancel writes nothing, Undo takes back one cell at a time', async (ctx) => {
+    await openPhone(ctx);
+    await newPack(ctx, 'Ember Isles');
+    await newElement(ctx, /^Spell A spell/, 'Ember Lance');
+    await ctx.screen.getByRole('tab', 'DESCRIPTION').tap();
+    await ctx.browser.locator('.rich-edit').first().click();
+    await ctx.screen.getByRole('button', 'Insert table').tap();
+    const heads = () => ctx.browser.evaluate((_: null) => Array.from(document.querySelectorAll('.rich-host .rich-edit th')).map((th) => th.innerHTML).join(' | '), null);
+    expectEqual('a new table', 'Column 1 | Column 2', await heads());
+
+    // the first heading: select its text in the sheet, Bold; Next keeps it
+    await ctx.screen.getByRole('button', 'Edit cell').tap();
+    await expect(ctx.screen.getByRole('dialog', 'Table cell: Header, column 1')).toBeVisible();
+    const box = '.rich-cell-sheet .rich-cell-edit';
+    const selectCell = async () => {
+      await ctx.browser.locator(box).click();
+      await ctx.browser.evaluate((sel: string) => {
+        const el = document.querySelector(sel)!;
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        getSelection()!.removeAllRanges();
+        getSelection()!.addRange(range);
+        return true;
+      }, box);
+      await waitFor(ctx, (sel: string) => (getSelection()?.toString() ?? '') === document.querySelector(sel)!.textContent, box, 'the cell text selected');
+    };
+    const cellTool = (name: string) => ctx.browser.locator(`.rich-cell-tools button[aria-label="${name}"]`);
+    const boxHtml = () => ctx.browser.evaluate((sel: string) => document.querySelector(sel)!.innerHTML, box);
+    await selectCell();
+    await cellTool('Bold').click();
+    await waitFor(ctx, (sel: string) => document.querySelector(sel)!.innerHTML === '<b>Column 1</b>', box, 'Column 1 bold in the sheet');
+    expectEqual('Bold pressed', 'true', String(await ctx.browser.evaluate((_: null) => document.querySelector('.rich-cell-tools button[aria-label="Bold"]')!.getAttribute('aria-pressed'), null)));
+
+    // with the keyboard up the sheet's buttons stay in the sheet (only the description toolbar docks)
+    await ctx.browser.evaluate((_: null) => { document.documentElement.classList.add('kb-open'); document.documentElement.style.setProperty('--kb', '300px'); return true; }, null);
+    const inSheet = await ctx.browser.evaluate((_: null) => {
+      const tools = document.querySelector('.rich-cell-tools')!;
+      const sheet = document.querySelector('.rich-cell-sheet')!.getBoundingClientRect();
+      const b = tools.getBoundingClientRect();
+      return `${getComputedStyle(tools).position}:${b.top >= sheet.top && b.bottom <= sheet.bottom}`;
+    }, null);
+    expectEqual('the sheet buttons in the sheet', 'static:true', inSheet);
+    await ctx.browser.evaluate((_: null) => { document.documentElement.classList.remove('kb-open'); document.documentElement.style.setProperty('--kb', '0px'); return true; }, null);
+
+    await ctx.screen.getByRole('button', 'Next cell').tap();
+    await expect(ctx.screen.getByRole('dialog', 'Table cell: Header, column 2')).toBeVisible();
+    await selectCell();
+    await cellTool('Italic').click();
+    await waitFor(ctx, (sel: string) => document.querySelector(sel)!.innerHTML === '<i>Column 2</i>', box, 'Column 2 italic in the sheet');
+    await ctx.screen.getByRole('button', 'OK').tap();
+    await expect(ctx.screen.getByRole('dialog', 'Table cell: Header, column 2')).toBeHidden();
+    expectEqual('the marks in the description', '<b>Column 1</b> | <i>Column 2</i>', await heads());
+
+    // a cell with marks opens in the sheet as it is; Bold on it and Cancel writes nothing
+    await ctx.screen.getByRole('button', 'Edit cell').tap();
+    await expect(ctx.screen.getByRole('dialog', 'Table cell: Header, column 2')).toBeVisible();
+    expectEqual('the italic cell in the sheet', '<i>Column 2</i>', await boxHtml());
+    await selectCell();
+    await cellTool('Bold').click();
+    await waitFor(ctx, (sel: string) => document.querySelector(sel)!.innerHTML === '<b><i>Column 2</i></b>', box, 'bold and italic in the sheet');
+    await ctx.screen.getByRole('button', 'Cancel').last().tap();
+    await expect(ctx.screen.getByRole('dialog', 'Table cell: Header, column 2')).toBeHidden();
+    expectEqual('Cancel wrote nothing', '<b>Column 1</b> | <i>Column 2</i>', await heads());
+
+    // the preview reads the marks; Undo takes back the second cell's write, then the first
+    await autosaved(ctx);
+    await ctx.screen.getByRole('tab', 'PREVIEW').tap();
+    await waitFor(ctx, (_: null) => /<th><b>Column 1<\/b><\/th><th><i>Column 2<\/i><\/th>/.test(document.querySelector('.hb-tabpanel')?.innerHTML ?? ''), null, 'the preview table with the marks');
+    await ctx.screen.getByRole('tab', 'DESCRIPTION').tap();
+    await pinned(ctx, 'Undo').click();
+    await waitFor(ctx, (_: null) => Array.from(document.querySelectorAll('.rich-host .rich-edit th')).map((th) => th.innerHTML).join(' | ') === '<b>Column 1</b> | Column 2', null, 'one Undo: the second cell plain again');
+    await pinned(ctx, 'Undo').click();
+    await waitFor(ctx, (_: null) => Array.from(document.querySelectorAll('.rich-host .rich-edit th')).map((th) => th.innerHTML).join(' | ') === 'Column 1 | Column 2', null, 'a second Undo: the first cell plain again');
   });
 });

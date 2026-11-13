@@ -1,4 +1,5 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import type { Fragment } from "prosemirror-model";
 import userEvent from "@testing-library/user-event";
 import { EditorState } from "prosemirror-state";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -9,7 +10,7 @@ import { type HapticsBackend, setHapticsForTests } from "../lib/haptics";
 import { setPhoneForTests, setPhoneOsForTests } from "../lib/phone";
 import { RefField } from "../pages/homebrew/pickers/RefField";
 import { CellSheet } from "../pages/homebrew/rich/CellSheet";
-import { cellIndexAt, insertTable, setCellText, tableCells, type TableCell } from "../pages/homebrew/rich/commands";
+import { cellIndexAt, insertTable, setCellText, tableCells } from "../pages/homebrew/rich/commands";
 import { richSchema } from "../pages/homebrew/rich/schema";
 import { mockApi, renderControl, Stateful } from "./hc-wb10-harness";
 import { renderApp } from "./utils";
@@ -213,7 +214,7 @@ describe("WB-25 table cells in a sheet (spec 16)", () => {
     setCellText(cells[2]!.pos, "1-3\nlow")(state, (tr) => { next = state.apply(tr); });
     // Assert
     const after = tableCells(next)!;
-    expect(after[2]).toMatchObject({ text: "1-3\nlow", plain: true });
+    expect(after[2]).toMatchObject({ text: "1-3\nlow" });
     expect(cellIndexAt(next)).toBe(2);
     const cell = next.doc.nodeAt(after[2]!.pos)!;
     expect(cell.content.childCount).toBe(3);
@@ -221,13 +222,9 @@ describe("WB-25 table cells in a sheet (spec 16)", () => {
   });
 
   it("the sheet keeps what was typed on Next and on OK, and nothing on Cancel", async () => {
-    // Arrange
+    // Arrange: a new table's cells ("Column 1", "Column 2" headings)
     act(() => setPhoneForTests(true));
-    const user = userEvent.setup();
-    const cells: TableCell[] = [
-      { pos: 2, row: 0, col: 0, head: true, text: "d6", plain: true },
-      { pos: 6, row: 0, col: 1, head: true, text: "", plain: true },
-    ];
+    const cells = tableCells(withTable())!;
     const onWrite = vi.fn();
     const onClose = vi.fn();
     let index = 0;
@@ -237,18 +234,21 @@ describe("WB-25 table cells in a sheet (spec 16)", () => {
       </AppProviders>
     );
     const utils = render(view());
-    // Act
+    // Act: typing replaces the heading's text (the editor reads its DOM)
     const sheet = await screen.findByRole("dialog", { name: "Table cell: Header, column 1" });
-    const box = within(sheet).getByRole("textbox", { name: "Cell text" }) as HTMLTextAreaElement;
-    expect(box.value).toBe("d6");
-    await user.clear(box);
-    await user.type(box, "d8");
-    await user.click(within(sheet).getByRole("button", { name: "Next cell" }));
+    const box = within(sheet).getByRole("textbox", { name: "Cell text" });
+    expect(box.textContent).toBe("Column 1");
+    await act(async () => { (box.firstChild as Text).data = "d8"; await new Promise((r) => setTimeout(r, 0)); });
+    fireEvent.click(within(sheet).getByRole("button", { name: "Next cell" }));
     // Assert
-    expect(onWrite).toHaveBeenLastCalledWith(cells[0], "d8");
+    expect(onWrite).toHaveBeenCalledTimes(1);
+    expect(onWrite.mock.calls[0]![0]).toBe(cells[0]);
+    expect((onWrite.mock.calls[0]![1] as Fragment).toJSON()).toEqual([{ type: "text", text: "d8" }]);
     const second = await screen.findByRole("dialog", { name: "Table cell: Header, column 2" });
-    await user.type(within(second).getByRole("textbox", { name: "Cell text" }), "Result");
-    await user.click(within(second).getByRole("button", { name: "Cancel" }));
+    const box2 = within(second).getByRole("textbox", { name: "Cell text" });
+    expect(box2.textContent).toBe("Column 2");
+    await act(async () => { (box2.firstChild as Text).data = "Result"; await new Promise((r) => setTimeout(r, 0)); });
+    fireEvent.click(within(second).getByRole("button", { name: "Cancel" }));
     expect(onWrite).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
   });

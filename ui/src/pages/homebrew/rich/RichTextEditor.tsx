@@ -11,7 +11,7 @@ import "../../equipment/equipment.css";
 import "../homebrew.css";
 import "./rich.css";
 import {
-  ACTION_META, addTableColumn, addTableRow, asAction, cellIndexAt, setCellText, tableCells, deleteTable, docFromJson, insertHigherLevel, insertTable, isHeadingActive,
+  ACTION_META, addTableColumn, addTableRow, asAction, cellIndexAt, setCellContent, tableCells, deleteTable, docFromJson, insertHigherLevel, insertTable, isHeadingActive,
   isListActive, isMarkActive, removeKeptAt, replaceDoc, richKeys, tableAt, toggleBold, toggleHeading, toggleItalic, toggleList,
   type Edition,
 } from "./commands";
@@ -204,8 +204,6 @@ export function RichTextEditor(props: RichTextEditorProps) {
   const buttons = state ? toolButtons(state, props.extras, props.edition) : [];
   const docked = phone && (focused || cellSheet !== null);
   const cells = phone && state ? tableCells(state) : null;
-  const here = cells && state ? cells[cellIndexAt(state)] : undefined;
-  const cellEditable = !!here?.plain;
 
   return (
     <div
@@ -230,8 +228,8 @@ export function RichTextEditor(props: RichTextEditorProps) {
           </button>
         ))}
         {phone && cells && (
-          <button type="button" aria-label="Edit cell" title={cellEditable ? "Edit this cell in a sheet" : "This cell has bold or italic text: edit it in place"}
-            disabled={!cellEditable} onMouseDown={keepFocus} onClick={() => setCellSheet(cellIndexAt(state!))}>
+          <button type="button" aria-label="Edit cell" title="Edit this cell in a sheet"
+            onMouseDown={keepFocus} onClick={() => setCellSheet(cellIndexAt(state!))}>
             <Icon name="pen" />Edit cell
           </button>
         )}
@@ -239,7 +237,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
       <div ref={hostRef} className="rich-host" />
       {cellSheet !== null && cells && (
         <CellSheet cells={cells} index={cellSheet} onIndex={setCellSheet} onClose={() => setCellSheet(null)}
-          onWrite={(cell, text) => { const view = viewRef.current; if (view) asAction(setCellText(cell.pos, text))(view.state, view.dispatch, view); }} />
+          onWrite={(cell, content) => { const view = viewRef.current; if (view) asAction(setCellContent(cell.pos, content))(view.state, view.dispatch, view); }} />
       )}
       {findings.length > 0 && (
         <div className="rich-lint" role="status">

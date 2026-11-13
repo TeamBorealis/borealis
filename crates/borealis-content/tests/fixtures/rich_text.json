@@ -2486,6 +2486,143 @@
       },
       "html": "<ul></ul>",
       "name": "kept empty list"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false,
+              "sections": true
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": true
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "d6",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_header"
+                  },
+                  {
+                    "content": [
+                      {
+                        "text": "Result",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_header"
+                  }
+                ],
+                "type": "table_row"
+              },
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "1-3",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  },
+                  {
+                    "content": [
+                      {
+                        "marks": [
+                          {
+                            "attrs": {
+                              "tag": "b"
+                            },
+                            "type": "bold"
+                          },
+                          {
+                            "attrs": {
+                              "tag": "i"
+                            },
+                            "type": "italic"
+                          }
+                        ],
+                        "text": "Ash",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              },
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "4-6",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  },
+                  {
+                    "content": [
+                      {
+                        "marks": [
+                          {
+                            "attrs": {
+                              "tag": "strong"
+                            },
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "Fire",
+                        "type": "text"
+                      },
+                      {
+                        "type": "hard_break"
+                      },
+                      {
+                        "marks": [
+                          {
+                            "attrs": {
+                              "tag": "em"
+                            },
+                            "type": "italic"
+                          }
+                        ],
+                        "text": "cold",
+                        "type": "text"
+                      },
+                      {
+                        "text": " ash",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<table><thead><tr><th>d6</th><th>Result</th></tr></thead><tbody><tr><td>1-3</td><td><b><i>Ash</i></b></td></tr><tr><td>4-6</td><td><strong>Fire</strong><br /><em>cold</em> ash</td></tr></tbody></table>",
+      "name": "table cells with bold and italic (phone cell sheet)"
     }
   ]
 }

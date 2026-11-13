@@ -366,27 +366,24 @@ export function applyCommand(state: EditorState, cmd: Command): { state: EditorS
 
 // ---- phone cell sheet (spec 16: "tables edit cell by cell in a sheet") -----------------------------------------------
 
-/** One cell of a table: where it starts, its plain text (line breaks as "\n"), and whether the sheet can edit it. */
+/** One cell of a table: where it starts, its content (bold, italic, line breaks as they are) and its plain text (line
+ * breaks as "\n"). The sheet edits any cell: a cell holds inline content only, which the sheet's schema holds whole. */
 export interface TableCell {
   pos: number;
   row: number;
   col: number;
   head: boolean;
   text: string;
-  /** Plain text and line breaks only: a cell with bold or italic text is edited in place, so nothing is lost. */
-  plain: boolean;
+  content: Fragment;
 }
 
-function cellText(cell: PMNode): { text: string; plain: boolean } {
+function cellText(cell: PMNode): string {
   let text = "";
-  let plain = true;
   cell.forEach((child) => {
     if (child.type === nodes.hard_break) text += "\n";
     else if (child.isText) text += child.text ?? "";
-    else plain = false;
-    if (child.marks.length > 0) plain = false;
   });
-  return { text, plain };
+  return text;
 }
 
 /** Every cell of the table holding the selection, in reading order (row by row), or null outside a table. */
@@ -398,7 +395,7 @@ export function tableCells(state: EditorState): TableCell[] | null {
   at.table.forEach((row, _o, r) => {
     let cellPos = rowPos + 1;
     row.forEach((cell, _c, c) => {
-      cells.push({ pos: cellPos, row: r, col: c, head: cell.type === nodes.table_header, ...cellText(cell) });
+      cells.push({ pos: cellPos, row: r, col: c, head: cell.type === nodes.table_header, text: cellText(cell), content: cell.content });
       cellPos += cell.nodeSize;
     });
     rowPos += row.nodeSize;
@@ -414,21 +411,27 @@ export function cellIndexAt(state: EditorState): number {
   return cells.findIndex((c) => c.row === at.row && c.col === at.col);
 }
 
-/** Replace the cell starting at `pos` with plain text ("\n" becomes a line break); the cursor goes to the cell's end. */
-export function setCellText(pos: number, text: string): Command {
+/** Replace the content of the cell starting at `pos` (the cell sheet's OK, Previous, Next); the cursor goes to the
+ * cell's end. */
+export function setCellContent(pos: number, content: Fragment): Command {
   return (state, dispatch) => {
     const cell = state.doc.nodeAt(pos);
     if (!cell || (cell.type !== nodes.table_cell && cell.type !== nodes.table_header)) return false;
     if (dispatch) {
-      const parts: PMNode[] = [];
-      text.split("\n").forEach((line, i) => {
-        if (i > 0) parts.push(nodes.hard_break.create());
-        if (line) parts.push(richSchema.text(line));
-      });
-      const tr = state.tr.replaceWith(pos + 1, pos + cell.nodeSize - 1, Fragment.from(parts));
+      const tr = state.tr.replaceWith(pos + 1, pos + cell.nodeSize - 1, content);
       const end = tr.doc.nodeAt(pos);
       dispatch(tr.setSelection(TextSelection.near(tr.doc.resolve(pos + (end ? end.nodeSize - 1 : 1)), -1)));
     }
     return true;
   };
+}
+
+/** Replace the cell starting at `pos` with plain text ("\n" becomes a line break). */
+export function setCellText(pos: number, text: string): Command {
+  const parts: PMNode[] = [];
+  text.split("\n").forEach((line, i) => {
+    if (i > 0) parts.push(nodes.hard_break.create());
+    if (line) parts.push(richSchema.text(line));
+  });
+  return setCellContent(pos, Fragment.from(parts));
 }

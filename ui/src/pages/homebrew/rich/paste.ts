@@ -83,7 +83,7 @@ function isCell(node: PMNode): boolean {
   return node.type.name === "table_cell" || node.type.name === "table_header";
 }
 
-/** Pasted text made canonical: escape fix (a fixed line break becomes a hard break), the editor's normalization,
+/** Pasted text made canonical (in the pasted nodes' own schema): escape fix (a fixed line break becomes a hard break), the editor's normalization,
  * single spaces; kept blocks dropped. Adjacent text with the same marks is joined by `Fragment.fromArray`. */
 function cleanFragment(fragment: Fragment, inCell: boolean): Fragment {
   const nodes: PMNode[] = [];
@@ -93,18 +93,20 @@ function cleanFragment(fragment: Fragment, inCell: boolean): Fragment {
       nodes.push(node.copy(cleanFragment(node.content, inCell || isCell(node))));
       return;
     }
+    const schema = node.type.schema;
     const lines = normalizeRichText(fixText(node.text ?? ""), inCell).replace(SPACE_RUNS, " ").split("\n");
     lines.forEach((line, i) => {
-      if (i > 0) nodes.push(richSchema.nodes.hard_break.create(null, null, node.marks));
-      if (line !== "") nodes.push(richSchema.text(line, node.marks));
+      if (i > 0) nodes.push(schema.nodes.hard_break!.create(null, null, node.marks));
+      if (line !== "") nodes.push(schema.text(line, node.marks));
     });
   });
   return Fragment.fromArray(nodes);
 }
 
-/** Pasted content made canonical (the editor's `transformPasted`). */
-export function normalizePastedSlice(slice: Slice): Slice {
-  return new Slice(cleanFragment(slice.content, false), slice.openStart, slice.openEnd);
+/** Pasted content made canonical (the editor's `transformPasted`); `inCell` for content that lands in a table cell
+ * as it is (the phone cell sheet's editor, whose nodes are a cell's inline content in a schema of its own). */
+export function normalizePastedSlice(slice: Slice, inCell = false): Slice {
+  return new Slice(cleanFragment(slice.content, inCell), slice.openStart, slice.openEnd);
 }
 
 function pastedDoc(doc: PMNode): PMNode {
