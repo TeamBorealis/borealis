@@ -194,7 +194,7 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
         with:
-          toolchain: stable
+          toolchain: 1.99.1  # = rust-toolchain.toml
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
         with:
           workspaces: ". -> target"
@@ -323,7 +323,7 @@ jobs:
         run: sdkmanager "ndk;27.2.12479018" "platforms;android-37.0" "build-tools;36.0.0"
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
         with:
-          toolchain: stable
+          toolchain: 1.99.1  # = rust-toolchain.toml
           targets: aarch64-linux-android
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
         with:
@@ -407,7 +407,7 @@ jobs:
         run: sdkmanager "ndk;27.2.12479018" "platforms;android-37.0" "build-tools;36.0.0"
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
         with:
-          toolchain: stable
+          toolchain: 1.99.1  # = rust-toolchain.toml
           targets: aarch64-linux-android
       # The APK job's dependency cache (restore only: the two jobs run side by side). The store switch is read with
       # option_env!, so only the borealis crate itself rebuilds.
@@ -489,7 +489,7 @@ jobs:
         run: xcodebuild -version && sw_vers
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
         with:
-          toolchain: stable
+          toolchain: 1.99.1  # = rust-toolchain.toml
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
         with:
           workspaces: ". -> target"
@@ -732,7 +732,7 @@ jobs:
         run: xcodebuild -version && xcrun --sdk iphoneos --show-sdk-version
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
         with:
-          toolchain: stable
+          toolchain: 1.99.1  # = rust-toolchain.toml
           targets: aarch64-apple-ios
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
         with:

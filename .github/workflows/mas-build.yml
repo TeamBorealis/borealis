@@ -36,7 +36,7 @@ jobs:
         run: xcodebuild -version && sw_vers
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
         with:
-          toolchain: stable
+          toolchain: 1.99.1  # = rust-toolchain.toml
           components: clippy
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
         with:
