@@ -105,6 +105,13 @@ interface OwnPack {
 /** An undoable change (spec 10.2, 12.5): the packs it wrote as they were, and the version each change wrote. */
 interface UndoRecord { packs: { before: OwnPack; versionAfter: string }[] }
 
+/** As the backend lists it (`content_packs::kind_of`, CS1/HC8): a pack holding text copied from the user's imports is
+ * not redistributable. */
+function marked(pack: ContentPack, elements: OwnPack["elements"]): ContentPack {
+  const { redistributable: _, ...rest } = pack;
+  return [...elements.values()].some((e) => e.summary.copiedText) ? { ...rest, redistributable: false } : rest;
+}
+
 const rulesetsOf = (edition: BookRuleset): Ruleset[] => (edition === "any" ? ["dnd2014", "dnd2024"] : [edition]);
 
 /** In-memory homebrew creator for the web mock: packs, elements and drafts; the rest answers `notImplemented`. */
@@ -270,7 +277,7 @@ export class MockHomebrew {
       return cid;
     });
     this.companions.delete(draftId);
-    const pack = { ...own.pack, elementCount: elements.size, version: bumpPatch(own.pack.version) };
+    const pack = marked({ ...own.pack, elementCount: elements.size, version: bumpPatch(own.pack.version) }, elements);
     this.packs.set(own.pack.id, { ...own, pack, elements });
     this.drafts.delete(draftId);
     this.touched.delete(draftId);
@@ -567,7 +574,7 @@ export class MockHomebrew {
 
   /** The pack with a new version (every write bumps its patch number), stored. */
   private write(own: OwnPack): OwnPack {
-    const next = { ...own, pack: { ...own.pack, elementCount: own.elements.size, version: bumpPatch(own.pack.version) } };
+    const next = { ...own, pack: marked({ ...own.pack, elementCount: own.elements.size, version: bumpPatch(own.pack.version) }, own.elements) };
     this.packs.set(own.pack.id, next);
     return next;
   }
