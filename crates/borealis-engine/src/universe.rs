@@ -200,7 +200,7 @@ pub struct UElem {
     pub derived: bool,
     /// How the element relates to the universe's edition.
     pub edition: EditionStatus,
-    /// `allow duplicate` setter, or a repeatable feat (`data.repeatable.allowed`).
+    /// `allow duplicate` setter, or a repeatable feat (`data.repeatable.allowed`, or `data.repeatable: true`).
     pub allow_duplicate: bool,
     /// Ability bonuses of the entries of rewritten `ability_*` list selects, per rule index.
     pub list_effects: crate::custom_rules::Effects,

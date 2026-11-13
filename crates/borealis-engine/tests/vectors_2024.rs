@@ -993,3 +993,34 @@ fn b1_warlock3_wizard2_pact_slots_stay_separate() {
     assert_eq!(sc(&snap, "Wizard").slots[..2], [3, 0]);
     assert!(snap.multiclass_slots.is_none(), "pact magic does not pool");
 }
+
+/// H_2C0 (SRD 5.2.1 Eldritch Invocation Options, Agonizing Blast: "Repeatable. You can gain this invocation more
+/// than once."): a level 2 Warlock takes Agonizing Blast twice. The content stores `repeatable: true`.
+#[test]
+fn a_repeatable_invocation_can_be_taken_twice() {
+    const BLAST: &str = "ID_2024_OPTION_ELDRITCH_INVOCATION_AGONIZING_BLAST";
+    const OWNER: &str = "ID_2024_CLASS_FEATURE_WARLOCK_ELDRITCH_INVOCATIONS";
+    const SLOT: &str = "Eldritch Invocation (Warlock 2)";
+    let mut h = caster("ID_2024_CLASS_WARLOCK", "Warlock", "Wisdom +1, Charisma +2");
+    h.level_to(2);
+    h.pick(OWNER, SLOT, 1, BLAST);
+    let snap = h.snap();
+    let second = slot_key(&snap, OWNER, SLOT, 2).expect("second invocation slot");
+    let offered = snap
+        .slots
+        .iter()
+        .find(|s| s.key == second)
+        .expect("slot")
+        .options
+        .iter()
+        .any(|o| o.id == BLAST);
+    assert!(offered, "Agonizing Blast is offered again");
+    h.pick(OWNER, SLOT, 2, BLAST);
+    let held = h
+        .snap()
+        .slots
+        .iter()
+        .filter(|s| s.owner.id == OWNER && s.chosen.as_ref().is_some_and(|c| c.id == BLAST))
+        .count();
+    assert_eq!(held, 2);
+}

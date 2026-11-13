@@ -323,8 +323,8 @@ fn an_srd_invocation_reads_its_group_class_level_and_repeatable() {
         assert_eq!(form.fields["group"], "Eldritch Invocation");
         assert_eq!(form.fields["className"], "Warlock");
         assert_eq!(
-            form.fields["repeatable"], false,
-            "the engine reads `data.repeatable.allowed`, not the plain boolean"
+            form.fields["repeatable"], true,
+            "the engine reads the plain boolean too (H_2C0)"
         );
         assert_eq!(form.fields["tags"], json!([]));
         assert_eq!(form.fields["requirements"]["original"], "[warlock:2]");
@@ -339,18 +339,19 @@ fn an_srd_invocation_reads_its_group_class_level_and_repeatable() {
             form_to_elements(&assign(&form), cx).unwrap(),
             vec![e.clone()]
         );
-        // an edit keeps the mirrors no field holds; off is how it reads, so the stored boolean stays
-        let off = form
-            .with_field("repeatable", json!(false))
-            .with_field("group", json!("Pact Secret"));
-        let out = form_to_elements(&assign(&off), cx).unwrap();
+        // an edit keeps the mirrors no field holds; on is how it reads, so the stored boolean stays
+        let edited = form.with_field("group", json!("Pact Secret"));
+        let out = form_to_elements(&assign(&edited), cx).unwrap();
         assert_eq!(out[0].data["repeatable"], json!(true));
         assert_eq!(out[0].data["min_warlock_level"], 2);
         assert_eq!(out[0].supports, vec!["Pact Secret".to_string()]);
-        // turned on, it takes the shape the engine reads
-        let on = form.with_field("repeatable", json!(true));
+        // turned off and on again, the plain boolean keeps its shape (the engine reads both)
+        let off = form.with_field("repeatable", json!(false));
+        let out = form_to_elements(&assign(&off), cx).unwrap();
+        assert_eq!(out[0].data["repeatable"], json!(false));
+        let on = element_to_form(&out[0], cx).with_field("repeatable", json!(true));
         let out = form_to_elements(&assign(&on), cx).unwrap();
-        assert_eq!(out[0].data["repeatable"], json!({"allowed": true}));
+        assert_eq!(out[0].data["repeatable"], json!(true));
     });
 }
 

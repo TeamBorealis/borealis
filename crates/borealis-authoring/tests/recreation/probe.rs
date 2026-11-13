@@ -179,7 +179,12 @@ pub fn canonical(v: &Value) -> Value {
                 m.iter()
                     .filter(|(k, _)| !(slot_key && k.as_str() == "rule"))
                     .filter(|(k, _)| !(spell_choice && k.as_str() == "name"))
-                    .map(|(k, x)| (k.clone(), canonical(x)))
+                    .map(|(k, x)| match (k.as_str(), x) {
+                        ("instance", Value::String(t)) => {
+                            (k.clone(), Value::String(instance_without_rules(t)))
+                        }
+                        _ => (k.clone(), canonical(x)),
+                    })
                     .collect(),
             )
         }
@@ -193,6 +198,25 @@ pub fn canonical(v: &Value) -> Value {
         Value::String(t) => Value::String(t.split_whitespace().collect()),
         other => other.clone(),
     }
+}
+
+/// A repeatable element's instance tag without the rule positions it names (`<owner>:<rule>:<ordinal>` of the choice
+/// that took it, `<owner>:g<rule>` of the grant), as a choice's key drops its `rule`: a re-created owner may write its
+/// rules in another order.
+fn instance_without_rules(tag: &str) -> String {
+    tag.split('@')
+        .map(|part| {
+            let pieces: Vec<&str> = part.split(':').collect();
+            match pieces.as_slice() {
+                [owner, rule, ordinal] if rule.chars().all(|c| c.is_ascii_digit()) => {
+                    format!("{owner}:{ordinal}")
+                }
+                [owner, grant] if grant.starts_with('g') => format!("{owner}:g"),
+                _ => part.to_string(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("@")
 }
 
 /// A choice the test character fills.
