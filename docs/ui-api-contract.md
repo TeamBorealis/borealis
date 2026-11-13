@@ -436,6 +436,8 @@ implements packs, elements and drafts in memory (kinds are sample forms).
 | `homebrew_where_used` | `{ elementId }` | `HomebrewElementRef[]` (loaded elements that grant, select, require or list it; strongest use first) |
 | `homebrew_spell_list` | `{ packId, listTag, expandedOf? }` | `HomebrewSpellListView` (every loaded spell and the pack's own, `onList`, `removable`; with `expandedOf` a subclass's expanded list, `expandedOf` set in the view) |
 | `homebrew_set_spell_list` | `{ packId, listTag, expandedOf?, add, remove }` | `HomebrewSpellListView` (one write; own spells change their tags, loaded spells get the pack's append; an expanded list changes the own subclass's `spellcasting.extends` (or its own feature's that holds them), or the pack's append's `spellcasting` for a loaded subclass) |
+| `homebrew_keep_spell_list_checks` | `{ packId, kept: HomebrewKeptChecks }` | `void` (a pack's unsaved SPELL LISTS checks, `{ list, pending: [{ id, on }] }`, kept on the device in `<data>/homebrew-drafts/spell-lists/<packId>.json`, never synced; an empty `list` or `pending` forgets them) |
+| `homebrew_kept_spell_list_checks` | `{ packId }` | `HomebrewKeptChecks \| null` |
 | `homebrew_trial_start` | `{ draftId, setup: HomebrewTrialSetup }` | `HomebrewTrialView` (`{ trialId, snapshot, ladder, problems, changed }`) |
 | `homebrew_trial_update` | `{ trialId, change: HomebrewTrialChange }` | `HomebrewTrialView` |
 | `homebrew_trial_end` | `{ trialId }` | `void` |
@@ -449,7 +451,10 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   stay, so the imported pack is still not redistributable. Only `kind: "homebrew"` packs export (`requirement_failed`).
   `HomebrewElementSummary.copiedText` marks the elements that still hold copied text (the export dialog's count). Import
   goes through `preview_import_pack`: one `.zip` holding a `creator.json` beside a `pack.json` is a creator pack, installed
-  unconverted as `kind: "homebrew"`; its preview carries `homebrew: { code, codeTaken, copyCode, copyName }`, no `books`.
+  unconverted as `kind: "homebrew"`; its preview carries `homebrew: { code, codeTaken, copyCode, copyName, replaceUsedBy, replaceDrops }`, no `books`
+  (`replaceUsedBy`: the local characters that use an element of the installed pack the file lacks, the delete check's
+  scan; `replaceDrops`: those elements' names; both empty when Replace loses nothing, and the UI's Replace asks first
+  otherwise).
   When its pack is installed (`replacesExisting`), `install_import_preview` replaces it (the old folder is copied to
   `<data>/sync/trash/<ms>-<packId>`, swept after 30 days) or, with `asCopy: true`, installs a copy: code `copyCode`, pack id
   `homebrew-<copyCode>`, name `copyName`, every `ID_<CODE>_` token of the pack and every element id given again with the
