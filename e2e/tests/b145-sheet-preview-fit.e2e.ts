@@ -16,18 +16,21 @@ import { bootToHome } from '../support/index.js';
 // Long text: a section's text needing more room than the PDF measured ran over the next section and into the footer
 // (a long backstory over Organisation, Allies and Notes; long lists at phone scale). A page is now at least as tall as
 // its paper and grows instead, and no section shrinks below its text. From tablet width up the pages keep their paper
-// height exactly; at phone widths the browser's tiny zoomed text needs a little more room, so a page may grow there.
+// height exactly (except a page holding more than the PDF puts on one page, below); at phone widths the browser's tiny
+// zoomed text needs a little more room, so a page may grow there.
 // Fixtures: `BOREALIS_HTML_SAMPLE=<dir> cargo test -p borealis-sheet --lib html_sheet_sample`, then copy
 // `2024-a4-long.html`, `2014-letter-long.html`, `2014-letter.html`, `2014-a4.html`, `2014-a4-story.html` and
 // `2024-a4-story.html` from <dir> to e2e/fixtures/sheet-preview/.
 const here = dirname(fileURLToPath(import.meta.url));
-const FIXTURES = [
+const FIXTURES: { file: string; ratio: number; grows?: boolean }[] = [
   { file: '2024-a4-long.html', ratio: 842 / 595 },
   { file: '2014-letter-long.html', ratio: 792 / 612 },
   { file: '2014-letter.html', ratio: 792 / 612 },
   { file: '2014-a4.html', ratio: 842 / 595 },
-  { file: '2014-a4-story.html', ratio: 842 / 595 },
-  { file: '2024-a4-story.html', ratio: 842 / 595 },
+  // A backstory too long for its page: the PDF continues it on a "Story (continued)" page, the preview does not split
+  // it yet, so that page grows instead (by how much depends on the fonts the browser has).
+  { file: '2014-a4-story.html', ratio: 842 / 595, grows: true },
+  { file: '2024-a4-story.html', ratio: 842 / 595, grows: true },
 ];
 /** From this width up every page keeps exactly its paper height. */
 const EXACT_FROM = 744;
@@ -94,14 +97,14 @@ async function probe({ html, width }: Probe): Promise<Found> {
 describe('B-145 sheet preview fit', { tags: ['b145'] }, () => {
   test('every page keeps its paper shape and height, no text runs over the next section or the footer, and page 1 vitals never overlap or leave the page, phone to desktop', async (ctx) => {
     await bootToHome(ctx);
-    for (const { file, ratio } of FIXTURES) {
+    for (const { file, ratio, grows } of FIXTURES) {
       const html = readFileSync(join(here, '../fixtures/sheet-preview', file), 'utf8');
       for (const width of WIDTHS) {
         const found = (await ctx.browser.evaluate(probe, { html, width })) as Found;
         const at = `${file} at ${width} px`;
         expect({ at, problems: found.problems }).toEqual({ at, problems: [] });
         for (const r of found.ratios) expect({ at, short: r < ratio - 0.01 }).toEqual({ at, short: false });
-        if (width < EXACT_FROM) continue;
+        if (width < EXACT_FROM || grows) continue;
         for (const r of found.ratios) expect({ at, off: Math.abs(r - ratio) < 0.01 }).toEqual({ at, off: true });
         expect({ at, heights: new Set(found.heights.map(Math.round)).size }).toEqual({ at, heights: 1 });
       }
