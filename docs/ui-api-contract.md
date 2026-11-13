@@ -621,7 +621,9 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   `data.creature_type`; `data.size`, `data.speed` and `data.traits` are written when the element has them. `subRace`
   and `raceVariant` have `parent` (required text): the tag the race's choice offers it by, its first support tag; a
   `parent` no loaded race's choice offers is the warning `lint.not_offered` at `fields.parent`. `race` has
-  `maleNames`, `femaleNames`, `familyNames` (chips: `names` setters with `type`). A rule a field doesn't write exactly
+  `maleNames`, `femaleNames`, `familyNames` (chips: `names` setters with `type`) and `subraces` (combo: `""` none,
+  `required`, `optional`: the race's own `select` of type `Sub Race`; a new one is named "<Race> Subrace" and offers the
+  tag of the race's name, a stored one keeps its name and tag; a choice with a number or a level stays a block). A rule a field doesn't write exactly
   (a trait from level 5, an increase with a condition) stays a block; the rules come back in their stored order. Child
   kinds `racialTrait` (`parentKinds ["species","race","subRace","raceVariant"]`) and `speciesTraitOption`
   (`["species","racialTrait"]`, 2024) have the shared parts only and are not offered by New element. `min`/`max` and
@@ -697,7 +699,9 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   `group` (required combo with custom text: the first support tag + `data.group` when present), `className`
   (`data.class_name`), `repeatable` (`data.repeatable`: a stored boolean keeps its shape, a new one is
   `{allowed: true}`), the shared condition `requirements` (`[warlock:2]`). House-rule settings (an `Option` with a
-  `default` setter) open in the generic form. No new command or type.
+  `default` setter) open in the generic form. No new command or type. A `group` that no loaded or drafted choice names,
+  that no other loaded option is in, for an option no rule gives by its id, is the warning `lint.group_not_offered` at
+  `fields.group` (naming a near spelling); the web mock has no such check (its sample content holds no choices).
 - **Small types and the generic form (WB-19).** One `small` kind per type of spec 4.10. Fields that bind several
   locations: `language.rarity` (`standard`/`exotic`/`secret`: the setters, the tag `Standard`/`Exotic`/`Secret`, 2024
   `Rare` for exotic, and `data.rarity`), `proficiency.covers` (`references`, picker `Proficiency`: its plain `grant`s
@@ -738,7 +742,9 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   proficiencyBonus}` (`xp` / `proficiencyBonus` null follow the CR). `statBlock` (`data.ruleset`, expert, read-only)
   follows the edition. New controls: `armorClass`, `hitPoints`, `speeds`, `initiative` (2024), `abilities`, `bonuses`
   (saves or skills, keys in `choices`), `damage`, `senses`, `challenge`, `entries` (traits, actions, bonus actions,
-  reactions: name, text, usage, condition, attack, save, spellcasting with spell refs), `legendary`, `lair`. Problems:
+  reactions: name, text, usage, condition, attack, save, spellcasting with spell refs `{name, id?, note?}`: a spell
+  that isn't loaded is typed by its name alone, each spell has an editable note; names and notes are trimmed and a blank
+  note left out), `legendary`, `lair`. Problems:
   `form.required` (size, creature type, alignment), `form` (creature type missing, unreadable dice or CR), and the stat
   block validator's `invalid_monster_data` / `non_standard_monster_xp` at the field (`fields.armorClass`, an entry at
   `fields.actions.2`) with a sentence per part; the content schema's duplicates inside such a stat block are dropped.
@@ -753,7 +759,8 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   the parts too, ids cleared: a class's features, starting equipment and (2024 shape, "<Class> Subclass") its subclasses
   with their features; a species' or race's traits and their lineage options; a background's feature, variants and
   package; a subclass's or feat's own features. The parts are the form's `children`; subclasses are not in the view: they
-  are kept with the draft and saved with it (`elementIds` lists them after the form's). On save every reference to a
+  are kept with the draft and saved with it (`elementIds` lists them after the form's), and `HomebrewDraftView.savedWith`
+  (absent when none) names them in saving order, which the editor shows as "Saved with it: Evoker.". On save every reference to a
   copied original names its copy, and a copied lineage choice offers the copied options by id (they lose the original's
   tag, so the original never offers them). Without `deepCopy` the copy grants the originals. A 2024 subclass choice's tag
   is written from the class name without the characters a tag can't hold ("Wizard (copy)" offers "Wizard copy
