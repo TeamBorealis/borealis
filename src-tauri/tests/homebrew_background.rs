@@ -517,3 +517,39 @@ fn a_new_2014_background_gives_its_skills_language_choice_feature_characteristic
 
     assert_eq!(app.resave(&pack, HERMIT), bg);
 }
+
+#[test]
+fn the_origin_feat_picker_offers_origin_feats_only() {
+    let app = App::new();
+    let kinds = borealis_authoring::form::descriptors();
+    let picker = kinds
+        .iter()
+        .find(|k| k.id == "background")
+        .and_then(|k| k.fields.iter().find(|f| f.key == "originFeat"))
+        .and_then(|f| f.picker.clone())
+        .expect("the origin feat picks feats");
+    assert_eq!(picker.tags, Some(vec!["Origin Feat".to_string()]));
+    let page = app
+        .state
+        .homebrew_reference_options(
+            &borealis_lib::homebrew_dto::HomebrewPickerTarget {
+                types: picker.types.clone(),
+                tags: picker.tags.clone(),
+                multiple: None,
+            },
+            "",
+            &borealis_lib::homebrew_dto::HomebrewPickerFilters::default(),
+            borealis_lib::homebrew_dto::HomebrewPageRequest {
+                offset: 0,
+                limit: 100,
+            },
+            None,
+        )
+        .unwrap();
+    let mut names: Vec<&str> = page.items.iter().map(|r| r.name.as_str()).collect();
+    names.sort_unstable();
+    assert_eq!(
+        names,
+        ["Alert", "Magic Initiate", "Savage Attacker", "Skilled"]
+    );
+}

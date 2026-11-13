@@ -60,6 +60,7 @@ fn own_fields() -> Vec<FieldDef> {
             bg(BackgroundField::OriginFeat),
         )
         .picker(&["Feat"])
+        .picker_tags(&["Origin Feat"])
         .editions(ONLY_2024)
         .section("Origin feat")
         .default("{\"feat\":null,\"params\":{}}")

@@ -6827,6 +6827,9 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "picker": {
           "types": [
             "Feat"
+          ],
+          "tags": [
+            "Origin Feat"
           ]
         },
         "default": {

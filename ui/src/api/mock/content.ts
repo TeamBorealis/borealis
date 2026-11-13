@@ -155,10 +155,10 @@ const subText: Record<string, string> = {
 };
 
 export const FEATS: MockElement[] = [
-  el("alert", "feat", "Alert", "Always ready for danger; bonus to initiative.", { rulesets: BOTH, tags: ["origin"] }),
-  el("magic-initiate", "feat", "Magic Initiate", "Learn two cantrips and one 1st-level spell from a class list.", { rulesets: ["dnd2024"], source: SOURCE_2024, tags: ["origin"] }),
-  el("savage-attacker", "feat", "Savage Attacker", "Reroll weapon damage once per turn.", { rulesets: ["dnd2024"], source: SOURCE_2024, tags: ["origin"] }),
-  el("skilled", "feat", "Skilled", "Gain proficiency in three skills or tools.", { rulesets: ["dnd2024"], source: SOURCE_2024, tags: ["origin"] }),
+  el("alert", "feat", "Alert", "Always ready for danger; bonus to initiative.", { rulesets: BOTH, tags: ["Origin Feat"] }),
+  el("magic-initiate", "feat", "Magic Initiate", "Learn two cantrips and one 1st-level spell from a class list.", { rulesets: ["dnd2024"], source: SOURCE_2024, tags: ["Origin Feat"] }),
+  el("savage-attacker", "feat", "Savage Attacker", "Reroll weapon damage once per turn.", { rulesets: ["dnd2024"], source: SOURCE_2024, tags: ["Origin Feat"] }),
+  el("skilled", "feat", "Skilled", "Gain proficiency in three skills or tools.", { rulesets: ["dnd2024"], source: SOURCE_2024, tags: ["Origin Feat"] }),
   el("tough", "feat", "Tough", "Hit point maximum increases by twice your level.", { tags: ["general"] }),
   el("lucky", "feat", "Lucky", "Spend luck points to reroll d20s.", { tags: ["general"] }),
   el("sentinel", "feat", "Sentinel", "Lock down enemies with opportunity attacks.", { prerequisites: "Strength or Dexterity 13", tags: ["general"] }),
