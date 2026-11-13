@@ -586,8 +586,12 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   a combo of `"0"` (Cantrip) to `"9"`. `spellLists` (control `spellLists`, a string list) holds every support tag of the
   spell, the way Aurora content puts a spell on a class list (`supports` + `data.classes`); the spell form has no `tags`
   field. The lists it offers are the picker rows of the type `"Spell List"` (`homebrew_reference_options` with
-  `target.types: ["Spell List"]`: one row per plain `spellcasting.list.supports` tag of the loaded content and the
-  pack's drafts, `id` = `name` = the list), plus the lists the spell already has, plus new names. `HomebrewFieldSpec.default`
+  `target.types: ["Spell List"]`: one row per `spellcasting.list.supports` list tag of the loaded content and the
+  pack's drafts, `id` = `name` = the list; an expression list such as `(Cleric||Wizard)` or
+  `Wizard,(Abjuration||Evocation)` gives each list tag it names, never a school, a level, `Ritual` or a spell id), plus
+  the lists the spell already has, plus new names. A list that no loaded class declares and no spell choice picks from
+  is a warning at `fields.spellLists` (`lint.unknown_spell_list`, naming a near spelling), and a spell on no list a hint
+  (`lint.no_spell_list`); the web mock words both the same way. `HomebrewFieldSpec.default`
   is the value a new element starts with (`homebrew_new_draft` fills it in: a new spell is a 1st-level action, Self,
   Instantaneous, V and S; its school is the author's choice), and `section` groups fields under a SectionSecondary heading.
   The web mock serves the real descriptor of every kind whose form has landed (`api/mock/homebrew-kinds.ts`, written by
@@ -669,7 +673,8 @@ implements packs, elements and drafts in memory (kinds are sample forms).
 - **Spellcasting section (WB-17).** Kinds `classFeature` and `feat` have a SPELLCASTING tab (spec 4.6) with the fields
   `casts` (the `spellcasting` node on/off), `casterName` (expert; empty = the class's name: a class's feature follows its
   class), `ability`, `preparation` (`prepared` = `prepare` + `list.known`, `spellbook` = `prepare` only, `known`),
-  `spellList` (`list.supports`, empty = the spellcasting name), `swap` (`allow_replace`), `casterType` (`""`, `full`,
+  `spellList` (`list.supports`, empty = the spellcasting name; a `combo` with `allowCustom` whose suggestions are the
+  `"Spell List"` picker rows, `picker.types: ["Spell List"]`), `swap` (`allow_replace`), `casterType` (`""`, `full`,
   `halfUp`, `halfDown`, `third`, `pact`, `custom`: the `<name>:spellcasting:slots:N` stats, 2014 pact `slots:count`/`slot`,
   2024 pact `pact_magic`), `slotTable` (control `slotTable`, `number[][]` 20 x 9 for `custom`, else `[]`),
   `multiclassSlots` (`auto` = the type's `ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_*`, a specific one, or `none`),

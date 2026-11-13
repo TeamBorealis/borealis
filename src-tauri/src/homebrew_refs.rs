@@ -26,7 +26,7 @@ const MAX_PAGE: usize = 500;
 /// The picker type of spell lists (WB-11, the spell form's lists): one row per list a loaded or drafted class
 /// declares (`spellcasting.list.supports`: a plain tag, or each list tag of an expression), its name as id and name.
 /// Not an element type.
-pub const SPELL_LIST_TYPE: &str = "Spell List";
+pub const SPELL_LIST_TYPE: &str = borealis_authoring::spell_lists::SPELL_LIST_PICKER;
 
 /// The picker type of subclasses' expanded lists (SPELL LISTS, spec 12.4): one row per subclass that has one (its own
 /// `spellcasting.extends` by spell id or a feature's it grants), and per subclass of a non-bundled pack whose class

@@ -5,6 +5,10 @@
 
 use borealis_content::expr::SupportsExpr;
 
+/// The picker type whose rows are the spell lists loaded and drafted classes declare (`homebrew_reference_options`):
+/// the spell form's Lists check boxes and the spellcasting section's Spell list suggestions. Not an element type.
+pub const SPELL_LIST_PICKER: &str = "Spell List";
+
 /// The eight schools (a school tag in a list expression filters by the spell's school, any case).
 const SCHOOLS: [&str; 8] = [
     "Abjuration",

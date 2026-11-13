@@ -92,10 +92,12 @@ pub(crate) fn caster_fields() -> Vec<FieldDef> {
             .section(main)
             .choices(PREPARATION, false)
             .default("\"prepared\""),
-        field("spellList", "Spell list", SPELLCASTING, Control::Text, caster(CasterField::List))
+        field("spellList", "Spell list", SPELLCASTING, Control::Combo, caster(CasterField::List))
             .section(main)
+            .choices(&[], true)
+            .picker(&[crate::spell_lists::SPELL_LIST_PICKER])
             .default("\"\"")
-            .help("Spells on this list are its spells (a spell's Lists). Left empty: the class's name."),
+            .help("Spells on this list are its spells (a spell's Lists). Pick a list loaded classes have, or type a new one. Left empty: the class's name."),
         field("swap", "Swap one spell per level", SPELLCASTING, Control::Check, caster(CasterField::Swap))
             .section(main)
             .default("false")

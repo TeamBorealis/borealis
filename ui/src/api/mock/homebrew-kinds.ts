@@ -870,13 +870,19 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "key": "spellList",
         "label": "Spell list",
         "tab": "spellcasting",
-        "control": "text",
+        "control": "combo",
         "required": false,
+        "allowCustom": true,
         "bindings": [
           "spellcasting.list.supports"
         ],
-        "help": "Spells on this list are its spells (a spell's Lists). Left empty: the class's name.",
+        "help": "Spells on this list are its spells (a spell's Lists). Pick a list loaded classes have, or type a new one. Left empty: the class's name.",
         "section": "Spellcasting",
+        "picker": {
+          "types": [
+            "Spell List"
+          ]
+        },
         "default": ""
       },
       {
@@ -2218,13 +2224,19 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "key": "spellList",
         "label": "Spell list",
         "tab": "spellcasting",
-        "control": "text",
+        "control": "combo",
         "required": false,
+        "allowCustom": true,
         "bindings": [
           "spellcasting.list.supports"
         ],
-        "help": "Spells on this list are its spells (a spell's Lists). Left empty: the class's name.",
+        "help": "Spells on this list are its spells (a spell's Lists). Pick a list loaded classes have, or type a new one. Left empty: the class's name.",
         "section": "Spellcasting",
+        "picker": {
+          "types": [
+            "Spell List"
+          ]
+        },
         "default": ""
       },
       {
@@ -3096,13 +3108,19 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "key": "spellList",
         "label": "Spell list",
         "tab": "spellcasting",
-        "control": "text",
+        "control": "combo",
         "required": false,
+        "allowCustom": true,
         "bindings": [
           "spellcasting.list.supports"
         ],
-        "help": "Spells on this list are its spells (a spell's Lists). Left empty: the class's name.",
+        "help": "Spells on this list are its spells (a spell's Lists). Pick a list loaded classes have, or type a new one. Left empty: the class's name.",
         "section": "Spellcasting",
+        "picker": {
+          "types": [
+            "Spell List"
+          ]
+        },
         "default": ""
       },
       {

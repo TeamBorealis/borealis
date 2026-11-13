@@ -373,3 +373,29 @@ fn a_renamed_class_writes_its_section_under_the_new_name() {
         );
     }
 }
+
+#[test]
+fn the_spell_list_field_offers_the_declared_lists_and_takes_a_new_one() {
+    let class = borealis_authoring::form::descriptors()
+        .into_iter()
+        .find(|k| k.id == "classFeature")
+        .expect("class feature kind");
+    let list = class
+        .fields
+        .iter()
+        .find(|f| f.key == "spellList")
+        .expect("spellList");
+    assert_eq!(list.control, "combo");
+    assert_eq!(
+        list.allow_custom,
+        Some(true),
+        "a list no class declares yet"
+    );
+    assert_eq!(
+        list.picker.as_ref().map(|p| p.types.clone()),
+        Some(vec![
+            borealis_authoring::spell_lists::SPELL_LIST_PICKER.to_string()
+        ]),
+        "the Spell List picker rows are its suggestions"
+    );
+}

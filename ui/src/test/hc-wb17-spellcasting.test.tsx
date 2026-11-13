@@ -93,7 +93,12 @@ describe("WB-17 spellcasting section", () => {
     await user.selectOptions(screen.getByRole("combobox", { name: /^Caster type/ }), "halfUp");
     await waitFor(() => expect(slots(5)).toEqual(["4", "2", "-", "-", "-"]));
     await user.selectOptions(screen.getByRole("combobox", { name: /^Spellcasting ability/ }), "Wisdom");
-    await user.type(screen.getByRole("textbox", { name: /^Spell list/ }), "Ranger");
+    // the spell list offers the lists loaded classes declare (the Spell List picker rows) and takes a new one
+    await user.click(screen.getByRole("button", { name: "Show Spell list options" }));
+    const lists = await screen.findByRole("listbox");
+    await waitFor(() => expect(within(lists).getByRole("option", { name: "Wizard" })).toBeTruthy());
+    await user.keyboard("{Escape}");
+    await user.type(screen.getByRole("combobox", { name: /^Spell list/ }), "Ranger");
     const prepared = within(row(5)).getByRole("textbox", { name: "Prepared at level 5" });
     await user.clear(prepared);
     await user.type(prepared, "6");
