@@ -89,6 +89,8 @@ fn own_fields() -> Vec<FieldDef> {
                 class(ClassField::Proficiencies(ProficiencyGroup::Armor)),
             )
             .picker(PROFICIENCY)
+            // a class lists its proficiencies by kind (read by id): the editor moves one picked under another kind (P3)
+            .help("Armor and shield training. A proficiency of another kind picked here moves to its own list.")
             .default("[]"),
         ),
         first_class_only(
@@ -100,6 +102,8 @@ fn own_fields() -> Vec<FieldDef> {
                 class(ClassField::Proficiencies(ProficiencyGroup::Weapons)),
             )
             .picker(PROFICIENCY)
+            // a class lists its proficiencies by kind (read by id): the editor moves one picked under another kind (P3)
+            .help("Weapon proficiencies. A proficiency of another kind picked here moves to its own list.")
             .default("[]"),
         ),
         first_class_only(
@@ -111,6 +115,8 @@ fn own_fields() -> Vec<FieldDef> {
                 class(ClassField::Proficiencies(ProficiencyGroup::Other)),
             )
             .picker(PROFICIENCY)
+            // a class lists its proficiencies by kind (read by id): the editor moves one picked under another kind (P3)
+            .help("Tools and every other proficiency.")
             .default("[]"),
         ),
         first_class_only(

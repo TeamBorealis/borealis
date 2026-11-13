@@ -1692,6 +1692,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:grant ID_PROFICIENCY_ARMOR_*"
         ],
+        "help": "Armor and shield training. A proficiency of another kind picked here moves to its own list.",
         "section": "First class only",
         "picker": {
           "types": [
@@ -1710,6 +1711,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:grant ID_PROFICIENCY_WEAPON_*"
         ],
+        "help": "Weapon proficiencies. A proficiency of another kind picked here moves to its own list.",
         "section": "First class only",
         "picker": {
           "types": [
@@ -1728,6 +1730,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "rules:grant Proficiency"
         ],
+        "help": "Tools and every other proficiency.",
         "section": "First class only",
         "picker": {
           "types": [

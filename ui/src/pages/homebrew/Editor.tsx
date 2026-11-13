@@ -14,6 +14,8 @@ import { FieldView } from "./FieldView";
 import { ProblemsPanel } from "./ProblemsPanel";
 import { TryIt } from "./TryIt";
 import { PROPERTIES_FIELD, WEAPON_KIND, withWeaponProperties } from "./weaponHands";
+import { CLASS_KIND, GROUP_FIELDS, withClassProficiencies } from "./proficiencyGroups";
+import { setStatus } from "../../state/status";
 import type { DraftController } from "./useDraft";
 import type { AutosaveState } from "./draftSession";
 
@@ -142,7 +144,13 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
     if (f.control === "blocks") draft.edit((cur) => ({ ...cur, blocks: v as HomebrewForm["blocks"] }));
     // a weapon's slot follows its Two-Handed property, in the same undo step (P3)
     else if (form.kind === WEAPON_KIND && f.key === PROPERTIES_FIELD) draft.edit((cur) => ({ ...cur, fields: withWeaponProperties(cur.fields, v) }));
-    else draft.setField(f.key, v, typing);
+    // a class lists its proficiencies by kind: one picked under another kind goes to its own at once, and says so (P3)
+    else if (form.kind === CLASS_KIND && GROUP_FIELDS.includes(f.key) && withClassProficiencies(form.fields, f.key, v).moved.length) {
+      const label = (key: string) => kind.fields.find((x) => x.key === key)?.label ?? key;
+      const { moved } = withClassProficiencies(form.fields, f.key, v);
+      draft.edit((cur) => ({ ...cur, fields: withClassProficiencies(cur.fields, f.key, v).fields }));
+      setStatus(moved.map((m) => `${m.name} is listed under ${label(m.to)}: a class lists its proficiencies by kind.`).join(" "));
+    } else draft.setField(f.key, v, typing);
   };
   const expertSwitch = <span className="hb-expert"><ToggleSwitch label="Expert fields" checked={expert} onChange={setExpert} onLabel="Expert" offLabel="Expert" /></span>;
   const childEditing: ChildEditing = {
