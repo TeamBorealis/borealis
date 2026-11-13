@@ -19,3 +19,5 @@
 @media (max-width: 600px) {
   .hb-cr-abilities { grid-template-columns: repeat(3, minmax(72px, 1fr)); }
 }
+/* a spell's note sits beside its name in the chip (HwTd4) */
+.hb-cr-spell .hb-cr-spell-note { width: 140px; min-width: 0; }

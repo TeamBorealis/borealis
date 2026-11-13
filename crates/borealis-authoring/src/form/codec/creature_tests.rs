@@ -299,3 +299,34 @@ fn the_validator_s_locations_point_at_the_creature_s_fields() {
         );
     });
 }
+
+#[test]
+fn a_spell_typed_by_name_and_a_spell_s_note_are_written() {
+    with_cx(|cx| {
+        let mut form = element_to_form(&wolf(), cx).with_field(
+            "actions",
+            json!([{"name": "Spellcasting", "text": "The wolf casts one of the following spells.", "condition": "",
+                "spellcasting": {"ability": "wis", "save_dc": 13, "lists": [{"frequency": "at_will", "spells": [
+                    {"name": " Ember Ward "},
+                    {"name": "Fire Bolt", "id": "ID_SRD_SPELL_FIRE_BOLT", "note": " level 5 version "},
+                    {"name": "Light", "id": "ID_SRD_SPELL_LIGHT", "note": "  "}
+                ]}]}}]),
+        );
+        form.memo.fields.remove("actions");
+        let e = form_to_element(&form, cx).expect("writes");
+        assert_eq!(
+            e.data["actions"][0]["spellcasting"]["lists"][0]["spells"],
+            json!([
+                {"name": "Ember Ward"},
+                {"name": "Fire Bolt", "id": "ID_SRD_SPELL_FIRE_BOLT", "note": "level 5 version"},
+                {"name": "Light", "id": "ID_SRD_SPELL_LIGHT"}
+            ]),
+            "a spell not loaded keeps its name alone; notes are trimmed, a blank one left out"
+        );
+        let again = element_to_form(&e, cx);
+        assert_eq!(
+            again.fields["actions"][0]["spellcasting"]["lists"][0]["spells"][0],
+            json!({"name": "Ember Ward"})
+        );
+    });
+}

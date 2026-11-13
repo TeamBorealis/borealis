@@ -13,9 +13,11 @@ const FREQUENCIES = [
 const frequencyKey = (f: HomebrewSpellFrequency): string => (f === "at_will" ? "at_will" : `${f.per_day.uses}${f.per_day.each ? "e" : ""}`);
 const frequencyOf = (key: string): HomebrewSpellFrequency => (key === "at_will" ? "at_will" : { per_day: { uses: Number.parseInt(key, 10), each: key.endsWith("e") } });
 
-/** One list: how often, then its spells (picked with the spell picker; a spell not loaded keeps its name). */
+/** One list: how often, then its spells: picked with the spell picker, or typed by name (a spell that isn't loaded
+ * keeps its name alone), each with a note ("level 5 version"). */
 function SpellListRow({ list, index, onChange, onRemove }: { list: HomebrewSpellList; index: number; onChange: (l: HomebrewSpellList) => void; onRemove: () => void }) {
   const [picking, setPicking] = useState(false);
+  const [typed, setTyped] = useState("");
   const label = `Spell list ${index + 1}`;
   const add = (picks: HomebrewRef[]) => {
     rememberRefs(picks);
@@ -23,6 +25,21 @@ function SpellListRow({ list, index, onChange, onRemove }: { list: HomebrewSpell
     const known = new Set(list.spells.map((s) => s.id ?? s.name));
     onChange({ ...list, spells: [...list.spells, ...picks.filter((p) => !known.has(p.id)).map((p) => ({ name: p.name, id: p.id }))] });
   };
+  const name = typed.trim().replace(/\s+/g, " ");
+  const addByName = () => {
+    if (!name) return;
+    setTyped("");
+    if (list.spells.some((s) => s.name.toLowerCase() === name.toLowerCase())) return;
+    onChange({ ...list, spells: [...list.spells, { name }] });
+  };
+  const setNote = (j: number, note: string) => onChange({
+    ...list,
+    spells: list.spells.map((s, k) => {
+      if (k !== j) return s;
+      const { note: _old, ...rest } = s;
+      return note ? { ...rest, note } : rest;
+    }),
+  });
   return (
     <div className="hb-cr-spell-list" role="group" aria-label={label}>
       <span className="hb-row-controls">
@@ -32,12 +49,18 @@ function SpellListRow({ list, index, onChange, onRemove }: { list: HomebrewSpell
       </span>
       <ul className="hb-ref-list" aria-label={`${label}: spells`}>
         {list.spells.map((s, j) => (
-          <li key={`${s.id ?? s.name}-${j}`} className="hb-chip-item">
-            <span className="hb-ref-name">{s.name}{s.note ? ` (${s.note})` : ""}</span>
+          <li key={`${s.id ?? s.name}-${j}`} className="hb-chip-item hb-cr-spell">
+            <span className="hb-ref-name">{s.name}</span>
+            <TextBox className="hb-cr-spell-note" aria-label={`${s.name}: note`} placeholder="Note" value={s.note ?? ""} onChange={(e) => setNote(j, e.target.value)} />
             <button type="button" className="hb-chip-x" aria-label={`Remove ${s.name}`} onClick={() => onChange({ ...list, spells: list.spells.filter((_, k) => k !== j) })}><Icon name="x" /></button>
           </li>
         ))}
       </ul>
+      <span className="hb-chip-add">
+        <TextBox aria-label={`${label}: a spell by name`} placeholder="A spell by name..." value={typed} onChange={(e) => setTyped(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && name) { e.preventDefault(); addByName(); } }} />
+        <button type="button" className="hb-pick-btn" aria-label={`${label}: add the spell by name`} disabled={!name} onClick={addByName}><Icon name="plus" />Add</button>
+      </span>
       {picking && <ReferencePicker title={`${label}: spells`} target={{ types: ["Spell"], multiple: true }} chosen={list.spells.flatMap((s) => (s.id ? [s.id] : []))}
         onChoose={add} onClose={() => setPicking(false)} />}
     </div>

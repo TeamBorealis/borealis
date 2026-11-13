@@ -156,7 +156,7 @@ pub(super) fn dice_text(t: &str) -> String {
     t.chars().filter(|c| !c.is_whitespace()).collect()
 }
 
-/// An entry with its empty optional texts left out (a blank "only in a form" or spell note).
+/// An entry with its empty optional texts left out (a blank "only in a form" or spell note) and its spell names trimmed.
 pub(super) fn clean_feature(mut f: Feature) -> Feature {
     f.condition = some_text(f.condition);
     if let Some(a) = f.attack.as_mut() {
@@ -172,6 +172,8 @@ pub(super) fn clean_feature(mut f: Feature) -> Feature {
     if let Some(sc) = f.spellcasting.as_mut() {
         for list in &mut sc.lists {
             for spell in &mut list.spells {
+                // a spell typed by name (not loaded) is its name alone
+                spell.name = spell.name.trim().to_string();
                 spell.id = some_text(spell.id.take());
                 spell.note = some_text(spell.note.take());
             }
