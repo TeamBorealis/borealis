@@ -6,14 +6,16 @@ use crate::dto::{Page, Ruleset};
 use crate::elements::summary;
 use crate::error::ApiResult;
 use crate::gear_facts::spell_facts;
+use crate::homebrew_drafts::DraftFile;
 use crate::homebrew_dto::{
     HomebrewPageRequest, HomebrewPickerFilters, HomebrewPickerRow, HomebrewPickerTarget,
 };
-use crate::state::AppState;
+use crate::homebrew_packs::CreatorPack;
+use crate::state::{AppState, ContentHub};
 use borealis_authoring::form::{
     assign_ids, feat_parameter_words, form_to_elements, open_types, setter_names,
-    CatalogBlockCodec, FormContext, WithElements, ELEMENT_TYPE_PICKER, FEAT_PARAMETER_PICKER,
-    SETTER_NAME_PICKER,
+    CatalogBlockCodec, FormContext, ProvisionalClass, WithElements, ELEMENT_TYPE_PICKER,
+    FEAT_PARAMETER_PICKER, SETTER_NAME_PICKER,
 };
 use borealis_content::{ContentStore, Element};
 use std::collections::{BTreeMap, HashSet};
@@ -404,7 +406,8 @@ impl AppState {
     }
 
     /// The new (never saved) elements of the drafts of `draft_id`'s pack, the open one included, with provisional
-    /// ids.
+    /// ids. A new class draft offered here records the id it is offered under (`DraftFile.provisional`, INW8I), so a
+    /// subclass that picks it follows the class to its saved id.
     pub(crate) fn hb_unsaved_elements(&self, draft_id: &str) -> ApiResult<Vec<Element>> {
         let open = self.hb_drafts.get(&self.paths.data, draft_id)?;
         let Ok(pack) = self.hb_pack(&open.pack_id) else {
@@ -413,16 +416,60 @@ impl AppState {
         let hub = self.hub()?;
         let codec = CatalogBlockCodec;
         let cx = FormContext::from_store(&hub.store, &codec);
-        let mut ids = self.hb_ids(&hub, &pack)?;
         let mut drafts = self.hb_drafts.list(&self.paths.data)?;
-        if !drafts.iter().any(|d| d.draft_id == open.draft_id) {
-            drafts.push(open);
+        let open_listed = drafts.iter().any(|d| d.draft_id == open.draft_id);
+        if !open_listed {
+            drafts.push(open.clone());
         }
-        Ok(drafts
+        let unsaved = self.hb_pack_unsaved(&hub, &pack, &cx, drafts)?;
+        for (d, els) in &unsaved {
+            let Some(p) = ProvisionalClass::of(els).filter(|p| !d.provisional.contains(p)) else {
+                continue;
+            };
+            let mut next = d.clone();
+            next.provisional.push(p);
+            // a draft with a file keeps the record there; the open one, held in memory, keeps it there
+            let kept = if d.draft_id == open.draft_id && !open_listed {
+                self.hb_drafts.hold(next)
+            } else {
+                self.hb_drafts.put(&self.paths.data, next)
+            };
+            if let Err(e) = kept {
+                tracing::warn!(
+                    "a class draft's provisional id was not recorded: {}",
+                    e.message
+                );
+            }
+        }
+        Ok(unsaved.into_iter().flat_map(|(_, els)| els).collect())
+    }
+
+    /// Every new (never saved) draft of `pack` among `drafts`, with its elements under the provisional ids they have
+    /// now: one id generator over the pack, the drafts in the order they were made (then by draft id), so two drafts
+    /// of one name get the same two ids (`X`, `X_2`) wherever they are asked for, and a newer draft never takes an
+    /// older one's id (INW8I). A draft whose form can't be written yet is left out.
+    pub(crate) fn hb_pack_unsaved(
+        &self,
+        hub: &ContentHub,
+        pack: &CreatorPack,
+        cx: &FormContext<'_>,
+        drafts: Vec<DraftFile>,
+    ) -> ApiResult<Vec<(DraftFile, Vec<Element>)>> {
+        let mut ids = self.hb_ids(hub, pack)?;
+        let mut own: Vec<DraftFile> = drafts
             .into_iter()
             .filter(|d| d.pack_id == pack.id() && d.element_id.is_none())
-            .filter_map(|d| form_to_elements(&assign_ids(&d.form, &mut ids), &cx).ok())
-            .flatten()
+            .collect();
+        own.sort_by(|a, b| {
+            (a.created, &a.updated_at, &a.draft_id).cmp(&(b.created, &b.updated_at, &b.draft_id))
+        });
+        own.dedup_by(|a, b| a.draft_id == b.draft_id);
+        Ok(own
+            .into_iter()
+            .filter_map(|d| {
+                let els = form_to_elements(&assign_ids(&d.form, &mut ids), cx).ok()?;
+                Some((d, els))
+            })
             .collect())
     }
 }

@@ -10,7 +10,10 @@ use borealis_engine::{CharacterState, Choice, Engine};
 use borealis_lib::content_dto::ContentProgress;
 use borealis_lib::content_packs::EventSink;
 use borealis_lib::dto::Ruleset;
-use borealis_lib::homebrew_dto::{HomebrewDraftView, HomebrewPackRequest};
+use borealis_lib::homebrew_dto::{
+    HomebrewDraftView, HomebrewPackRequest, HomebrewPageRequest, HomebrewPickerFilters,
+    HomebrewPickerTarget,
+};
 use borealis_lib::state::{AppPaths, AppState};
 use serde_json::{json, Value};
 use std::path::PathBuf;
@@ -297,4 +300,103 @@ fn a_subclass_saved_before_its_class_follows_the_class_renamed_before_its_first_
     assert_eq!(saved["supports"], json!(["Dusk Knight Subclass"]));
     let hub = app.state.hub().unwrap();
     assert!(offered_subclasses(&hub.engine, &class_id).contains(&sub_id));
+}
+
+impl App {
+    /// The unsaved classes a subclass draft's class picker offers (ids), in the picker's order.
+    fn offered_classes(&self, subclass_draft: &str) -> Vec<String> {
+        self.state
+            .homebrew_reference_options(
+                &HomebrewPickerTarget {
+                    types: vec!["Class".into()],
+                    tags: None,
+                    multiple: None,
+                },
+                "",
+                &HomebrewPickerFilters::default(),
+                HomebrewPageRequest {
+                    offset: 0,
+                    limit: 500,
+                },
+                Some(subclass_draft),
+            )
+            .unwrap()
+            .items
+            .into_iter()
+            .filter(|r| r.draft)
+            .map(|r| r.id)
+            .collect()
+    }
+
+    /// The provisional class ids a draft file records.
+    fn recorded(&self, draft_id: &str) -> Vec<String> {
+        let path = self
+            .data
+            .path()
+            .join("homebrew-drafts")
+            .join(format!("{draft_id}.json"));
+        let file: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        file["provisional"]
+            .as_array()
+            .map(|a| {
+                a.iter()
+                    .map(|p| p["id"].as_str().unwrap().to_string())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+}
+
+/// INW8I: two unsaved class drafts of one name in a pack are offered under two ids (the second `_2`), and each class
+/// draft records the id it is offered under; a subclass that picked the second follows it to its saved id.
+#[test]
+fn two_unsaved_classes_of_one_name_record_the_ids_the_picker_offers() {
+    // Arrange
+    let app = App::new();
+    let isles = app.pack("Ember Isles", "EI");
+    let a = app.class_draft(&isles, "Ember Knight");
+    let b = app.class_draft(&isles, "Ember Knight");
+    let probe = app
+        .state
+        .homebrew_new_draft(&isles, "subclass", None, None, None)
+        .unwrap();
+
+    // Act
+    let offered = app.offered_classes(&probe.draft_id);
+
+    // Assert: each offered id is recorded by exactly one of the two drafts
+    assert_eq!(
+        {
+            let mut o = offered.clone();
+            o.sort();
+            o
+        },
+        ["ID_EI_CLASS_EMBER_KNIGHT", "ID_EI_CLASS_EMBER_KNIGHT_2"]
+    );
+    let (ra, rb) = (app.recorded(&a.draft_id), app.recorded(&b.draft_id));
+    for id in &offered {
+        assert_eq!(
+            usize::from(ra.contains(id)) + usize::from(rb.contains(id)),
+            1,
+            "{id}: a {ra:?}, b {rb:?}"
+        );
+    }
+
+    // a subclass of the class offered as `_2` follows that class to its saved id (the plain one: it is saved first),
+    // and stays there when the other class, offered under the plain id, is saved next as `_2`
+    let second = "ID_EI_CLASS_EMBER_KNIGHT_2";
+    let (owner, other) = if rb.iter().any(|x| x == second) {
+        (&b, &a)
+    } else {
+        (&a, &b)
+    };
+    let sub = app.subclass_draft(&isles, "Order of Dusk", second, "Ember Knight");
+    let owner_id = app.save(owner);
+    assert_eq!(owner_id, "ID_EI_CLASS_EMBER_KNIGHT");
+    assert_eq!(app.save(other), second);
+    let reopened = app
+        .state
+        .homebrew_open_draft(&isles, None, Some(&sub.draft_id))
+        .unwrap();
+    assert_eq!(reopened.form.fields["parentClass"]["id"], json!(owner_id));
 }

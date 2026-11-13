@@ -9,7 +9,7 @@ use crate::compendium::element_detail_with;
 use crate::content_dto::PackKind;
 use crate::content_packs::EventSink;
 use crate::error::{ApiError, ApiResult};
-use crate::homebrew_drafts::{new_draft_id, DraftFile, HB_DRAFT_FORMAT};
+use crate::homebrew_drafts::{created_now, new_draft_id, DraftFile, HB_DRAFT_FORMAT};
 use crate::homebrew_dto::{
     HomebrewCharacterRef, HomebrewDraftSummary, HomebrewDraftView, HomebrewGeneratedView,
     HomebrewProblem, HomebrewSaveResult,
@@ -171,6 +171,7 @@ impl AppState {
             copied_from,
             copy,
             provisional: Vec::new(),
+            created: created_now(),
         }
     }
 
@@ -321,6 +322,7 @@ impl AppState {
             copied_from: None,
             copy: CopyExtras::default(),
             provisional: Vec::new(),
+            created: created_now(),
         };
         self.hb_drafts.hold(draft.clone())?;
         self.hb_view(&draft, &pack)
@@ -368,17 +370,14 @@ impl AppState {
         keep_read_only(&stored.form, &mut merged);
         let form = refresh_blocks(&merged, &cx);
         // a new class: the id a subclass's class picker offers it under now (P3)
-        let provisional = if stored.element_id.is_none() && form.kind == CLASS_KIND {
-            self.hb_provisional(&hub, &pack, &form, &cx, &stored.provisional)?
-        } else {
-            stored.provisional.clone()
-        };
-        let draft = DraftFile {
+        let mut draft = DraftFile {
             form,
             updated_at: now(),
-            provisional,
             ..stored
         };
+        if draft.element_id.is_none() && draft.form.kind == CLASS_KIND {
+            draft.provisional = self.hb_provisional(&hub, &pack, &draft, &cx)?;
+        }
         self.hb_drafts.put(&self.paths.data, draft.clone())?;
         self.hb_view(&draft, &pack)
     }
@@ -462,9 +461,11 @@ impl AppState {
             None
         };
         // a new class renamed before this first save: subclasses of its provisional ids follow it to its id (P3)
+        // (an id another class of the pack was saved with since is that class's: INW8I)
         let first_save: Vec<ClassRename> = draft
             .provisional
             .iter()
+            .filter(|p| !pack.disk.content.elements.iter().any(|e| e.id == p.id))
             .filter_map(|p| ClassRename::from_provisional(p, &elements))
             .collect();
         let followed: Vec<Element> = rename
@@ -691,23 +692,30 @@ impl AppState {
             .collect())
     }
 
-    /// `known` with the provisional class of a new class draft's `form` added (the id its first save would give it now,
-    /// as the subclass class picker offers it, [`Self::hb_unsaved_elements`]). A form that can't be written yet adds
-    /// nothing (the picker does not offer it either).
+    /// `known` with the provisional class of a new class draft's `form` added: the id its first save would give it now,
+    /// as the subclass class picker offers it ([`Self::hb_unsaved_elements`]: the pack's new drafts share one id
+    /// generator, INW8I). A form that can't be written yet adds nothing (the picker does not offer it either).
     fn hb_provisional(
         &self,
         hub: &ContentHub,
         pack: &CreatorPack,
-        form: &FormState,
+        draft: &DraftFile,
         cx: &FormContext<'_>,
-        known: &[ProvisionalClass],
     ) -> ApiResult<Vec<ProvisionalClass>> {
-        let mut ids = self.hb_ids(hub, pack)?;
-        let now = form_to_elements(&assign_ids(form, &mut ids), cx)
-            .ok()
-            .and_then(|els| ProvisionalClass::of(&els))
-            .filter(|p| !known.contains(p));
-        Ok(known.iter().cloned().chain(now).collect())
+        let mut drafts: Vec<DraftFile> = self
+            .hb_drafts
+            .list(&self.paths.data)?
+            .into_iter()
+            .filter(|d| d.draft_id != draft.draft_id)
+            .collect();
+        drafts.push(draft.clone());
+        let now = self
+            .hb_pack_unsaved(hub, pack, cx, drafts)?
+            .into_iter()
+            .find(|(d, _)| d.draft_id == draft.draft_id)
+            .and_then(|(_, els)| ProvisionalClass::of(&els))
+            .filter(|p| !draft.provisional.contains(p));
+        Ok(draft.provisional.iter().cloned().chain(now).collect())
     }
 
     /// The edited subclass drafts of a renamed class take its new tag and name (a draft of a saved subclass keeps its

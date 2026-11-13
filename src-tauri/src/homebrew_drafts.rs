@@ -57,6 +57,23 @@ pub struct DraftFile {
     /// subclass that picked one follows the class to its saved id (P3).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub provisional: Vec<ProvisionalClass>,
+    /// When the draft was made (nanoseconds since 1970; 0 for a draft made before this was kept): new drafts of one
+    /// pack are given their provisional ids in this order, so a newer draft never takes an older one's (INW8I).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub created: u64,
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)] // serde's skip_serializing_if passes a reference
+fn is_zero(n: &u64) -> bool {
+    *n == 0
+}
+
+/// Now, as [`DraftFile::created`].
+#[must_use]
+pub fn created_now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| u64::try_from(d.as_nanos()).unwrap_or(u64::MAX))
 }
 
 #[derive(Debug, Clone)]
@@ -306,6 +323,7 @@ mod tests {
             copied_from: None,
             copy: CopyExtras::default(),
             provisional: Vec::new(),
+            created: 0,
         }
     }
 
