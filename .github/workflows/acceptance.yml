@@ -75,6 +75,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.99.1  # = rust-toolchain.toml
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: ". -> target"
@@ -156,6 +158,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.99.1  # = rust-toolchain.toml
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: ". -> target"
@@ -324,6 +328,8 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev \
             webkit2gtk-driver xvfb xauth dbus-x11
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.99.1  # = rust-toolchain.toml
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: ". -> target"

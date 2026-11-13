@@ -1,4 +1,4 @@
 [toolchain]
-channel = "stable"
+channel = "1.99.1"  # pinned: move on purpose (CI and release.yml pass the same version)
 components = ["rustfmt", "clippy"]
 targets = []

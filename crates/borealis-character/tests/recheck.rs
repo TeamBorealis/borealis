@@ -43,15 +43,20 @@ const CHARACTER: &str = r#"<?xml version="1.0" encoding="utf-8"?>
 </character>"#;
 
 fn engine(with_pack: bool) -> Engine {
+    engine_with(with_pack.then_some(PACK))
+}
+
+fn engine_with(pack: Option<&str>) -> Engine {
     let core = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content/core");
     let mut b = ContentStoreBuilder::new()
         .add_pack_dir(&core)
         .expect("core");
-    if with_pack {
-        let dir = std::env::temp_dir().join(format!("borealis-recheck-{}", std::process::id()));
+    if let Some(pack) = pack {
+        let n = pack.len();
+        let dir = std::env::temp_dir().join(format!("borealis-recheck-{}-{n}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("tmp");
         let input = dir.join("syn.xml");
-        std::fs::write(&input, PACK).expect("write");
+        std::fs::write(&input, pack).expect("write");
         let opts = MigrateOptions {
             origin: PackOrigin::Custom,
             validate: false,
@@ -156,4 +161,73 @@ fn internal_ids_the_engine_lacks_are_reported_and_types_come_from_sum() {
         .find(|m| m.id == "ID_ZZ_SYN_CLASS_WARDEN")
         .expect("owner");
     assert_eq!(owner.ty, "Class");
+}
+
+const ARMS_PACK: &str = r#"<elements>
+  <info><name>Synthetic Arms</name><update version="0.0.1"><file name="arms.xml" url="https://example.invalid/arms.xml"/></update></info>
+  <element name="Arms Training" type="Proficiency" source="Synthetic" id="ID_ZZ_SYN_PROF_ARMS">
+    <rules>
+      <grant type="Proficiency" id="ID_ZZ_SYN_PROF_SPEAR"/>
+      <grant type="Proficiency" id="ID_ZZ_LOST_PROF_NAMED"/>
+    </rules>
+  </element>
+  <element name="Spear Training" type="Proficiency" source="Synthetic" id="ID_ZZ_SYN_PROF_SPEAR"/>
+</elements>"#;
+
+/// Aurora saved the grants of its own install: an add-on had appended a weapon to the
+/// installed "Arms Training" grant, so its proficiency sits under it in the tree and in `sum`.
+const ARMS_CHARACTER: &str = r#"<?xml version="1.0" encoding="utf-8"?>
+<character version="1.0.0">
+  <information><name>Arms Hero</name></information>
+  <build>
+    <input/>
+    <elements>
+      <element type="Level" name="1" id="ID_LEVEL_1">
+        <element type="Proficiency" name="Arms Training" id="ID_ZZ_SYN_PROF_ARMS">
+          <element type="Proficiency" name="Spear Training" id="ID_ZZ_SYN_PROF_SPEAR"/>
+          <element type="Proficiency" name="Named Training" id="ID_ZZ_LOST_PROF_NAMED"/>
+          <element type="Proficiency" name="Add-on Training" id="ID_ZZ_ADDON_PROF_HOOK"/>
+        </element>
+      </element>
+    </elements>
+    <sum>
+      <element type="Proficiency" id="ID_ZZ_SYN_PROF_ARMS"/>
+      <element type="Proficiency" id="ID_ZZ_SYN_PROF_SPEAR"/>
+      <element type="Proficiency" id="ID_ZZ_LOST_PROF_NAMED"/>
+      <element type="Proficiency" id="ID_ZZ_ADDON_PROF_HOOK"/>
+    </sum>
+  </build>
+</character>"#;
+
+#[test]
+fn add_on_grants_under_an_installed_element_are_not_missing_content() {
+    let missing = |e: &Engine| -> Vec<String> {
+        import_dnd5e(e, ARMS_CHARACTER)
+            .expect("import")
+            .report
+            .missing_content
+            .into_iter()
+            .map(|m| m.id)
+            .collect()
+    };
+    // The parent is installed: what an add-on appended to it at save time is not content the
+    // character lacks, but a grant the parent itself names still is.
+    let with_pack = missing(&engine_with(Some(ARMS_PACK)));
+    assert!(
+        !with_pack.iter().any(|id| id == "ID_ZZ_ADDON_PROF_HOOK"),
+        "{with_pack:?}"
+    );
+    assert!(
+        with_pack.iter().any(|id| id == "ID_ZZ_LOST_PROF_NAMED"),
+        "{with_pack:?}"
+    );
+    // The parent is not installed: everything under it is still reported.
+    let without = missing(&engine_with(None));
+    for id in [
+        "ID_ZZ_SYN_PROF_ARMS",
+        "ID_ZZ_ADDON_PROF_HOOK",
+        "ID_ZZ_LOST_PROF_NAMED",
+    ] {
+        assert!(without.iter().any(|m| m == id), "{id}: {without:?}");
+    }
 }
