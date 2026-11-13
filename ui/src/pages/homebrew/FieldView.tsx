@@ -19,6 +19,7 @@ import { useCreatorEnv } from "./env";
 import { EntryList, LairField, LegendaryField } from "./creature/EntryList";
 import { AbilitiesField, ArmorClassField, BonusesField, ChallengeField, DamageField, HitPointsField, InitiativeField, SensesField, SpeedsField } from "./creature/StatParts";
 import { ChoicesField, FeatGrantField, WrittenListField } from "./fields/BackgroundParts";
+import { classTableRows } from "./class/classTable";
 import { MapsToField, NAME_FORMAT_VALUES, SettersField, SheetField, TemplateText } from "./fields/FormParts";
 import { ContentsField, contentsOf, optionsOf, PackageOptionsField } from "./fields/ItemParts";
 import { SpellListsField } from "./fields/SpellListsField";
@@ -174,7 +175,8 @@ function Control({ field, value, onChange, id, labelledBy, describedBy, invalid,
       return <div id={id}><FormulaBuilder label={label} value={asExprValue<HomebrewFormulaNode>(value)} onChange={(v) => onChange(v, false)} dialect="formula" problems={builderProblems} required={field.required} /></div>;
     case "richText":
       return <RichTextEditor id={id} label={label} value={value as DocJson | null} onChange={(doc, typing) => onChange(doc, typing)} describedBy={describedBy} invalid={invalid}
-        extras={kindId === "spell" ? "spell" : kindId === "class" ? "class" : null} edition={env.edition} />;
+        extras={kindId === "spell" ? "spell" : kindId === "class" ? "class" : null} edition={env.edition}
+        classTable={kindId === "class" && env.form ? () => classTableRows(env.form!) : undefined} />;
     case "nameFormat":
       return <TemplateText id={id} label={label} value={text(value)} values={NAME_FORMAT_VALUES} onChange={(v, typing) => onChange(v, typing)} />;
     case "sheet":

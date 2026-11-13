@@ -324,11 +324,11 @@ describe("RichTextEditor", () => {
     ])), false]);
   });
 
-  it("the class extra is shown but waits for the class levels grid", () => {
+  it("the class extra waits for the class's form when it has no table to write", () => {
     const { button, onChange } = setup({ extras: "class" });
     const b = button("Insert class table");
     expect(b.getAttribute("aria-disabled")).toBe("true");
-    expect(b.title).toMatch(/class levels grid/);
+    expect(b.title).toMatch(/class's form/);
     fireEvent.click(b);
     expect(onChange).not.toHaveBeenCalled();
     expect(within(screen.getByRole("toolbar")).queryByRole("button", { name: "Higher-level slots" })).toBeNull();

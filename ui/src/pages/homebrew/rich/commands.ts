@@ -317,6 +317,24 @@ export function insertHigherLevel(edition: Edition | null | undefined): Command 
   };
 }
 
+/** Add a table at the end of the description (replacing a lone empty paragraph): the first row a header row. */
+export function insertTableRows(rows: readonly (readonly string[])[]): Command {
+  return (state, dispatch) => {
+    if (rows.length === 0) return false;
+    if (dispatch) {
+      const text = (t: string) => (t ? [richSchema.text(t)] : []);
+      const table = nodes.table.create({ joined: false, sections: true }, rows.map((cells, i) => nodes.table_row.create({ head: i === 0 },
+        cells.map((t) => (i === 0 ? nodes.table_header : nodes.table_cell).create(null, text(t))))));
+      const doc = state.doc;
+      const lone = doc.childCount === 1 && doc.firstChild?.type === nodes.paragraph && doc.firstChild.content.size === 0;
+      const from = lone ? 0 : doc.content.size;
+      const tr = state.tr.replaceWith(from, doc.content.size, table);
+      dispatch(tr.setSelection(TextSelection.near(tr.doc.resolve(from + 1))).scrollIntoView());
+    }
+    return true;
+  };
+}
+
 // ---- kept blocks and the escape fix -------------------------------------------------------------------------------
 
 /** Remove the kept block at `pos`. */

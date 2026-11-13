@@ -11,7 +11,7 @@ import "../../equipment/equipment.css";
 import "../homebrew.css";
 import "./rich.css";
 import {
-  ACTION_META, addTableColumn, addTableRow, asAction, cellIndexAt, setCellContent, tableCells, deleteTable, docFromJson, insertHigherLevel, insertTable, isHeadingActive,
+  ACTION_META, addTableColumn, addTableRow, asAction, cellIndexAt, setCellContent, tableCells, deleteTable, docFromJson, insertHigherLevel, insertTable, insertTableRows, isHeadingActive,
   isListActive, isMarkActive, removeKeptAt, replaceDoc, richKeys, tableAt, toggleBold, toggleHeading, toggleItalic, toggleList,
   type Edition,
 } from "./commands";
@@ -37,6 +37,8 @@ export interface RichTextEditorProps {
   invalid?: boolean;
   extras?: "spell" | "class" | null;
   edition?: Edition | null;
+  /** The class extra's table (spec 4.5): its rows, the header first, written from the class's LEVELS grid. */
+  classTable?: () => readonly (readonly string[])[];
 }
 
 /** Most artefacts named in the escape warning line. */
@@ -93,7 +95,7 @@ interface ToolButton {
   compact?: boolean;
 }
 
-function toolButtons(state: EditorState, extras: RichTextEditorProps["extras"], edition: RichTextEditorProps["edition"]): ToolButton[] {
+function toolButtons(state: EditorState, { extras, edition, classTable }: Pick<RichTextEditorProps, "extras" | "edition" | "classTable">): ToolButton[] {
   const inTable = tableAt(state) !== null;
   const buttons: ToolButton[] = [
     { key: "bold", compact: true, icon: "bold", text: "Bold", label: "Bold", title: "Bold (Ctrl+B)", cmd: toggleBold, pressed: isMarkActive(state, richSchema.marks.bold) },
@@ -120,10 +122,11 @@ function toolButtons(state: EditorState, extras: RichTextEditorProps["extras"], 
     });
   }
   if (extras === "class") {
-    buttons.push({
-      key: "classtable", icon: "table-large", text: "Class table", label: "Insert class table",
-      title: "Insert class table: needs the class levels grid, which is not in this build yet", unavailable: true,
-    });
+    buttons.push(classTable
+      ? { key: "classtable", icon: "table-large", text: "Class table", label: "Insert class table",
+        title: "Add the class table (levels, proficiency bonus, features and the class's columns) at the end", cmd: (st, dispatch) => insertTableRows(classTable())(st, dispatch) }
+      : { key: "classtable", icon: "table-large", text: "Class table", label: "Insert class table",
+        title: "Insert class table: open the class's form to write it from its levels", unavailable: true });
   }
   return buttons;
 }
@@ -201,7 +204,7 @@ export function RichTextEditor(props: RichTextEditorProps) {
 
   const doc = state?.doc;
   const findings = useMemo(() => (doc ? lintDocJson(doc.toJSON() as DocJson) : []), [doc]);
-  const buttons = state ? toolButtons(state, props.extras, props.edition) : [];
+  const buttons = state ? toolButtons(state, props) : [];
   const docked = phone && (focused || cellSheet !== null);
   const cells = phone && state ? tableCells(state) : null;
 
