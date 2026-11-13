@@ -40,7 +40,10 @@ export interface HomebrewTab {
 export type HomebrewControl =
   | "text" | "multiline" | "number" | "combo" | "check" | "toggle" | "tags" | "chips"
   | "reference" | "references" | "statistic" | "condition" | "tagFilter" | "equipped" | "formula"
-  | "richText" | "sheet" | "grid" | "blocks" | "children" | "setters" | "mapsTo"
+  | "richText" | "sheet"
+  /** An item's "Name when made" (`name-format`, a string): text with the base item's name and bonus as value chips. */
+  | "nameFormat"
+  | "grid" | "blocks" | "children" | "setters" | "mapsTo"
   | "auto" | "numbers" | "name" | "statValue" | "numberOrStatistic" | "formulas" | "dice" | "uses"
   | "abilitySource" | "abilityChoice" | "splits" | "classCounter" | "group" | "rows" | "variant" | "map"
   /** Item forms (WB-12): an item pack's contents and an Equipment Package's options (`HomebrewContentsRow[]`,

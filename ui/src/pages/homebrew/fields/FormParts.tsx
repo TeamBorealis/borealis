@@ -28,28 +28,44 @@ export const templateText = (parts: readonly Part[]): string => parts.map((p) =>
 /** Literal braces are refused in these fields (spec 7.4): a value goes in through Insert value. */
 const noBraces = (s: string): string => s.replace(/[{}]/g, "");
 
+/** A fixed value a template offers instead of the statistic picker: its placeholder, its words, its button's words. */
+export interface TemplateValue { key: string; label: string; insert: string }
+
+/** The values of an item's "Name when made" (`name-format`, spec 4.9): the base item's name and its enhancement bonus. */
+export const NAME_FORMAT_VALUES: readonly TemplateValue[] = [
+  { key: "parent", label: "Base item's name", insert: "Insert the base item's name" },
+  { key: "enhancement", label: "Enhancement bonus", insert: "Insert the enhancement bonus" },
+];
+
 /**
  * Plain text with value chips (spec 7.4: sheet lines, name formats): typed text never needs `{`, a value is inserted
- * from the statistic picker and shown by its words ("Rages"), never as `{{barbarian rage:count}}`.
+ * from the statistic picker (or, with `values`, from one button per fixed value) and shown by its words ("Rages"),
+ * never as `{{barbarian rage:count}}`.
  */
-export function TemplateText({ label, value, onChange }: { label: string; value: string; onChange: (text: string, typing: boolean) => void }) {
+export function TemplateText({ label, value, onChange, values, id }: {
+  label: string; value: string; onChange: (text: string, typing: boolean) => void; values?: readonly TemplateValue[]; id?: string;
+}) {
   const env = useCreatorEnv();
   const [picking, setPicking] = useState(false);
   const parts = templateParts(value);
   const set = (next: Part[], typing: boolean) => onChange(templateText(next), typing);
+  const insert = (stat: string) => set([...parts, { stat }, { text: "" }], false);
+  const words = (stat: string) => values?.find((v) => v.key === stat)?.label ?? statLabel(env, stat);
   return (
-    <span className="hb-template" role="group" aria-label={label}>
+    <span className="hb-template" role="group" aria-label={label} id={id}>
       {parts.map((p, i) => ("stat" in p ? (
         <span key={i} className="hb-chip-item hb-value-chip">
-          <span className="hb-ref-name">{statLabel(env, p.stat)}</span>
-          <button type="button" className="hb-chip-x" aria-label={`Remove the value ${statLabel(env, p.stat)}`} onClick={() => set(parts.filter((_, j) => j !== i), false)}><Icon name="x" /></button>
+          <span className="hb-ref-name">{words(p.stat)}</span>
+          <button type="button" className="hb-chip-x" aria-label={`Remove the value ${words(p.stat)}`} onClick={() => set(parts.filter((_, j) => j !== i), false)}><Icon name="x" /></button>
         </span>
       ) : (
         <TextBox key={i} aria-label={i === 0 ? label : `${label}, text ${i + 1}`} value={p.text} className="hb-template-text"
           onChange={(e) => set(parts.map((x, j) => (j === i ? { text: noBraces(e.target.value) } : x)), true)} />
       )))}
-      <button type="button" className="hb-pick-btn" onClick={() => setPicking(true)}><Icon name="plus" />Insert value</button>
-      {picking && <StatisticPicker title="Insert value" onClose={() => setPicking(false)} onChoose={(stat) => { setPicking(false); set([...parts, { stat }, { text: "" }], false); }} />}
+      {values
+        ? values.map((v) => <button key={v.key} type="button" className="hb-pick-btn" aria-label={v.insert} onClick={() => insert(v.key)}><Icon name="plus" />{v.label}</button>)
+        : <button type="button" className="hb-pick-btn" onClick={() => setPicking(true)}><Icon name="plus" />Insert value</button>}
+      {picking && <StatisticPicker title="Insert value" onClose={() => setPicking(false)} onChoose={(stat) => { setPicking(false); insert(stat); }} />}
     </span>
   );
 }

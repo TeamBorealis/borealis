@@ -571,11 +571,11 @@ fn magic_item() -> KindDef {
             "nameFormat",
             "Name when made",
             GENERAL,
-            Control::Text,
+            Control::NameFormat,
             Codec::SetterText("name-format"),
         )
         .section(MAGIC)
-        .help("Write {{parent}} for the base item's name and {{enhancement}} for the bonus, like {{parent}} +{{enhancement}}."),
+        .help("The name of an item made from a base item: text with the base item's name and the bonus inserted as values, like \"Longsword +1\"."),
     ];
     own.extend(cost_and_weight());
     own.push(slot());

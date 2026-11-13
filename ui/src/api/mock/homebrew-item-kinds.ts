@@ -2135,12 +2135,12 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
         "key": "nameFormat",
         "label": "Name when made",
         "tab": "general",
-        "control": "text",
+        "control": "nameFormat",
         "required": false,
         "bindings": [
           "setter:name-format"
         ],
-        "help": "Write {{parent}} for the base item's name and {{enhancement}} for the bonus, like {{parent}} +{{enhancement}}.",
+        "help": "The name of an item made from a base item: text with the base item's name and the bonus inserted as values, like \"Longsword +1\".",
         "section": "Magic"
       },
       {

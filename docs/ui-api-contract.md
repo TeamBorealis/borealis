@@ -577,7 +577,9 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   element has them); an armor's Armor Class and stealth disadvantage are its `stat ac:armored:armor` / `ac:shield` and
   `grant ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE` rules, and a magic armor's bonus its AC rule. Rules a field writes are
   not blocks (the block list holds the others). Bad values (dice, ranges, costs, coins) are `form` problems at the field.
-  The web mock serves the six descriptors from `api/mock/homebrew-item-kinds.ts`, written by
+  A magic item's `nameFormat` (control `nameFormat`, the `name-format` setter as a string) is text with value chips:
+  `{{parent}}` (the base item's name) and `{{enhancement}}` (its bonus) are shown by their words and inserted from
+  buttons; braces can't be typed (spec 7.4). The web mock serves the six descriptors from `api/mock/homebrew-item-kinds.ts`, written by
   `crates/borealis-authoring/tests/form_items.rs`.
 - **Spell form (WB-11).** Kind `spell` (element type `Spell`, spec 4.1). Its fields bind the engine setter and, only when
   the element already has it, the 2024 mirror in `data` (`level` = setter `level` + `data.level`, `school`, `verbal`/

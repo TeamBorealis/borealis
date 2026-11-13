@@ -818,3 +818,22 @@ fn the_web_mock_has_the_item_kinds() {
         "ui/src/api/mock/homebrew-item-kinds.ts is stale: run this test with BOREALIS_UPDATE_SNAPSHOTS=1"
     );
 }
+
+#[test]
+fn name_when_made_is_text_with_value_chips() {
+    let magic = borealis_authoring::form::descriptors()
+        .into_iter()
+        .find(|k| k.id == "magicItem")
+        .expect("magic item kind");
+    let f = magic
+        .fields
+        .iter()
+        .find(|f| f.key == "nameFormat")
+        .expect("nameFormat");
+    assert_eq!(f.control, "nameFormat", "text with value chips (spec 7.4)");
+    assert!(
+        !f.help.as_deref().unwrap_or_default().contains('{'),
+        "the help never asks for braces: {:?}",
+        f.help
+    );
+}

@@ -19,7 +19,7 @@ import { useCreatorEnv } from "./env";
 import { EntryList, LairField, LegendaryField } from "./creature/EntryList";
 import { AbilitiesField, ArmorClassField, BonusesField, ChallengeField, DamageField, HitPointsField, InitiativeField, SensesField, SpeedsField } from "./creature/StatParts";
 import { ChoicesField, FeatGrantField, WrittenListField } from "./fields/BackgroundParts";
-import { MapsToField, SettersField, SheetField } from "./fields/FormParts";
+import { MapsToField, NAME_FORMAT_VALUES, SettersField, SheetField, TemplateText } from "./fields/FormParts";
 import { ContentsField, contentsOf, optionsOf, PackageOptionsField } from "./fields/ItemParts";
 import { SpellListsField } from "./fields/SpellListsField";
 import { useWords } from "./fields/useWords";
@@ -175,6 +175,8 @@ function Control({ field, value, onChange, id, labelledBy, describedBy, invalid,
     case "richText":
       return <RichTextEditor id={id} label={label} value={value as DocJson | null} onChange={(doc, typing) => onChange(doc, typing)} describedBy={describedBy} invalid={invalid}
         extras={kindId === "spell" ? "spell" : kindId === "class" ? "class" : null} edition={env.edition} />;
+    case "nameFormat":
+      return <TemplateText id={id} label={label} value={text(value)} values={NAME_FORMAT_VALUES} onChange={(v, typing) => onChange(v, typing)} />;
     case "sheet":
       return <SheetField id={id} value={(value as HomebrewSheetValue | null) ?? null} onChange={(v, typing) => onChange(v, typing)} />;
     case "setters": {

@@ -65,6 +65,8 @@ pub enum Control {
     RichText,
     /// The sheet editor.
     Sheet,
+    /// Text with the base item's name and enhancement bonus as value chips (an item's `name-format`, spec 7.4).
+    NameFormat,
     /// The rule block list.
     Blocks,
     /// Name/value rows (expert).
@@ -148,6 +150,7 @@ impl Control {
             Self::Condition => "condition",
             Self::RichText => "richText",
             Self::Sheet => "sheet",
+            Self::NameFormat => "nameFormat",
             Self::Blocks => "blocks",
             Self::Setters => "setters",
             Self::Reference => "reference",
