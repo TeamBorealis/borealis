@@ -91,6 +91,8 @@
 .hb-field.hb-error .hb-field-msg { color: var(--aur-danger-bright); }
 .hb-field.hb-warning .hb-field-msg { color: var(--aur-warning); }
 .hb-field-help { margin: 2px 0 0; font-size: 11px; color: var(--text-secondary); }
+/* the elements a deep copy saves with it (Hy6vY): a line under the commands, in the help text's style */
+.hb-saved-with { margin: 2px 12px 4px; font-size: 11px; color: var(--text-secondary); flex: none; }
 /* New element (HC10 Q5): the KIND and START FROM lines sit under their heading, a gap above the cards. */
 .v4-new .hb-kind-cards { margin-top: 6px; }
 .hb-multiline { width: 100%; min-height: 60px; resize: vertical; background: var(--field-bg, #1c1c1c); color: var(--text); border: 1px solid #424243; font: inherit; font-size: var(--fs-md); padding: 4px 5px; }

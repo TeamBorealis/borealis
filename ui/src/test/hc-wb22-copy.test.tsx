@@ -54,6 +54,9 @@ describe("WB-22 copies (mock)", () => {
     await user.click(wizard);
     await user.click(within(picker).getByRole("button", { name: "Choose" }));
     await waitFor(() => expect(nameBox().value).toBe("Wizard (copy)"));
+    // the class editor names the subclasses saved with it (board Hy6vY)
+    expect(within(screen.getByRole("region", { name: "Element editor" })).getByRole("note", { name: "Saved with it" }).textContent)
+      .toBe("Saved with it: Evoker.");
     await user.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(async () => {
       const kinds = (await api.homebrewListElements({ packId: pack.id })).map((e) => `${e.kind}:${e.name}`);

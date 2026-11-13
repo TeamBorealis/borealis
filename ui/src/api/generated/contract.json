@@ -7321,6 +7321,15 @@
       }
      }
     },
+    "savedWith": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
     "updatedAt": {
      "opt": false,
      "t": {

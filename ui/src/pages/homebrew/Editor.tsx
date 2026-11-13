@@ -182,6 +182,11 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
   );
   const error = draft.error && <p className="hb-error-line" role="alert">{draft.error}</p>;
   const problemsPanel = <ProblemsPanel problems={draft.problems} checking={draft.checking} onJump={actions.onJump} onOpen={() => void draft.check()} />;
+  // a deep class copy saves its subclasses with it (spec 11): they are not on screen, so the editor names them
+  const companionNames = draft.view?.savedWith ?? [];
+  const savedWith = companionNames.length > 0
+    ? <p className="hb-saved-with" role="note" aria-label="Saved with it">Saved with it: {companionNames.join(", ")}.</p>
+    : null;
   return (
     <CreatorEnvProvider draftId={draft.view?.draftId ?? null} packId={draft.view?.packId ?? null} onPackChanged={actions.onPackChanged} edition={edition} form={form} answer={draft.view?.form ?? null} problems={draft.problems} expert={expert}>
       <section className="hb-editor" aria-label="Element editor" ref={editorRef}>
@@ -191,12 +196,13 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
           <>
             <div className="hb-editor-head" ref={headRef}>{band}{tabBand}</div>
             {error}
+            {savedWith}
             {problemsPanel}
             {hasExpert && <div className="hb-expert-row">{expertSwitch}</div>}
           </>
         ) : (
           // Desktop (13.2-13.4): the title band, commands, PROBLEMS and the sub-tab band stay; only the form scrolls.
-          <>{band}<div className="hb-cmdrow">{commands}{hasExpert && expertSwitch}</div>{error}{problemsPanel}{tabBand}</>
+          <>{band}<div className="hb-cmdrow">{commands}{hasExpert && expertSwitch}</div>{error}{savedWith}{problemsPanel}{tabBand}</>
         )}
         <div role="tabpanel" id="hb-tab-panel" aria-labelledby={`hb-tab-${current}`} className="hb-tabpanel" ref={panelRef}>
           {current === PREVIEW_TAB.id ? preview : current === DATA_TAB.id ? <DataView generated={draft.view?.generated} /> : current === SPELLCASTING_TAB && (kind.id === "class" || kind.id === "subclass")

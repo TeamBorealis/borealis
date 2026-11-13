@@ -213,8 +213,11 @@ export class MockHomebrew {
     }
     const view = this.store(own.pack.id, null, form);
     if (!source && !saved) this.copiedText.add(view.draftId);
-    if (companions.length) this.companions.set(view.draftId, companions);
-    return view;
+    if (!companions.length) return view;
+    this.companions.set(view.draftId, companions);
+    const named = { ...view, ...this.savedWith(view.draftId) };
+    this.drafts.set(view.draftId, named);
+    return named;
   }
 
   /** `homebrew_new_draft {parentId}` (WB-16): a child inside its parent's draft (or a saved element's), given by the
@@ -613,6 +616,12 @@ export class MockHomebrew {
     return generatedOf(form, id, type, own.pack.name, descriptionHtml(form.fields.description));
   }
 
+  /** `savedWith` of a draft's view: the names of the forms a deep copy saves with it (the backend's `HomebrewDraftView`). */
+  private savedWith(draftId: string): { savedWith?: string[] } {
+    const names = (this.companions.get(draftId) ?? []).map((c) => String(c.fields.name ?? "").trim()).filter(Boolean);
+    return names.length ? { savedWith: names } : {};
+  }
+
   private freeId(own: OwnPack, base: string): string {
     if (!own.elements.has(base)) return base;
     for (let n = 2; ; n += 1) if (!own.elements.has(`${base}_${n}`)) return `${base}_${n}`;
@@ -631,7 +640,7 @@ export class MockHomebrew {
     ];
     const view: HomebrewDraftView = {
       draftId, packId, elementId, form, preview: this.preview(packId, elementId ?? draftId, form), problems, updatedAt: now(), baseChanged: false,
-      generated: this.generated(packId, elementId, form),
+      generated: this.generated(packId, elementId, form), ...this.savedWith(draftId),
     };
     this.drafts.set(draftId, view);
     return view;

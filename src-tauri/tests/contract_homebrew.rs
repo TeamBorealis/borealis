@@ -232,6 +232,7 @@ fn pack_element_and_draft_types_match_the_ts_contract() {
             },
             updated_at: "2026-11-10T10:00:00Z".into(),
             base_changed: false,
+            saved_with: vec!["Evoker".into()],
         },
     );
     check(

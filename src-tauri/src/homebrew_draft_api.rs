@@ -149,6 +149,14 @@ impl AppState {
             generated: HomebrewGeneratedView { json, tree },
             updated_at: draft.updated_at.clone(),
             base_changed: Self::hb_base_changed(pack, draft),
+            saved_with: draft
+                .copy
+                .companions
+                .iter()
+                .filter_map(|c| c.fields.get("name").and_then(Value::as_str))
+                .map(|n| n.trim().to_string())
+                .filter(|n| !n.is_empty())
+                .collect(),
         })
     }
 

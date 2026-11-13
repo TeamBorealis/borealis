@@ -290,6 +290,10 @@ pub struct HomebrewDraftView {
     pub generated: HomebrewGeneratedView,
     pub updated_at: String,
     pub base_changed: bool,
+    /// The names of the elements a copy saves with it (a deep class copy's subclasses, spec 11), in saving order;
+    /// left out when there are none.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub saved_with: Vec<String>,
 }
 
 /// A draft on this device.

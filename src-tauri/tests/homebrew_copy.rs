@@ -258,6 +258,8 @@ fn a_deep_copied_srd_wizard_levels_to_20_with_its_own_features_and_subclass() {
     let v = app.copy("class", WIZARD, true);
     assert_eq!(v.form.fields["name"], json!("Wizard (copy)"));
     assert_eq!(v.form.fields["edition"], json!("dnd2024"));
+    // the class editor names the subclasses saved with it (they are not on screen)
+    assert_eq!(v.saved_with, ["Evoker"]);
     let children: Vec<&str> = v
         .form
         .children

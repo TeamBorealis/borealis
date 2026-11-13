@@ -710,6 +710,8 @@ export interface HomebrewDraftView {
   updatedAt: string;
   /** The saved element changed since the draft started (another device's pack arrived): ask Keep my draft / Use the saved version. */
   baseChanged: boolean;
+  /** The names of the elements a copy saves with it (a deep class copy's subclasses, spec 11); absent when none. */
+  savedWith?: string[];
 }
 
 /** Drafts on this device (spec 10.1: "Unsaved changes from <time>"). */
