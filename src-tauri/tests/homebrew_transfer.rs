@@ -419,6 +419,48 @@ fn replace_puts_the_old_pack_in_the_trash() {
     );
 }
 
+/// H1OPU (spec 10.3): the Replace preview names the local characters that use an element of the installed pack the
+/// file lacks, and those elements, as the delete scan does; a file holding every element names none.
+#[test]
+fn replace_preview_lists_characters_that_use_elements_the_file_lacks() {
+    // Arrange: the file has Fireball's copy; the installed pack gained Bless's copy after, which Mira uses
+    let app = App::new();
+    app.save_copy("spell", FIREBALL, false);
+    let file = app.export(true);
+    let later = app.save_copy("spell", "ID_2024_SPELL_BLESS", false);
+    let chars = app.state.characters_dir();
+    std::fs::create_dir_all(&chars).unwrap();
+    std::fs::write(
+        chars.join("mira.json"),
+        json!({"meta": {"name": "Mira"}, "build": {"choices": {"x": [later[0].clone()]}}})
+            .to_string(),
+    )
+    .unwrap();
+    std::fs::write(
+        chars.join("tam.json"),
+        json!({"meta": {"name": "Tam"}}).to_string(),
+    )
+    .unwrap();
+
+    // Act
+    let p = app.preview(&file);
+
+    // Assert
+    let info = p.homebrew.expect("a creator pack");
+    let names: Vec<&str> = info
+        .replace_used_by
+        .iter()
+        .map(|c| c.name.as_str())
+        .collect();
+    assert_eq!(names, ["Mira"]);
+    assert_eq!(info.replace_drops, ["Bless (copy)"]);
+
+    // a file with every element of the installed pack drops nothing
+    let whole = app.export(true);
+    let info = app.preview(&whole).homebrew.expect("a creator pack");
+    assert!(info.replace_used_by.is_empty() && info.replace_drops.is_empty());
+}
+
 #[test]
 fn leave_text_out_exports_no_copied_text_and_imports_cleanly() {
     let app = with_imported_book();

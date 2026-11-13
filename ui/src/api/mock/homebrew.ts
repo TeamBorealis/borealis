@@ -513,7 +513,9 @@ export class MockHomebrew {
       counts: [...counts].map(([type, count]): TypeCount => ({ type, count })), summary: { errors: 0, warnings: 0, infos: 0 },
       diagnostics: [], diagnosticsTruncated: false, unresolved: [], unresolvedTotal: 0, conditions: [], conditionsTotal: 0,
       replacesExisting: installed, books: [],
-      homebrew: { code: data.code, codeTaken: !installed && codes.has(data.code), copyCode: copyCode(data.code, codes), copyName: `${data.pack.name} (copy)` },
+      homebrew: { code: data.code, codeTaken: !installed && codes.has(data.code), copyCode: copyCode(data.code, codes), copyName: `${data.pack.name} (copy)`,
+        // the mock keeps no characters' choices to scan (as its delete scan)
+        replaceUsedBy: [], replaceDrops: [] },
     };
   }
 

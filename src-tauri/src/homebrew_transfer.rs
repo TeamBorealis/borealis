@@ -12,6 +12,7 @@ use crate::content_packs::{progress, EventSink};
 use crate::content_preview::{Converted, ImportPreview, Staged, TypeCount};
 use crate::content_report::MAX_DIAGNOSTICS;
 use crate::error::{ApiError, ApiResult};
+use crate::homebrew_dto::HomebrewCharacterRef;
 use crate::homebrew_files::{read_pack, write_new_pack, PackWrite};
 use crate::session::new_id;
 use crate::state::AppState;
@@ -56,6 +57,11 @@ pub struct HomebrewImportInfo {
     /// The code and name Import as a copy gives.
     pub copy_code: String,
     pub copy_name: String,
+    /// Replace (spec 10.3, H1OPU): the local characters that use an element of the installed pack this file lacks
+    /// (Replace removes those elements); empty when nothing is lost or the pack is not installed.
+    pub replace_used_by: Vec<HomebrewCharacterRef>,
+    /// The names of those elements, in the installed pack's order.
+    pub replace_drops: Vec<String>,
 }
 
 /// A creator pack read from a pack file.
@@ -332,6 +338,11 @@ impl AppState {
             .iter()
             .any(|p| !p.bundled && p.manifest.id == id)
             || self.paths.library().join(slug(&id)).exists();
+        let (replace_used_by, replace_drops) = if installed {
+            self.hb_replace_losses(&id, &ids)?
+        } else {
+            (Vec::new(), Vec::new())
+        };
         let preview = ImportPreview {
             preview_id: format!("prev_{}", new_id()),
             pack_name: pack.manifest.name.clone(),
@@ -358,6 +369,8 @@ impl AppState {
                 code_taken,
                 copy_code: self.hb_free_copy_code(&pack.creator.code)?,
                 copy_name: copy_name(&pack.manifest.name),
+                replace_used_by,
+                replace_drops,
             }),
         };
         Ok(Staged {
@@ -368,6 +381,43 @@ impl AppState {
             report,
             preview,
         })
+    }
+
+    /// What Replace would take from local characters (spec 10.3, H1OPU): the characters that use an element of the
+    /// installed pack `id` that the file (`file_ids`) lacks, and those elements' names. Nothing when the installed
+    /// pack can't be read (the preview still shows; Replace keeps the old folder in the trash).
+    fn hb_replace_losses(
+        &self,
+        id: &str,
+        file_ids: &HashSet<&str>,
+    ) -> ApiResult<(Vec<HomebrewCharacterRef>, Vec<String>)> {
+        let Ok(disk) = read_pack(&self.paths.library().join(slug(id))) else {
+            return Ok((Vec::new(), Vec::new()));
+        };
+        let lost: Vec<_> = disk
+            .content
+            .elements
+            .iter()
+            .filter(|e| e.ty != SOURCE_TYPE && !file_ids.contains(e.id.as_str()))
+            .collect();
+        let all: HashSet<&str> = lost.iter().map(|e| e.id.as_str()).collect();
+        if all.is_empty() {
+            return Ok((Vec::new(), Vec::new()));
+        }
+        let used_by = self.hb_characters_using(&all)?;
+        if used_by.is_empty() {
+            return Ok((Vec::new(), Vec::new()));
+        }
+        let mut drops = Vec::new();
+        for e in lost {
+            if !self
+                .hb_characters_using(&HashSet::from([e.id.as_str()]))?
+                .is_empty()
+            {
+                drops.push(e.name.clone());
+            }
+        }
+        Ok((used_by, drops))
     }
 
     /// Install a staged creator pack: as it is (an installed pack of the same id is copied to the app's trash, then

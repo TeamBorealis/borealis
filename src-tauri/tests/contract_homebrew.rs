@@ -413,6 +413,11 @@ fn pack_file_types_match_the_ts_contract() {
             code_taken: false,
             copy_code: "GH2".into(),
             copy_name: "Gloom Hollow (copy)".into(),
+            replace_used_by: vec![HomebrewCharacterRef {
+                character_id: "c1".into(),
+                name: "Mira".into(),
+            }],
+            replace_drops: vec!["Ember Bolt".into()],
         },
     );
 }

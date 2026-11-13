@@ -14,6 +14,24 @@ import { ImportReportDialog } from "./ImportReportDialog";
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
+/** Names shown in a sentence before "and N more". */
+const NAMES_SHOWN = 5;
+/** "A", "A and B", "A, B and C", "A, B, C, D, E and 3 more". */
+const listWords = (names: readonly string[]): string => {
+  const shown = names.slice(0, NAMES_SHOWN);
+  const more = names.length - shown.length;
+  const all = more > 0 ? [...shown, `${more} more`] : shown;
+  return all.length < 2 ? all.join("") : `${all.slice(0, -1).join(", ")} and ${all[all.length - 1]}`;
+};
+
+/** H1OPU (spec 10.3): what Replace takes from local characters, in plain words. */
+export function replaceWarning(drops: readonly string[], users: readonly string[]): string {
+  const many = drops.length > 1;
+  return `This file doesn't have ${listWords(drops)}, which ${listWords(users)} ${users.length > 1 ? "use" : "uses"}. `
+    + `Replacing the pack removes ${many ? "them" : "it"}, and ${users.length > 1 ? "those characters lose" : `${users[0]} loses`} `
+    + `${many ? "those choices" : "that choice"}. Your current pack is kept in the trash for 30 days.`;
+}
+
 /** One unresolved id: who uses it, in which files, and (issue 8) the loaded book its id names but that lacks it. */
 function RefItem({ u }: { u: UnresolvedRef }) {
   const more = u.count > u.referencedBy.length ? ` and ${u.count - u.referencedBy.length} more` : "";
@@ -81,9 +99,18 @@ export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
       navigate(homebrew && r.pack && pathname.startsWith("/homebrew") ? `/homebrew/${encodeURIComponent(r.pack.id)}` : "/content");
     } catch (e) { setImportBusy(false); toast.push(errorMessage(e), "error"); }
   };
+  /** Replace asks first when local characters use elements the file lacks (H1OPU). */
+  const replace = async () => {
+    const users = homebrew?.replaceUsedBy ?? [];
+    if (users.length > 0) {
+      const body = replaceWarning(homebrew?.replaceDrops ?? [], users.map((u) => u.name));
+      if ((await confirm({ title: "Replace the pack?", body, confirmLabel: "Replace", danger: true })) !== "confirm") return;
+    }
+    await install(false);
+  };
   const copyOnly = !!homebrew && homebrew.codeTaken && !preview.replacesExisting;
   const installButtons = homebrew && preview.replacesExisting
-    ? <><Button disabled={busy} onClick={() => void install(true)}>Import as a copy</Button><Button variant="primary" disabled={busy} onClick={() => void install(false)}>Replace</Button></>
+    ? <><Button disabled={busy} onClick={() => void install(true)}>Import as a copy</Button><Button variant="primary" disabled={busy} onClick={() => void replace()}>Replace</Button></>
     : copyOnly
       ? <Button variant="primary" disabled={busy} onClick={() => void install(true)}>Import as a copy</Button>
       : <Button variant="primary" disabled={none || busy} onClick={() => void install()}>Install</Button>;

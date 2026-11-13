@@ -7675,6 +7675,25 @@
      "t": {
       "k": "prim"
      }
+    },
+    "replaceDrops": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "replaceUsedBy": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewCharacterRef"
+      }
+     }
     }
    }
   },

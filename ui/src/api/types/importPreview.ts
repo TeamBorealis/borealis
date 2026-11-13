@@ -2,6 +2,7 @@
 
 import type { MigrationIssueCode } from "./content";
 import type { BookRuleset } from "./core";
+import type { HomebrewCharacterRef } from "./homebrew";
 
 export interface ImportFileInput {
   fileName: string;
@@ -77,6 +78,10 @@ export interface HomebrewImportInfo {
   /** The code and name Import as a copy gives. */
   copyCode: string;
   copyName: string;
+  /** Replace (spec 10.3): the local characters that use an element of the installed pack this file lacks. */
+  replaceUsedBy: HomebrewCharacterRef[];
+  /** The names of those elements. */
+  replaceDrops: string[];
 }
 
 /** IM14: a book of an import preview. */
