@@ -140,6 +140,9 @@ pub enum SpeciesField {
     Parent,
     /// A `names` setter of one type.
     Names(NameKind),
+    /// A 2014 race's choice of its subraces: a `select` of type Sub Race by a tag (a new one: the race's name);
+    /// the value is `""` (none), `"required"` or `"optional"`.
+    Subraces,
 }
 
 impl SpeciesField {
@@ -167,6 +170,7 @@ impl SpeciesField {
             Self::Ability(a) => vec![format!("rule:stat {a}")],
             Self::Parent => vec!["supports:<parent>".into()],
             Self::Names(k) => vec![format!("setter:names type={}", k.attribute())],
+            Self::Subraces => vec!["rule:select Sub Race".into()],
         };
         v
     }
@@ -269,6 +273,19 @@ fn language_choice(name: &str, n: i64) -> Rule {
     rule(v)
 }
 
+/// The subrace choice's values: the player chooses a subrace, or may.
+const REQUIRED: &str = "required";
+const OPTIONAL: &str = "optional";
+
+/// A race's subrace choice: the subraces tagged `tag` (a new race's: its name), maybe optional.
+fn subrace_choice(name: &str, tag: &str, optional: bool) -> Rule {
+    let mut v = json!({ "kind": "select", "type": "Sub Race", "name": name, "supports": tag });
+    if optional {
+        v["optional"] = json!(true);
+    }
+    rule(v)
+}
+
 /// The element type a granting field grants.
 fn granted_type(field: SpeciesField) -> &'static str {
     if field == SpeciesField::Traits {
@@ -308,6 +325,12 @@ fn one_rule_value(field: SpeciesField, r: &Rule) -> Option<Value> {
         (SpeciesField::Ability(a), Rule::Stat(s)) if s.name == a => {
             let n: i64 = s.value.parse().ok().filter(|n| *n != 0)?;
             same(r, &ability_rule(a, n)).then(|| json!(n))
+        }
+        (SpeciesField::Subraces, Rule::Select(s)) if s.ty == "Sub Race" => {
+            let tag = s.supports.as_deref()?;
+            let optional = s.optional == Some(true);
+            same(r, &subrace_choice(&s.name, tag, optional))
+                .then(|| json!(if optional { OPTIONAL } else { REQUIRED }))
         }
         (SpeciesField::LanguageChoice, Rule::Select(s))
             if s.ty == "Language" && s.supports.as_deref() == Some(ANY_LANGUAGE) =>
@@ -370,11 +393,12 @@ pub(crate) fn read(field: SpeciesField, r: &mut Reader<'_>, cx: &FormContext<'_>
         SpeciesField::Size
         | SpeciesField::Speed(_)
         | SpeciesField::Ability(_)
-        | SpeciesField::LanguageChoice => {
-            let none = if field == SpeciesField::Size {
-                json!([])
-            } else {
-                json!(0)
+        | SpeciesField::LanguageChoice
+        | SpeciesField::Subraces => {
+            let none = match field {
+                SpeciesField::Size => json!([]),
+                SpeciesField::Subraces => json!(""),
+                _ => json!(0),
             };
             match take_one(field, r) {
                 Some((v, i)) => rules_memo(v, r, &[i], data),
@@ -630,6 +654,29 @@ pub(crate) fn write(
                 let name = stored_name
                     .unwrap_or_else(|| format!("Language ({})", out.element.name.trim()));
                 rules(out, vec![language_choice(&name, n)]);
+            }
+        }
+        SpeciesField::Subraces => {
+            let how: String = decode(value, path)?;
+            let optional = match how.as_str() {
+                "" => return Ok(()),
+                REQUIRED => false,
+                OPTIONAL => true,
+                _ => return Err(FormProblem::new(path, "Choose from the list.")),
+            };
+            // a stored choice keeps its name (the choice's key) and the tag its subraces carry
+            let name = out.element.name.trim().to_string();
+            let stored: Option<(String, String)> = raw
+                .and_then(|r| r["rules"].get(0))
+                .and_then(decode_raw::<Rule>)
+                .and_then(|r| match r {
+                    Rule::Select(s) => Some((s.name.clone(), s.supports.clone()?)),
+                    _ => None,
+                });
+            let named =
+                stored.or_else(|| (!name.is_empty()).then(|| (format!("{name} Subrace"), name)));
+            if let Some((label, tag)) = named {
+                rules(out, vec![subrace_choice(&label, &tag, optional)]);
             }
         }
         SpeciesField::Traits => {

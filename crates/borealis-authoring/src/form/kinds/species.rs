@@ -78,7 +78,7 @@ struct Shape {
     parent: Option<&'static str>,
     /// 2014: fixed ability score increases, languages.
     aurora: bool,
-    /// Random names (2014 Race).
+    /// Random names and the subrace choice (2014 Race).
     names: bool,
     /// A new one walks 30 feet and is Medium.
     defaults: bool,
@@ -277,6 +277,27 @@ fn traits() -> FieldDef {
     .help("Each is given at level 1: make it here, or give one that exists. A trait from a later level, or one with a condition, is a block on RULES.")
 }
 
+/// A 2014 race's subrace choice (spec 4.4): the player chooses one of the subraces made for it.
+fn subraces() -> FieldDef {
+    field(
+        "subraces",
+        "Subraces",
+        GENERAL,
+        Control::Combo,
+        sp(SpeciesField::Subraces),
+    )
+    .choices(SUBRACE_CHOICE, false)
+    .section(TRAITS)
+    .default("\"\"")
+    .help("Whether the player chooses one of its subraces. A subrace is offered when its parent race is this race's name.")
+}
+
+const SUBRACE_CHOICE: &[(&str, &str)] = &[
+    ("", "None"),
+    ("required", "The player chooses one"),
+    ("optional", "The player may choose one"),
+];
+
 /// A racial trait's lineage (spec 4.4): the options the player chooses one of (Drow, High Elf, Wood Elf), made inside
 /// the trait and offered by one choice by id.
 fn lineage() -> FieldDef {
@@ -389,6 +410,7 @@ fn fields(shape: Shape) -> Vec<FieldDef> {
     }
     own.push(traits());
     if shape.names {
+        own.push(subraces());
         own.extend(names());
     }
     head().into_iter().chain(own).chain(details()).collect()

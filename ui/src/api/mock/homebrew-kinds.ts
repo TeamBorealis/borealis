@@ -4911,6 +4911,33 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         }
       },
       {
+        "key": "subraces",
+        "label": "Subraces",
+        "tab": "general",
+        "control": "combo",
+        "required": false,
+        "choices": [
+          {
+            "value": "",
+            "label": "None"
+          },
+          {
+            "value": "required",
+            "label": "The player chooses one"
+          },
+          {
+            "value": "optional",
+            "label": "The player may choose one"
+          }
+        ],
+        "bindings": [
+          "rule:select Sub Race"
+        ],
+        "help": "Whether the player chooses one of its subraces. A subrace is offered when its parent race is this race's name.",
+        "section": "Traits",
+        "default": ""
+      },
+      {
         "key": "maleNames",
         "label": "Male names",
         "tab": "general",

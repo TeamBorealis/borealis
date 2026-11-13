@@ -283,12 +283,9 @@ fn a_2014_race_reads_increases_languages_darkvision_and_names() {
         assert_eq!(form.fields["languageChoice"], json!(1));
         assert_eq!(form.fields["maleNames"], json!(["Bruenor", "Dain"]));
         assert_eq!(form.fields["femaleNames"], json!([]));
+        assert_eq!(form.fields["subraces"], json!("required"));
         let blocks: Vec<&str> = form.blocks.iter().map(|b| b.kind.as_str()).collect();
-        assert_eq!(
-            blocks,
-            ["stat", "select"],
-            "the conditional increase and the subrace choice"
-        );
+        assert_eq!(blocks, ["stat"], "the conditional increase");
         assert_eq!(one(&form, cx), e);
     });
 }
@@ -588,7 +585,7 @@ fn validator_locations_point_at_the_species_fields() {
         assert_eq!(at("rules[5]").as_deref(), Some("fields.languages"));
         assert_eq!(at("rules[6]").as_deref(), Some("blocks.0"));
         assert_eq!(at("rules[7]").as_deref(), Some("fields.languageChoice"));
-        assert_eq!(at("rules[9]").as_deref(), Some("blocks.1"));
+        assert_eq!(at("rules[9]").as_deref(), Some("fields.subraces"));
         assert_eq!(at("setters[0]").as_deref(), Some("fields.maleNames"));
         assert_eq!(at("data.speed").as_deref(), Some("fields.speed"));
         let elf = elf_2024();
@@ -607,7 +604,10 @@ fn the_stored_order_survives_forgetting_the_field_memos() {
         let mut form = element_to_form(&e, cx);
         form.memo.fields.clear();
         let back = one(&form, cx);
-        assert_eq!(rules(&back), rules(&e));
+        // the subrace choice, written from the race's name without its stored text, keeps its place
+        let mut want = rules(&e);
+        want[9]["name"] = json!("Dwarf Subrace");
+        assert_eq!(rules(&back), want);
         assert_eq!(back.setters, e.setters);
     });
 }
@@ -635,5 +635,64 @@ fn traits_and_trait_options_round_trip_with_the_shared_parts() {
             );
             assert_eq!(one(&form, cx), e);
         }
+    });
+}
+
+#[test]
+fn a_race_s_subrace_choice_is_a_field() {
+    with_cx(|cx| {
+        // a new race that offers subraces: the choice is written from its name
+        let mut race = kind("race").expect("race").new_form("e");
+        race.memo.id = Some("ID_X_RACE_STONEFOLK".into());
+        assert_eq!(race.fields["subraces"], json!(""));
+        let race = race
+            .with_field("name", json!("Stonefolk"))
+            .with_field("subraces", json!("required"));
+        let e = one(&race, cx);
+        let choice = json!({"kind": "select", "type": "Sub Race", "name": "Stonefolk Subrace", "supports": "Stonefolk"});
+        assert_eq!(rules(&e).as_array().expect("rules").last(), Some(&choice));
+        let again = element_to_form(&e, cx);
+        assert_eq!(again.fields["subraces"], json!("required"));
+        assert!(
+            again.blocks.is_empty(),
+            "the choice is the field's, not a block"
+        );
+
+        // a stored choice keeps its name and tag (the name is the choice's key; subraces name the tag), and its
+        // place among the rules; unchecking removes it
+        let stored = el(json!({
+            "id": "ID_X_RACE_TIEFLING", "name": "Tiefling", "type": "Race", "source": "X",
+            "rules": [{"kind": "stat", "name": "charisma", "value": "2"},
+                      {"kind": "select", "type": "Sub Race", "name": "Infernal Bloodline", "supports": "Tiefling Bloodline", "optional": true},
+                      {"kind": "grant", "id": "ID_X_TRAIT_KEEN", "type": "Racial Trait"}]
+        }));
+        let form = element_to_form(&stored, cx);
+        assert_eq!(form.fields["subraces"], json!("optional"));
+        assert!(form.blocks.is_empty());
+        assert_eq!(one(&form, cx), stored);
+        let renamed = one(&form.with_field("name", json!("Hellborn")), cx);
+        assert_eq!(
+            rules(&renamed)[1],
+            rules(&stored)[1],
+            "kept across a rename"
+        );
+        let required = one(&form.with_field("subraces", json!("required")), cx);
+        assert_eq!(
+            rules(&required)[1],
+            json!({"kind": "select", "type": "Sub Race", "name": "Infernal Bloodline", "supports": "Tiefling Bloodline"})
+        );
+        let off = one(&form.with_field("subraces", json!("")), cx);
+        assert_eq!(off.rules.len(), 2);
+        assert!(!rules(&off).to_string().contains("Sub Race"));
+
+        // a subrace choice with more to it (a number, a level) stays a rule block
+        let more = el(json!({
+            "id": "ID_X_RACE_ODD", "name": "Odd", "type": "Race", "source": "X",
+            "rules": [{"kind": "select", "type": "Sub Race", "name": "Odd Subrace", "supports": "Odd", "number": 2}]
+        }));
+        let form = element_to_form(&more, cx);
+        assert_eq!(form.fields["subraces"], json!(""));
+        assert_eq!(form.blocks.len(), 1);
+        assert_eq!(one(&form, cx), more);
     });
 }
