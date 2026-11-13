@@ -21,9 +21,21 @@ const scrollPast = (ctx: Ctx, grid: string, past: number): Promise<Pin> => ctx.b
   const head = document.querySelector('.hb-ws.narrow .hb-editor-head');
   const viewTop = () => Math.max(scroller!.getBoundingClientRect().top, head ? head.getBoundingClientRect().bottom : -Infinity);
   scroller!.scrollTop += table.getBoundingClientRect().top - viewTop() + by;
-  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   const th = table.querySelector('thead th')!;
-  return { head: Math.round(th.getBoundingClientRect().top), view: Math.round(viewTop()), display: getComputedStyle(table.querySelector('thead')!).display };
+  const read = () => ({ head: Math.round(th.getBoundingClientRect().top), view: Math.round(viewTop()), display: getComputedStyle(table.querySelector('thead')!).display });
+  const frame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
+  // read once the layout has settled: the editor head can change height a frame later (an autosave line) and the
+  // sticky header follows it on the next layout; two equal reads in a row, at most 30 frames
+  await frame();
+  await frame();
+  let pin = read();
+  for (let i = 0; i < 30; i++) {
+    await frame();
+    const next = read();
+    if (next.head === pin.head && next.view === pin.view) break;
+    pin = next;
+  }
+  return pin;
 }, { css: grid, by: past });
 
 async function addSpellcasting(ctx: Ctx): Promise<void> {
