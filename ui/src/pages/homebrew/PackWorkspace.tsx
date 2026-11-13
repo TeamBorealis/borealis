@@ -13,7 +13,7 @@ import { BulkActions, type BulkDone } from "./BulkActions";
 import { Categories, ElementList, type ExtraCategory, KindChips } from "./ElementList";
 import { KeysDialog } from "./KeysDialog";
 import { EMPTY_FILTER, type ListFilter } from "./search";
-import { keptChecks } from "./keptLists";
+import { keptChecks, keptKnown, loadKeptChecks } from "./keptLists";
 import { SpellLists, type SpellListsHandle } from "./SpellLists";
 import { WhereUsed } from "./WhereUsed";
 import { useCreatorKeys } from "./keymap";
@@ -74,6 +74,17 @@ export function PackWorkspace() {
   /** The workspace shows a kind's elements, or the pack's SPELL LISTS (spec 12.4). */
   // unsaved SPELL LISTS checks kept from the last visit open SPELL LISTS again (P3)
   const [pane, setPane] = useState<"elements" | "lists">(() => (keptChecks(api, packId) ? "lists" : "elements"));
+  // ...and so do those kept on the device by an earlier run of the app (INW5c), unless an element was opened meanwhile
+  const openedSince = useRef(false);
+  useEffect(() => { if (draft.view) openedSince.current = true; }, [draft.view]);
+  useEffect(() => {
+    if (keptKnown(api, packId)) return undefined;
+    let live = true;
+    loadKeptChecks(api, packId)
+      .then((k) => { if (live && k && !openedSince.current) setPane("lists"); })
+      .catch((e) => { if (live) toast.push(errorMessage(e), "error"); });
+    return () => { live = false; };
+  }, [api, packId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [described, setDescribed] = useState<string | null>(null);
   const [keysOpen, setKeysOpen] = useState(false);
   /** Bumped after every write: WHERE USED reads again. */

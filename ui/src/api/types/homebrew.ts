@@ -834,6 +834,19 @@ export interface HomebrewSpellListView {
   rows: HomebrewSpellListRow[];
 }
 
+/** One unsaved SPELL LISTS check: the spell goes on the list (`on`) or off it. */
+export interface HomebrewKeptCheck {
+  id: string;
+  on: boolean;
+}
+
+/** A pack's unsaved SPELL LISTS checks kept on the device while the workspace is left (P3 INW5c, spec 10.1). */
+export interface HomebrewKeptChecks {
+  /** The list chosen: a list tag, or `expanded:<subclass id>`. */
+  list: string;
+  pending: HomebrewKeptCheck[];
+}
+
 /** Try it setup (spec 9). Slots left out take the edition's SRD defaults. */
 export interface HomebrewTrialSetup {
   edition?: Ruleset;

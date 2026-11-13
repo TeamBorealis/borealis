@@ -179,6 +179,8 @@
     "allow-homebrew-where-used",
     "allow-homebrew-spell-list",
     "allow-homebrew-set-spell-list",
+    "allow-homebrew-keep-spell-list-checks",
+    "allow-homebrew-kept-spell-list-checks",
     "allow-homebrew-undo",
     "allow-homebrew-trial-start",
     "allow-homebrew-trial-update",

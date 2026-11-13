@@ -493,3 +493,20 @@ pub struct HomebrewTrialView {
     pub problems: Vec<HomebrewProblem>,
     pub changed: Vec<String>,
 }
+
+/// One unsaved SPELL LISTS check: the spell goes on the list (`on`) or off it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomebrewKeptCheck {
+    pub id: String,
+    pub on: bool,
+}
+
+/// Unsaved SPELL LISTS checks of a pack kept on the device while the workspace is left (P3 INW5c, spec 10.1): the list
+/// chosen (a list tag, or `expanded:<subclass id>`) and its checks.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomebrewKeptChecks {
+    pub list: String,
+    pub pending: Vec<HomebrewKeptCheck>,
+}

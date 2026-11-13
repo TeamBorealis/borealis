@@ -10,10 +10,11 @@ use crate::homebrew_creator;
 use crate::homebrew_dto::{
     HomebrewBlockSpec, HomebrewBulkPatch, HomebrewBulkResult, HomebrewCharacterRef,
     HomebrewDeleteResult, HomebrewDraftSummary, HomebrewDraftView, HomebrewElementRef,
-    HomebrewElementSummary, HomebrewExportResult, HomebrewForm, HomebrewPackPatch,
-    HomebrewPackRequest, HomebrewPageRequest, HomebrewPickerFilters, HomebrewPickerRow,
-    HomebrewPickerTarget, HomebrewProblem, HomebrewSaveResult, HomebrewSpellListView,
-    HomebrewStatGroup, HomebrewTrialChange, HomebrewTrialSetup, HomebrewTrialView,
+    HomebrewElementSummary, HomebrewExportResult, HomebrewForm, HomebrewKeptChecks,
+    HomebrewPackPatch, HomebrewPackRequest, HomebrewPageRequest, HomebrewPickerFilters,
+    HomebrewPickerRow, HomebrewPickerTarget, HomebrewProblem, HomebrewSaveResult,
+    HomebrewSpellListView, HomebrewStatGroup, HomebrewTrialChange, HomebrewTrialSetup,
+    HomebrewTrialView,
 };
 use crate::state::AppState;
 use tauri::State;
@@ -248,6 +249,25 @@ pub async fn homebrew_set_spell_list(
         None => s.homebrew_set_spell_list(&pack_id, &list_tag, &add, &remove, sink),
     })
     .await
+}
+
+/// Keep a pack's unsaved SPELL LISTS checks on the device (none: forget them), P3 INW5c.
+#[tauri::command(async)]
+pub fn homebrew_keep_spell_list_checks(
+    state: State<'_, AppState>,
+    pack_id: String,
+    kept: HomebrewKeptChecks,
+) -> ApiResult<()> {
+    state.homebrew_keep_spell_list_checks(&pack_id, &kept)
+}
+
+/// The unsaved SPELL LISTS checks kept for a pack, if any.
+#[tauri::command(async)]
+pub fn homebrew_kept_spell_list_checks(
+    state: State<'_, AppState>,
+    pack_id: String,
+) -> ApiResult<Option<HomebrewKeptChecks>> {
+    state.homebrew_kept_spell_list_checks(&pack_id)
 }
 
 /// Try it (spec 9): a test character that takes the draft (`homebrew_trial.rs`).

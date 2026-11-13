@@ -9,7 +9,7 @@ import { Band } from "../spells/TwoPane";
 import { refusalText } from "./BulkActions";
 import { SpellPickerGrid } from "./pickers/SpellPickerGrid";
 import { nextSelection } from "./search";
-import { keepChecks, keptChecks } from "./keptLists";
+import { forgetChecks, keepChecks, keptChecks, keptKnown, loadKeptChecks } from "./keptLists";
 import { useMessageBox } from "./useMessageBox";
 
 /** How many declared lists the list chooser reads (classes are few; one page holds them all). */
@@ -65,11 +65,24 @@ export function SpellLists({ packId, narrow, described, onDescribe, handle, onSa
   const [other, setOther] = useState("");
   const [view, setView] = useState<HomebrewSpellListView | null>(null);
   const [pending, setPending] = useState<ReadonlyMap<string, boolean>>(() => keptChecks(api, packId)?.pending ?? new Map());
-  useEffect(() => { keepChecks(api, packId, list, pending); }, [api, packId, list, pending]);
+  // kept on the device like a draft, so a restart keeps them too (INW5c)
+  const [error, setError] = useState<string | null>(null);
+  const keepFailed = useCallback((e: unknown) => setError(`Your unsaved changes could not be kept on this device: ${errorMessage(e)}`), []);
+  useEffect(() => { keepChecks(api, packId, list, pending).catch(keepFailed); }, [api, packId, list, pending, keepFailed]);
+  // opened before this run read the device: the checks kept there come back while nothing is chosen yet
+  useEffect(() => {
+    if (keptKnown(api, packId)) return undefined;
+    let live = true;
+    loadKeptChecks(api, packId).then((k) => {
+      if (!live || !k) return;
+      setList((l) => l || k.list);
+      setPending((p) => (p.size ? p : k.pending));
+    }).catch(keepFailed);
+    return () => { live = false; };
+  }, [api, packId, keepFailed]);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [anchor, setAnchor] = useState<string | null>(null);
   const [text, setText] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -128,10 +141,10 @@ export function SpellLists({ packId, narrow, described, onDescribe, handle, onSa
   useEffect(() => {
     handle.current = {
       pending: () => pending.size, save,
-      discard: () => { keepChecks(api, packId, "", new Map()); setPending(new Map()); },
+      discard: () => { forgetChecks(api, packId).catch(keepFailed); setPending(new Map()); },
     };
     return () => { handle.current = null; };
-  }, [handle, pending, save, api, packId]);
+  }, [handle, pending, save, api, packId, keepFailed]);
 
   const choose = async (name: string) => {
     if (pending.size > 0) {

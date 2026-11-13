@@ -1,4 +1,4 @@
-import type { Api, ApiEvents, BookRuleset, EventName, Ruleset, SlotOption, SlotOptionsArgs, SwitchVersionResult } from "../contract";
+import type { Api, ApiEvents, BookRuleset, HomebrewKeptChecks, EventName, Ruleset, SlotOption, SlotOptionsArgs, SwitchVersionResult } from "../contract";
 import type {
   AddedKind,
   AiHostStatus,
@@ -1015,6 +1015,14 @@ export class MockApi implements Api {
     return expandedOf ? this.homebrew.setExpandedList(packId, expandedOf, add, remove, this.loadedElements())
       : this.homebrew.setSpellList(packId, listTag, add, remove, this.loadedElements());
   }
+  /** Unsaved SPELL LISTS checks kept per pack: the mock's device (it outlives the UI's memory, as the backend's files). */
+  private keptLists = new Map<string, HomebrewKeptChecks>();
+  async homebrewKeepSpellListChecks({ packId, kept }: Parameters<Api["homebrewKeepSpellListChecks"]>[0]) {
+    await this.tick();
+    if (kept.list.trim() && kept.pending.length) this.keptLists.set(packId, kept);
+    else this.keptLists.delete(packId);
+  }
+  async homebrewKeptSpellListChecks({ packId }: { packId: string }) { await this.tick(); return this.keptLists.get(packId) ?? null; }
   /** Every loaded element of the sample content (the creator's own packs are `MockHomebrew`'s). */
   private loadedElements() { return this.content.search({ query: "", limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items; }
   async homebrewTrialStart({ draftId, setup }: Parameters<Api["homebrewTrialStart"]>[0]) { await this.tick(); return this.trials.start(draftId, setup); }

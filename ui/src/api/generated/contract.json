@@ -741,6 +741,26 @@
     "name": "HomebrewExportResult"
    }
   },
+  "homebrew_keep_spell_list_checks": {
+   "args": {
+    "kept": false,
+    "packId": false
+   },
+   "method": "homebrewKeepSpellListChecks",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "homebrew_kept_spell_list_checks": {
+   "args": {
+    "packId": false
+   },
+   "method": "homebrewKeptSpellListChecks",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewKeptChecks"
+   }
+  },
   "homebrew_kinds": {
    "args": {},
    "method": "homebrewKinds",
@@ -7692,6 +7712,44 @@
       "t": {
        "k": "ref",
        "name": "HomebrewCharacterRef"
+      }
+     }
+    }
+   }
+  },
+  "HomebrewKeptCheck": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "on": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewKeptChecks": {
+   "k": "object",
+   "props": {
+    "list": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pending": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "HomebrewKeptCheck"
       }
      }
     }

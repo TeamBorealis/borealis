@@ -147,6 +147,7 @@ import type {
   HomebrewProblem,
   HomebrewSaveResult,
   HomebrewSpellListView,
+  HomebrewKeptChecks,
   HomebrewStatGroup,
   HomebrewTrialChange,
   HomebrewTrialSetup,
@@ -677,6 +678,10 @@ export interface ApiMethods {
   homebrewSpellList(args: { packId: string; listTag: string; expandedOf?: string | null }): Promise<HomebrewSpellListView>;
   /** Add or remove spells (own spells change their tags; loaded spells get an append in the pack). */
   homebrewSetSpellList(args: { packId: string; listTag: string; expandedOf?: string | null; add: string[]; remove: string[] }): Promise<HomebrewSpellListView>;
+  /** Keep a pack's unsaved SPELL LISTS checks on the device, like a draft (none: forget them), P3 INW5c. */
+  homebrewKeepSpellListChecks(args: { packId: string; kept: HomebrewKeptChecks }): Promise<void>;
+  /** The unsaved SPELL LISTS checks kept for a pack, if any. */
+  homebrewKeptSpellListChecks(args: { packId: string }): Promise<HomebrewKeptChecks | null>;
   /** Try it: a throwaway character with the draft, never saved or listed. */
   homebrewTrialStart(args: { draftId: string; setup: HomebrewTrialSetup }): Promise<HomebrewTrialView>;
   homebrewTrialUpdate(args: { trialId: string; change: HomebrewTrialChange }): Promise<HomebrewTrialView>;
@@ -939,6 +944,8 @@ export const COMMANDS = {
   homebrewWhereUsed: "homebrew_where_used",
   homebrewSpellList: "homebrew_spell_list",
   homebrewSetSpellList: "homebrew_set_spell_list",
+  homebrewKeepSpellListChecks: "homebrew_keep_spell_list_checks",
+  homebrewKeptSpellListChecks: "homebrew_kept_spell_list_checks",
   homebrewUndo: "homebrew_undo",
   homebrewTrialStart: "homebrew_trial_start",
   homebrewTrialUpdate: "homebrew_trial_update",
