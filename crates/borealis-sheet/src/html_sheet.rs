@@ -174,7 +174,9 @@ struct PageSpec {
     body: String,
     /// Page 1 only: identity line and meta carry the field ids.
     identity: Option<(String, Vec<(String, String)>)>,
-    /// The page holds what one PDF page holds, so it keeps the paper height exactly (B-146).
+    /// The page holds what one PDF page holds, so it keeps the paper height (B-146). The browser's
+    /// text can still need more room than the PDF's (other fonts, a small preview scale): then the
+    /// page grows rather than letting a section run over the next one or into the footer.
     /// Pages the preview does not split yet grow with their content instead of cutting it.
     fixed: bool,
 }

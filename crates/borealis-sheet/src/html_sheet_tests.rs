@@ -345,6 +345,48 @@ fn html_sheet_sample() {
             );
             std::fs::write(format!("{dir}/{name}-{tag}-long.html"), html).unwrap();
         }
+        // A backstory in eight paragraphs, with Organisation, Allies and Notes after it: its text
+        // must never run over the sections after it or into the footer.
+        let html = render_sheet(
+            &long_story(d),
+            &HtmlOptions {
+                paper: Paper::A4,
+                ..HtmlOptions::default()
+            },
+        );
+        std::fs::write(format!("{dir}/{name}-a4-story.html"), html).unwrap();
+    }
+}
+
+const STORY: &str = "I kept a careful list of every promise I made and every one I broke, \
+and I read it aloud whenever the night was quiet enough to hear myself think.";
+
+/// `d` with a backstory in eight paragraphs and the sections after it filled.
+fn long_story(mut d: SheetData) -> SheetData {
+    d.story.backstory = [STORY; 8].join("\n\n");
+    d.story.organization = "The wardens of the northern lighthouse.".into();
+    d.story.allies = [STORY; 2].join(" ");
+    d.story.notes = [STORY; 2].join(" ");
+    d
+}
+
+/// Every page keeps at least its paper height and grows when the browser's text needs more
+/// room than the PDF measured, and no section shrinks below its text, so a long text never
+/// runs over the next section or into the footer.
+#[test]
+fn pages_and_sections_grow_with_their_text() {
+    let css = super::css::CSS;
+    assert!(css.contains(".a4{width:595pt;min-height:842pt}"));
+    assert!(css.contains(".letter{width:612pt;min-height:792pt}"));
+    assert!(!css.contains(";height:842pt") && !css.contains(";height:792pt"));
+    assert!(css.contains(".sec{min-height:auto}"));
+    for pair in [cleric_2014(), wizard_2024()] {
+        let d = long_story(data(&pair));
+        let html = render_sheet(&d, &HtmlOptions::default());
+        for section in ["Backstory", "Organisation", "Allies", "Notes"] {
+            assert!(html.contains(&format!("<h2>{section}<svg")), "{section}");
+        }
+        assert!(html.contains("whenever the night was quiet"));
     }
 }
 
