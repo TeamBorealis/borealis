@@ -13,6 +13,7 @@
 use crate::expr_build::tag_filter::{TagFilter, TagFilterLanguage};
 use crate::expr_build::ExprValue;
 use crate::form::value::RefValue;
+use borealis_content::expr::{SupportsExpr, SupportsLeaf};
 use borealis_content::{CustomRule, Element, ListItem, Rule, SelectRule};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
@@ -281,6 +282,31 @@ pub(super) fn variant_ids_of(s: &SelectRule) -> Option<Vec<String>> {
         .collect();
     let all_ids = ids.iter().all(|t| t.starts_with("ID_"));
     (all_ids && Rule::Select(s.clone()) == variants_rule(&s.name, &ids)).then_some(ids)
+}
+
+/// A variants select that offers its variants by tag (an Aurora background: `supports "Variant Criminal"`, or an
+/// expression of tags): its expression, when it names no id and the rule is only the select (maybe optional).
+pub(super) fn variant_tags_of(s: &SelectRule) -> Option<SupportsExpr> {
+    if s.ty != VARIANT_TYPE {
+        return None;
+    }
+    let text = s.supports.as_deref()?;
+    let expr = SupportsExpr::parse(text).ok().flatten()?;
+    let tags = expr.tags();
+    if tags.is_empty() || tags.iter().any(|t| t.starts_with("ID_")) || !expr.dynamics().is_empty() {
+        return None;
+    }
+    let mut plain = plain_select(VARIANT_TYPE, &s.name, None, Some(text.to_string()));
+    plain.optional = s.optional;
+    (*s == plain).then_some(expr)
+}
+
+/// The variant carries the tags `expr` asks for.
+pub(super) fn offered_by_tags(expr: &SupportsExpr, variant: &Element) -> bool {
+    borealis_engine::eval::eval_bool(expr.root(), &|leaf| match leaf {
+        SupportsLeaf::Tag(t) => variant.supports.iter().any(|s| s == t),
+        SupportsLeaf::Dynamic(_) => false,
+    })
 }
 
 #[cfg(test)]

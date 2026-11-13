@@ -621,3 +621,80 @@ fn a_renamed_background_keeps_its_choices_names() {
         assert_eq!(p[0].0, "fields.choices.0");
     });
 }
+
+#[test]
+fn variants_offered_by_tag_are_read_into_the_variants_field() {
+    let variant = |id: &str, name: &str, tags: &[&str]| {
+        el(
+            json!({"id": id, "name": name, "type": "Background Variant", "source": "X", "supports": tags}),
+        )
+    };
+    let loaded = [
+        variant("ID_X_BACKGROUND_VARIANT_SPY", "Spy", &["Variant Criminal"]),
+        variant(
+            "ID_X_BACKGROUND_VARIANT_SMUGGLER",
+            "Smuggler",
+            &["Variant Criminal", "Coast"],
+        ),
+        variant(
+            "ID_X_BACKGROUND_VARIANT_KNIGHT",
+            "Knight",
+            &["Variant Noble"],
+        ),
+    ];
+    let names = names();
+    let lookup = WithElements {
+        base: &names,
+        extra: &loaded,
+    };
+    with_lookup(&lookup, |cx| {
+        let bg = el(json!({
+            "id": "ID_X_BACKGROUND_CRIMINAL", "name": "Criminal", "type": "Background", "source": "X",
+            "rules": [
+                {"kind": "grant", "id": "ID_PROFICIENCY_SKILL_INSIGHT", "type": "Proficiency"},
+                {"kind": "select", "type": "Background Variant", "name": "Variant", "supports": "Variant Criminal", "optional": true}
+            ]
+        }));
+        let form = element_to_form(&bg, cx);
+        assert_eq!(
+            form.fields["variants"],
+            json!([
+                {"element": {"id": "ID_X_BACKGROUND_VARIANT_SPY", "name": "Spy", "type": "Background Variant"}},
+                {"element": {"id": "ID_X_BACKGROUND_VARIANT_SMUGGLER", "name": "Smuggler", "type": "Background Variant"}}
+            ]),
+            "the loaded variants its tag offers"
+        );
+        assert!(form.blocks.is_empty(), "the choice is the field's");
+        assert_eq!(
+            form_to_element(&form, cx).expect("writes"),
+            bg,
+            "the tag shape is kept"
+        );
+
+        // an expression of tags reads the same way
+        let mut both = bg.clone();
+        both.rules[1] = serde_json::from_value(
+            json!({"kind": "select", "type": "Background Variant", "name": "Variant",
+            "supports": "Variant Criminal, Coast", "optional": true}),
+        )
+        .expect("rule");
+        let form2 = element_to_form(&both, cx);
+        assert_eq!(form2.fields["variants"].as_array().map(Vec::len), Some(1));
+        assert_eq!(form_to_element(&form2, cx).expect("writes"), both);
+
+        // a changed list offers the variants it lists by id; an empty one offers none
+        let edited = form.with_field(
+            "variants",
+            json!([{"element": {"id": "ID_X_BACKGROUND_VARIANT_SPY", "name": "Spy", "type": "Background Variant"}},
+                   {"element": {"id": "ID_X_BACKGROUND_VARIANT_KNIGHT", "name": "Knight", "type": "Background Variant"}}]),
+        );
+        let e = form_to_element(&edited, cx).expect("writes");
+        assert_eq!(
+            rules(&e)[1],
+            json!({"kind": "select", "type": "Background Variant", "name": "Variant",
+                   "supports": "ID_X_BACKGROUND_VARIANT_SPY|ID_X_BACKGROUND_VARIANT_KNIGHT", "optional": true})
+        );
+        let none = form_to_element(&form.with_field("variants", json!([])), cx).expect("writes");
+        assert_eq!(none.rules.len(), 1);
+    });
+}

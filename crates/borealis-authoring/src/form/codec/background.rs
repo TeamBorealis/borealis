@@ -16,8 +16,8 @@
 
 use super::background_values::{
     choice_row_of, choice_rule, choice_type, distribution_rule, feat_grant_of, feat_params,
-    feat_rule, list_rule, param_key, variant_ids_of, variants_rule, written_list_of, ChoiceRow,
-    FeatGrant, WrittenList, DISTRIBUTION, VARIANT_TYPE,
+    feat_rule, list_rule, offered_by_tags, param_key, variant_ids_of, variant_tags_of,
+    variants_rule, written_list_of, ChoiceRow, FeatGrant, WrittenList, DISTRIBUTION, VARIANT_TYPE,
 };
 use super::class::{package_rule, Raw, Take, ABILITY_CHOICES};
 use super::{decode, decode_raw, to_json, Reader};
@@ -344,12 +344,27 @@ pub(crate) fn read(field: BackgroundField, r: &mut Reader<'_>, cx: &FormContext<
             to_json(&rich::parse(html))
         }
         BackgroundField::Variants => {
-            let rules = t.rules(|x| select(x).and_then(variant_ids_of).is_some(), 1);
-            let entries: Vec<ChildEntry> = rules
-                .first()
-                .and_then(|x| select(x))
-                .and_then(variant_ids_of)
-                .unwrap_or_default()
+            let shaped = |s: &borealis_content::SelectRule| {
+                variant_ids_of(s).is_some() || variant_tags_of(s).is_some()
+            };
+            let rules = t.rules(|x| select(x).is_some_and(shaped), 1);
+            let chosen = rules.first().and_then(|x| select(x));
+            // by id (the creator's shape), or by tag: the loaded variants that carry the tags
+            let ids: Vec<String> = match chosen.and_then(variant_ids_of) {
+                Some(ids) => ids,
+                None => chosen
+                    .and_then(variant_tags_of)
+                    .map(|expr| {
+                        cx.lookup
+                            .loaded_of_type(VARIANT_TYPE)
+                            .into_iter()
+                            .filter(|v| offered_by_tags(&expr, v))
+                            .map(|v| v.id.clone())
+                            .collect()
+                    })
+                    .unwrap_or_default(),
+            };
+            let entries: Vec<ChildEntry> = ids
                 .iter()
                 .map(|id| ChildEntry {
                     level: None,
