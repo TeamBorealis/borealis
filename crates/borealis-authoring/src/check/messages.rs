@@ -553,6 +553,15 @@ pub enum Finding {
         /// "subrace", "variant".
         noun: String,
     },
+    /// A spell's list that no loaded class declares and no choice picks spells from.
+    UnknownSpellList {
+        /// The list as the spell carries it.
+        list: String,
+        /// A known list spelled nearly the same (or the same but for case).
+        near: Option<String>,
+    },
+    /// A spell on no spell list.
+    OnNoSpellList,
 }
 
 impl Finding {
@@ -573,6 +582,8 @@ impl Finding {
             Self::SpellListEmpty => "lint.spell_list_empty",
             Self::UnknownPool { .. } => "lint.unknown_pool",
             Self::NotOffered { .. } => "lint.not_offered",
+            Self::UnknownSpellList { .. } => "lint.unknown_spell_list",
+            Self::OnNoSpellList => "lint.no_spell_list",
             Self::TypeNotHere { .. } => "form.type",
         }
     }
@@ -595,8 +606,9 @@ impl Finding {
             | Self::SelectOffersNothing
             | Self::SpellListEmpty
             | Self::UnknownPool { .. }
-            | Self::NotOffered { .. } => Warning,
-            Self::EmptyDescription => Info,
+            | Self::NotOffered { .. }
+            | Self::UnknownSpellList { .. } => Warning,
+            Self::EmptyDescription | Self::OnNoSpellList => Info,
         }
     }
 
@@ -651,6 +663,19 @@ impl Finding {
             Self::NotOffered { noun } => format!(
                 "No loaded race's {noun} choice offers it. Check the parent race: it is the tag that choice offers, usually the race's name."
             ),
+            Self::UnknownSpellList { list, near } => {
+                let head = format!("No loaded class or choice uses the spell list \"{list}\".");
+                match near {
+                    Some(n) if n.eq_ignore_ascii_case(list) => {
+                        format!("{head} Lists match by exact spelling: there is a list \"{n}\".")
+                    }
+                    Some(n) => format!("{head} Check the spelling: there is a list \"{n}\"."),
+                    None => format!("{head} Check the spelling, or make the class that has it."),
+                }
+            }
+            Self::OnNoSpellList => {
+                "This spell is on no spell list, so no class offers it. It can still be given by a feature.".into()
+            }
             Self::TypeNotHere {
                 ty,
                 made_with: Some(route),

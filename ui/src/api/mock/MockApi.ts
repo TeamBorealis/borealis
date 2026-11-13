@@ -50,7 +50,7 @@ import { FEAT_PARAMETER_PICKER } from "./homebrew-background";
 import { ELEMENT_TYPE_PICKER, EXPANDED_LIST_PICKER, MockHomebrew, SETTER_NAME_PICKER } from "./homebrew";
 import { MockTrials } from "./homebrew-trial";
 import { MOCK_BLOCK_CATALOG, MOCK_STAT_CATALOG } from "./homebrew-catalog";
-import { referenceRows, wordRows } from "./homebrew-check";
+import { referenceRows, spellListNames, wordRows } from "./homebrew-check";
 
 export interface MockApiOptions {
   /** Artificial latency per call in ms (default 0). */
@@ -156,7 +156,7 @@ export class MockApi implements Api {
     this.content = new ContentService((p) => this.emit("content:progress", p), () => this.emit("content:reloaded", { reason: "content changed" }), (p) => this.emit("import5etools:progress", p));
     this.ai = new MockAi((e) => this.emit("ai:event", e), { chunkDelayMs: opts.aiChunkDelayMs ?? 25, available: opts.aiAvailable ?? true });
     this.setup = new MockAiSetup((e) => this.emit("aisetup:event", e), opts.aiSetup);
-    this.homebrew = new MockHomebrew((pack) => this.content.putOwnPack(pack));
+    this.homebrew = new MockHomebrew((pack) => this.content.putOwnPack(pack), () => spellListNames(this.loadedElements()));
     this.trials = new MockTrials({ rules: () => this.rules, draft: (id) => this.homebrew.trialDraft(id) });
     this.imp = new MockImport((e) => this.emit("import:event", e), opts.importStepMs ?? 300);
     this.link = new MockDeviceLink((st) => this.emit("link:status", st), {

@@ -55,7 +55,8 @@ describe("homebrew creator problems on the mock (WB-07)", () => {
     const api = new MockApi();
     const { id: packId } = await api.homebrewCreatePack({ request: PACK });
     const d = await api.homebrewNewDraft({ packId, kind: "spell" });
-    expect(d.problems.map((p) => p.message)).toEqual(["Give it a name.", "A spell needs a school."]);
+    expect(d.problems.map((p) => p.message)).toEqual(["Give it a name.", "A spell needs a school.",
+      "This spell is on no spell list, so no class offers it. It can still be given by a feature."]);
     expect(await api.homebrewCheckDraft({ draftId: d.draftId })).toEqual([]);
   });
 });

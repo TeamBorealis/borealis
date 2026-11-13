@@ -6,7 +6,7 @@ import type {
 } from "../types";
 import { formUse, generatedOf, hasTag, listingClasses, loadedListRow, tagsOf, textOf, withTags } from "./homebrew-expert";
 import { apiError } from "./errors";
-import { descriptionHtml, formProblems, pickerRow } from "./homebrew-check";
+import { descriptionHtml, formProblems, pickerRow, spellListProblems } from "./homebrew-check";
 import { addChild, addChildIn, newChildKey, newClassForm, newForm } from "./homebrew-class";
 import { backgroundProblems, FEAT_PARAMETER_PICKER, featParameterWords } from "./homebrew-background";
 import { creatureFacts, creatureHtml, creatureProblems } from "./homebrew-creature";
@@ -130,7 +130,8 @@ export class MockHomebrew {
   private stagedFiles = new Map<string, { fileName: string; data: MockPackData }>();
   private nextPreview = 1;
 
-  constructor(private putPack: (pack: ContentPack) => ContentPack) {}
+  /** `spellLists`: the spell lists loaded classes declare (the spell form's list lints). */
+  constructor(private putPack: (pack: ContentPack) => ContentPack, private spellLists: () => readonly string[] = () => []) {}
 
   kinds(): HomebrewKindDescriptor[] { return KINDS; }
 
@@ -605,6 +606,7 @@ export class MockHomebrew {
   private store(packId: string, elementId: string | null, form: HomebrewForm, draftId = `draft-${this.nextDraft++}`): HomebrewDraftView {
     const problems = [
       ...formProblems(form, MOCK_BLOCK_CATALOG, elementId, KINDS.find((k) => k.id === form.kind)),
+      ...spellListProblems(form, elementId, form.kind === "spell" ? this.spellLists() : []),
       ...subclassProblems(form, elementId),
       ...backgroundProblems(form, elementId),
       ...creatureProblems(form, elementId),

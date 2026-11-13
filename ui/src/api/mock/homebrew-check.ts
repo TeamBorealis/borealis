@@ -28,15 +28,59 @@ export function pickerRow(e: ElementSummary): HomebrewPickerRow {
   };
 }
 
-/** The spell lists the mock's classes declare: a loaded class whose name some loaded spell carries as a tag
+/** The classes that declare a spell list on the mock: a loaded class whose name some loaded spell carries as a tag
  * (the backend reads each class's `spellcasting.list.supports`; `homebrew_refs::SPELL_LIST_TYPE`). */
-function spellListRows(loaded: readonly ElementSummary[], query: string, page: { offset: number; limit: number }): Page<HomebrewPickerRow> {
+function listClasses(loaded: readonly ElementSummary[]): ElementSummary[] {
   const tags = new Set(loaded.filter((e) => e.type === "spell").flatMap((e) => (e.tags ?? []).map((t) => t.toLowerCase())));
+  return loaded.filter((e) => e.type === "class" && (tags.has(e.id.toLowerCase()) || tags.has(e.name.toLowerCase())));
+}
+
+/** The spell lists the mock's loaded classes declare, by name. */
+export function spellListNames(loaded: readonly ElementSummary[]): string[] {
+  return [...new Set(listClasses(loaded).map((e) => e.name))];
+}
+
+/** The Spell List picker rows (`homebrew_refs::SPELL_LIST_TYPE`). */
+function spellListRows(loaded: readonly ElementSummary[], query: string, page: { offset: number; limit: number }): Page<HomebrewPickerRow> {
   const words = query.trim().toLowerCase();
-  const rows = loaded.filter((e) => e.type === "class" && (tags.has(e.id.toLowerCase()) || tags.has(e.name.toLowerCase())) && e.name.toLowerCase().includes(words))
+  const rows = listClasses(loaded).filter((e) => e.name.toLowerCase().includes(words))
     .map((e): HomebrewPickerRow => ({ id: e.name, name: e.name, type: "Spell List", summary: "", prerequisites: null, sourceName: e.sourceName, edition: null, draft: false }))
     .sort((a, b) => a.name.localeCompare(b.name));
   return { total: rows.length, items: rows.slice(page.offset, page.offset + page.limit) };
+}
+
+/** The Levenshtein distance of two words (`check::lints::edit_distance`). */
+function editDistance(a: string, b: string): number {
+  let row = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 0; i < a.length; i += 1) {
+    const next = [i + 1];
+    for (let j = 0; j < b.length; j += 1) next.push(Math.min(row[j]! + (a[i] === b[j] ? 0 : 1), next[j]! + 1, row[j + 1]! + 1));
+    row = next;
+  }
+  return row[b.length]!;
+}
+
+/** A known list spelled like `list` but for case, or within two letters of it (`check::lints::near_list`). */
+function nearList(list: string, known: readonly string[]): string | undefined {
+  const fold = (t: string) => t.trim().toLowerCase();
+  return known.find((k) => fold(k) === fold(list)) ?? (fold(list).length > 3 ? known.find((k) => editDistance(fold(k), fold(list)) <= 2) : undefined);
+}
+
+/** A spell's lists no loaded class declares (warnings) and a spell on no list (a hint), as `check::lints` words them. */
+export function spellListProblems(form: HomebrewForm, elementId: string | null, known: readonly string[]): HomebrewProblem[] {
+  if (form.kind !== "spell") return [];
+  const path = "fields.spellLists";
+  const lists = Array.isArray(form.fields.spellLists) ? form.fields.spellLists.map(String) : [];
+  if (lists.length === 0) {
+    return [{ severity: "info", path, elementId, code: "lint.no_spell_list", message: "This spell is on no spell list, so no class offers it. It can still be given by a feature." }];
+  }
+  return lists.filter((l) => !known.includes(l)).map((list): HomebrewProblem => {
+    const near = nearList(list, known);
+    const head = `No loaded class or choice uses the spell list "${list}".`;
+    const tail = near === undefined ? "Check the spelling, or make the class that has it."
+      : near.toLowerCase() === list.toLowerCase() ? `Lists match by exact spelling: there is a list "${near}".` : `Check the spelling: there is a list "${near}".`;
+    return { severity: "warning", path, elementId, code: "lint.unknown_spell_list", message: `${head} ${tail}` };
+  });
 }
 
 /** Rows for a picker: loaded elements and the pack's own, by type, tags and the typed words; one page of them. */

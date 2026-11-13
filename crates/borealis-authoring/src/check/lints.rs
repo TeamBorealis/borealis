@@ -1,10 +1,12 @@
 //! Creator lints of the live pipeline (spec 8.1 step 5): what loads but is likely a mistake. A name another element
 //! of the same type in the pack has, a description left empty, escape leftovers in it (spec 7.3), a resource cost
-//! naming a pool nothing defines. (Choices and spell lists that match nothing need the engine's view of the content;
-//! they are engine checks, `deep.rs`.)
+//! naming a pool nothing defines, a spell list nothing declares (a misspelled "Wizzard") and a spell on no list.
+//! (Choices and spell lists that match nothing need the engine's view of the content; they are engine checks,
+//! `deep.rs`.)
 
 use super::messages::{type_noun, words, Finding};
 use crate::form::{form_path_for_location, kind, FormContext, FormState};
+use crate::spell_lists::list_tags;
 use borealis_content::rich;
 use borealis_content::{ContentStore, Element, Rule};
 use std::collections::HashSet;
@@ -53,6 +55,7 @@ pub fn lints(
 ) -> Vec<Lint> {
     let own: HashSet<&str> = pairs.iter().map(|(_, _, e)| e.id.as_str()).collect();
     let mut pools: Option<HashSet<String>> = None;
+    let mut lists: Option<Vec<String>> = None;
     let mut out = Vec::new();
     for (prefix, form, e) in pairs {
         let id = Some(e.id.clone());
@@ -94,6 +97,24 @@ pub fn lints(
                 ));
             }
         }
+        if has("spellLists") && e.ty == "Spell" {
+            let at = format!("{prefix}fields.spellLists");
+            if e.supports.is_empty() {
+                out.push((at, id.clone(), Finding::OnNoSpellList));
+            } else {
+                let known = lists.get_or_insert_with(|| known_spell_lists(store, pairs));
+                for list in e.supports.iter().filter(|s| !known.contains(s)) {
+                    out.push((
+                        at.clone(),
+                        id.clone(),
+                        Finding::UnknownSpellList {
+                            list: list.clone(),
+                            near: near_list(list, known),
+                        },
+                    ));
+                }
+            }
+        }
         for (i, rule) in e.rules.iter().enumerate() {
             let Some(pool) = cost_pool(rule) else {
                 continue;
@@ -108,6 +129,66 @@ pub fn lints(
         }
     }
     out
+}
+
+/// The spell lists of the loaded content and the draft: every list tag a spellcasting list or extension declares, and
+/// every tag a choice of spells picks by (a feature's own list, "Shadow,1").
+fn known_spell_lists(
+    store: &ContentStore,
+    pairs: &[(String, &FormState, &Element)],
+) -> Vec<String> {
+    let loaded = store.iter().map(|s| &s.element);
+    let draft = pairs.iter().map(|(_, _, e)| *e);
+    let mut out: Vec<String> = Vec::new();
+    for e in loaded.chain(draft) {
+        let declared = e
+            .spellcasting
+            .iter()
+            .flat_map(|s| s.list.iter().chain(s.extends.iter()))
+            .map(|l| l.supports.as_str());
+        let picked = e.all_rules().filter_map(|r| match r {
+            Rule::Select(s) if s.ty == "Spell" => s.supports.as_deref(),
+            _ => None,
+        });
+        for tag in declared.chain(picked).flat_map(list_tags) {
+            if !out.contains(&tag) {
+                out.push(tag);
+            }
+        }
+    }
+    out
+}
+
+/// A known list spelled like `list` but for case, or within two letters of it (a typo); the first one found.
+fn near_list(list: &str, known: &[String]) -> Option<String> {
+    let folded = fold(list);
+    known
+        .iter()
+        .find(|k| fold(k) == folded)
+        .or_else(|| {
+            (folded.chars().count() > 3)
+                .then(|| known.iter().find(|k| edit_distance(&fold(k), &folded) <= 2))
+                .flatten()
+        })
+        .cloned()
+}
+
+/// The Levenshtein distance of two words, by characters.
+fn edit_distance(a: &str, b: &str) -> usize {
+    let b: Vec<char> = b.chars().collect();
+    let mut row: Vec<usize> = (0..=b.len()).collect();
+    for (i, ca) in a.chars().enumerate() {
+        let mut prev = row[0];
+        row[0] = i + 1;
+        for (j, cb) in b.iter().enumerate() {
+            let here = row[j + 1];
+            row[j + 1] = (prev + usize::from(ca != *cb))
+                .min(row[j] + 1)
+                .min(here + 1);
+            prev = here;
+        }
+    }
+    row[b.len()]
 }
 
 /// What a race's choice of this type is called ("subrace"), for the types a race offers by tag.

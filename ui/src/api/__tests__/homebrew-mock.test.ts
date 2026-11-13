@@ -34,8 +34,9 @@ describe("homebrew creator contract (WB-00)", () => {
     await expect(api.homebrewSaveDraft({ draftId: draft.draftId })).rejects.toMatchObject({ code: "invalid_argument" });
     // a new spell starts with the spell form's values (WB-11); its school is the author's to choose
     expect(draft.form.fields).toMatchObject({ level: "1", time: "Action", range: "Self", duration: "Instantaneous", verbal: true, somatic: true, material: false });
-    expect(draft.problems.map((p) => p.path)).toEqual(["fields.name", "fields.school"]);
-    const named = await api.homebrewUpdateDraft({ draftId: draft.draftId, form: { ...draft.form, fields: { ...draft.form.fields, name: "Ember Bolt", school: "Evocation" } } });
+    // and it is on no spell list yet (a hint)
+    expect(draft.problems.map((p) => p.path)).toEqual(["fields.name", "fields.school", "fields.spellLists"]);
+    const named = await api.homebrewUpdateDraft({ draftId: draft.draftId, form: { ...draft.form, fields: { ...draft.form.fields, name: "Ember Bolt", school: "Evocation", spellLists: ["Wizard"] } } });
     expect(named.problems).toEqual([]);
     expect((await api.homebrewListDrafts()).map((d) => d.name)).toEqual(["Ember Bolt"]);
     const saved = await api.homebrewSaveDraft({ draftId: draft.draftId });

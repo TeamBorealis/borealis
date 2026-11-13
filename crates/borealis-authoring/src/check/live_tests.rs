@@ -260,3 +260,109 @@ fn a_subrace_no_race_offers_is_told_at_its_parent_race() {
         )]
     );
 }
+
+/// The live problems of a spell on `lists`, with a Wizard class and a feat whose choice picks spells by "Shadow".
+fn spell_list_lints(lists: &[&str]) -> Vec<(String, String, String, ProblemSeverity)> {
+    let wizard = element(
+        json!({"id": "ID_T_CLASS_WIZARD", "name": "Wizard", "type": "Class", "source": "T",
+        "spellcasting": {"name": "Wizard", "ability": "Intelligence", "list": {"supports": "Wizard"}}}),
+    );
+    let knight = element(
+        json!({"id": "ID_T_CLASS_FEATURE_KNIGHT", "name": "Knight Spellcasting", "type": "Class Feature",
+        "source": "T", "spellcasting": {"name": "Knight", "list": {"supports": "(Oracle||Wizard),(Abjuration||Evocation)"}}}),
+    );
+    let gloom = element(
+        json!({"id": "ID_T_FEAT_GLOOM", "name": "Gloom", "type": "Feat", "source": "T",
+        "rules": [{"kind": "select", "type": "Spell", "name": "Gloom Spell", "supports": "Shadow,1"}]}),
+    );
+    let store = ContentStoreBuilder::new()
+        .add_file(
+            "t.json",
+            PackOrigin::Custom,
+            ContentFile::new(vec![wizard, knight, gloom]),
+        )
+        .build();
+    let codec = CatalogBlockCodec;
+    let cx = FormContext::from_store(&store, &codec);
+    let spell = element(
+        json!({"id": "ID_T_SPELL_GLIMMER", "name": "Glimmer", "type": "Spell", "source": "T",
+        "description": "<p>A glimmer.</p>", "supports": lists,
+        "setters": [{"name": "level", "value": "1"}, {"name": "school", "value": "Illusion"},
+            {"name": "time", "value": "Action"}, {"name": "duration", "value": "Instantaneous"},
+            {"name": "range", "value": "Self"}]}),
+    );
+    let form = element_to_form(&spell, &cx);
+    let hidden = HashSet::new();
+    live_problems(&LiveInput {
+        form: &form,
+        cx: &cx,
+        store: &store,
+        file: "mine/content.json",
+        hidden: &hidden,
+        pack: &[],
+    })
+    .into_iter()
+    .filter(|p| p.path.as_deref() == Some("fields.spellLists"))
+    .map(|p| (p.path.unwrap_or_default(), p.code, p.message, p.severity))
+    .collect()
+}
+
+#[test]
+fn a_spell_list_nothing_declares_is_a_warning_with_the_near_spelling() {
+    assert_eq!(spell_list_lints(&["Wizard"]), vec![], "a class's list");
+    assert_eq!(
+        spell_list_lints(&["Oracle"]),
+        vec![],
+        "a list in an expression"
+    );
+    assert_eq!(
+        spell_list_lints(&["Shadow"]),
+        vec![],
+        "a list a choice picks spells from"
+    );
+    let at = "fields.spellLists".to_string();
+    let code = "lint.unknown_spell_list".to_string();
+    assert_eq!(
+        spell_list_lints(&["Wizard", "Wizzard"]),
+        vec![(
+            at.clone(),
+            code.clone(),
+            "No loaded class or choice uses the spell list \"Wizzard\". Check the spelling: there is a list \"Wizard\"."
+                .to_string(),
+            ProblemSeverity::Warning
+        )]
+    );
+    assert_eq!(
+        spell_list_lints(&["wizard"]),
+        vec![(
+            at.clone(),
+            code.clone(),
+            "No loaded class or choice uses the spell list \"wizard\". Lists match by exact spelling: there is a list \"Wizard\"."
+                .to_string(),
+            ProblemSeverity::Warning
+        )]
+    );
+    assert_eq!(
+        spell_list_lints(&["Artificer"]),
+        vec![(
+            at,
+            code,
+            "No loaded class or choice uses the spell list \"Artificer\". Check the spelling, or make the class that has it."
+                .to_string(),
+            ProblemSeverity::Warning
+        )]
+    );
+}
+
+#[test]
+fn a_spell_on_no_list_is_a_hint() {
+    assert_eq!(
+        spell_list_lints(&[]),
+        vec![(
+            "fields.spellLists".to_string(),
+            "lint.no_spell_list".to_string(),
+            "This spell is on no spell list, so no class offers it. It can still be given by a feature.".to_string(),
+            ProblemSeverity::Info
+        )]
+    );
+}
