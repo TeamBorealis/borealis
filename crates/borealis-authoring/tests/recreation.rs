@@ -57,13 +57,6 @@ const EXCEPTIONS: &[(&str, &str, &str)] = &[
      reads from its `data`: a Core element, engine plumbing the creator does not author (spec 3.1 \"Not authored\"); \
      the generic form opens it and keeps the tables in the preserved bucket",
     ),
-    (
-        "ID_LANGUAGE_DRUIDIC",
-        "core",
-        "a secret language stored as exotic too (setter `Exotic` true and the tag Secret), so the 2014 \
-         \"any language\" choices offer it; the creator's rarity is one of standard, exotic and secret, and a \
-         secret language it writes is not offered (secret languages are taught, not chosen: Thieves' Cant)",
-    ),
 ];
 
 const ITEM_TYPES: [&str; 4] = ["Item", "Weapon", "Armor", "Magic Item"];

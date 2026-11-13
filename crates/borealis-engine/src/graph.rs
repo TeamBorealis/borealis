@@ -1368,6 +1368,10 @@ impl<'u> Graph<'u> {
             {
                 return false;
             }
+            // HC13: secret languages are taught, not chosen (a stored choice of one is still replayed)
+            if secret_language_hidden(s, cand) {
+                return false;
+            }
         }
         // the supports filter before the duplicate check: most candidates of a long list fail it,
         // and every check up to the requirement is a pure test, so the order does not change the
@@ -1838,6 +1842,30 @@ impl DynamicSupports for SpellDynamics<'_, '_> {
             }
         }
     }
+}
+
+/// The Secret tag of a language (Druidic, Thieves' Cant): its own tag, the implicit one of a `Secret` setter, or the
+/// Core support id.
+const SECRET_TAGS: [&str; 2] = ["Secret", "ID_INTERNAL_SUPPORT_LANGUAGE_SECRET"];
+
+/// HC13 (2): a language choice never offers a language tagged Secret, unless the choice itself names Secret or that
+/// language's id (the author asked for it). Secret languages arrive only by a grant.
+fn secret_language_hidden(s: &borealis_content::SelectRule, cand: &UElem) -> bool {
+    if s.ty != "Language"
+        || !cand
+            .supports
+            .iter()
+            .any(|t| SECRET_TAGS.contains(&t.as_str()))
+    {
+        return false;
+    }
+    let asked = s.supports.as_deref().unwrap_or_default();
+    let named = |word: &str| {
+        asked
+            .split(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+            .any(|w| w.eq_ignore_ascii_case(word))
+    };
+    !(named("Secret") || named(&cand.el.id))
 }
 
 #[cfg(test)]
