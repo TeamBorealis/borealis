@@ -299,6 +299,10 @@ fn finding_samples() -> Vec<Finding> {
             near: Some("Wizard".into()),
         },
         Finding::OnNoSpellList,
+        Finding::GroupNotOffered {
+            group: "Eldrich Invocation".into(),
+            near: Some("Eldritch Invocation".into()),
+        },
         Finding::TypeNotHere {
             ty: "Spell".into(),
             made_with: Some("New element > Spell".into()),

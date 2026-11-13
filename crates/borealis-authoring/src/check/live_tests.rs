@@ -366,3 +366,83 @@ fn a_spell_on_no_list_is_a_hint() {
         )]
     );
 }
+
+/// The live problems at a class option's group, with a class whose choice offers "Eldritch Invocation", loaded
+/// "Cunning Strike" options no choice offers (a feature uses them), and an option given by its id alone.
+fn group_lints(group: &str, id: &str) -> Vec<(String, String, String, ProblemSeverity)> {
+    let invocations = element(
+        json!({"id": "ID_T_CLASS_FEATURE_INVOCATIONS", "name": "Eldritch Invocations", "type": "Class Feature",
+        "source": "T", "rules": [{"kind": "select", "type": "Option", "name": "Eldritch Invocation", "supports": "Eldritch Invocation", "level": 2}]}),
+    );
+    let strike = element(
+        json!({"id": "ID_T_OPTION_POISON", "name": "Poison", "type": "Option", "source": "T", "supports": ["Cunning Strike"]}),
+    );
+    let sense = element(
+        json!({"id": "ID_T_CLASS_FEATURE_SENSE", "name": "Divine Sense", "type": "Class Feature", "source": "T",
+        "rules": [{"kind": "grant", "type": "Option", "id": "ID_T_OPTION_GLOW"}]}),
+    );
+    let store = ContentStoreBuilder::new()
+        .add_file(
+            "t.json",
+            PackOrigin::Custom,
+            ContentFile::new(vec![invocations, strike, sense]),
+        )
+        .build();
+    let codec = CatalogBlockCodec;
+    let cx = FormContext::from_store(&store, &codec);
+    let option = element(
+        json!({"id": id, "name": "Ember Gaze", "type": "Option", "source": "T",
+        "description": "<p>Your eyes burn.</p>", "supports": [group]}),
+    );
+    let form = element_to_form(&option, &cx);
+    assert_eq!(form.kind, "classOption");
+    let hidden = HashSet::new();
+    live_problems(&LiveInput {
+        form: &form,
+        cx: &cx,
+        store: &store,
+        file: "mine/content.json",
+        hidden: &hidden,
+        pack: &[],
+    })
+    .into_iter()
+    .filter(|p| p.path.as_deref() == Some("fields.group"))
+    .map(|p| (p.path.unwrap_or_default(), p.code, p.message, p.severity))
+    .collect()
+}
+
+#[test]
+fn a_class_option_group_no_choice_offers_is_a_warning() {
+    let id = "ID_T_OPTION_EMBER_GAZE";
+    assert_eq!(
+        group_lints("Eldritch Invocation", id),
+        vec![],
+        "a choice offers it"
+    );
+    assert_eq!(
+        group_lints("Cunning Strike", id),
+        vec![],
+        "a group loaded options are in (a feature uses them)"
+    );
+    assert_eq!(
+        group_lints("Glow", "ID_T_OPTION_GLOW"),
+        vec![],
+        "the option is given by its id"
+    );
+    let warning = |message: &str| {
+        vec![(
+            "fields.group".to_string(),
+            "lint.group_not_offered".to_string(),
+            message.to_string(),
+            ProblemSeverity::Warning,
+        )]
+    };
+    assert_eq!(
+        group_lints("Eldritch Invocations", id),
+        warning("No loaded class's choice offers the group \"Eldritch Invocations\", so no character can take this option. Check the spelling: there is a group \"Eldritch Invocation\".")
+    );
+    assert_eq!(
+        group_lints("Ember Techniques", id),
+        warning("No loaded class's choice offers the group \"Ember Techniques\", so no character can take this option. Add a choice of it to a class (Lets the player choose), or pick a group a class offers.")
+    );
+}

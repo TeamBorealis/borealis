@@ -562,6 +562,13 @@ pub enum Finding {
     },
     /// A spell on no spell list.
     OnNoSpellList,
+    /// A class option whose group no loaded choice offers (and no loaded option is in, and nothing gives it by id).
+    GroupNotOffered {
+        /// The group as the option carries it.
+        group: String,
+        /// A known group spelled nearly the same.
+        near: Option<String>,
+    },
 }
 
 impl Finding {
@@ -584,6 +591,7 @@ impl Finding {
             Self::NotOffered { .. } => "lint.not_offered",
             Self::UnknownSpellList { .. } => "lint.unknown_spell_list",
             Self::OnNoSpellList => "lint.no_spell_list",
+            Self::GroupNotOffered { .. } => "lint.group_not_offered",
             Self::TypeNotHere { .. } => "form.type",
         }
     }
@@ -607,7 +615,8 @@ impl Finding {
             | Self::SpellListEmpty
             | Self::UnknownPool { .. }
             | Self::NotOffered { .. }
-            | Self::UnknownSpellList { .. } => Warning,
+            | Self::UnknownSpellList { .. }
+            | Self::GroupNotOffered { .. } => Warning,
             Self::EmptyDescription | Self::OnNoSpellList => Info,
         }
     }
@@ -671,6 +680,17 @@ impl Finding {
                     }
                     Some(n) => format!("{head} Check the spelling: there is a list \"{n}\"."),
                     None => format!("{head} Check the spelling, or make the class that has it."),
+                }
+            }
+            Self::GroupNotOffered { group, near } => {
+                let head = format!(
+                    "No loaded class's choice offers the group \"{group}\", so no character can take this option."
+                );
+                match near {
+                    Some(n) => format!("{head} Check the spelling: there is a group \"{n}\"."),
+                    None => format!(
+                        "{head} Add a choice of it to a class (Lets the player choose), or pick a group a class offers."
+                    ),
                 }
             }
             Self::OnNoSpellList => {

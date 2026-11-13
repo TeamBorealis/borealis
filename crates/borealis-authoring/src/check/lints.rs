@@ -1,6 +1,7 @@
 //! Creator lints of the live pipeline (spec 8.1 step 5): what loads but is likely a mistake. A name another element
 //! of the same type in the pack has, a description left empty, escape leftovers in it (spec 7.3), a resource cost
-//! naming a pool nothing defines, a spell list nothing declares (a misspelled "Wizzard") and a spell on no list.
+//! naming a pool nothing defines, a spell list nothing declares (a misspelled "Wizzard"), a spell on no list, and a
+//! class option in a group no choice offers.
 //! (Choices and spell lists that match nothing need the engine's view of the content; they are engine checks,
 //! `deep.rs`.)
 
@@ -115,6 +116,12 @@ pub fn lints(
                 }
             }
         }
+        if has("group") && e.ty == "Option" {
+            let draft: Vec<&Element> = pairs.iter().map(|(_, _, d)| *d).collect();
+            if let Some(f) = group_not_offered(e, store, &draft, &own) {
+                out.push((format!("{prefix}fields.group"), id.clone(), f));
+            }
+        }
         for (i, rule) in e.rules.iter().enumerate() {
             let Some(pool) = cost_pool(rule) else {
                 continue;
@@ -157,6 +164,60 @@ fn known_spell_lists(
         }
     }
     out
+}
+
+/// A class option nothing reaches: its group (first tag) is named by no loaded or drafted choice, no other loaded
+/// option is in it (a group a feature uses without a choice, Cunning Strike), and no rule names the option's id (a
+/// grant, a feat choice's alternatives).
+fn group_not_offered(
+    e: &Element,
+    store: &ContentStore,
+    draft: &[&Element],
+    own: &HashSet<&str>,
+) -> Option<Finding> {
+    let group = e.supports.first()?.trim();
+    if group.is_empty() {
+        return None;
+    }
+    let loaded: Vec<&Element> = store.iter().map(|s| &s.element).collect();
+    let everything = || loaded.iter().copied().chain(draft.iter().copied());
+    let chosen = everything().flat_map(Element::all_rules).any(|r| match r {
+        Rule::Select(s) => s
+            .parse_supports()
+            .ok()
+            .flatten()
+            .is_some_and(|x| x.tags().iter().any(|t| *t == group || *t == e.id)),
+        _ => false,
+    });
+    let others: Vec<&str> = loaded
+        .iter()
+        .filter(|o| o.ty == "Option" && !own.contains(o.id.as_str()))
+        .flat_map(|o| o.supports.iter().map(String::as_str))
+        .collect();
+    let named = || {
+        everything()
+            .filter(|x| x.id != e.id)
+            .flat_map(Element::all_rules)
+            .any(|r| serde_json::to_string(r).is_ok_and(|j| j.contains(&format!("\"{}\"", e.id))))
+    };
+    if chosen || others.contains(&group) || named() {
+        return None;
+    }
+    let mut known: Vec<String> = others.iter().map(|t| (*t).to_string()).collect();
+    for tags in everything()
+        .flat_map(Element::all_rules)
+        .filter_map(|r| match r {
+            Rule::Select(s) if s.ty == "Option" => s.parse_supports().ok().flatten(),
+            _ => None,
+        })
+    {
+        known.extend(tags.tags().iter().map(|t| (*t).to_string()));
+    }
+    known.retain(|k| !k.starts_with("ID_"));
+    Some(Finding::GroupNotOffered {
+        group: group.to_string(),
+        near: near_list(group, &known),
+    })
 }
 
 /// A known list spelled like `list` but for case, or within two letters of it (a typo); the first one found.
