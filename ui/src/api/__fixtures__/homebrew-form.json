@@ -470,6 +470,12 @@
           "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
           "key": "tags",
           "label": "Tags",
+          "picker": {
+            "types": [
+              "Tag",
+              "Language"
+            ]
+          },
           "required": false,
           "tab": "general"
         },
@@ -747,6 +753,11 @@
           "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
           "key": "tags",
           "label": "Tags",
+          "picker": {
+            "types": [
+              "Tag"
+            ]
+          },
           "required": false,
           "tab": "general"
         },

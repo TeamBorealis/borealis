@@ -46,6 +46,9 @@ export const ELEMENT_TYPE_PICKER = "Element Type";
 /** SPELL LISTS' expanded-list choices (the backend's `homebrew_refs::EXPANDED_LIST_TYPE`). */
 export const EXPANDED_LIST_PICKER = "Expanded Spell List";
 export const SETTER_NAME_PICKER = "Setter Name";
+/** The item forms' Category suggestions and the Tags field's (`borealis_authoring::form::{ITEM_CATEGORY_PICKER, TAG_PICKER}`). */
+export const ITEM_CATEGORY_PICKER = "Item Category";
+export const TAG_PICKER = "Tag";
 
 const TYPE_TOKENS: Record<string, string> = {
   Spell: "SPELL", Feat: "FEAT", "Feat Feature": "FEAT_FEATURE", Species: "SPECIES", Race: "RACE", "Sub Race": "SUBRACE", "Race Variant": "RACE_VARIANT",
@@ -477,6 +480,18 @@ export class MockHomebrew {
       const own = KINDS.find((k) => k.id === "other")?.fields.find((f) => f.key === "type")?.choices?.map((c) => c.value) ?? [];
       const used = saved.filter((e) => e.form.kind === "other").map((e) => e.summary.elementType);
       return [...new Set([...own, ...used.filter((t) => !own.includes(t)).sort()])];
+    }
+    const sorted = (words: string[]) => [...new Map(words.map((w) => w.trim()).filter(Boolean).map((w) => [w.toLowerCase(), w] as const)).values()]
+      .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    // the backend reads loaded content (`item_categories`, `loaded_tags`); the mock reads the pack's saved elements
+    if (types.includes(ITEM_CATEGORY_PICKER)) {
+      const items = new Set(MOCK_ITEM_KINDS.map((k) => k.id));
+      return sorted(saved.filter((e) => items.has(e.form.kind)).map((e) => String(e.form.fields.category ?? "")));
+    }
+    if (types[0] === TAG_PICKER) {
+      const ofTypes = types.slice(1);
+      return sorted(saved.filter((e) => ofTypes.includes(e.summary.elementType))
+        .flatMap((e) => (Array.isArray(e.form.fields.tags) ? e.form.fields.tags.map(String) : [])).filter((t) => !t.startsWith("ID_")));
     }
     const ofType = types.filter((t) => t !== SETTER_NAME_PICKER);
     const names = saved.filter((e) => ofType.includes(e.summary.elementType))

@@ -707,6 +707,12 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   Familiar and Property types, then the loaded types with no form of their own); `["Setter Name", "<type>"]` lists
   the setter names the type requires and the ones its loaded elements use. A new or retyped generic element whose
   type has its own form, or is `Source`/`Multiclass`, has an error at `fields.type` (code `form.type`).
+- **Suggestions from loaded content (1.5.1).** Two more pseudo picker types of `homebrew_reference_options`, one row
+  per word: `["Item Category"]` lists the `category` setter values of loaded and drafted elements of the item forms'
+  types (first spelling, sorted); the item forms' `category` combo (custom text) has `picker.types` `["Item Category"]`
+  and offers them after its fixed choices. `["Tag", "<type>", ...]` lists the tags (`supports`, no `ID_` ids) loaded
+  and drafted elements of those types carry; the shared `tags` field has `picker.types` `["Tag", <the kind's element
+  types>]` and its chips suggest them (the generic form adds its `type`). The web mock reads the pack's saved elements.
 - **Background form (WB-14).** Kind `background` (type `Background`, both editions; a new one has its pack's edition,
   2024 in a pack of both, and shows that edition's fields: `editions`). A tab whose fields are all of the other
   edition is not shown (CHARACTERISTICS on a 2024 background). 2024: `abilityScores` (closed chips: three abilities,

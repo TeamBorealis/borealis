@@ -150,8 +150,13 @@ function Control({ field, value, onChange, id, labelledBy, describedBy, invalid,
       return <ComboBox id={id} options={withCurrent(field.choices, text(value))} value={text(value)} aria-labelledby={labelledBy} aria-describedby={describedBy} onChange={(v) => onChange(v, false)} />;
     case "toggle":
       return <span id={id}><ToggleSwitch label={label} checked={value === true} onChange={(v) => onChange(v, false)} /></span>;
-    case "tags": case "chips":
-      return <ChipsField id={id} label={label} value={strings(value)} onChange={(v) => onChange(v, false)} choices={field.choices} allowCustom={field.allowCustom ?? !field.choices?.length} describedBy={describedBy} invalid={invalid} />;
+    case "tags": case "chips": {
+      // the Tags field suggests the tags loaded elements of the kind's types carry; the generic form adds its Type (spec 3.2)
+      const type = kindId === "other" && typeof env.form?.fields.type === "string" ? env.form.fields.type.trim() : "";
+      const suggest = field.picker ? [...field.picker.types, ...(type ? [type] : [])] : [];
+      return <ChipsField id={id} label={label} value={strings(value)} onChange={(v) => onChange(v, false)} choices={field.choices} allowCustom={field.allowCustom ?? !field.choices?.length} describedBy={describedBy} invalid={invalid}
+        suggestFrom={suggest} />;
+    }
     case "reference": case "references": {
       const multiple = field.control === "references" || !!field.picker?.multiple;
       return <RefField id={id} label={label} target={{ ...(field.picker ?? { types: [] }), multiple }} value={refsOf(value)} describedBy={describedBy} invalid={invalid}

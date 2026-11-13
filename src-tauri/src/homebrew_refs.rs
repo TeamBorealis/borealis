@@ -13,9 +13,10 @@ use crate::homebrew_dto::{
 use crate::homebrew_packs::CreatorPack;
 use crate::state::{AppState, ContentHub};
 use borealis_authoring::form::{
-    assign_ids, feat_parameter_words, form_to_elements, open_types, setter_names,
-    CatalogBlockCodec, FormContext, ProvisionalClass, WithElements, ELEMENT_TYPE_PICKER,
-    FEAT_PARAMETER_PICKER, SETTER_NAME_PICKER,
+    assign_ids, feat_parameter_words, form_to_elements, item_categories, loaded_tags, open_types,
+    setter_names, CatalogBlockCodec, FormContext, ProvisionalClass, WithElements,
+    ELEMENT_TYPE_PICKER, FEAT_PARAMETER_PICKER, ITEM_CATEGORY_PICKER, SETTER_NAME_PICKER,
+    TAG_PICKER,
 };
 use borealis_content::{ContentStore, Element};
 use std::collections::{BTreeMap, HashSet};
@@ -351,6 +352,23 @@ impl AppState {
             let param = target.types.get(2).map(String::as_str);
             let words = feat_parameter_words(&words, feat, param);
             return Ok(word_rows(words, FEAT_PARAMETER_PICKER, &query, page));
+        }
+        // the item forms' categories and the Tags field's suggestions (spec 4.9, 3.2): words loaded content uses
+        if target.types.iter().any(|t| t == ITEM_CATEGORY_PICKER) {
+            let names = item_categories(&words);
+            return Ok(word_rows(names, ITEM_CATEGORY_PICKER, &query, page));
+        }
+        if target.types.first().map(String::as_str) == Some(TAG_PICKER) {
+            let mut names: Vec<String> = Vec::new();
+            for ty in &target.types[1..] {
+                for tag in loaded_tags(&words, ty) {
+                    if !names.iter().any(|n| n.eq_ignore_ascii_case(&tag)) {
+                        names.push(tag);
+                    }
+                }
+            }
+            names.sort_by_key(|n| n.to_lowercase());
+            return Ok(word_rows(names, TAG_PICKER, &query, page));
         }
         if target.types.iter().any(|t| t == SETTER_NAME_PICKER) {
             let names = target

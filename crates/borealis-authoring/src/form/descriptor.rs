@@ -120,7 +120,17 @@ fn strings(items: &[&str]) -> Vec<String> {
     items.iter().map(|s| (*s).to_string()).collect()
 }
 
-fn field_spec(f: &FieldDef) -> FieldSpec {
+/// The picker types a field sends: the shared Tags field's suggestions are the tags loaded elements of the kind's own
+/// types carry (`["Tag", "Feat"]`).
+fn picker_types(f: &FieldDef, element_types: &[&str]) -> Vec<String> {
+    let mut types = strings(f.picker);
+    if f.picker == [super::other::TAG_PICKER] {
+        types.extend(strings(element_types));
+    }
+    types
+}
+
+fn field_spec(f: &FieldDef, element_types: &[&str]) -> FieldSpec {
     FieldSpec {
         key: f.key.into(),
         label: f.label.into(),
@@ -145,7 +155,7 @@ fn field_spec(f: &FieldDef) -> FieldSpec {
         min: f.min,
         max: f.max,
         picker: (!f.picker.is_empty()).then(|| PickerSpec {
-            types: strings(f.picker),
+            types: picker_types(f, element_types),
             tags: (!f.picker_tags.is_empty()).then(|| strings(f.picker_tags)),
             multiple: (f.control == Control::References).then_some(true),
         }),
@@ -175,7 +185,11 @@ impl KindDef {
                     label: (*label).into(),
                 })
                 .collect(),
-            fields: self.fields.iter().map(field_spec).collect(),
+            fields: self
+                .fields
+                .iter()
+                .map(|f| field_spec(f, self.element_types))
+                .collect(),
         }
     }
 }

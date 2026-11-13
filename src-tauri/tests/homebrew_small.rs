@@ -524,3 +524,44 @@ fn the_generic_form_offers_open_types_and_the_setter_names_a_type_uses() {
     assert_eq!(names.len(), 12);
     assert!(names.iter().any(|n| n == "bite"));
 }
+
+#[test]
+fn item_categories_and_tags_loaded_content_uses_are_offered() {
+    let app = App::new();
+    let categories = app.words(&["Item Category"]);
+    for c in ["Adventuring Gear", "Weapons", "Wondrous Items", "Potions"] {
+        assert!(categories.iter().any(|x| x == c), "{c} in {categories:?}");
+    }
+    let tags = app.words(&["Tag", "Feat"]);
+    for t in [
+        "Origin Feat",
+        "General Feat",
+        "Epic Boon Feat",
+        "Fighting Style Feat",
+    ] {
+        assert!(tags.iter().any(|x| x == t), "{t} in {tags:?}");
+    }
+    assert!(
+        !tags.iter().any(|t| t == "Wizard"),
+        "a spell's list is not a feat's tag"
+    );
+    // the item forms suggest them: Category from the item categories, Tags from the kind's element types
+    let kinds = borealis_authoring::form::descriptors();
+    let field = |kind: &str, key: &str| {
+        kinds
+            .iter()
+            .find(|k| k.id == kind)
+            .and_then(|k| k.fields.iter().find(|f| f.key == key))
+            .and_then(|f| f.picker.as_ref())
+            .map(|p| p.types.clone())
+    };
+    assert_eq!(
+        field("item", "category"),
+        Some(vec!["Item Category".to_string()])
+    );
+    assert_eq!(
+        field("feat", "tags"),
+        Some(vec!["Tag".to_string(), "Feat".to_string()]),
+        "the tags of the kind's own element types"
+    );
+}

@@ -179,8 +179,13 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:category"
         ],
-        "help": "The group it is listed under in the equipment list.",
-        "section": "Item"
+        "help": "The group it is listed under in the equipment list. Pick one loaded items use, or type a new one.",
+        "section": "Item",
+        "picker": {
+          "types": [
+            "Item Category"
+          ]
+        }
       },
       {
         "key": "itemType",
@@ -458,7 +463,13 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Item"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -757,8 +768,13 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:category"
         ],
-        "help": "The group it is listed under in the equipment list.",
-        "section": "Item"
+        "help": "The group it is listed under in the equipment list. Pick one loaded items use, or type a new one.",
+        "section": "Item",
+        "picker": {
+          "types": [
+            "Item Category"
+          ]
+        }
       },
       {
         "key": "weaponCategory",
@@ -1058,7 +1074,13 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Weapon"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -1357,8 +1379,13 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:category"
         ],
-        "help": "The group it is listed under in the equipment list.",
-        "section": "Item"
+        "help": "The group it is listed under in the equipment list. Pick one loaded items use, or type a new one.",
+        "section": "Item",
+        "picker": {
+          "types": [
+            "Item Category"
+          ]
+        }
       },
       {
         "key": "armorType",
@@ -1617,7 +1644,13 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Armor"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -1916,8 +1949,13 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:category"
         ],
-        "help": "The group it is listed under in the equipment list.",
-        "section": "Item"
+        "help": "The group it is listed under in the equipment list. Pick one loaded items use, or type a new one.",
+        "section": "Item",
+        "picker": {
+          "types": [
+            "Item Category"
+          ]
+        }
       },
       {
         "key": "magicType",
@@ -2251,7 +2289,13 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Magic Item"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -2550,8 +2594,13 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:category"
         ],
-        "help": "The group it is listed under in the equipment list.",
-        "section": "Item"
+        "help": "The group it is listed under in the equipment list. Pick one loaded items use, or type a new one.",
+        "section": "Item",
+        "picker": {
+          "types": [
+            "Item Category"
+          ]
+        }
       },
       {
         "key": "cost",
@@ -2637,7 +2686,13 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Item Pack"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -2882,7 +2937,13 @@ export const MOCK_ITEM_KINDS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Equipment Package"
+          ]
+        }
       },
       {
         "key": "summary",

@@ -15,6 +15,63 @@ pub const ELEMENT_TYPE_PICKER: &str = "Element Type";
 /// element type (`["Setter Name", "Companion"]`). Not an element type.
 pub const SETTER_NAME_PICKER: &str = "Setter Name";
 
+/// The picker type whose rows are the categories loaded items use (`Adventuring Gear`, `Wondrous Items`): the item
+/// forms' Category suggestions (spec 4.9). Not an element type.
+pub const ITEM_CATEGORY_PICKER: &str = "Item Category";
+
+/// The picker type whose rows are the tags loaded elements of a type carry: the target's other `types` name the
+/// element types (`["Tag", "Feat"]`), the shared Tags field's suggestions (spec 3.2). Not an element type.
+pub const TAG_PICKER: &str = "Tag";
+
+/// Words in their first spelling, each once (any case), sorted case-insensitively.
+fn first_spellings(words: impl Iterator<Item = String>) -> Vec<String> {
+    let mut out: BTreeMap<String, String> = BTreeMap::new();
+    for w in words {
+        let w = w.trim().to_string();
+        if !w.is_empty() {
+            out.entry(w.to_lowercase()).or_insert(w);
+        }
+    }
+    out.into_values().collect()
+}
+
+/// The `category` setter values of loaded elements of the types the item forms write (spec 4.9).
+#[must_use]
+pub fn item_categories(lookup: &dyn Lookup) -> Vec<String> {
+    let types: Vec<&str> = super::item_kinds::item_kinds()
+        .iter()
+        .filter(|k| {
+            k.fields
+                .iter()
+                .any(|f| f.codec == super::codec::Codec::SetterText("category"))
+        })
+        .flat_map(|k| k.element_types.iter().copied())
+        .collect();
+    let mut seen: Vec<&str> = Vec::new();
+    let values = types
+        .into_iter()
+        .filter(|t| {
+            let new = !seen.contains(t);
+            seen.push(t);
+            new
+        })
+        .flat_map(|t| lookup.loaded_of_type(t))
+        .filter_map(|e| e.setter_value("category").map(str::to_string));
+    first_spellings(values)
+}
+
+/// The tags loaded elements of type `ty` carry (their `supports`, no element ids).
+#[must_use]
+pub fn loaded_tags(lookup: &dyn Lookup, ty: &str) -> Vec<String> {
+    let tags = lookup
+        .loaded_of_type(ty)
+        .into_iter()
+        .flat_map(|e| e.supports.iter())
+        .filter(|t| !t.starts_with("ID_"))
+        .cloned();
+    first_spellings(tags)
+}
+
 /// The open types the generic form writes (spec 3.1), offered even when no loaded content uses them.
 pub const OPEN_TYPES: &[(&str, &str)] = &[
     ("Companion", "Companion"),
@@ -191,6 +248,37 @@ mod tests {
         // a lookup of names only: the fixed types, no setter names
         assert_eq!(open_types(&super::super::NoLookup).len(), OPEN_TYPES.len());
         assert!(setter_names(&super::super::NoLookup, "Vehicle").is_empty());
+    }
+
+    #[test]
+    fn item_categories_and_tags_are_read_from_loaded_content() {
+        let mut feat = el("Feat", &[]);
+        feat.supports = vec!["Origin Feat".into(), "ID_X_SUPPORT".into(), "Feat".into()];
+        let mut other = el("Feat", &[]);
+        other.supports = vec!["origin feat".into(), "General Feat".into()];
+        let mut spell = el("Spell", &[]);
+        spell.supports = vec!["Wizard".into()];
+        let loaded = Loaded(vec![
+            el("Item", &[("category", "Adventuring Gear")]),
+            el("Weapon", &[("category", "Weapons")]),
+            el("Magic Item", &[("category", "Wondrous Items")]),
+            el("Item", &[("category", "adventuring gear")]),
+            el("Feat", &[("category", "Origin")]),
+            feat,
+            other,
+            spell,
+        ]);
+        assert_eq!(
+            item_categories(&loaded),
+            ["Adventuring Gear", "Weapons", "Wondrous Items"],
+            "the item kinds' categories, first spelling, sorted; a feat's category is not an item's"
+        );
+        assert_eq!(
+            loaded_tags(&loaded, "Feat"),
+            ["Feat", "General Feat", "Origin Feat"],
+            "a type's tags, first spelling, sorted; ids are not tags"
+        );
+        assert!(loaded_tags(&super::super::NoLookup, "Feat").is_empty());
     }
 
     #[test]

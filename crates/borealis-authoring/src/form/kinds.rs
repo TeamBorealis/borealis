@@ -480,7 +480,9 @@ pub(crate) fn head() -> Vec<FieldDef> {
 /// The parts every form shares after the kind's own fields (spec 3.2).
 pub(crate) fn tail() -> Vec<FieldDef> {
     vec![
-        field("tags", "Tags", GENERAL, Control::Tags, Codec::Tags).help(HELP_TAGS),
+        field("tags", "Tags", GENERAL, Control::Tags, Codec::Tags)
+            .picker(&[super::other::TAG_PICKER])
+            .help(HELP_TAGS),
         field(
             "summary",
             "Summary line",

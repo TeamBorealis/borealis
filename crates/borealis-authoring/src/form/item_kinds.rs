@@ -124,8 +124,9 @@ fn category() -> FieldDef {
         Codec::SetterText("category"),
     )
     .choices(CATEGORIES, true)
+    .picker(&[super::other::ITEM_CATEGORY_PICKER])
     .section(ITEM)
-    .help("The group it is listed under in the equipment list.")
+    .help("The group it is listed under in the equipment list. Pick one loaded items use, or type a new one.")
 }
 
 fn cost_and_weight() -> Vec<FieldDef> {

@@ -1,9 +1,12 @@
 import { type KeyboardEvent, useState } from "react";
 import type { HomebrewChoice } from "../../../api/contract";
 import { EditableComboBox, Icon } from "../../../components";
+import { useWords } from "../fields/useWords";
 
 /** Characters a tag or chip may not hold (IM15: they would break the tag grammar or the stored list). */
 const FORBIDDEN = /[,|&!()[\]{}$]/g;
+
+const NONE: readonly string[] = [];
 
 /** A typed chip, trimmed, single spaced and without the characters lists can't hold. */
 export const cleanChip = (text: string): string => text.replace(FORBIDDEN, " ").replace(/\s+/g, " ").trim();
@@ -16,8 +19,10 @@ export interface ChipsFieldProps {
   /** A closed set: each choice is a toggle chip. With `allowCustom`, choices are suggestions and any text may be added. */
   choices?: readonly HomebrewChoice[];
   allowCustom?: boolean;
-  /** Suggestions for typed chips (tags loaded content uses, names in scope). */
+  /** Suggestions for typed chips (names in scope). */
   suggestions?: readonly string[];
+  /** Picker types whose words are further suggestions (`["Tag", "Feat"]`: the tags loaded feats carry). */
+  suggestFrom?: readonly string[];
   describedBy?: string;
   invalid?: boolean;
 }
@@ -27,8 +32,9 @@ export interface ChipsFieldProps {
  * and `aria-pressed`, never colour alone, spec 17); an open list shows each chip with its X and an add box with
  * suggestions ("New tag" allowed).
  */
-export function ChipsField({ id, label, value, onChange, choices, allowCustom, suggestions = [], describedBy, invalid }: ChipsFieldProps) {
+export function ChipsField({ id, label, value, onChange, choices, allowCustom, suggestions = [], suggestFrom = NONE, describedBy, invalid }: ChipsFieldProps) {
   const [draft, setDraft] = useState("");
+  const loaded = useWords(suggestFrom);
   const closed = !!choices?.length && !allowCustom;
   const labelOf = (v: string) => choices?.find((c) => c.value === v)?.label ?? v;
   if (closed) {
@@ -46,7 +52,7 @@ export function ChipsField({ id, label, value, onChange, choices, allowCustom, s
       </div>
     );
   }
-  const offered = [...new Set([...(choices ?? []).map((c) => c.value), ...suggestions])].filter((s) => !value.includes(s));
+  const offered = [...new Set([...(choices ?? []).map((c) => c.value), ...suggestions, ...loaded])].filter((s) => !value.includes(s));
   const add = (text: string) => {
     const chip = cleanChip(choices?.find((c) => c.label === text)?.value ?? text);
     setDraft("");

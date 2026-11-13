@@ -1172,7 +1172,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Feat"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -1364,7 +1370,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Feat Feature"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -1888,7 +1900,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Class"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -2525,7 +2543,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Class Feature"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -2817,7 +2841,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Archetype"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -3429,7 +3459,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Archetype Feature"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -3850,7 +3886,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Option"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -4284,7 +4326,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Species"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -4908,7 +4956,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Race"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -5386,7 +5440,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Sub Race"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -5864,7 +5924,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Race Variant"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -6187,7 +6253,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Racial Trait"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -6460,7 +6532,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Species Trait Option"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -6969,7 +7047,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Background"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -7169,7 +7253,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Background Feature"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -7392,7 +7482,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Background Variant"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -7662,7 +7758,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Background Characteristics"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -8930,7 +9032,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Monster"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -9141,7 +9249,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Language"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -9362,7 +9476,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Proficiency"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -9579,7 +9699,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Condition"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -9783,7 +9909,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Damage Type"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -10026,6 +10158,12 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Skill choices offer skills by these tags: Skill, and the ability or class names a choice asks for.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Skill"
+          ]
+        },
         "default": [
           "Skill"
         ]
@@ -10304,7 +10442,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Deity"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -10508,7 +10652,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Vision"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -10712,7 +10862,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Size"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -10926,7 +11082,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Alignment"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -11142,7 +11304,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Weapon Property"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -11346,7 +11514,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Weapon Group"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -11550,7 +11724,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Weapon Category"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -11754,7 +11934,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Armor Group"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -11981,6 +12167,12 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Mastery properties carry the tag Mastery Property.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Mastery Property"
+          ]
+        },
         "default": [
           "Mastery Property"
         ]
@@ -12187,7 +12379,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Spellcasting Focus Group"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -12391,7 +12589,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Dragonmark"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -12627,6 +12831,12 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Glossary entries carry the tag Rules Glossary.",
+        "picker": {
+          "types": [
+            "Tag",
+            "Rules Glossary Entry"
+          ]
+        },
         "default": [
           "Rules Glossary"
         ]
@@ -12920,8 +13130,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:category"
         ],
-        "help": "The group it is listed under in the equipment list.",
-        "section": "Item"
+        "help": "The group it is listed under in the equipment list. Pick one loaded items use, or type a new one.",
+        "section": "Item",
+        "picker": {
+          "types": [
+            "Item Category"
+          ]
+        }
       },
       {
         "key": "itemType",
@@ -13199,7 +13414,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Item"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -13498,8 +13719,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:category"
         ],
-        "help": "The group it is listed under in the equipment list.",
-        "section": "Item"
+        "help": "The group it is listed under in the equipment list. Pick one loaded items use, or type a new one.",
+        "section": "Item",
+        "picker": {
+          "types": [
+            "Item Category"
+          ]
+        }
       },
       {
         "key": "weaponCategory",
@@ -13799,7 +14025,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Weapon"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -14098,8 +14330,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:category"
         ],
-        "help": "The group it is listed under in the equipment list.",
-        "section": "Item"
+        "help": "The group it is listed under in the equipment list. Pick one loaded items use, or type a new one.",
+        "section": "Item",
+        "picker": {
+          "types": [
+            "Item Category"
+          ]
+        }
       },
       {
         "key": "armorType",
@@ -14358,7 +14595,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Armor"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -14657,8 +14900,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:category"
         ],
-        "help": "The group it is listed under in the equipment list.",
-        "section": "Item"
+        "help": "The group it is listed under in the equipment list. Pick one loaded items use, or type a new one.",
+        "section": "Item",
+        "picker": {
+          "types": [
+            "Item Category"
+          ]
+        }
       },
       {
         "key": "magicType",
@@ -14992,7 +15240,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Magic Item"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -15291,8 +15545,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:category"
         ],
-        "help": "The group it is listed under in the equipment list.",
-        "section": "Item"
+        "help": "The group it is listed under in the equipment list. Pick one loaded items use, or type a new one.",
+        "section": "Item",
+        "picker": {
+          "types": [
+            "Item Category"
+          ]
+        }
       },
       {
         "key": "cost",
@@ -15378,7 +15637,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Item Pack"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -15623,7 +15888,13 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
           "supports"
         ],
         "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
-        "section": "Details"
+        "section": "Details",
+        "picker": {
+          "types": [
+            "Tag",
+            "Equipment Package"
+          ]
+        }
       },
       {
         "key": "summary",
@@ -15908,7 +16179,12 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "supports"
         ],
-        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one."
+        "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+        "picker": {
+          "types": [
+            "Tag"
+          ]
+        }
       },
       {
         "key": "summary",

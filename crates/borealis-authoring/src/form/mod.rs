@@ -67,8 +67,8 @@ pub use kinds::{
     new_background_form, new_class_form, new_creature_form, BACKGROUND_KIND, CREATURE_KIND,
 };
 pub use other::{
-    open_types, setter_names, type_refusal, TypeRefusal, ELEMENT_TYPE_PICKER, OPEN_TYPES,
-    SETTER_NAME_PICKER,
+    item_categories, loaded_tags, open_types, setter_names, type_refusal, TypeRefusal,
+    ELEMENT_TYPE_PICKER, ITEM_CATEGORY_PICKER, OPEN_TYPES, SETTER_NAME_PICKER, TAG_PICKER,
 };
 pub use paths::{check_fields, form_path_for_issue, form_path_for_location};
 pub use preserved::{KeptPart, PreservedPart};
