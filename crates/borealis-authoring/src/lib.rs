@@ -10,6 +10,7 @@
 //! * [`form`]: the creator's form model (fields bound to model locations, rule blocks, the preserved bucket) and the
 //!   element/form round trip.
 //! * [`pack`]: the homebrew pack layout, `creator.json`, child elements, saving and deleting steps.
+//! * [`spell_lists`]: the spell list tags a class's list (a plain tag or an expression) names.
 //! * [`rich`]: the description tree and its one HTML writer (`borealis_content::rich`, re-exported here; see
 //!   `specs/handoffs/hc-wb04.md` for why it stays in `borealis-content`).
 //!
@@ -23,6 +24,7 @@ pub mod expr_build;
 pub mod form;
 pub mod ids;
 pub mod pack;
+pub mod spell_lists;
 pub mod stats;
 
 pub use borealis_content::rich;

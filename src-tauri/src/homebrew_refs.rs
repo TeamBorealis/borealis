@@ -24,7 +24,8 @@ use std::collections::{BTreeMap, HashSet};
 const MAX_PAGE: usize = 500;
 
 /// The picker type of spell lists (WB-11, the spell form's lists): one row per list a loaded or drafted class
-/// declares (`spellcasting.list.supports`, a plain tag), its name as id and name. Not an element type.
+/// declares (`spellcasting.list.supports`: a plain tag, or each list tag of an expression), its name as id and name.
+/// Not an element type.
 pub const SPELL_LIST_TYPE: &str = "Spell List";
 
 /// The picker type of subclasses' expanded lists (SPELL LISTS, spec 12.4): one row per subclass that has one (its own
@@ -41,7 +42,8 @@ pub(crate) fn plain_list_tag(supports: &str) -> Option<&str> {
     (plain && !t.starts_with("ID_")).then_some(t)
 }
 
-/// One row per spell list `elements` declare, by name (first spelling and book kept), filtered by `query`.
+/// One row per spell list `elements` declare, by name (first spelling and book kept), filtered by `query`. A list
+/// written as an expression (`(Cleric||Wizard)`, `Wizard,(Abjuration||Evocation)`) declares each list tag it names.
 fn spell_list_rows<'a>(
     elements: impl Iterator<Item = (&'a Element, bool)>,
     query: &str,
@@ -49,32 +51,29 @@ fn spell_list_rows<'a>(
 ) -> Page<HomebrewPickerRow> {
     let mut lists: BTreeMap<String, HomebrewPickerRow> = BTreeMap::new();
     for (el, draft) in elements {
-        let Some(name) = el
-            .spellcasting
-            .as_ref()
-            .and_then(|s| s.list.as_ref())
-            .and_then(|l| plain_list_tag(&l.supports))
-        else {
+        let Some(list) = el.spellcasting.as_ref().and_then(|s| s.list.as_ref()) else {
             continue;
         };
-        if !name.to_lowercase().contains(query) {
-            continue;
+        for name in borealis_authoring::spell_lists::list_tags(&list.supports) {
+            if !name.to_lowercase().contains(query) {
+                continue;
+            }
+            lists
+                .entry(name.to_lowercase())
+                .or_insert_with(|| HomebrewPickerRow {
+                    id: name.clone(),
+                    name,
+                    ty: SPELL_LIST_TYPE.to_string(),
+                    summary: String::new(),
+                    prerequisites: None,
+                    source_name: el.source.clone(),
+                    edition: None,
+                    draft,
+                    level: None,
+                    school: None,
+                    spell: None,
+                });
         }
-        lists
-            .entry(name.to_lowercase())
-            .or_insert_with(|| HomebrewPickerRow {
-                id: name.to_string(),
-                name: name.to_string(),
-                ty: SPELL_LIST_TYPE.to_string(),
-                summary: String::new(),
-                prerequisites: None,
-                source_name: el.source.clone(),
-                edition: None,
-                draft,
-                level: None,
-                school: None,
-                spell: None,
-            });
     }
     let total = lists.len();
     let items = lists
@@ -497,6 +496,43 @@ mod tests {
             tags: None,
             multiple: None,
         }
+    }
+
+    fn caster(name: &str, list: &str) -> Element {
+        let mut e = Element::new(format!("ID_T_CLASS_{name}"), name, "Class", "Test");
+        e.spellcasting = Some(
+            serde_json::from_value(serde_json::json!({"name": name, "list": {"supports": list}}))
+                .expect("spellcasting"),
+        );
+        e
+    }
+
+    fn list_names(elements: &[Element]) -> Vec<String> {
+        let page = spell_list_rows(
+            elements.iter().map(|e| (e, false)),
+            "",
+            HomebrewPageRequest {
+                offset: 0,
+                limit: 50,
+            },
+        );
+        page.items.into_iter().map(|r| r.name).collect()
+    }
+
+    #[test]
+    fn spell_lists_written_as_expressions_are_offered_by_their_list_tags() {
+        let elements = [
+            caster("Wizard", "Wizard"),
+            caster("Eldritch Knight", "Wizard,(Abjuration||Evocation)"),
+            caster("Mystic", "(Cleric||Oracle)"),
+            caster("Spellblade", "(Wizard||Bard),(abjuration||Illusion),1"),
+            caster("Hexer", "ID_T_SPELL_HEX"),
+        ];
+        assert_eq!(
+            list_names(&elements),
+            ["Bard", "Cleric", "Oracle", "Wizard"],
+            "the class lists an expression names, once each; schools, levels and spell ids are not lists"
+        );
     }
 
     #[test]
