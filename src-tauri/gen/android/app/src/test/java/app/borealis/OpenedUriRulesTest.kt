@@ -34,6 +34,22 @@ class OpenedUriRulesTest {
   }
 
   @Test
+  fun aFileBorealisSharedItselfIsRefusedAsItsOwn() {
+    assertEquals(OpenedUriRules.Refusal.OWN_FILE, OpenedUriRules.refusal("content", "app.borealis.fileprovider", own))
+  }
+
+  /** H5wn8: every refusal has a message the app shows; the own-file one says where pack files are imported. */
+  @Test
+  fun everyRefusalHasAMessageNamingTheFile() {
+    for (r in OpenedUriRules.Refusal.values()) {
+      val m = OpenedUriRules.message("Ember.borealis-pack.zip", r)
+      assertTrue(m, m.contains("\u201cEmber.borealis-pack.zip\u201d"))
+    }
+    assertTrue(OpenedUriRules.message("x", OpenedUriRules.Refusal.OWN_FILE).contains("Import pack"))
+    assertTrue(OpenedUriRules.message("x", OpenedUriRules.Refusal.TOO_LARGE).contains("64 MB"))
+  }
+
+  @Test
   fun readsUpToTheCap() {
     val bytes = ByteArray(1000) { it.toByte() }
     val got = OpenedUriRules.readCapped(ByteArrayInputStream(bytes), 1000)

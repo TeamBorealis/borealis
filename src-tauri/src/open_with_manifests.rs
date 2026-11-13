@@ -246,3 +246,20 @@ fn the_file_provider_serves_only_the_share_folder() {
         "the provider stays private; access only through per-share grants"
     );
 }
+
+/// H5wn8: Borealis is left out of its own share sheet (it refuses its own provider's files), and a file it does not
+/// read is reported to the UI with a message, never dropped silently.
+#[test]
+fn android_leaves_itself_out_of_its_share_sheet_and_reports_refusals() {
+    assert_eq!(SHARE_PLUGIN.matches("Intent.createChooser(").count(), 1);
+    assert_eq!(SHARE_PLUGIN.matches("chooser(send, args.title)").count(), 2);
+    assert!(SHARE_PLUGIN.contains(
+        "putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, arrayOf(ComponentName(activity, MainActivity::class.java)))"
+    ));
+    assert!(MAIN_ACTIVITY.contains("OpenedFiles.refuse(name, OpenedUriRules.message(name, why))"));
+    assert!(
+        !MAIN_ACTIVITY.contains("?: continue") && !MAIN_ACTIVITY.contains("isEmpty()) continue"),
+        "no silent skip"
+    );
+    assert!(MAIN_ACTIVITY.contains(r#"put("refused", message)"#));
+}

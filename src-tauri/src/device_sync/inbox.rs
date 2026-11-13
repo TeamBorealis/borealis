@@ -113,6 +113,11 @@ fn looks_like_bundle(bytes: &[u8]) -> bool {
 pub fn claim_bundles(state: &AppState, files: Vec<OpenedFile>) -> Vec<OpenedFile> {
     let mut rest = Vec::with_capacity(files.len());
     for file in files {
+        // a refused file has no bytes: the UI shows its message
+        if file.refused.is_some() {
+            rest.push(file);
+            continue;
+        }
         let Ok(bytes) = STANDARD.decode(&file.content_base64) else {
             rest.push(file);
             continue;

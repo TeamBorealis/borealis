@@ -127,6 +127,10 @@ pub struct ImportPreview {
 pub struct OpenedFile {
     pub file_name: String,
     pub content_base64: String,
+    /// The file was not opened (Android: a URI Borealis does not read, H5wn8): what the UI tells the user instead.
+    /// The content is empty then.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub refused: Option<String>,
 }
 
 pub(crate) struct Staged {
@@ -729,6 +733,7 @@ pub fn push_opened_file(path: &Path) {
         q.push(OpenedFile {
             file_name,
             content_base64: STANDARD.encode(bytes),
+            refused: None,
         });
     }
 }

@@ -68,7 +68,10 @@ export function GlobalImport() {
   // (macOS, iOS: `content:open-file`); Android's activity parks them for the backend and fires `borealis-open-file`.
   useEffect(() => {
     const drain = async () => {
-      const opened = await api.takeOpenedFiles().catch(() => []);
+      const taken = await api.takeOpenedFiles().catch(() => []);
+      // a file the OS handed over that was not opened says why (H5wn8), it is never dropped silently
+      taken.forEach((o) => { if (o.refused) toast.push(o.refused, "error"); });
+      const opened = taken.filter((o) => !o.refused);
       if (opened.length) void route(opened.map((o) => base64ToFile(o.fileName, o.contentBase64)));
       // `.borealis` bundles are kept as files by the backend; ask for them after the other files were taken.
       await openOsBundles(api);
@@ -78,7 +81,7 @@ export function GlobalImport() {
     const onOpen = () => void drain();
     window.addEventListener("borealis-open-file", onOpen);
     return () => { off(); window.removeEventListener("borealis-open-file", onOpen); };
-  }, [api, route]);
+  }, [api, route, toast]);
 
   // Files dropped from the OS on the desktop app: the backend handles the native drop and sends tokens and names only.
   useEffect(() => api.subscribe("files:dropped", (drop) => {

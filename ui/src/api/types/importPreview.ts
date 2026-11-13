@@ -99,4 +99,6 @@ export interface PreviewBook {
 export interface OpenedFile {
   fileName: string;
   contentBase64: string;
+  /** Not opened (Android: a file Borealis does not read, H5wn8): the message shown instead; the content is empty. */
+  refused?: string;
 }

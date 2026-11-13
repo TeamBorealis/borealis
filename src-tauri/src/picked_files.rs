@@ -154,6 +154,7 @@ pub fn take_picked_files(
         out.push(OpenedFile {
             file_name: file_name(&path),
             content_base64: STANDARD.encode(bytes),
+            refused: None,
         });
     }
     Ok(out)
