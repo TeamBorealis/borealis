@@ -19,8 +19,7 @@ body.compact{font-size:6.6pt;line-height:1.25}
 .serif,.name,h2,.ab-name,.mod,.big,.mid,.lvhead td{font-family:"Noto Serif",Georgia,"Times New Roman",serif}
 .desk{padding:16px 0}
 .page{position:relative;display:flex;background:var(--paper);margin:0 auto 16px;box-shadow:0 2px 10px rgba(0,0,0,.35);overflow:hidden}
-.letter{width:612pt;min-height:792pt;height:792pt}.a4{width:595pt;min-height:842pt;height:842pt}
-.page.flow{height:auto}
+.letter{width:612pt;min-height:792pt}.a4{width:595pt;min-height:842pt}
 .page:not(.flow) .sec.grow>.lined{min-height:0}
 .frame,.corner,.sky{position:absolute;pointer-events:none;color:var(--ink);overflow:hidden}
 .frame{inset:0;width:100%;height:100%}
@@ -48,7 +47,7 @@ body.compact{font-size:6.6pt;line-height:1.25}
 h2{margin:0 0 3pt;font-weight:700;font-size:8.6pt;line-height:1.2;letter-spacing:.03em;display:flex;align-items:center;gap:5pt}
 h2 svg.hr{flex:1;min-width:0;width:0;height:12pt;color:var(--ink-3);overflow:hidden}
 h2 .aside{font:400 6pt "Noto Sans",sans-serif;color:var(--ink-3);letter-spacing:0}
-.sec{min-height:0}.grow{flex:1;display:flex;flex-direction:column}
+.sec{min-height:auto}.grow{flex:1;display:flex;flex-direction:column}
 .body{display:grid;grid-template-columns:178pt minmax(0,1fr);gap:10pt;flex:1}
 .a4 .body.d14{grid-template-columns:150pt minmax(0,1fr)}
 .abil,.main,.col{display:flex;flex-direction:column;gap:4.5pt;min-width:0}

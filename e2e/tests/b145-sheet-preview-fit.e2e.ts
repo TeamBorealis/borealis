@@ -13,16 +13,24 @@ import { bootToHome } from '../support/index.js';
 // B-146 (same tester): 2014 page 1 and the spellcasting page ran long. The preview now splits them as the PDF does, so
 // every page of every sample (incl. the 2014 cleric on both papers, whose spells run over two pages) is as tall as its
 // paper, and nothing on a page runs past its content box into the footer.
+// Long text: a section's text needing more room than the PDF measured ran over the next section and into the footer
+// (a long backstory over Organisation, Allies and Notes; long lists at phone scale). A page is now at least as tall as
+// its paper and grows instead, and no section shrinks below its text. From tablet width up the pages keep their paper
+// height exactly; at phone widths the browser's tiny zoomed text needs a little more room, so a page may grow there.
 // Fixtures: `BOREALIS_HTML_SAMPLE=<dir> cargo test -p borealis-sheet --lib html_sheet_sample`, then copy
-// `2024-a4-long.html`, `2014-letter-long.html`, `2014-letter.html` and `2014-a4.html` from <dir> to
-// e2e/fixtures/sheet-preview/.
+// `2024-a4-long.html`, `2014-letter-long.html`, `2014-letter.html`, `2014-a4.html`, `2014-a4-story.html` and
+// `2024-a4-story.html` from <dir> to e2e/fixtures/sheet-preview/.
 const here = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = [
   { file: '2024-a4-long.html', ratio: 842 / 595 },
   { file: '2014-letter-long.html', ratio: 792 / 612 },
   { file: '2014-letter.html', ratio: 792 / 612 },
   { file: '2014-a4.html', ratio: 842 / 595 },
+  { file: '2014-a4-story.html', ratio: 842 / 595 },
+  { file: '2024-a4-story.html', ratio: 842 / 595 },
 ];
+/** From this width up every page keeps exactly its paper height. */
+const EXACT_FROM = 744;
 /** Phone (360, 376 = a 392 px phone's frame), iPad portrait pane (440), tablet (744) and desktop widths. */
 const WIDTHS = [360, 376, 440, 744, 1024];
 
@@ -52,6 +60,11 @@ async function probe({ html, width }: Probe): Promise<Found> {
       const b = el.getBoundingClientRect();
       if (b.height && b.bottom > limit + 0.5) { problems.push(`page ${i + 1}: ${name(el)} runs into the footer`); break; }
     }
+    // No section is squeezed below its text (which would then run over the next section); the extra spells box clips
+    // on purpose.
+    for (const sec of p.querySelectorAll('.sec:not(.more-spells)')) {
+      if (sec.scrollHeight > sec.clientHeight + 1) problems.push(`page ${i + 1}: ${name(sec)} is shorter than its text`);
+    }
   });
   const p1 = pages[0].getBoundingClientRect();
   if (p1.right > doc.documentElement.clientWidth + 0.5) problems.push(`page 1 is wider than the ${width} px frame`);
@@ -79,7 +92,7 @@ async function probe({ html, width }: Probe): Promise<Found> {
 }
 
 describe('B-145 sheet preview fit', { tags: ['b145'] }, () => {
-  test('every page keeps its paper shape and height, and page 1 vitals never overlap or leave the page, phone to desktop', async (ctx) => {
+  test('every page keeps its paper shape and height, no text runs over the next section or the footer, and page 1 vitals never overlap or leave the page, phone to desktop', async (ctx) => {
     await bootToHome(ctx);
     for (const { file, ratio } of FIXTURES) {
       const html = readFileSync(join(here, '../fixtures/sheet-preview', file), 'utf8');
@@ -87,6 +100,8 @@ describe('B-145 sheet preview fit', { tags: ['b145'] }, () => {
         const found = (await ctx.browser.evaluate(probe, { html, width })) as Found;
         const at = `${file} at ${width} px`;
         expect({ at, problems: found.problems }).toEqual({ at, problems: [] });
+        for (const r of found.ratios) expect({ at, short: r < ratio - 0.01 }).toEqual({ at, short: false });
+        if (width < EXACT_FROM) continue;
         for (const r of found.ratios) expect({ at, off: Math.abs(r - ratio) < 0.01 }).toEqual({ at, off: true });
         expect({ at, heights: new Set(found.heights.map(Math.round)).size }).toEqual({ at, heights: 1 });
       }
