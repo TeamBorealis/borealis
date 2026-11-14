@@ -853,6 +853,7 @@ mod tests {
             prereq: Default::default(),
             repeatable: false,
             superseded: false,
+            hidden: false,
             replaced_supports: Vec::new(),
             replaced_ids: Vec::new(),
             toggle_effects: Vec::new(),

@@ -48,7 +48,7 @@ impl Engine {
     ) -> Self {
         // PF1 (B-235): the two universes are independent, so they are built side by side.
         let [first, second] = all_profiles().map(|p| p.ruleset());
-        let universes = std::thread::scope(|scope| {
+        let mut universes = std::thread::scope(|scope| {
             let other = scope.spawn(|| Universe::with_adapter(store, second, adapter));
             let one = Universe::with_adapter(store, first, adapter);
             let two = other
@@ -56,6 +56,11 @@ impl Engine {
                 .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
             [one, two]
         });
+        if !settings.hidden_elements.is_empty() {
+            for u in &mut universes {
+                u.hide(&settings.hidden_elements);
+            }
+        }
         Self {
             settings,
             universes,

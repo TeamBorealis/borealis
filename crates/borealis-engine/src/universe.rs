@@ -211,6 +211,8 @@ pub struct UElem {
     /// Foreign element that a native element replaces one to one (`maps_to` kind `equivalent`);
     /// never offered for new picks.
     pub superseded: bool,
+    /// Listed in [`crate::EngineSettings::hidden_elements`]: never offered for new picks.
+    pub hidden: bool,
     /// IM16: the tags of the 2014 elements this native 2024 element replaces (`maps_to` kind
     /// `equivalent`, 2024 universe only). A supports expression the element's own tags do not
     /// match is matched against these too ([`crate::eval::supports_match`]).
@@ -268,6 +270,7 @@ impl UElem {
             prereq,
             repeatable,
             superseded: false,
+            hidden: false,
             replaced_supports: Vec::new(),
             replaced_ids: Vec::new(),
             toggle_effects,
@@ -791,6 +794,13 @@ impl Universe {
     #[must_use]
     pub fn creation_roots(&self) -> &[String] {
         &self.creation_roots
+    }
+
+    /// Mark the elements of `ids` as hidden from new picks ([`crate::EngineSettings::hidden_elements`]).
+    pub(crate) fn hide(&mut self, ids: &std::collections::BTreeSet<String>) {
+        for u in &mut self.elems {
+            u.hidden = ids.contains(&u.el.id);
+        }
     }
 
     /// Elements that an element authored for this universe's ruleset replaces one to one
