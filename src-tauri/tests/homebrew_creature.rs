@@ -6,7 +6,9 @@
 //! * made in the form (AC, HP dice, speeds, scores, CR, one attack action), it validates clean, saves as a typed
 //!   `Monster` stat block, is listed in the compendium as a monster and reads there as a stat block (the same entry the
 //!   draft's live preview showed), and a level-2 Druid is offered it as a Wild Shape form;
-//! * it opens again in the creature form and saves unchanged.
+//! * it opens again in the creature form and saves unchanged;
+//! * a choice of type Companion (in a species the pack makes) offers it by creature type and challenge, and Try it
+//!   places a creature draft in that choice (HwTXE).
 
 use borealis_content::{MonsterData, Ruleset as ContentRuleset};
 use borealis_engine::commands::{self, slot_key};
@@ -294,4 +296,173 @@ fn a_new_creature_validates_shows_in_the_compendium_and_is_a_wild_shape_form() {
         .homebrew_save_draft(&touched.draft_id, &Quiet)
         .unwrap();
     assert_eq!(app.saved(&pack, BOAR), stored);
+}
+
+/// A rule block, as the block dialog writes it.
+fn block(kind: &str, fields: Value) -> borealis_authoring::form::Block {
+    serde_json::from_value(
+        json!({"key": format!("u-{kind}"), "kind": kind, "sentence": "", "fields": fields}),
+    )
+    .unwrap()
+}
+
+/// The tag filter `Beast,(1/4||1/2)` as the block dialog's builder writes it: beasts of challenge 1/4 or 1/2.
+fn small_beasts() -> Value {
+    let tag = |t: &str| json!({"node": "row", "row": {"row": "tag", "tag": t}});
+    json!({"value": {"shape": "model", "model": {"specific": false, "root": {"node": "group", "mode": "all", "items": [
+        tag("Beast"),
+        {"node": "group", "mode": "any", "items": [tag("1/4"), tag("1/2")]}
+    ]}}}})
+}
+
+/// HwTXE (WB-20 Open): typed `Monster` stat blocks fill `Companion` selects (`universe::type_family`), so a creature
+/// made in the form is offered by a choice of type Companion that filters by creature type and challenge, and Try it
+/// places a creature draft in that choice. No bundled build has such a select: the pack makes one in a species.
+#[test]
+fn a_homebrew_creature_fills_a_companion_choice_and_try_it_places_it_there() {
+    use borealis_lib::homebrew_dto::HomebrewTrialSetup;
+    let app = App::new();
+    let pack = app.pack();
+
+    // a species whose companion is a beast of challenge 1/4 or 1/2
+    let v = app
+        .state
+        .homebrew_new_draft(&pack, "species", None, None, None)
+        .unwrap();
+    let mut form = v.form.clone();
+    form.fields.insert("name".into(), json!("Beastfriend"));
+    form.blocks.push(block(
+        "select",
+        json!({"type": "Companion", "name": "Animal Companion", "supports": small_beasts()}),
+    ));
+    let v = app.state.homebrew_update_draft(&v.draft_id, &form).unwrap();
+    assert_eq!(problems(&v, "error"), Vec::new());
+    let species = app
+        .state
+        .homebrew_save_draft(&v.draft_id, &Quiet)
+        .unwrap()
+        .element_ids[0]
+        .clone();
+    let saved = app.saved(&pack, &species);
+    assert!(
+        saved["rules"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["kind"] == "select"
+                && r["type"] == "Companion"
+                && r["supports"] == "Beast,(1/4||1/2)"),
+        "{}",
+        saved["rules"]
+    );
+
+    // a beast of challenge 2: the filter leaves it out
+    let drake = app
+        .state
+        .homebrew_new_draft(&pack, "creature", None, None, None)
+        .unwrap();
+    let mut drake_fields = boar_fields();
+    drake_fields.push(("name", json!("Ember Drake")));
+    drake_fields.push(("creatureType", json!("beast")));
+    drake_fields.push((
+        "challenge",
+        json!({"cr": "2", "note": "", "xp": null, "xpLair": null, "proficiencyBonus": null}),
+    ));
+    let drake = app.set(&drake, &drake_fields);
+    assert_eq!(problems(&drake, "error"), Vec::new());
+    let drake = app
+        .state
+        .homebrew_save_draft(&drake.draft_id, &Quiet)
+        .unwrap()
+        .element_ids[0]
+        .clone();
+
+    // the boar, still a draft, tried on a Beastfriend: it takes the companion choice
+    let boar = app
+        .state
+        .homebrew_new_draft(&pack, "creature", None, None, None)
+        .unwrap();
+    let mut fields = boar_fields();
+    fields.push(("name", json!("Cinder Boar")));
+    fields.push(("creatureType", json!("beast")));
+    let boar = app.set(&boar, &fields);
+    assert_eq!(problems(&boar, "error"), Vec::new());
+    let view = app
+        .state
+        .homebrew_trial_start(
+            &boar.draft_id,
+            &HomebrewTrialSetup {
+                level: Some(1),
+                species_id: Some(species.clone()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    let slot = view
+        .snapshot
+        .slots
+        .iter()
+        .find(|s| s.title == "Animal Companion")
+        .unwrap_or_else(|| {
+            panic!(
+                "the species' companion choice: {:?}",
+                view.snapshot
+                    .slots
+                    .iter()
+                    .map(|s| &s.title)
+                    .collect::<Vec<_>>()
+            )
+        });
+    assert_eq!(
+        slot.chosen.as_ref().map(|c| c.id.as_str()),
+        Some(BOAR),
+        "Try it places the draft in the choice that offers it"
+    );
+    let offered = app
+        .state
+        .homebrew_trial_options(&view.trial_id, &slot.id, None, Some(500), None)
+        .unwrap();
+    let ids: Vec<&str> = offered
+        .items
+        .iter()
+        .map(|i| i.base.summary.id.as_str())
+        .collect();
+    assert!(ids.contains(&BOAR), "{ids:?}");
+    assert!(
+        !ids.contains(&drake.as_str()),
+        "challenge 2 is filtered out: {ids:?}"
+    );
+    assert!(
+        offered
+            .items
+            .iter()
+            .any(|i| i.base.summary.source != "Ember Isles"),
+        "the SRD's small beasts are offered too: {ids:?}"
+    );
+    app.state.homebrew_trial_end(&view.trial_id).unwrap();
+
+    // saved, a Beastfriend character is offered it by the same choice and takes it
+    let saved = app
+        .state
+        .homebrew_save_draft(&boar.draft_id, &Quiet)
+        .unwrap();
+    assert_eq!(saved.element_ids, [BOAR]);
+    let hub = app.state.hub().unwrap();
+    let e = &hub.engine;
+    let mut s = commands::new_character(e, ContentRuleset::Dnd2024);
+    s = pick(e, &s, "Race", &species);
+    let snap = e.derive(&s);
+    let slot = snap
+        .slots
+        .iter()
+        .find(|k| k.name == "Animal Companion")
+        .expect("the companion choice");
+    let options: Vec<&str> = slot.options.iter().map(|o| o.id.as_str()).collect();
+    assert!(options.contains(&BOAR), "{options:?}");
+    assert!(!options.contains(&drake.as_str()), "{options:?}");
+    let s = commands::select(e, &s, &slot.key, Choice::Element(BOAR.into()))
+        .unwrap()
+        .state;
+    let snap = e.derive(&s);
+    assert!(snap.elements.iter().any(|x| x.element.id == BOAR));
 }
