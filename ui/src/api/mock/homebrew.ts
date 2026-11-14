@@ -124,7 +124,12 @@ export class MockHomebrew {
   private nextPreview = 1;
 
   /** `spellLists`: the spell lists loaded classes declare (the spell form's list lints). */
-  constructor(private putPack: (pack: ContentPack) => ContentPack, private spellLists: () => readonly string[] = () => []) {}
+  constructor(private putPack: (pack: ContentPack) => ContentPack, private spellLists: () => readonly string[] = () => [],
+    private loadedName: (id: string) => string | null = () => null) {}
+
+  /** An element's name by id, own packs first (the lookup the backend's prerequisite sentence reads). */
+  private readonly nameOf = (id: string): string | null =>
+    [...this.packs.values()].map((p) => p.elements.get(id)?.summary.name).find((n) => n !== undefined) ?? this.loadedName(id);
 
   kinds(): HomebrewKindDescriptor[] { return [...KINDS]; }
 
@@ -455,7 +460,7 @@ export class MockHomebrew {
     const tagged = (form: HomebrewForm) => wanted.length === 0
       || [...tagsOf(form), String(form.fields.group ?? "")].some((t) => wanted.includes(t.toLowerCase()));
     const saved = [...this.packs.values()].flatMap((own) => [...own.elements.values()].filter(({ form }) => tagged(form)).map(({ summary, form }): HomebrewPickerRow => ({
-      id: summary.id, name: summary.name, type: summary.elementType, summary: String(form.fields.summary ?? ""), prerequisites: featPrerequisite(form),
+      id: summary.id, name: summary.name, type: summary.elementType, summary: String(form.fields.summary ?? ""), prerequisites: featPrerequisite(form, this.nameOf),
       sourceName: own.pack.name, edition: summary.edition, draft: false, ...spellRow(form),
     })));
     const drafts = [...this.drafts.values()].filter((d) => d.packId === draftPack && d.elementId === null && d.draftId !== draftId && String(d.form.fields.name ?? "").trim() && tagged(d.form))
@@ -573,7 +578,7 @@ export class MockHomebrew {
     const description = descriptionHtml(form.fields.description) + (form.kind === "creature" ? creatureHtml(form) : "");
     return {
       id, name: text("name") || "Unnamed", type: PREVIEW_TYPES[form.kind] ?? "option", source: own.pack.sourceIds[0] ?? own.pack.id,
-      sourceName: own.pack.name, shortDescription: "", prerequisites: featPrerequisite(form), rulesets: own.pack.rulesets,
+      sourceName: own.pack.name, shortDescription: "", prerequisites: featPrerequisite(form, this.nameOf), rulesets: own.pack.rulesets,
       descriptionHtml: description, facts: form.kind === "creature" ? creatureFacts(form) : k ? facts : [], grants: [],
     };
   }

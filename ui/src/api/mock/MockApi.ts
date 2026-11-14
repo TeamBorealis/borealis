@@ -156,7 +156,8 @@ export class MockApi implements Api {
     this.content = new ContentService((p) => this.emit("content:progress", p), () => this.emit("content:reloaded", { reason: "content changed" }), (p) => this.emit("import5etools:progress", p));
     this.ai = new MockAi((e) => this.emit("ai:event", e), { chunkDelayMs: opts.aiChunkDelayMs ?? 25, available: opts.aiAvailable ?? true });
     this.setup = new MockAiSetup((e) => this.emit("aisetup:event", e), opts.aiSetup);
-    this.homebrew = new MockHomebrew((pack) => this.content.putOwnPack(pack), () => spellListNames(this.loadedElements()));
+    this.homebrew = new MockHomebrew((pack) => this.content.putOwnPack(pack), () => spellListNames(this.loadedElements()),
+      (id) => this.loadedElements().find((e) => e.id === id)?.name ?? null);
     this.trials = new MockTrials({ rules: () => this.rules, draft: (id) => this.homebrew.trialDraft(id) });
     this.imp = new MockImport((e) => this.emit("import:event", e), opts.importStepMs ?? 300);
     this.link = new MockDeviceLink((st) => this.emit("link:status", st), {
