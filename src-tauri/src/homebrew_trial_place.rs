@@ -2,25 +2,37 @@
 //! choice that dropped it: the first choice that offers it (looked at level by level), a feat at the first ability
 //! score improvement, a spell through its class's lists, an item added and equipped, anything else as a test grant.
 
+use crate::base_items::bases_by_name;
 use crate::builder::{apply, apply_filled, select_in};
 use crate::homebrew_trial_build::{levels, Note, Placement, TrialDraft, MAX_LEVEL};
 use crate::session::{Ctx, Draft};
 use crate::state::ContentHub;
 use borealis_engine::added_picks::AddedKind;
 use borealis_engine::commands::{self, Improvement};
+use borealis_engine::item_base::needs_base;
 use borealis_engine::snapshot::SlotSnapshot;
+use borealis_engine::state::InventoryItem;
 use borealis_engine::CharacterState;
 
 const IMPROVEMENT_PREFIX: &str = "Improvement Option (";
 
+/// Does the character carry the item draft: as the item, or as the magic item on a base item?
+pub(crate) fn carries(state: &CharacterState, draft: &TrialDraft) -> bool {
+    state
+        .inventory
+        .items
+        .iter()
+        .any(|i| is_draft_line(i, draft))
+}
+
+fn is_draft_line(line: &InventoryItem, draft: &TrialDraft) -> bool {
+    line.item == draft.root.id || line.adorner.as_deref() == Some(draft.root.id.as_str())
+}
+
 /// Is the draft on the character (registered, or in the inventory)?
 pub(crate) fn present(hub: &ContentHub, state: &CharacterState, draft: &TrialDraft) -> bool {
     if draft.placement == Placement::Item {
-        return state
-            .inventory
-            .items
-            .iter()
-            .any(|i| i.item == draft.root.id);
+        return carries(state, draft);
     }
     hub.engine
         .derive_with(state, false)
@@ -197,10 +209,42 @@ fn grant(ctx: &Ctx<'_>, d: &mut Draft, draft: &TrialDraft, notes: &mut Vec<Note>
     }
 }
 
-/// An item: added, then equipped and attuned when it can be (a pack or a trinket is only carried).
+/// The base item a generic magic weapon or armor draft is tried on, as a character adds it on a base it chooses
+/// (IqzUc): the first it can be made from by name, of the character's own edition first; none when the draft names
+/// its one base or is no magic weapon or armor.
+fn trial_base(ctx: &Ctx<'_>, d: &Draft, draft: &TrialDraft) -> Option<(String, String)> {
+    let uni = ctx.hub.engine.universe(d.character.build.ruleset);
+    let item = uni.get(&draft.root.id).filter(|e| needs_base(uni, e))?;
+    let bases = bases_by_name(uni, item, |_| true);
+    let base = bases
+        .iter()
+        .find(|b| !b.edition.is_foreign())
+        .or_else(|| bases.first())?;
+    Some((base.el.id.clone(), base.el.name.clone()))
+}
+
+/// An item: added, then equipped and attuned when it can be (a pack or a trinket is only carried); a generic magic
+/// weapon or armor on its [`trial_base`].
 fn add_item(ctx: &Ctx<'_>, d: &mut Draft, draft: &TrialDraft, notes: &mut Vec<Note>) {
     let engine = &ctx.hub.engine;
-    match commands::add_item(engine, &d.character.build, &draft.root.id, 1) {
+    let base = trial_base(ctx, d, draft);
+    let added = match &base {
+        Some((id, _)) => {
+            commands::add_adorned_item(engine, &d.character.build, id, &draft.root.id, 1)
+        }
+        None => commands::add_item(engine, &d.character.build, &draft.root.id, 1),
+    };
+    if let Some((_, name)) = &base {
+        notes.push(Note::new(
+            1,
+            "info",
+            format!(
+                "{} is tried on a {name}: the first base item it can be made from, by name.",
+                draft.name()
+            ),
+        ));
+    }
+    match added {
         Ok(o) => apply(d, o),
         Err(e) => {
             notes.push(Note::new(
@@ -218,7 +262,7 @@ fn add_item(ctx: &Ctx<'_>, d: &mut Draft, draft: &TrialDraft, notes: &mut Vec<No
         .items
         .iter()
         .rev()
-        .find(|i| i.item == draft.root.id)
+        .find(|i| is_draft_line(i, draft))
         .map(|i| i.uid.clone())
     else {
         return;

@@ -4,7 +4,7 @@ import type {
 } from "../types";
 import type { MockElement } from "./data-types";
 import { ABILITY_KEYS } from "../types";
-import { getClass, getElement } from "./content";
+import { ELEMENTS, getClass, getElement, getItem } from "./content";
 import { apiError } from "./errors";
 import { createCharacter } from "./library";
 import { buildSlotDefs, type SlotDef } from "./slots";
@@ -95,18 +95,60 @@ export function needsAttunement(fields: Readonly<Record<string, unknown>>): bool
   return v === true || (typeof v === "string" && v.trim() !== "" && v.trim().toLowerCase() !== "false");
 }
 
+type AppliesRow = { row?: string; id?: string; tag?: string };
+type AppliesNode = { node: string; row?: AppliesRow; items?: AppliesNode[] };
+
+/** A magic weapon draft's "Applies to" rows (the base item builder's top level), or null for any other draft. */
+function appliesRows(draft: TrialDraft): { specific: boolean; rows: AppliesRow[] } | null {
+  if (draft.kind.elementTypes[0] !== "Magic Item" || fieldText(draft, "magicType").toLowerCase() !== "weapon") return null;
+  const model = (draft.view.form.fields.appliesToWeapon as { value?: { shape?: string; model?: { specific?: boolean; root?: AppliesNode } } } | undefined)?.value;
+  if (model?.shape !== "model" || !model.model?.root) return null;
+  const root = model.model.root;
+  const nodes = root.node === "row" ? [root] : root.items ?? [];
+  return { specific: model.model.specific === true, rows: nodes.flatMap((n) => (n.node === "row" && n.row ? [n.row] : [])) };
+}
+
 /** The one weapon a magic weapon draft's "Applies to" names (Specific elements, one of them), or null: the backend
  * uses such a magic item as that weapon adorned with itself (`item_base::implied_base`); a group or several bases
  * name none. */
 function namedBase(draft: TrialDraft): WeaponFacts | null {
-  if (draft.kind.elementTypes[0] !== "Magic Item" || fieldText(draft, "magicType").toLowerCase() !== "weapon") return null;
-  type Node = { node: string; row?: { row?: string; id?: string }; items?: Node[] };
-  const model = (draft.view.form.fields.appliesToWeapon as { value?: { shape?: string; model?: { specific?: boolean; root?: Node } } } | undefined)?.value;
-  if (model?.shape !== "model" || model.model?.specific !== true || !model.model.root) return null;
-  const root = model.model.root;
-  const rows = root.node === "row" ? [root] : root.items ?? [];
-  const ids = rows.map((n) => (n.node === "row" && n.row?.row === "element" ? n.row.id ?? "" : "")).filter(Boolean);
-  return ids.length === 1 ? getElement(ids[0]!)?.weapon ?? null : null;
+  const applies = appliesRows(draft);
+  if (!applies?.specific) return null;
+  const ids = applies.rows.map((r) => (r.row === "element" ? r.id ?? "" : "")).filter(Boolean);
+  if (ids.length !== 1) return null;
+  const weapon = getElement(ids[0]!);
+  return weapon?.type === "weapon" ? weapon.weapon ?? null : null;
+}
+
+/** Does a mock weapon match a row of "Applies to": its id, its Weapon Category tag
+ * (`ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE`), or a tag word (Martial, Melee) or its name. */
+function adorns(row: AppliesRow, weapon: MockElement): boolean {
+  const facts = weapon.weapon;
+  if (!facts) return false;
+  const category = `ID_INTERNAL_WEAPON_CATEGORY_${facts.proficiency}_${facts.kind}`.toUpperCase();
+  const word = (row.row === "element" ? row.id : row.tag)?.trim() ?? "";
+  if (word === weapon.id || word === category) return true;
+  return [facts.proficiency, facts.kind, weapon.name].some((w) => w.toLowerCase() === word.toLowerCase());
+}
+
+/** The base a magic weapon draft for a group of bases is tried on (IqzUc, `homebrew_trial_place::trial_base`): the
+ * first mock weapon by name that a row names, of the trial's edition; none when it names its one base. The mock's
+ * sample magic weapons (they need attunement, a base weapon never does) are no bases. */
+function groupBase(draft: TrialDraft, edition: Ruleset): MockElement | null {
+  const applies = appliesRows(draft);
+  if (!applies || namedBase(draft)) return null;
+  const bases = ELEMENTS.filter((e) => e.type === "weapon" && !getItem(e.id)?.attune && (e.rulesets ?? [edition]).includes(edition))
+    .filter((e) => applies.rows.length === 0 || applies.rows.some((r) => adorns(r, e)))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+  return bases[0] ?? null;
+}
+
+/** The trial's note on the base a magic weapon draft for a group of bases is tried on (the backend's words). */
+function groupBaseNote(draft: TrialDraft, edition: Ruleset): HomebrewProblem | null {
+  const base = groupBase(draft, edition);
+  return base
+    ? { severity: "info", message: `${nameOf(draft.view)} is tried on a ${base.name}: the first base item it can be made from, by name.`, path: null, elementId: draft.view.elementId, code: "trial" }
+    : null;
 }
 
 /** A magic item draft's bonus to attack and damage rolls (its Enhancement). */
@@ -120,8 +162,8 @@ const withModifier = (dice: string, n: number): string => (n === 0 ? dice : n > 
 
 /** A weapon draft's weapon facts, as the backend reads them from what the form writes; a magic weapon on one base
  * item has that base's. */
-function weaponFacts(draft: TrialDraft): WeaponFacts | null {
-  const base = namedBase(draft);
+function weaponFacts(draft: TrialDraft, edition: Ruleset): WeaponFacts | null {
+  const base = namedBase(draft) ?? groupBase(draft, edition)?.weapon;
   if (base) return base;
   if (draft.kind.elementTypes[0] !== "Weapon") return null;
   const category = refName(draft.view.form.fields.weaponCategory);
@@ -135,7 +177,7 @@ function weaponFacts(draft: TrialDraft): WeaponFacts | null {
 
 /** The weapon draft as a loaded weapon (the Weapon Mastery choice offers it, P2b), or null for any other draft. */
 export function draftWeapon(draft: TrialDraft): MockElement | null {
-  const weapon = draft.kind.elementTypes[0] === "Weapon" ? weaponFacts(draft) : null;
+  const weapon = draft.kind.elementTypes[0] === "Weapon" ? weaponFacts(draft, draft.rulesets[0] ?? "dnd2024") : null;
   if (!weapon) return null;
   const p = draft.view.preview;
   return {
@@ -153,9 +195,12 @@ export function draftOptions(draft: TrialDraft, def: SlotDef): MockElement[] {
 /** An item draft on the test character (spec 9): carried and, when it is worn or held, equipped; attuned only when it
  * needs attunement; a weapon is an attack. Never a feature. */
 function withItem(s: CharacterSnapshot, draft: TrialDraft): { snapshot: CharacterSnapshot; changed: string[] } {
-  const name = nameOf(draft.view);
+  // a magic weapon for a group of bases is carried as its base adorned with it ("Greatsword (Emberbrand)")
+  const base = groupBase(draft, s.ruleset);
+  const name = base?.name ?? nameOf(draft.view);
+  const displayName = base ? `${base.name} (${nameOf(draft.view)})` : name;
   const fields = draft.view.form.fields;
-  const weapon = weaponFacts(draft);
+  const weapon = weaponFacts(draft, s.ruleset);
   const slot = fieldText(draft, "slot");
   const held = weapon !== null || slot !== "";
   const attuned = held && needsAttunement(fields);
@@ -165,7 +210,7 @@ function withItem(s: CharacterSnapshot, draft: TrialDraft): { snapshot: Characte
   const ability: AbilityKey = weapon?.kind === "Ranged" || (finesse && dex > strength) ? "dex" : "str";
   const mod = s.abilities.modifier[ability];
   const item: InventoryItem = {
-    id: `trial-${draft.view.draftId}`, itemId: draft.view.draftId, name, displayName: name, category: fieldText(draft, "category") || draft.kind.label,
+    id: `trial-${draft.view.draftId}`, itemId: base?.id ?? draft.view.draftId, name, displayName, category: fieldText(draft, "category") || draft.kind.label,
     quantity: 1, weight: Number(fieldText(draft, "weight")) || 0, valueCp: Math.round((Number(fieldText(draft, "cost")) || 0) * 100),
     equipped: held ? "primary" : null, attuned, requiresAttunement: needsAttunement(fields), storage: 0, notes: "", listInInventory: true,
     isPack: false, packContents: [], isWeapon: weapon !== null, equippable: held, armor: null, overrideRequirements: false, withheldGrants: [],
@@ -328,6 +373,7 @@ export class MockTrials {
     const top = buildSnapshot(this.build(t, MAX_LEVEL), this.deps.rules()).snapshot;
     const at = placementLevel(draft, t.setup.edition);
     const problems: HomebrewProblem[] = draft.view.problems.filter((p) => p.severity !== "info");
+    const baseNote = groupBaseNote(draft, t.setup.edition);
     const blocks = statChanges(draft, t.setup.edition);
     return Array.from({ length: MAX_LEVEL }, (_, i) => {
       const level = i + 1;
@@ -340,7 +386,8 @@ export class MockTrials {
         ...(blocks.some((b) => b.from === level && b.from > at) ? [`${nameOf(draft.view)} (more)`] : []),
       ];
       const slots = Array.from({ length: 9 }, (__, n) => s.spellcasting.slots.find((r) => r.level === n + 1)?.total ?? 0);
-      return { level, features, choices: gained.map((x) => x.title), slots, problems: level === at ? problems : [] };
+      const notes = level === 1 && baseNote ? [baseNote] : [];
+      return { level, features, choices: gained.map((x) => x.title), slots, problems: [...notes, ...(level === at ? problems : [])] };
     });
   }
 

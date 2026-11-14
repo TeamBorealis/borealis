@@ -187,11 +187,7 @@ fn severity_word(s: Severity) -> Option<&'static str> {
 /// Is the draft on this level's character?
 fn has_draft(state: &CharacterState, snap: &EngineSnapshot, draft: &TrialDraft) -> bool {
     if draft.placement == Placement::Item {
-        return state
-            .inventory
-            .items
-            .iter()
-            .any(|i| i.item == draft.root.id);
+        return crate::homebrew_trial_place::carries(state, draft);
     }
     snap.elements.iter().any(|e| draft.is_draft(&e.element.id))
 }

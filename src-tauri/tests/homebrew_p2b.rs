@@ -524,7 +524,7 @@ fn carried<'s>(snap: &'s serde_json::Value, name: &str) -> &'s serde_json::Value
 
 /// HmG6I: item drafts in Try it, past the plain weapon above: an armor is worn and sets the Armor Class; a magic
 /// weapon on one base item is held and its attack line has its +1 to hit and damage; a magic armor on one base adds
-/// its +1 to that armor's AC. The test character is the edition's SRD fighter (Strength +2, proficiency +2).
+/// its +1 to that armor's AC; one for a group of bases is tried on the first of them. The test character is the edition's SRD fighter (Strength +2, proficiency +2).
 #[test]
 fn item_drafts_tried_out_are_equipped_with_their_attack_line_and_armor_class() {
     const LONGSWORD: &str = "ID_2024_WEAPON_LONGSWORD";
@@ -584,6 +584,53 @@ fn item_drafts_tried_out_are_equipped_with_their_attack_line_and_armor_class() {
         view.changed.iter().any(|c| c == "attacks:Emberblade"),
         "{:?}",
         view.changed
+    );
+    app.state.homebrew_trial_end(&view.trial_id).unwrap();
+
+    // IqzUc: a magic weapon for a group of bases ("any martial melee weapon") is tried on the first base it can be made
+    // from, by name, as a character adds it on a base it chooses: held, with its attack line and its +1
+    let martial = json!({"value": {"shape": "model", "model": {"specific": true,
+        "root": {"node": "row", "row": {"row": "element", "id": "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE"}}}}});
+    let brand = item_draft(
+        &app,
+        &pack,
+        "magicItem",
+        json!({"name": "Emberbrand", "magicType": "Weapon", "rarity": "Uncommon",
+            "appliesToWeapon": martial, "enhancement": 1}),
+    );
+    let view = app.try_it(&brand, 1);
+    let snap = serde_json::to_value(&view.snapshot).unwrap();
+    let line = snap["inventory"]["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["displayName"] == "Battleaxe (Emberbrand)")
+        .unwrap_or_else(|| panic!("Emberbrand carried: {}", snap["inventory"]["items"]));
+    assert_eq!(line["equipped"], "primary", "{line}");
+    let uid = line["id"].clone();
+    // the attack line is the base weapon's, as on a character's sheet
+    let line = snap["attacks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|a| a["id"] == uid)
+        .unwrap_or_else(|| panic!("the Emberbrand line's attack: {}", snap["attacks"]));
+    assert_eq!(line["name"], "Battleaxe");
+    assert_eq!(
+        line["toHit"].as_i64(),
+        Some(unarmed + 1),
+        "+1 to hit: {line}"
+    );
+    assert_eq!(
+        line["damage"], "1d8+3 slashing",
+        "the Battleaxe's die, Strength +2 and +1"
+    );
+    let notes = serde_json::to_value(&view.ladder[0].problems).unwrap();
+    assert!(
+        notes.as_array().unwrap().iter().any(|n| n["message"]
+            .as_str()
+            .is_some_and(|m| m.contains("Battleaxe"))),
+        "a note names the base: {notes}"
     );
     app.state.homebrew_trial_end(&view.trial_id).unwrap();
 
