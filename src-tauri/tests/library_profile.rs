@@ -18,7 +18,7 @@ use borealis_authoring::form::FormState;
 use borealis_lib::content_dto::ContentProgress;
 use borealis_lib::content_packs::EventSink;
 use borealis_lib::dto::Ruleset;
-use borealis_lib::homebrew_dto::HomebrewPackRequest;
+use borealis_lib::homebrew_dto::{HomebrewPackRequest, HomebrewTrialChange, HomebrewTrialSetup};
 use borealis_lib::state::{AppPaths, AppState};
 use serde_json::json;
 use std::path::{Path, PathBuf};
@@ -223,11 +223,33 @@ fn creator_saves_on_a_large_library() {
             state.homebrew_save_draft(&draft, &NoEvents).unwrap()
         });
         step("  search re-sync", || wait_search(&state));
-        let reopened = state
-            .homebrew_open_draft(&pack, saved.element_ids.first().map(String::as_str), None)
-            .unwrap();
+        let reopened = step("  open the saved spell", || {
+            state
+                .homebrew_open_draft(&pack, saved.element_ids.first().map(String::as_str), None)
+                .unwrap()
+        });
         draft = reopened.draft_id;
         form = reopened.form;
+        if i == 1 {
+            // flow 1's Try it: the spell on a test character
+            let trial = step("Try it (start)", || {
+                state
+                    .homebrew_trial_start(&draft, &HomebrewTrialSetup::default())
+                    .unwrap()
+            });
+            step("  Try it (level 3)", || {
+                state
+                    .homebrew_trial_update(
+                        &trial.trial_id,
+                        &HomebrewTrialChange {
+                            level: Some(3),
+                            ..HomebrewTrialChange::default()
+                        },
+                    )
+                    .unwrap()
+            });
+            state.homebrew_trial_end(&trial.trial_id).unwrap();
+        }
     }
 
     let class = state

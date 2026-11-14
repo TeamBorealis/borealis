@@ -218,7 +218,7 @@ impl AppState {
 
     /// The pack as the Content page lists it.
     pub(crate) fn hb_pack_dto(&self, pack_id: &str) -> ApiResult<ContentPack> {
-        self.list_packs()?
+        self.packs_listed(Some(pack_id))?
             .into_iter()
             .find(|p| p.id == pack_id)
             .ok_or_else(|| ApiError::internal("the homebrew pack is missing after a save"))

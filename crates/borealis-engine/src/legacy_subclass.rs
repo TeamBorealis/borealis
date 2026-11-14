@@ -30,6 +30,7 @@ use crate::profile::{RulesetProfile, SubclassRename};
 use crate::universe::{Cond, EditionStatus, UElem, URule};
 use borealis_content::expr::{BoolExpr, RequirementsExpr, SupportsExpr, SupportsLeaf};
 use borealis_content::Rule;
+use rayon::prelude::*;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -104,8 +105,9 @@ pub(crate) fn adopt(
     let ctx = Ctx {
         elems,
         choices: &choices,
+        // each subclass on its own (in parallel)
         class_of: subclasses
-            .iter()
+            .par_iter()
             .map(|&i| (i, classes_of(elems, pos, &choices, i)))
             .collect(),
         keys: subclasses
@@ -115,8 +117,9 @@ pub(crate) fn adopt(
         subclasses: &subclasses,
         renames: profile.subclass_renames(),
     };
+    // planned on their own (in parallel, in order), applied one after the other
     let plans: Vec<(usize, Plan)> = subclasses
-        .iter()
+        .par_iter()
         .filter(|&&i| elems[i].edition.is_foreign())
         .map(|&i| (i, plan(&ctx, i)))
         .collect();

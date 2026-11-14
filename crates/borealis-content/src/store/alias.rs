@@ -9,6 +9,7 @@
 
 use crate::element::Element;
 use crate::rules::Rule;
+use rayon::prelude::*;
 use std::collections::HashSet;
 
 /// Prefix of Aurora's 2024 Player's Handbook ids.
@@ -218,10 +219,10 @@ fn rewrite_element(e: &Element, map: &dyn Fn(&str) -> Option<String>) -> Option<
 
 /// Rewrite references to undefined PHB 2024 ids that have a loaded SRD 5.2.1 equivalent.
 /// Returns the elements in the same order; untouched elements are moved, not cloned.
-pub(crate) fn resolve_phb24_aliases<T>(
+pub(crate) fn resolve_phb24_aliases<T: Send>(
     items: Vec<T>,
-    element: impl Fn(&T) -> &Element,
-    with: impl Fn(T, Element) -> T,
+    element: impl Fn(&T) -> &Element + Sync,
+    with: impl Fn(T, Element) -> T + Sync,
 ) -> Vec<T> {
     let defined: HashSet<String> = items.iter().map(|i| element(i).id.clone()).collect();
     let map = |id: &str| -> Option<String> {
@@ -230,8 +231,9 @@ pub(crate) fn resolve_phb24_aliases<T>(
         }
         phb24_candidate(id).filter(|c| defined.contains(c))
     };
+    // each element on its own (in parallel, in order)
     items
-        .into_iter()
+        .into_par_iter()
         .map(|i| match rewrite_element(element(&i), &map) {
             Some(new) => with(i, new),
             None => i,

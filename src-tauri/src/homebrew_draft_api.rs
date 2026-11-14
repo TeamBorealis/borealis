@@ -403,11 +403,13 @@ impl AppState {
         sink: &dyn EventSink,
     ) -> ApiResult<HomebrewSaveResult> {
         let _guard = self.content_lock()?;
+        let mut timer = crate::load_timing::LoadTimer::named("homebrew save draft");
         let draft = self.hb_drafts.get(&self.paths.data, draft_id)?;
         let pack = self.hb_pack(&draft.pack_id)?;
         let hub = self.hub()?;
         let codec = CatalogBlockCodec;
         let cx = Self::hb_context(&hub, &codec);
+        timer.step("pack read", "");
         let refuse = |problems: Vec<HomebrewProblem>| {
             let mut e = ApiError::invalid("Fix the problems marked in red before saving.");
             e.details = serde_json::to_value(&problems).ok();
@@ -421,6 +423,7 @@ impl AppState {
             .filter(Problem::is_error)
             .map(|p| wire_problem(p, &saved_before))
             .collect();
+        timer.step("live checks", "");
         if !errors.is_empty() {
             return Err(refuse(errors));
         }
@@ -523,6 +526,7 @@ impl AppState {
         let writes: Vec<(&CreatorPack, &PackWrite)> = std::iter::once((&pack, &next))
             .chain(others.iter().map(|(p, w, _)| (p, w)))
             .collect();
+        timer.step("elements", &format!("{} written", writes.len()));
         match self.hb_commit_all(&writes, &checked, sink) {
             Ok(()) => {}
             Err(CommitError::Api(e)) => return Err(e),
@@ -536,14 +540,18 @@ impl AppState {
                 ));
             }
         }
+        timer.step("commit", "");
         self.hb_drafts.remove(&self.paths.data, draft_id)?;
         for r in rename.iter().chain(&first_save) {
             self.hb_follow_drafts(r);
         }
-        Ok(HomebrewSaveResult {
+        let result = HomebrewSaveResult {
             pack: self.hb_pack_dto(&draft.pack_id)?,
             element_ids: saved,
-        })
+        };
+        timer.step("pack listed", "");
+        timer.total("");
+        Ok(result)
     }
 
     /// Local characters that use a saved child of a draft, or the saved children inside it (spec 10.3's scan): asked

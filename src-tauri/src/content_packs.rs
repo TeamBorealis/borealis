@@ -152,23 +152,32 @@ impl AppState {
     /// # Errors
     /// `internal` if a lock is poisoned.
     pub fn list_packs(&self) -> ApiResult<Vec<ContentPack>> {
+        self.packs_listed(None)
+    }
+
+    /// [`Self::list_packs`], of the pack `only` alone when given (what a save of that pack answers with).
+    pub(crate) fn packs_listed(&self, only: Option<&str>) -> ApiResult<Vec<ContentPack>> {
         let hub = self.hub()?;
         let prefs = self.content_prefs();
-        let mut loaded: BTreeMap<&str, (usize, BTreeSet<String>)> = BTreeMap::new();
+        let mut loaded: BTreeMap<&str, (usize, BTreeSet<&str>)> = BTreeMap::new();
         for stored in hub.store.iter() {
             let pack = stored.file.split('/').next().unwrap_or_default();
+            if only.is_some_and(|o| o != pack) {
+                continue;
+            }
             let entry = loaded.entry(pack).or_default();
             entry.0 += 1;
-            entry.1.insert(stored.element.source.clone());
+            entry.1.insert(stored.element.source.as_str());
         }
         Ok(self
             .installed_packs()
             .iter()
+            .filter(|p| only.is_none_or(|o| p.manifest.id == o))
             .map(|p| {
                 let id = &p.manifest.id;
                 let enabled = id == CORE_PACK || !prefs.disabled_packs.contains(id);
                 let (element_count, sources) = match loaded.get(id.as_str()) {
-                    Some((n, s)) if enabled => (*n, s.clone()),
+                    Some((n, s)) if enabled => (*n, s.iter().map(|s| (*s).to_string()).collect()),
                     _ => disk_stats(p),
                 };
                 let (kind, redistributable) = kind_of(p);

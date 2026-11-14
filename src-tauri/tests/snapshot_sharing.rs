@@ -79,7 +79,10 @@ fn save_a_spell(state: &AppState, pack: &str, name: &str) {
         .unwrap();
     let form = v.form.with_field("name", json!(name));
     state.homebrew_update_draft(&v.draft_id, &form).unwrap();
-    state.homebrew_save_draft(&v.draft_id, &Quiet).unwrap();
+    let saved = state.homebrew_save_draft(&v.draft_id, &Quiet).unwrap();
+    // the save answers with its pack as the Content page lists it
+    let listed = state.list_packs().unwrap();
+    assert_eq!(Some(&saved.pack), listed.iter().find(|p| p.id == pack));
 }
 
 #[test]

@@ -4,6 +4,7 @@ use crate::error::ContentError;
 use crate::file::{ContentFile, IndexFile, PackFileKind, PackManifest, PackOrigin};
 use crate::issue::{Issue, IssueCode};
 use crate::ruleset::Ruleset;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Component, Path, PathBuf};
@@ -421,6 +422,32 @@ impl ContentStoreBuilder {
             source_editions,
         } = self;
         let retagged = source_edition_tags(&files, &source_editions);
+        // the edition an element of a file is built with, and the book whose user edition set it
+        let edition_of = |file: &ContentFile, at: (usize, usize)| match retagged.get(&at) {
+            Some((ruleset, book)) => (Some(*ruleset), Some(book.clone())),
+            None => (file.elements[at.1].ruleset.or(file.ruleset), None),
+        };
+        // the previous store's element for each file element that is it as built (compared in parallel)
+        let reused: Vec<Vec<Option<Arc<Element>>>> = match previous {
+            None => Vec::new(),
+            Some(p) => files
+                .par_iter()
+                .enumerate()
+                .map(|(fi, pending)| {
+                    let file = pending.file.as_ref();
+                    (0..file.elements.len())
+                        .map(|ei| {
+                            let element = &file.elements[ei];
+                            let old = p.get_exact(&element.id)?;
+                            let (ruleset, _) = edition_of(file, (fi, ei));
+                            old.element
+                                .equals_with_ruleset(element, ruleset)
+                                .then(|| Arc::clone(&old.element))
+                        })
+                        .collect()
+                })
+                .collect(),
+        };
         let shared = |element: Element| -> Arc<Element> {
             match previous.and_then(|p| p.get_exact(&element.id)) {
                 Some(old) if *old.element == element => Arc::clone(&old.element),
@@ -446,13 +473,8 @@ impl ContentStoreBuilder {
             }
             loaded_files.push(pending.name.clone());
             let file = pending.file;
-            let file_ruleset = file.ruleset;
             for (element_index, element) in file.elements.iter().enumerate() {
-                let (ruleset, user_edition_book) = match retagged.get(&(file_index, element_index))
-                {
-                    Some((ruleset, book)) => (Some(*ruleset), Some(book.clone())),
-                    None => (element.ruleset.or(file_ruleset), None),
-                };
+                let (ruleset, user_edition_book) = edition_of(&file, (file_index, element_index));
                 if let Some(&old) = position.get(&element.id) {
                     match pending.origin {
                         PackOrigin::Core => {
@@ -488,11 +510,12 @@ impl ContentStoreBuilder {
                 }
                 position.insert(element.id.clone(), slots.len());
                 // the previous store's element when it is this one as built, else a copy with its edition
-                let element = match previous.and_then(|p| p.get_exact(&element.id)) {
-                    Some(old) if old.element.equals_with_ruleset(element, ruleset) => {
-                        Arc::clone(&old.element)
-                    }
-                    _ => Arc::new(Element {
+                let element = match reused
+                    .get(file_index)
+                    .and_then(|f| f[element_index].clone())
+                {
+                    Some(old) => old,
+                    None => Arc::new(Element {
                         ruleset,
                         ..element.clone()
                     }),
