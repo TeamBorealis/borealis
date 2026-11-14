@@ -66,13 +66,14 @@ const HELPERS = `(() => {
     seen,
     /**
      * False while the phone status line is open and will fold by itself (a plain message folds 4 s after it shows,
-     * STATUS_FOLD_MS in Chrome.tsx, moving everything pinned above it). A folded line, or one held open (a pending
-     * choice, a running command, an offer), will not move on its own.
+     * STATUS_FOLD_MS in Chrome.tsx, moving everything pinned above it; a running command folds 4 s after it ends). A
+     * folded line, or one held open by a pending choice or an offer, will not move on its own.
      */
     statusSettled() {
       const st = document.querySelector('.aur-status');
       if (!st || st.dataset.collapsed !== 'false') return true;
-      return st.dataset.pending === 'true' || st.querySelector('.aur-status-busyline, button') !== null;
+      if (st.querySelector('.aur-status-busyline')) return false;
+      return st.dataset.pending === 'true' || st.querySelector('button') !== null;
     },
     /** What the page looked like around a touch that did not reach its target. */
     probe(x, y, since, sel, text) {
