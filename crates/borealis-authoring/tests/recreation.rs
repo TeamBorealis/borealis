@@ -24,7 +24,8 @@
 //! The snapshots are compared as JSON in a canonical form ([`probe::canonical`]): what only orders a list or labels a
 //! spell choice, white space in text, and a save DC's formula text (its value is compared) are left out.
 //!
-//! About 5 minutes in a debug build on 10 cores, 15 s in release
+//! About 30 s in a test build on 10 cores (the workspace's test profile builds the engine, the content store and the
+//! dependencies at opt-level 1; at 0 it took 4.5 minutes), 15 s in release
 //! (`cargo test --release -p borealis-authoring --test recreation -- --nocapture`). Debugging aids:
 //! `BOREALIS_RECREATION_DUMP=<id>,<id>` prints elements before and after (`*`: every differing one, to
 //! `target/recreation-dump.jsonl`), `BOREALIS_RECREATION_CLIP=<n>` widens the differences printed.
@@ -212,20 +213,36 @@ fn ladders(entries: &[Entry], store: &ContentStore) -> Vec<Probe> {
     out
 }
 
-/// `f` over `items` on every core, in order.
+/// `f` over `items` on every core, results in the order of `items`. Each worker takes the next item when it is free
+/// (a ladder 1-20 costs many times a plain probe, so fixed chunks left most cores idle behind the slowest one).
 fn parallel<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
-    let threads = std::thread::available_parallelism().map_or(4, usize::from);
-    let chunk = items.len().div_ceil(threads).max(1);
-    std::thread::scope(|s| {
-        let handles: Vec<_> = items
-            .chunks(chunk)
-            .map(|c| s.spawn(|| c.iter().map(&f).collect::<Vec<R>>()))
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let threads = std::thread::available_parallelism()
+        .map_or(4, usize::from)
+        .min(items.len().max(1));
+    let next = AtomicUsize::new(0);
+    let mut done: Vec<(usize, R)> = std::thread::scope(|s| {
+        let handles: Vec<_> = (0..threads)
+            .map(|_| {
+                s.spawn(|| {
+                    let mut out = Vec::new();
+                    loop {
+                        let i = next.fetch_add(1, Ordering::Relaxed);
+                        let Some(item) = items.get(i) else {
+                            return out;
+                        };
+                        out.push((i, f(item)));
+                    }
+                })
+            })
             .collect();
         handles
             .into_iter()
             .flat_map(|h| h.join().expect("worker"))
             .collect()
-    })
+    });
+    done.sort_by_key(|(i, _)| *i);
+    done.into_iter().map(|(_, r)| r).collect()
 }
 
 /// A library and what the ladders and hosts made in it, so probes can start from their states.
@@ -574,10 +591,18 @@ fn every_bundled_element_recreated_from_its_form_is_engine_equivalent() {
     }
     let started = std::time::Instant::now();
     let ladders = ladders(&entries, &original);
-    let before = World::new(&original, &ladders);
+    // the two libraries' ladders are made side by side (each on every core), so no core waits for a long ladder
+    let (before, after) = std::thread::scope(|s| {
+        let after = s.spawn(|| World::new(&again, &ladders));
+        let before = World::new(&original, &ladders);
+        (
+            before,
+            after.join().expect("the re-created library's ladders"),
+        )
+    });
     let origins = before.origins();
     let before = before.with_origins(&origins);
-    let after = World::new(&again, &ladders).with_origins(&origins);
+    let after = after.with_origins(&origins);
     println!(
         "ladders: {} and {} origins in {:?}",
         ladders.len(),
