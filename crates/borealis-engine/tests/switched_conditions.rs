@@ -165,6 +165,34 @@ fn only_a_listed_condition_can_be_switched_on_and_any_can_be_switched_off() {
         .is_empty());
 }
 
+/// IpY2E: a condition the creator wrote with "Listed as a condition" off (`data.listed: false`) is no condition a
+/// character switches on, in a 2014 pack too, where the listed ones carry no tag either.
+#[test]
+fn a_condition_marked_unlisted_is_not_offered() {
+    const WARD: &str = "ID_EI_CONDITION_EMBER_WARD";
+    let ward = |ruleset: &str| {
+        json!({"id": WARD, "name": "Ember Ward", "type": "Condition", "source": "Ember Isles", "ruleset": ruleset,
+            "data": {"listed": false}, "rules": [{"kind": "stat", "name": "ac:misc", "value": "1"}]})
+    };
+    for (pack, ruleset, edition) in [
+        ("srd-5.1", "dnd2014", Ruleset::Dnd2014),
+        ("srd-5.2.1", "dnd2024", Ruleset::Dnd2024),
+    ] {
+        let e = engine(pack, ruleset, vec![ward(ruleset)]);
+        let s = commands::new_character(&e, edition);
+        let snap = e.derive(&s);
+        assert!(!snap.conditions.iter().any(|c| c.id == WARD), "{ruleset}");
+        assert_eq!(names(&snap), SRD, "{ruleset}: the SRD's stay listed");
+        assert!(
+            matches!(
+                commands::set_condition(&e, &s, WARD, true),
+                Err(CommandError::UnknownElement(_))
+            ),
+            "{ruleset}"
+        );
+    }
+}
+
 #[test]
 fn switched_conditions_are_saved_and_last_through_rests() {
     let e = engine("srd-5.2.1", "dnd2024", homebrew());

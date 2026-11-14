@@ -3,7 +3,8 @@
 //!
 //! The conditions a character can switch on are the `Condition` elements the loaded content defines (the SRD's,
 //! imported ones, homebrew ones), not the engine's helper conditions (`Internal`/`Core` sources, `_INTERNAL_` ids:
-//! Resistance (Fire), which features grant) and not Exhaustion, which has its own levels ([`crate::play_rules`]).
+//! Resistance (Fire), which features grant), not one the creator marks unlisted (`data.listed` false) and not
+//! Exhaustion, which has its own levels ([`crate::play_rules`]).
 //! A switched-on condition is a root of the character's graph ([`crate::graph::Graph::build`]): its rules apply like
 //! those of any element the character has, and requirements naming it hold. The switched-on ids are saved in
 //! [`crate::state::PlayState::conditions`]; none is on unless the user switches it on, so a character that never
@@ -12,7 +13,7 @@
 use crate::graph::Graph;
 use crate::snapshot::ConditionSnapshot;
 use crate::universe::{UElem, Universe};
-use borealis_content::{is_unrestrictable_source, Rule};
+use borealis_content::{is_unrestrictable_source, Element, Rule};
 
 /// The element type of a condition.
 pub const CONDITION_TYPE: &str = "Condition";
@@ -21,6 +22,22 @@ const EXHAUSTION_NAME: &str = "Exhaustion";
 const EXHAUSTION_RULE: &str = "exhaustion";
 /// The id marker of the engine's helper elements (`ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE`).
 const INTERNAL_MARKER: &str = "_INTERNAL_";
+/// The creator's mark of a condition not listed with the conditions ("Listed as a condition" off): `data.listed`
+/// false. A tag can't tell it, since the SRD 5.1 conditions carry none (IpY2E).
+pub const LISTED_KEY: &str = "listed";
+
+/// Is this condition one of the engine's helpers (`Internal`/`Core` source, an `_INTERNAL_` id: Resistance (Fire),
+/// which features grant), never listed with the conditions?
+#[must_use]
+pub fn is_helper(el: &Element) -> bool {
+    is_unrestrictable_source(&el.source) || el.id.contains(INTERNAL_MARKER)
+}
+
+/// Does the creator mark this condition as not listed with the conditions ([`LISTED_KEY`])?
+#[must_use]
+pub fn is_marked_unlisted(el: &Element) -> bool {
+    el.data.get(LISTED_KEY).and_then(serde_json::Value::as_bool) == Some(false)
+}
 
 /// Can a character switch this element on as a condition?
 #[must_use]
@@ -29,8 +46,8 @@ pub fn is_switchable(u: &UElem) -> bool {
     el.ty == CONDITION_TYPE
         && u.edition.is_accepted()
         && !u.superseded
-        && !is_unrestrictable_source(&el.source)
-        && !el.id.contains(INTERNAL_MARKER)
+        && !is_helper(el)
+        && !is_marked_unlisted(el)
         && !el.name.trim().eq_ignore_ascii_case(EXHAUSTION_NAME)
         && !el
             .rules

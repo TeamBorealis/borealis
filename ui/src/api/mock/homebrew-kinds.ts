@@ -9718,7 +9718,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "supports:Condition",
-          "data.tag"
+          "data.tag",
+          "data.listed"
         ],
         "help": "Shown with the conditions (Blinded, Prone...). Leave it off for helper conditions such as a damage resistance.",
         "default": true

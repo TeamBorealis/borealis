@@ -36,7 +36,7 @@ describe("WB-19 small types and the generic form (mock)", () => {
     const field = (k: string, key: string) => kind(k).fields.find((f) => f.key === key);
     expect(field("language", "rarity")).toMatchObject({ control: "combo", choices: [{ value: "standard" }, { value: "exotic" }, { value: "secret" }] });
     expect(field("proficiency", "covers")).toMatchObject({ control: "references", picker: { types: ["Proficiency"], multiple: true }, bindings: ["rules:grant Proficiency"] });
-    expect(field("condition", "listed")).toMatchObject({ control: "check", default: true, bindings: ["supports:Condition", "data.tag"] });
+    expect(field("condition", "listed")).toMatchObject({ control: "check", default: true, bindings: ["supports:Condition", "data.tag", "data.listed"] });
     expect(field("skill", "tags")).toMatchObject({ default: ["Skill"] });
     for (const key of ["alignment", "domains", "symbol"]) expect(field("deity", key)).toMatchObject({ required: true, help: expect.stringMatching(/^Every deity needs/) });
     expect(field("rulesText", "glossaryGroup")).toMatchObject({ control: "combo", allowCustom: true, bindings: ["data.tag", "supports:<group>"] });

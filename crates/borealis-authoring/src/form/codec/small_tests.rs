@@ -121,7 +121,11 @@ fn a_condition_is_listed_by_its_tag_and_mirror() {
         assert_eq!(one(&f, cx), condition_2024());
         let off = one(&f.with_field("listed", json!(false)), cx);
         assert_eq!(off.supports, ["Mind"]);
-        assert!(off.data.is_empty());
+        assert_eq!(
+            serde_json::to_value(&off.data).unwrap(),
+            json!({"listed": false}),
+            "marked unlisted (IpY2E)"
+        );
         // a 2014 condition has no tag and no mirror: listing it adds the tag only
         let old = el(
             json!({"id": "ID_X_CONDITION_RESIST", "name": "Resistance (Fire)", "type": "Condition",
@@ -133,6 +137,36 @@ fn a_condition_is_listed_by_its_tag_and_mirror() {
         let on = one(&f.with_field("listed", json!(true)), cx);
         assert_eq!(on.supports, ["Resistance", "Condition"]);
         assert!(on.data.is_empty());
+    });
+}
+
+/// IpY2E: the Play tab lists every condition that is not an engine helper (the SRD 5.1 conditions carry no tag), so an
+/// unlisted condition is marked `data.listed: false`, in both editions; listing it again takes the mark off.
+#[test]
+fn an_unlisted_condition_is_marked_so_the_play_tab_leaves_it_out() {
+    with_cx(|cx| {
+        for edition in ["dnd2014", "dnd2024"] {
+            let mut f = kind("condition")
+                .unwrap()
+                .new_form("e")
+                .with_field("name", json!("Ember Ward"))
+                .with_field("edition", json!(edition));
+            f.memo.id = Some("ID_X_CONDITION_EMBER_WARD".into());
+            let off = one(&f.with_field("listed", json!(false)), cx);
+            assert!(!off.supports.iter().any(|t| t == "Condition"), "{edition}");
+            assert_eq!(off.data.get("listed"), Some(&json!(false)), "{edition}");
+            assert_eq!(off.data.get("tag"), None, "{edition}");
+            let on = one(&f, cx);
+            assert!(on.supports.iter().any(|t| t == "Condition"), "{edition}");
+            assert_eq!(on.data.get("listed"), None, "{edition}");
+            // read back: off, kept off when unchanged, listed again without the mark
+            let read = element_to_form(&off, cx);
+            assert_eq!(read.fields["listed"], false, "{edition}");
+            assert_eq!(one(&read, cx), off, "{edition}");
+            let again = one(&read.with_field("listed", json!(true)), cx);
+            assert_eq!(again.data.get("listed"), None, "{edition}");
+            assert!(again.supports.iter().any(|t| t == "Condition"), "{edition}");
+        }
     });
 }
 

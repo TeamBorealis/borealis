@@ -5,7 +5,8 @@
 //!   the 2024 mirror `data.rarity`. A 2014 Aurora-shaped language holds one `Exotic` setter, `true` or `false`; it
 //!   keeps that shape.
 //! * **What a proficiency covers**: the plain `grant`s of `Proficiency` elements (a group granting each armor).
-//! * **Listed as a condition**: the tag `Condition` and the 2024 mirror `data.tag`.
+//! * **Listed as a condition**: the tag `Condition` and the 2024 mirror `data.tag`; off, `data.listed` false (the Play
+//!   tab lists every condition that is no engine helper, and the SRD 5.1 conditions carry no tag: IpY2E).
 //! * **A rules text's group**: `data.tag` and the support tag of the same name.
 
 use super::{decode, present, raw_setters, stored, to_json, Reader};
@@ -13,6 +14,7 @@ use crate::form::value::RefValue;
 use crate::form::write::Out;
 use crate::form::{FieldMemo, FormContext, FormProblem, Slots};
 use borealis_content::{GrantRule, Rule, Ruleset, Setter};
+use borealis_engine::conditions;
 use serde_json::{json, Value};
 
 /// A small type's field (spec 4.10).
@@ -28,6 +30,8 @@ pub enum SmallField {
 
 const PROFICIENCY: &str = "Proficiency";
 const CONDITION: &str = "Condition";
+/// The mark of a condition not listed with the conditions (`borealis_engine::conditions::LISTED_KEY`).
+const LISTED: &str = conditions::LISTED_KEY;
 /// Rank of the covers grants among new field rules (they lead, before the blocks).
 const RANK_COVERS: u8 = 0;
 
@@ -40,7 +44,7 @@ impl SmallField {
     pub(super) fn bindings(self) -> Vec<String> {
         let b: &[&str] = match self {
             Self::Covers => &["rules:grant Proficiency"],
-            Self::Listed => &["supports:Condition", "data.tag"],
+            Self::Listed => &["supports:Condition", "data.tag", "data.listed"],
             Self::GlossaryGroup => &["data.tag", "supports:<group>"],
         };
         b.iter().map(|s| (*s).to_string()).collect()
@@ -49,7 +53,8 @@ impl SmallField {
     pub(super) fn data_keys(self) -> Vec<&'static str> {
         match self {
             Self::Covers => Vec::new(),
-            Self::Listed | Self::GlossaryGroup => vec!["tag"],
+            Self::Listed => vec!["tag", LISTED],
+            Self::GlossaryGroup => vec!["tag"],
         }
     }
 
@@ -109,8 +114,15 @@ pub(super) fn read(field: SmallField, r: &mut Reader<'_>, cx: &FormContext<'_>) 
         SmallField::Listed => {
             let tag = take_tag(r, CONDITION);
             let data = r.take_data("tag");
-            let on = tag.is_some() || data.and_then(Value::as_str) == Some(CONDITION);
-            tagged_memo(json!(on), tag, data)
+            let listed = r.take_data(LISTED);
+            // as the Play tab lists it: tagged, or (the SRD 5.1's carry no tag) any condition that is no engine
+            // helper; never one marked unlisted
+            let tagged = tag.is_some() || data.and_then(Value::as_str) == Some(CONDITION);
+            let on =
+                !conditions::is_marked_unlisted(r.e) && (tagged || !conditions::is_helper(r.e));
+            let mut memo = tagged_memo(json!(on), tag, data);
+            memo.raw["listed"] = present(listed);
+            memo
         }
         SmallField::GlossaryGroup => {
             let data = r.take_data("tag");
@@ -156,6 +168,9 @@ pub(super) fn write_raw(field: SmallField, m: &FieldMemo, out: &mut Out, path: &
             out.supports(tags, &m.slots.supports);
             if let Some(v) = stored(&m.raw["data"]) {
                 out.element.data.insert("tag".into(), v.clone());
+            }
+            if let Some(v) = stored(&m.raw["listed"]) {
+                out.element.data.insert(LISTED.into(), v.clone());
             }
         }
     }
@@ -205,6 +220,9 @@ pub(super) fn write(
             };
             if let Some(v) = data {
                 out.element.data.insert("tag".into(), v);
+            }
+            if !on {
+                out.element.data.insert(LISTED.into(), json!(false));
             }
         }
         SmallField::GlossaryGroup => {

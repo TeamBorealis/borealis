@@ -618,9 +618,31 @@ fn a_new_condition_switched_on_applies_its_rules_and_is_saved_with_the_character
         .unwrap()
         .element_ids[0]
         .clone();
+    // IpY2E: one made with "Listed as a condition" off is not listed
+    let hidden = app.new_draft("condition");
+    let mut form = hidden.form.clone();
+    form.fields.insert("name".into(), json!("Ember Ward"));
+    form.fields.insert("listed".into(), json!(false));
+    let hidden = app.update(&hidden, &form);
+    let hidden = app
+        .state
+        .homebrew_save_draft(&hidden.draft_id, &Quiet)
+        .unwrap()
+        .element_ids[0]
+        .clone();
     let id = dwarf(&app);
     let before = app.state.get_snapshot(&id).unwrap();
     assert_eq!(before.play.speeds.walk, 30);
+    assert!(
+        !before
+            .play
+            .conditions
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|c| c["id"] == hidden.as_str()),
+        "{hidden} is not listed"
+    );
     let listed = condition(&before, &cond);
     assert_eq!(listed["on"], false);
     assert_eq!(listed["effects"], json!(["Speed -10"]));
