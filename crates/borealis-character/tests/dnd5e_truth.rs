@@ -11,7 +11,8 @@
 //!
 //! The reviewed exceptions (`exceptions.tsv`) and the per-file results (`results/*.json`,
 //! `rates.tsv`) live in `BOREALIS_DND5E_PRIVATE` (default `../specs/acceptance-private/dnd5e`
-//! next to the app repo when that folder exists); they hold content ids, so never in the repo.
+//! next to the app repo when that folder exists, also from a git worktree of the app); they hold
+//! content ids, so never in the repo.
 //! Pass = every check of every file with complete content matches or is a listed exception.
 //! Files with missing content are compared, not gated; their gate outcome rows still FAIL on a
 //! mismatch unless `exceptions.tsv` lists it as class `m` (the value depends on content that
@@ -74,8 +75,17 @@ fn private_dir() -> Option<PathBuf> {
     if let Ok(p) = std::env::var("BOREALIS_DND5E_PRIVATE") {
         return Some(PathBuf::from(p));
     }
-    let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../specs/acceptance-private/dnd5e");
-    p.is_dir().then_some(p)
+    find_private(Path::new(env!("CARGO_MANIFEST_DIR")))
+}
+
+/// The private results folder `specs/acceptance-private/dnd5e` of the workspace around the app:
+/// the nearest folder above the crate at `crate_dir` that holds it. The app's crates are two
+/// levels under the workspace's `app/`, a worktree's (`app/.claude/worktrees/<name>/`) deeper.
+fn find_private(crate_dir: &Path) -> Option<PathBuf> {
+    crate_dir
+        .ancestors()
+        .map(|d| d.join("specs/acceptance-private/dnd5e"))
+        .find(|p| p.is_dir())
 }
 
 fn is_dnd5e(p: &Path) -> bool {
@@ -511,4 +521,32 @@ fn run(repos: &Path) {
         "{} value(s) differ from what Aurora wrote (not in exceptions.tsv): {open:#?}",
         open.len()
     );
+}
+
+/// The reviewed exceptions are found from a git worktree of the app as well as from the app
+/// itself: a worktree's crates sit deeper (`app/.claude/worktrees/<name>/crates/...`), and
+/// without the folder every reviewed exception would read as a regression.
+#[test]
+fn the_private_folder_is_found_from_the_app_and_from_a_worktree() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let private = root.path().join("specs/acceptance-private/dnd5e");
+    std::fs::create_dir_all(&private).expect("private folder");
+    let app = root.path().join("app/crates/borealis-character");
+    let worktree = root
+        .path()
+        .join("app/.claude/worktrees/fix/crates/borealis-character");
+    for dir in [&app, &worktree] {
+        std::fs::create_dir_all(dir).expect("crate folder");
+        let found = find_private(dir).map(|p| p.canonicalize().expect("canonical"));
+        assert_eq!(
+            found,
+            Some(private.canonicalize().expect("canonical")),
+            "{}",
+            dir.display()
+        );
+    }
+    let elsewhere = tempfile::tempdir().expect("tempdir");
+    let lone = elsewhere.path().join("app/crates/borealis-character");
+    std::fs::create_dir_all(&lone).expect("crate folder");
+    assert_eq!(find_private(&lone), None);
 }
