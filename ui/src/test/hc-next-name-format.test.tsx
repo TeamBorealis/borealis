@@ -4,7 +4,7 @@ import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import type { HomebrewFieldSpec } from "../api/contract";
 import { MockApi } from "../api/mock/MockApi";
-import { MOCK_ITEM_KINDS } from "../api/mock/homebrew-item-kinds";
+import { MOCK_KIND_DESCRIPTORS } from "../api/mock/homebrew-kinds";
 import { CreatorEnvValue } from "../pages/homebrew/env";
 import { FieldView } from "../pages/homebrew/FieldView";
 import { ApiProvider } from "../state/ApiContext";
@@ -12,7 +12,7 @@ import { ApiProvider } from "../state/ApiContext";
 // "Name when made" with value chips (board HmGzM, spec 7.4): an item's `name-format` is plain text with the base item's
 // name and the enhancement bonus inserted as values, shown by their words and never as `{{parent}}`; braces can't be typed.
 
-const field = (): HomebrewFieldSpec => MOCK_ITEM_KINDS.find((k) => k.id === "magicItem")!.fields.find((f) => f.key === "nameFormat")!;
+const field = (): HomebrewFieldSpec => MOCK_KIND_DESCRIPTORS.find((k) => k.id === "magicItem")!.fields.find((f) => f.key === "nameFormat")!;
 
 let last = "";
 function Harness({ start }: { start: string }) {

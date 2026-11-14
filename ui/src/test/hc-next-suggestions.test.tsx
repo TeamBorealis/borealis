@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { HomebrewFieldSpec } from "../api/contract";
 import { MockApi } from "../api/mock/MockApi";
-import { MOCK_ITEM_KINDS } from "../api/mock/homebrew-item-kinds";
 import { MOCK_KIND_DESCRIPTORS } from "../api/mock/homebrew-kinds";
 import { CreatorEnvValue } from "../pages/homebrew/env";
 import { FieldView } from "../pages/homebrew/FieldView";
@@ -38,14 +37,14 @@ function renderField(api: MockApi, field: HomebrewFieldSpec, kindId: string, val
 
 describe("category and tag suggestions (mock)", () => {
   it("the descriptors name the suggestion pickers", () => {
-    expect(fieldOf(MOCK_ITEM_KINDS, "item", "category").picker?.types).toEqual(["Item Category"]);
+    expect(fieldOf(MOCK_KIND_DESCRIPTORS, "item", "category").picker?.types).toEqual(["Item Category"]);
     expect(fieldOf(MOCK_KIND_DESCRIPTORS, "feat", "tags").picker?.types).toEqual(["Tag", "Feat"]);
   });
 
   it("an item's Category offers its fixed categories, then the ones saved items use", async () => {
     const user = userEvent.setup();
     const api = await apiWithSaved("item", { name: "Lantern of Echoes", category: "Curios" });
-    renderField(api, fieldOf(MOCK_ITEM_KINDS, "item", "category"), "item", "");
+    renderField(api, fieldOf(MOCK_KIND_DESCRIPTORS, "item", "category"), "item", "");
     await user.click(screen.getByRole("button", { name: "Show Category options" }));
     const list = await screen.findByRole("listbox");
     await waitFor(() => expect(within(list).getByRole("option", { name: "Curios" })).toBeTruthy());

@@ -15,7 +15,6 @@ import { refreshSubclass, subclassProblems } from "./homebrew-subclass";
 import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
 import { CORE_PICKER_ROWS } from "./homebrew-core-rows";
 import { MOCK_COPY_SOURCES } from "./homebrew-copies";
-import { MOCK_ITEM_KINDS } from "./homebrew-item-kinds";
 import { MOCK_KIND_DESCRIPTORS } from "./homebrew-kinds";
 import type { TrialDraft } from "./homebrew-trial";
 import { copyCode, copyOf, type MockPackData, packFile, packFileName, readPackFile } from "./homebrew-transfer";
@@ -26,20 +25,11 @@ export function notImplemented(command: string): ApiError {
   return { code: "requirement_failed", message: `The homebrew creator can't do this yet (${command} is not implemented).`, details: { notImplemented: command } };
 }
 
-/** The kinds `borealis-authoring` defines: the mock serves their real descriptors (generated). */
-const REAL_KINDS = ["spell", "feat", "featFeature", "species", "race", "subRace", "raceVariant", "racialTrait", "speciesTraitOption", "class", "classFeature",
-  "subclass", "subclassFeature", "classOption", "background", "backgroundFeature", "backgroundVariant", "backgroundCharacteristics", "creature"];
-/** The small types and the generic form (WB-19), after the item forms as `kinds()` lists them. */
-const SMALL_KINDS = ["language", "proficiency", "condition", "damageType", "skill", "deity", "vision", "size", "alignment", "weaponProperty", "weaponGroup",
-  "weaponCategory", "armorGroup", "masteryProperty", "focusGroup", "dragonmark", "rulesText"];
-const realKinds = (ids: readonly string[]): HomebrewKindDescriptor[] => ids.map((id) => {
-  const k = MOCK_KIND_DESCRIPTORS.find((d) => d.id === id);
-  if (!k) throw new Error(`homebrew-kinds.ts has no ${id} form`);
-  return k;
-});
-
-/** The forms of the web mock: the real ones (generated from borealis-authoring), in the backend's order. */
-const KINDS: HomebrewKindDescriptor[] = [...realKinds(REAL_KINDS), ...realKinds(SMALL_KINDS), ...MOCK_ITEM_KINDS, ...realKinds(["other"])];
+/** The forms of the web mock: every kind `borealis-authoring` defines, as the backend's `homebrew_kinds` answers them
+ * (generated into `homebrew-kinds.ts`), in its order. */
+const KINDS: readonly HomebrewKindDescriptor[] = MOCK_KIND_DESCRIPTORS;
+/** The item forms (spec 4.9): their saved elements' categories are the Category suggestions. */
+const ITEM_KIND_IDS: readonly HomebrewKindId[] = ["item", "weapon", "armor", "magicItem", "itemPack", "equipmentPackage"];
 
 /** The pseudo picker types of the generic form (`borealis_authoring::form::{ELEMENT_TYPE_PICKER, SETTER_NAME_PICKER}`). */
 export const ELEMENT_TYPE_PICKER = "Element Type";
@@ -136,7 +126,7 @@ export class MockHomebrew {
   /** `spellLists`: the spell lists loaded classes declare (the spell form's list lints). */
   constructor(private putPack: (pack: ContentPack) => ContentPack, private spellLists: () => readonly string[] = () => []) {}
 
-  kinds(): HomebrewKindDescriptor[] { return KINDS; }
+  kinds(): HomebrewKindDescriptor[] { return [...KINDS]; }
 
   /** A homebrew pack removed in Additional content (`remove_pack`): its elements and drafts go with it. */
   forgetPack(packId: string): void {
@@ -487,8 +477,7 @@ export class MockHomebrew {
       .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
     // the backend reads loaded content (`item_categories`, `loaded_tags`); the mock reads the pack's saved elements
     if (types.includes(ITEM_CATEGORY_PICKER)) {
-      const items = new Set(MOCK_ITEM_KINDS.map((k) => k.id));
-      return sorted(saved.filter((e) => items.has(e.form.kind)).map((e) => String(e.form.fields.category ?? "")));
+      return sorted(saved.filter((e) => ITEM_KIND_IDS.includes(e.form.kind)).map((e) => String(e.form.fields.category ?? "")));
     }
     if (types[0] === TAG_PICKER) {
       const ofTypes = types.slice(1);

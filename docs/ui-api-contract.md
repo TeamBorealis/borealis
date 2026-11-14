@@ -580,8 +580,8 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   not blocks (the block list holds the others). Bad values (dice, ranges, costs, coins) are `form` problems at the field.
   A magic item's `nameFormat` (control `nameFormat`, the `name-format` setter as a string) is text with value chips:
   `{{parent}}` (the base item's name) and `{{enhancement}}` (its bonus) are shown by their words and inserted from
-  buttons; braces can't be typed (spec 7.4). The web mock serves the six descriptors from `api/mock/homebrew-item-kinds.ts`, written by
-  `crates/borealis-authoring/tests/form_items.rs`.
+  buttons; braces can't be typed (spec 7.4). The web mock serves the six descriptors from `api/mock/homebrew-kinds.ts` with every other kind, written by
+  `src-tauri/tests/contract_homebrew.rs`.
 - **Spell form (WB-11).** Kind `spell` (element type `Spell`, spec 4.1). Its fields bind the engine setter and, only when
   the element already has it, the 2024 mirror in `data` (`level` = setter `level` + `data.level`, `school`, `verbal`/
   `somatic`/`material` = `hasVerbalComponent`... + `data.components.v/s/m`, `concentration`, `ritual`, `materialCost` =

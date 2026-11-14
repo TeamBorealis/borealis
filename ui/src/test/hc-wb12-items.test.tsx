@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { HomebrewContentsRow, HomebrewFieldSpec, HomebrewPackageOption } from "../api/contract";
-import { MOCK_ITEM_KINDS } from "../api/mock/homebrew-item-kinds";
+import { MOCK_KIND_DESCRIPTORS } from "../api/mock/homebrew-kinds";
 import { FieldView } from "../pages/homebrew/FieldView";
 import { ContentsField, nextLetter, PackageOptionsField } from "../pages/homebrew/fields/ItemParts";
 import { mockApi, renderControl, Stateful } from "./hc-wb10-harness";
@@ -11,7 +11,7 @@ import { mockApi, renderControl, Stateful } from "./hc-wb10-harness";
 // weapon's mastery picker, pack contents and starting-equipment options, and a weapon and a magic item saved to a pack.
 
 const fieldOf = (kind: string, key: string): HomebrewFieldSpec => {
-  const f = MOCK_ITEM_KINDS.find((k) => k.id === kind)?.fields.find((x) => x.key === key);
+  const f = MOCK_KIND_DESCRIPTORS.find((k) => k.id === kind)?.fields.find((x) => x.key === key);
   if (!f) throw new Error(`no field ${kind}.${key}`);
   return f;
 };
