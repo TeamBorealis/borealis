@@ -309,6 +309,19 @@ fn picker_list_and_trial_types_match_the_ts_contract() {
             ty: "Class".into(),
             pack_id: None,
             relation: "lists".into(),
+            draft_id: None,
+        },
+    );
+    check(
+        &c,
+        "HomebrewElementRef",
+        &HomebrewElementRef {
+            id: "ID_EI_BACKGROUND_EMBER_WARDEN".into(),
+            name: "Ember Warden".into(),
+            ty: "Background".into(),
+            pack_id: Some("ember-isles".into()),
+            relation: "grants".into(),
+            draft_id: Some("hb-0123".into()),
         },
     );
     check(

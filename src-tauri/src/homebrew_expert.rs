@@ -1,11 +1,12 @@
 //! The creator's expert commands (spec 12.3-12.5): where used, SPELL LISTS, and multi-select edits (edition, tags,
 //! move to another homebrew pack, duplicate). Every change goes through the shared pieces: the element forms
 //! (`borealis_authoring::form::bulk_patched`, `with_spell_list`), WB-22's copier for duplicates, the one reference
-//! scanner (`borealis_authoring::pack::use_of`, the delete scan's), and the pack commit with its fast reload
+//! scanner (`borealis_authoring::pack::uses`, the delete scan's), and the pack commit with its fast reload
 //! ([`AppState::hb_commit_all`]). Each multi-select edit is one undoable step ([`crate::homebrew_undo`]).
 
 use crate::content_packs::EventSink;
 use crate::error::{ApiError, ApiResult};
+use crate::homebrew_drafts::DraftFile;
 use crate::homebrew_dto::{
     HomebrewBulkPatch, HomebrewBulkResult, HomebrewElementRef, HomebrewProblem,
     HomebrewSpellListRow, HomebrewSpellListView,
@@ -14,17 +15,17 @@ use crate::homebrew_files::PackWrite;
 use crate::homebrew_packs::{CommitError, CreatorPack};
 use crate::homebrew_refs::{class_list_name, granted, is_bundled, picker_row, plain_list_tag};
 use crate::homebrew_undo::PackBefore;
-use crate::state::AppState;
+use crate::state::{AppState, ContentHub};
 use borealis_authoring::form::{
     assign_ids, bulk_patched, copy_element, write_copy, BulkChange, CatalogBlockCodec, Copy,
     FormContext, FormProblem, WithElements,
 };
 use borealis_authoring::pack::{
     appended_expanded, bump_patch, descendants, expanded_ids, on_list, parent_of, removable,
-    source_name, use_of, with_elements, with_expanded_list, with_spell_list, without_elements,
-    CreatorElement, SOURCE_TYPE,
+    source_name, uses, with_elements, with_expanded_list, with_spell_list, without_elements,
+    CreatorElement, UseRelation, UseTarget, SOURCE_TYPE,
 };
-use borealis_content::{ContentFile, Element, Issue};
+use borealis_content::{ContentFile, Element, Issue, Ruleset};
 use std::collections::HashSet;
 use std::time::SystemTime;
 
@@ -106,8 +107,9 @@ fn next_write(pack: &CreatorPack, content: ContentFile) -> PackWrite {
 }
 
 impl AppState {
-    /// Where used (spec 12.3): the loaded elements (own packs and every other) that grant, offer, require or list
-    /// the element, strongest use first, then by name.
+    /// Where used (spec 12.3): the loaded elements (own packs and every other) and the own packs' unsaved new drafts
+    /// that grant, offer, require or list the element, strongest use first, then by name. A choice offers it as the
+    /// engine would, in either edition's universe (H0eFo: derived and dynamic tags, IM16).
     ///
     /// # Errors
     /// `not_found` for an element that is not loaded.
@@ -117,30 +119,79 @@ impl AppState {
             .store
             .element(element_id)
             .ok_or_else(|| ApiError::not_found("That element isn't loaded."))?;
-        let mut found: Vec<(borealis_authoring::pack::UseRelation, HomebrewElementRef)> = hub
+        let universes = [
+            hub.engine.universe(Ruleset::Dnd2014),
+            hub.engine.universe(Ruleset::Dnd2024),
+        ];
+        let found = UseTarget::in_universes(target, &universes);
+        let row = |el: &Element,
+                   relation: UseRelation,
+                   pack_id: Option<String>,
+                   draft_id: Option<String>| {
+            (
+                relation,
+                HomebrewElementRef {
+                    id: el.id.clone(),
+                    name: el.name.clone(),
+                    ty: el.ty.clone(),
+                    pack_id,
+                    relation: relation.as_str().to_string(),
+                    draft_id,
+                },
+            )
+        };
+        let mut rows: Vec<(UseRelation, HomebrewElementRef)> = hub
             .store
             .iter()
             .filter_map(|s| {
-                let relation = use_of(&s.element, target)?;
-                let pack = pack_of(&s.file);
-                Some((
-                    relation,
-                    HomebrewElementRef {
-                        id: s.element.id.clone(),
-                        name: s.element.name.clone(),
-                        ty: s.element.ty.clone(),
-                        pack_id: (!is_bundled(&s.file)).then(|| pack.to_string()),
-                        relation: relation.as_str().to_string(),
-                    },
-                ))
+                let relation = uses(&s.element, &found)?;
+                let pack = (!is_bundled(&s.file)).then(|| pack_of(&s.file).to_string());
+                Some(row(&s.element, relation, pack, None))
             })
             .collect();
-        found.sort_by(|(ra, a), (rb, b)| {
+        for (draft, els) in self.hb_unsaved_drafts(&hub)? {
+            for el in &els {
+                if let Some(relation) = uses(el, &found) {
+                    rows.push(row(
+                        el,
+                        relation,
+                        Some(draft.pack_id.clone()),
+                        Some(draft.draft_id.clone()),
+                    ));
+                }
+            }
+        }
+        rows.sort_by(|(ra, a), (rb, b)| {
             ra.cmp(rb)
                 .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
                 .then_with(|| a.id.cmp(&b.id))
         });
-        Ok(found.into_iter().map(|(_, r)| r).collect())
+        Ok(rows.into_iter().map(|(_, r)| r).collect())
+    }
+
+    /// Every own pack's unsaved new drafts (those with a file: an edited draft) with their elements under the ids
+    /// they have now ([`AppState::hb_pack_unsaved`]). A pack that can't be read is left out.
+    fn hb_unsaved_drafts(&self, hub: &ContentHub) -> ApiResult<Vec<(DraftFile, Vec<Element>)>> {
+        let drafts: Vec<DraftFile> = self
+            .hb_drafts
+            .list(&self.paths.data)?
+            .into_iter()
+            .filter(|d| d.element_id.is_none())
+            .collect();
+        let mut pack_ids: Vec<&str> = drafts.iter().map(|d| d.pack_id.as_str()).collect();
+        pack_ids.sort_unstable();
+        pack_ids.dedup();
+        let codec = CatalogBlockCodec;
+        let cx = FormContext::from_store(&hub.store, &codec);
+        let mut out = Vec::new();
+        for id in pack_ids {
+            let Ok(pack) = self.hb_pack(id) else {
+                continue;
+            };
+            let own: Vec<DraftFile> = drafts.iter().filter(|d| d.pack_id == id).cloned().collect();
+            out.extend(self.hb_pack_unsaved(hub, &pack, &cx, own)?);
+        }
+        Ok(out)
     }
 
     /// The SPELL LISTS grid of a pack for one list (spec 12.4): every loaded spell and the pack's own, whether it is

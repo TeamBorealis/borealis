@@ -21,7 +21,7 @@ pub use layout::{
     with_elements, without_elements, PackSettings, SettingsProblem, CONTENT_FILE, FIRST_VERSION,
     PACK_NAME_MAX, SOURCE_TYPE,
 };
-pub use refs::{id_tokens, mentions, names_any, offers, use_of, UseRelation};
+pub use refs::{id_tokens, mentions, names_any, offers, use_of, uses, UseRelation, UseTarget};
 pub use spell_lists::{
     appended, appended_expanded, expanded_ids, on_list, removable, with_expanded_list,
     with_spell_list, ListChange,

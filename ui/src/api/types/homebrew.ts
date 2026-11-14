@@ -816,6 +816,8 @@ export interface HomebrewElementRef {
   /** The pack holding it (null for bundled content shown without a pack). */
   packId: string | null;
   relation: HomebrewUseRelation;
+  /** A new element of an own pack that was never saved (H0eFo): its draft, which opens it. Absent for a saved one. */
+  draftId?: string;
 }
 
 /** One spell of a SPELL LISTS grid (spec 12.4): its picker row (the Magic grid's columns and filter facts) and its place

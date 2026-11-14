@@ -394,8 +394,13 @@ export function PackWorkspace() {
   });
 
   const homebrewIds = new Set((packs.data ?? []).filter((p) => p.kind === "homebrew").map((p) => p.id));
-  const openRef = (r: { id: string; packId: string | null }) => {
-    if (r.packId === packId) void openById(r.id);
+  const openRef = (r: { id: string; packId: string | null; draftId?: string }) => {
+    const { draftId } = r;
+    if (draftId && r.packId === packId) {
+      void leaveLists().then(async (left) => { if (left) await show(await api.homebrewOpenDraft({ packId, draftId })); })
+        .catch((e) => toast.push(errorMessage(e), "error"));
+    } else if (draftId) nav(`/homebrew/${encodeURIComponent(r.packId ?? "")}?draft=${encodeURIComponent(draftId)}`);
+    else if (r.packId === packId) void openById(r.id);
     else nav(`/homebrew/${encodeURIComponent(r.packId ?? "")}?element=${encodeURIComponent(r.id)}`);
   };
   // HC5: Edit on a loaded element makes a deep copy in this pack and opens it, as Copy to homebrew does

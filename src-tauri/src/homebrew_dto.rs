@@ -416,6 +416,9 @@ pub struct HomebrewElementRef {
     pub ty: String,
     pub pack_id: Option<String>,
     pub relation: String,
+    /// A new element of an own pack that was never saved (H0eFo): its draft, which opens it. Left out for a saved one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub draft_id: Option<String>,
 }
 
 /// One spell of a SPELL LISTS grid: its picker row (the Magic grid's columns and filter facts) and its place on the

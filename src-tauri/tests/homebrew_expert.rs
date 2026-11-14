@@ -283,6 +283,91 @@ fn where_used_tells_grants_from_choices_and_the_data_view_shows_the_element() {
     );
 }
 
+/// H0eFo: where used matches a choice the way the engine does: the tags a spell has from its level and school, a
+/// class's `$(spellcasting:list)` and `$(spellcasting:slots)` terms, and (IM16) the tags of the 2014 element a 2024
+/// one replaces; and it lists the pack's unsaved new drafts.
+#[test]
+fn where_used_counts_derived_and_dynamic_tags_and_unsaved_drafts() {
+    let app = App::new();
+    let fireball = app.loaded("Fireball", "Spell");
+    let used = app.state.homebrew_where_used(&fireball).unwrap();
+    let uses = |id: &str, relation: &str| used.iter().any(|r| r.id == id && r.relation == relation);
+    assert!(
+        uses(
+            "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_EVOCATION_SAVANT",
+            "selects"
+        ),
+        "a choice of 'Wizard, Evocation, (1||2||3)' offers a 3rd-level evocation: {used:?}"
+    );
+    assert!(
+        uses("ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING", "selects"),
+        "the Wizard's spellbook choice ($(spellcasting:list), $(spellcasting:slots)) offers it: {used:?}"
+    );
+    assert!(
+        !used
+            .iter()
+            .any(|r| r.id == "ID_2024_CLASS_FEATURE_CLERIC_SPELLCASTING"),
+        "the Cleric's list does not hold Fireball: {used:?}"
+    );
+
+    // IM16: the 2014 Rogue's archetype choice names a tag only the 2014 Thief carries
+    let used = app
+        .state
+        .homebrew_where_used("ID_2024_SUBCLASS_ROGUE_THIEF")
+        .unwrap();
+    assert!(
+        used.iter()
+            .any(|r| r.relation == "selects" && r.name == "Roguish Archetype"),
+        "the 2014 choice offers the 2024 Thief that replaces its own: {used:?}"
+    );
+
+    // an unsaved new draft of a pack that gives the element
+    let pack = app.create("Ember Isles", "EI", Ruleset::Dnd2024);
+    let alert = app.loaded("Alert", "Feat");
+    let v = app
+        .state
+        .homebrew_new_draft(&pack, "background", None, None, None)
+        .unwrap();
+    let v = app.edit(
+        &v,
+        &[
+            ("name", json!("Ember Warden")),
+            (
+                "originFeat",
+                json!({"feat": {"id": alert, "name": "", "type": "Feat"}, "params": {}}),
+            ),
+            (
+                "abilityScores",
+                json!(["Wisdom", "Strength", "Constitution"]),
+            ),
+            (
+                "skills",
+                json!([
+                    {"id": "ID_PROFICIENCY_SKILL_NATURE", "name": "", "type": "Proficiency"},
+                    {"id": "ID_PROFICIENCY_SKILL_SURVIVAL", "name": "", "type": "Proficiency"}
+                ]),
+            ),
+        ],
+    );
+    let used = app.state.homebrew_where_used(&alert).unwrap();
+    let draft = used
+        .iter()
+        .find(|r| r.name == "Ember Warden")
+        .unwrap_or_else(|| panic!("the unsaved background is listed: {used:?}"));
+    assert_eq!(draft.relation, "grants");
+    assert_eq!(draft.pack_id.as_deref(), Some(pack.as_str()));
+    assert_eq!(
+        draft.draft_id.as_deref(),
+        Some(v.draft_id.as_str()),
+        "it opens as its draft"
+    );
+    app.state.homebrew_save_draft(&v.draft_id, &Quiet).unwrap();
+    let used = app.state.homebrew_where_used(&alert).unwrap();
+    let saved: Vec<_> = used.iter().filter(|r| r.name == "Ember Warden").collect();
+    assert_eq!(saved.len(), 1, "saved, it is listed once: {used:?}");
+    assert_eq!(saved[0].draft_id, None);
+}
+
 #[test]
 fn tags_and_edition_change_together_as_one_undoable_step() {
     let app = App::new();

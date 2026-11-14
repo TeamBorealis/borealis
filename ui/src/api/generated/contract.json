@@ -7341,6 +7341,12 @@
   "HomebrewElementRef": {
    "k": "object",
    "props": {
+    "draftId": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "id": {
      "opt": false,
      "t": {

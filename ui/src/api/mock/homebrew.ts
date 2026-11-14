@@ -266,10 +266,9 @@ export class MockHomebrew {
       throw { ...apiError("invalid_argument", "Fix the problems marked in red before saving."), details: draft.problems };
     }
     const own = this.own(draft.packId);
+    const { type, name, id: fresh } = this.newIdentity(own, draft.form);
     const k = KINDS.find((x) => x.id === draft.form.kind)!;
-    const type = k.elementTypes[0] ?? (String(draft.form.fields.type ?? "").trim() || k.label);
-    const name = String(draft.form.fields.name).trim();
-    const id = draft.elementId ?? this.freeId(own, `ID_${own.code}_${TYPE_TOKENS[type] ?? slug(type)}_${slug(name)}`);
+    const id = draft.elementId ?? fresh;
     const summary: HomebrewElementSummary = {
       id, name, kind: k.id, elementType: type, parentId: null, edition: listEdition(draft.form), problems: { errors: 0, warnings: 0 }, hasDraft: false, tags: [], text: "",
       copiedText: this.copiedText.has(draftId) || (own.elements.get(id)?.summary.copiedText ?? false),
@@ -370,7 +369,7 @@ export class MockHomebrew {
     const spellTags = saved?.form.kind === "spell" ? tagsOf(saved.form)
       : [...(loaded.find((e) => e.id === elementId)?.tags ?? []), ...[...this.packs.values()].flatMap((p) => p.appends.get(elementId) ?? [])];
     const order = ["grants", "selects", "requires", "lists"];
-    return [...own, ...listingClasses(loaded, spellTags)].sort((a, b) => order.indexOf(a.relation) - order.indexOf(b.relation) || a.name.localeCompare(b.name));
+    return [...own, ...this.draftUses(elementId), ...listingClasses(loaded, spellTags)].sort((a, b) => order.indexOf(a.relation) - order.indexOf(b.relation) || a.name.localeCompare(b.name));
   }
 
   /** The packs' expanded lists of subclasses (spec 12.4): pack id -> subclass id -> the spells the pack put on it (an own
@@ -620,6 +619,27 @@ export class MockHomebrew {
   private savedWith(draftId: string): { savedWith?: string[] } {
     const names = (this.companions.get(draftId) ?? []).map((c) => String(c.fields.name ?? "").trim()).filter(Boolean);
     return names.length ? { savedWith: names } : {};
+  }
+
+  /** A new element's type, name and the id it gets on its first save (the backend's provisional id). */
+  private newIdentity(own: OwnPack, form: HomebrewForm): { type: string; name: string; id: string } {
+    const k = KINDS.find((x) => x.id === form.kind)!;
+    const type = k.elementTypes[0] ?? (String(form.fields.type ?? "").trim() || k.label);
+    const name = String(form.fields.name ?? "").trim();
+    return { type, name, id: this.freeId(own, `ID_${own.code}_${TYPE_TOKENS[type] ?? slug(type)}_${slug(name)}`) };
+  }
+
+  /** H0eFo: the edited new drafts (never saved) that use the element, as the backend lists them; a draft that can't be
+   * written yet (it has errors) is left out, as the backend's. */
+  private draftUses(elementId: string): HomebrewElementRef[] {
+    return [...this.drafts.values()]
+      .filter((d) => d.elementId === null && this.touched.has(d.draftId) && !d.problems.some((p) => p.severity === "error"))
+      .flatMap((d) => {
+        const relation = formUse(d.form, elementId);
+        if (!relation) return [];
+        const { type, name, id } = this.newIdentity(this.own(d.packId), d.form);
+        return [{ id, name, type, packId: d.packId, relation, draftId: d.draftId }];
+      });
   }
 
   private freeId(own: OwnPack, base: string): string {

@@ -5,12 +5,21 @@
 //! scan asks [`mentions`] of a character file; where-used asks [`use_of`] of every loaded element, which says how an
 //! element uses another: it grants it, a choice of it offers it, its prerequisite names it, or it lists it (a spell
 //! list, a package, a data reference). Deterministic, no AI (G7).
+//!
+//! A choice offers an element by tag the way the engine matches it when the element is looked for in the loaded
+//! universes ([`UseTarget::in_universes`], H0eFo): with the tags the engine gives it (a spell's level and school, a
+//! support id's name, the appended tags), the tags of the 2014 element a 2024 one replaces (IM16), a class's
+//! `$(spellcasting:list)` (the lists of the spellcasting the choice names) and `$(spellcasting:slots)` (any spell
+//! level a character could have slots for). A bare element ([`use_of`]) is matched by its own id and tags only.
 
-use borealis_content::expr::{BoolExpr, SupportsExpr, SupportsLeaf};
+use borealis_content::expr::{BoolExpr, Dynamic, SupportsExpr, SupportsLeaf};
 use borealis_content::{Element, Rule};
+use borealis_engine::eval::{supports_match, DynamicSupports, NoDynamics};
+use borealis_engine::universe::{UElem, Universe};
 use serde::Serialize;
 use serde_json::Value;
-use std::collections::HashSet;
+use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
 
 /// How one element uses another (`HomebrewUseRelation` on the wire).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
@@ -85,9 +94,126 @@ fn eval(expr: &BoolExpr<SupportsLeaf>, leaf: &dyn Fn(&SupportsLeaf) -> bool) -> 
 /// match nothing: they depend on a character).
 #[must_use]
 pub fn offers(text: &str, target: &Element) -> bool {
-    let Ok(Some(expr)) = SupportsExpr::parse(text) else {
-        return false;
-    };
+    UseTarget::bare(target).offered(text, None)
+}
+
+/// The highest spell level a slot can have: `$(spellcasting:slots)` offers a spell of any level up to it, since some
+/// character of the class reaches it.
+const HIGHEST_SLOT_LEVEL: u32 = 9;
+
+/// The element a where-used scan looks for, and what a choice can offer it by.
+pub struct UseTarget<'a> {
+    el: &'a Element,
+    /// Its prepared forms in the loaded universes (the engine's tags for it); empty for a bare element.
+    forms: Vec<(&'a Universe, &'a UElem)>,
+    /// Per form and spellcasting name: whether that spellcasting's lists hold it (`$(spellcasting:list)`).
+    on_lists: RefCell<HashMap<(usize, String), bool>>,
+}
+
+impl<'a> UseTarget<'a> {
+    /// The element alone: a choice offers it by its id or its own tags.
+    #[must_use]
+    pub fn bare(el: &'a Element) -> Self {
+        Self {
+            el,
+            forms: Vec::new(),
+            on_lists: RefCell::new(HashMap::new()),
+        }
+    }
+
+    /// The element as these universes hold it: a choice offers it as the engine would offer it to some character
+    /// (see the module). An element no universe holds is matched bare.
+    #[must_use]
+    pub fn in_universes(el: &'a Element, universes: &[&'a Universe]) -> Self {
+        let forms = universes
+            .iter()
+            .filter_map(|u| u.get(&el.id).map(|form| (*u, form)))
+            .collect();
+        Self {
+            forms,
+            ..Self::bare(el)
+        }
+    }
+
+    /// True when the supports expression `text` of a choice offers the element; `spellcasting` is the choice's
+    /// spellcasting name (what `$(spellcasting:list)` reads).
+    fn offered(&self, text: &str, spellcasting: Option<&str>) -> bool {
+        let Ok(Some(expr)) = SupportsExpr::parse(text) else {
+            return false;
+        };
+        if self.forms.is_empty() {
+            return bare_offers(&expr, self.el);
+        }
+        self.forms.iter().enumerate().any(|(at, (_, form))| {
+            let dynamics = AnyCharacter {
+                target: self,
+                at,
+                spellcasting,
+            };
+            supports_match(&expr, form, &dynamics)
+        })
+    }
+
+    /// True when the lists of the spellcasting named `name` in form `at`'s universe hold the element, as the engine
+    /// reads `$(spellcasting:list)` (`graph::SpellDynamics`): every spellcasting of that name, and every extension of
+    /// it (or of all); a list entry that is one spell's id holds a leveled spell.
+    fn on_list_of(&self, at: usize, name: &str, form: &UElem) -> bool {
+        let key = (at, name.to_string());
+        if let Some(&known) = self.on_lists.borrow().get(&key) {
+            return known;
+        }
+        let uni = self.forms[at].0;
+        let serves = |sc: &borealis_content::Spellcasting| {
+            let own = sc.name.as_deref().unwrap_or_default();
+            if sc.extend == Some(true) {
+                sc.all == Some(true) || own.eq_ignore_ascii_case(name)
+            } else {
+                own == name
+            }
+        };
+        let held = uni
+            .iter()
+            .filter_map(|u| u.el.spellcasting.as_ref())
+            .filter(|sc| serves(sc))
+            .flat_map(|sc| sc.list.iter().chain(sc.extends.iter()))
+            .any(|l| {
+                if l.is_spell_id() {
+                    l.supports.trim() == form.el.id && form.spell_level() != Some(0)
+                } else {
+                    l.expr()
+                        .ok()
+                        .flatten()
+                        .is_some_and(|e| supports_match(&e, form, &NoDynamics))
+                }
+            });
+        self.on_lists.borrow_mut().insert(key, held);
+        held
+    }
+}
+
+/// The `$(spellcasting:...)` terms of a choice for some character: the lists its spellcasting has, and any spell
+/// level up to [`HIGHEST_SLOT_LEVEL`]. `$(param:...)` names a value chosen on the character, so it matches nothing.
+struct AnyCharacter<'t, 'a> {
+    target: &'t UseTarget<'a>,
+    at: usize,
+    spellcasting: Option<&'t str>,
+}
+
+impl DynamicSupports for AnyCharacter<'_, '_> {
+    fn matches(&self, dynamic: &Dynamic, element: &UElem) -> bool {
+        match dynamic {
+            Dynamic::SpellcastingList => self
+                .spellcasting
+                .is_some_and(|name| self.target.on_list_of(self.at, name, element)),
+            Dynamic::SpellcastingSlots => element
+                .spell_level()
+                .is_some_and(|l| (1..=HIGHEST_SLOT_LEVEL).contains(&l)),
+            Dynamic::Other(_) => false,
+        }
+    }
+}
+
+fn bare_offers(expr: &SupportsExpr, target: &Element) -> bool {
     let range = expr.is_id_range_mode();
     eval(expr.root(), &|leaf| match leaf {
         SupportsLeaf::Tag(t) if range && t.starts_with("ID_") => target.id == *t,
@@ -97,9 +223,17 @@ pub fn offers(text: &str, target: &Element) -> bool {
 }
 
 /// How `user` uses `target`, the strongest way first (grants, then selects, requires, lists); `None` when it does
-/// not. An element never uses itself.
+/// not. An element never uses itself. `target` is matched bare (its own id and tags): [`uses`] matches it as the
+/// engine does.
 #[must_use]
 pub fn use_of(user: &Element, target: &Element) -> Option<UseRelation> {
+    uses(user, &UseTarget::bare(target))
+}
+
+/// How `user` uses the element `sought` looks for, as [`use_of`].
+#[must_use]
+pub fn uses(user: &Element, sought: &UseTarget<'_>) -> Option<UseRelation> {
+    let target = sought.el;
     if user.id == target.id {
         return None;
     }
@@ -115,7 +249,7 @@ pub fn use_of(user: &Element, target: &Element) -> Option<UseRelation> {
                     || s.default_id.as_deref().is_some_and(|d| names_any(d, &ids));
                 let by_tag = !text.trim().is_empty()
                     && s.ty.eq_ignore_ascii_case(&target.ty)
-                    && offers(text, target);
+                    && sought.offered(text, s.spellcasting.as_deref());
                 if by_id || by_tag {
                     found(UseRelation::Selects);
                 }
@@ -133,12 +267,16 @@ pub fn use_of(user: &Element, target: &Element) -> Option<UseRelation> {
         found(UseRelation::Requires);
     }
     if let Some(sc) = &user.spellcasting {
-        let listed = target.ty == "Spell"
+        let is_spell = target.ty == "Spell";
+        let listed = is_spell
             && sc
                 .list
                 .as_ref()
-                .is_some_and(|l| offers(&l.supports, target));
-        if listed || sc.extends.iter().any(|l| names_any(&l.supports, &ids)) {
+                .is_some_and(|l| sought.offered(&l.supports, None));
+        let extended = sc.extends.iter().any(|l| {
+            names_any(&l.supports, &ids) || (is_spell && sought.offered(&l.supports, None))
+        });
+        if listed || extended {
             found(UseRelation::Lists);
         }
     }
