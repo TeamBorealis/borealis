@@ -180,8 +180,7 @@ fn healing(l: &Live<'_>, cx: &Cx<'_, '_>) -> String {
 }
 
 fn damage_scaling(l: &Live<'_>, cx: &Cx<'_, '_>) -> Option<String> {
-    let levels = l.c.fields.get("levels")?.as_object()?;
-    let dice = crate::cantrips::dice_for_level(levels, cx.level)?;
+    let dice = crate::breath::scaled_dice(l, cx.level)?;
     Some(format!(
         "{}: {dice} {}",
         l.str("name").unwrap_or(&l.el.name),
