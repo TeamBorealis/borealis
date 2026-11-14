@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { MockApi } from "../api/mock";
@@ -13,6 +13,22 @@ async function openMenu(user: ReturnType<typeof userEvent.setup>, name: string):
   const items = within(await screen.findByRole("menu")).getAllByRole("menuitem").map((i) => i.textContent ?? "");
   await user.keyboard("{Escape}");
   return items;
+}
+
+/** Resolves once the app's first settings read was answered, settings coming `delayMs` late (a slow runner). */
+function settingsRead(api: MockApi, delayMs = 0): Promise<void> {
+  const getSettings = api.getSettings.bind(api);
+  let answered!: () => void;
+  const read = new Promise<void>((r) => { answered = r; });
+  Object.assign(api, {
+    getSettings: async () => {
+      if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
+      const s = await getSettings();
+      answered();
+      return s;
+    },
+  });
+  return read;
 }
 
 function drop(files: File[]) {
@@ -106,6 +122,8 @@ describe("No AI on mobile", () => {
 });
 
 describe("Import without AI", () => {
+  /** How late the settings are read in the slow-runner case (ItXcI). */
+  const SLOW_SETTINGS_MS = 300;
   const file = (name: string, text = "<x/>", type = "") => new File([text], name, { type });
 
   it("converts XML and .index together into one preview, without installing", async () => {
@@ -142,8 +160,13 @@ describe("Import without AI", () => {
   });
 
   it("explains that PDFs and photos need the optional AI assistant, without opening the AI wizard", async () => {
-    renderApp("/characters");
+    // Same race as ItXcI: before the settings are read the build counts as one without AI (the shorter message), so
+    // the file is dropped once they were.
+    const api = mock();
+    const read = settingsRead(api, SLOW_SETTINGS_MS);
+    renderApp("/characters", { api });
     await screen.findByRole("heading", { name: "Characters" });
+    await act(async () => { await read; await new Promise((r) => setTimeout(r, 0)); });
     drop([file("sheet.pdf", "%PDF", "application/pdf")]);
     expect(await screen.findByText(/sheet\.pdf cannot be imported directly\. PDFs, photos and plain text need the optional AI assistant/)).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Import" })).toBeNull();
@@ -165,8 +188,14 @@ describe("Import without AI", () => {
   });
 
   it("with AI on, other files still go to the AI import page", async () => {
-    renderApp("/characters", { aiEnabled: true });
+    // ItXcI: on a slow runner the Characters page shows before the settings are read, and a file dropped then gets the
+    // neutral message (AI counts as off until then, by design). The settings come late here on purpose, so the test
+    // drops only once the AI "+" (a link to the import page, a file picker button while AI is off) shows they were read.
+    const api = mock({ aiEnabled: true });
+    void settingsRead(api, SLOW_SETTINGS_MS);
+    renderApp("/characters", { api });
     await screen.findByRole("heading", { name: "Characters" });
+    expect((await screen.findByRole("link", { name: "Import content" })).getAttribute("href")).toBe("/import");
     drop([file("notes.txt", "a class", "text/plain")]);
     expect(await screen.findByRole("heading", { name: "Import" })).toBeTruthy();
   });
