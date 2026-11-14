@@ -22,7 +22,7 @@ const NAMES: [(&str, &str, &str); 2] = [
 ];
 
 /// `(case, requirements as the builder holds them, the text typed in "Prerequisite as shown")`.
-const CASES: [(&str, &str, &str); 17] = [
+const CASES: [(&str, &str, &str); 20] = [
     (
         "level and one of two abilities",
         "[character:4]&&([str:13]||[dex:13])",
@@ -49,6 +49,9 @@ const CASES: [(&str, &str, &str); 17] = [
         "",
     ),
     ("a statistic", "[innate speed:fly:1]", ""),
+    ("a speed of at least", "[innate speed:climb:30]", ""),
+    ("a statistic the picker names", "[darkvision:range:60]", ""),
+    ("a statistic of the author's", "[my homebrew:counter:2]", ""),
     ("a test words can't say", "[type:Spell]", ""),
     ("an element and a level", "ID_X_RACE_ELF&&[character:8]", ""),
     (

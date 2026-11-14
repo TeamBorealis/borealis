@@ -444,3 +444,34 @@ fn a_feat_feature_round_trips_with_the_shared_parts() {
         assert_eq!((e.name.as_str(), e.ty.as_str()), ("Cold", "Feat Feature"));
     });
 }
+
+/// IqzaQ: a statistic row reads as words, not as the statistic's key ("Innate speed:fly 1+"): a speed as the SRD names
+/// it, any other statistic by the statistic picker's label.
+#[test]
+fn a_statistic_prerequisite_reads_as_words() {
+    with_cx(|cx| {
+        for (stat, min, words) in [
+            ("innate speed:fly", 1, "A flying speed"),
+            ("speed:swim", 1, "A swimming speed"),
+            ("innate speed:climb", 30, "Climbing speed 30+ ft."),
+            ("innate speed", 35, "Walking speed 35+ ft."),
+            ("darkvision:range", 60, "Darkvision range 60+"),
+            ("my homebrew:counter", 2, "My homebrew counter 2+"),
+        ] {
+            let model = Node::group(
+                GroupMode::All,
+                vec![row(ConditionRow::Statistic {
+                    stat: stat.into(),
+                    min,
+                })],
+            );
+            let mut f = kind("feat").unwrap().new_form("e");
+            f.memo.id = Some("ID_EI_FEAT_SKY".into());
+            let f = f
+                .with_field("name", json!("Sky Touched"))
+                .with_field("category", json!("General"))
+                .with_field("requirements", new_cond(model));
+            assert_eq!(one(&f, cx).prerequisite, words, "{stat} {min}");
+        }
+    });
+}

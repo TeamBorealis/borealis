@@ -228,6 +228,29 @@ fn ability_name(a: Ability) -> String {
     capital(a.full())
 }
 
+/// The words of a speed statistic's movement mode (`innate speed:fly` -> "flying"), as the SRD names a speed.
+fn speed_mode(stat: &str) -> Option<&'static str> {
+    let stat = stat.trim().to_lowercase();
+    match stat.strip_prefix("innate ").unwrap_or(&stat) {
+        "speed" => Some("walking"),
+        "speed:fly" => Some("flying"),
+        "speed:swim" => Some("swimming"),
+        "speed:climb" => Some("climbing"),
+        "speed:burrow" => Some("burrowing"),
+        _ => None,
+    }
+}
+
+/// A statistic row in words (IqzaQ): a speed as authors and the SRD write it ("A flying speed", "Climbing speed 30+
+/// ft."), any other statistic by its label in the statistic picker ("Darkvision range 60+").
+fn statistic_phrase(stat: &str, min: i64) -> String {
+    match speed_mode(stat) {
+        Some(mode) if min <= 1 => format!("A {mode} speed"),
+        Some(mode) => format!("{} speed {min}+ ft.", capital(mode)),
+        None => format!("{} {min}+", crate::stats::label(stat)),
+    }
+}
+
 fn row_phrase(row: &ConditionRow, lookup: &dyn Lookup) -> Option<String> {
     Some(match row {
         ConditionRow::CharacterLevel { min } | ConditionRow::Level { min } => {
@@ -238,7 +261,7 @@ fn row_phrase(row: &ConditionRow, lookup: &dyn Lookup) -> Option<String> {
         ConditionRow::Feature { name } => format!("{} Feature", name.trim()),
         ConditionRow::Spellcasting { level } if *level <= 1 => "Spellcasting Feature".into(),
         ConditionRow::Spellcasting { level } => format!("Spell slots of level {level}"),
-        ConditionRow::Statistic { stat, min } => format!("{} {min}+", capital(stat)),
+        ConditionRow::Statistic { stat, min } => statistic_phrase(stat, *min),
         ConditionRow::Has { id } => lookup.find(id)?.name,
         ConditionRow::Lacks { id } => format!("No {}", lookup.find(id)?.name),
         ConditionRow::Type { .. } | ConditionRow::Kept { .. } => return None,

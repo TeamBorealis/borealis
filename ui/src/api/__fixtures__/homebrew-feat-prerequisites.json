@@ -555,7 +555,112 @@
         "kind": "feat",
         "preserved": []
       },
-      "prerequisite": "Innate speed:fly 1+"
+      "prerequisite": "A flying speed"
+    },
+    {
+      "case": "a speed of at least",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 30,
+                      "row": "statistic",
+                      "stat": "innate speed:climb"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Climbing speed 30+ ft."
+    },
+    {
+      "case": "a statistic the picker names",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 60,
+                      "row": "statistic",
+                      "stat": "darkvision:range"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Darkvision range 60+"
+    },
+    {
+      "case": "a statistic of the author's",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 2,
+                      "row": "statistic",
+                      "stat": "my homebrew:counter"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "My homebrew counter 2+"
     },
     {
       "case": "a test words can't say",

@@ -1,4 +1,5 @@
 import type { HomebrewExprNode, HomebrewForm } from "../types";
+import { MOCK_STAT_CATALOG } from "./homebrew-catalog";
 
 // The web mock's stand-in for the feat form's display sentence (`borealis-authoring` `codec/feat_prereq.rs`): the text
 // typed in "Prerequisite as shown", else the sentence the backend writes from the condition, as the 2024 SRD words it
@@ -9,6 +10,26 @@ type Row = Record<string, unknown>;
 type Node = HomebrewExprNode<Row>;
 
 const capital = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** The statistic picker's label of a plain (not class-scoped) statistic, as the backend's `stats::label` finds it. */
+const STAT_LABELS = new Map(MOCK_STAT_CATALOG.flatMap((g) => g.stats).filter((e) => !e.classScoped).map((e) => [e.name, e.label]));
+
+/** `stats::label` for the names the mock meets: the catalog's label, else the name's own words ("My homebrew counter"). */
+function statWords(stat: string): string {
+  const name = stat.trim().toLowerCase();
+  return STAT_LABELS.get(name) ?? capital(name.split(/[:\-_ ]/).filter(Boolean).join(" "));
+}
+
+/** The words of a speed statistic's movement mode (`innate speed:fly` -> "flying"), as `feat_prereq.rs` `speed_mode`. */
+const SPEED_MODES: Record<string, string> = { speed: "walking", "speed:fly": "flying", "speed:swim": "swimming", "speed:climb": "climbing", "speed:burrow": "burrowing" };
+
+/** A statistic row in words (IqzaQ): "A flying speed", "Climbing speed 30+ ft.", "Darkvision range 60+". */
+function statisticPhrase(stat: string, min: number): string {
+  const key = stat.trim().toLowerCase();
+  const mode = SPEED_MODES[key.startsWith("innate ") ? key.slice("innate ".length) : key];
+  if (mode) return min <= 1 ? `A ${mode} speed` : `${capital(mode)} speed ${min}+ ft.`;
+  return `${statWords(stat)} ${min}+`;
+}
 
 /** An element's name by id (the lookup the backend's sentence reads for "has" and "lacks" rows), or null. */
 export type NameOf = (id: string) => string | null;
@@ -21,7 +42,7 @@ function rowPhrase(row: Row, nameOf: NameOf): string | null {
     case "classLevel": return `${capital(String(row.class))} level ${min}+`;
     case "feature": return `${String(row.name ?? "").trim()} Feature`;
     case "spellcasting": return Number(row.level) <= 1 ? "Spellcasting Feature" : `Spell slots of level ${Number(row.level)}`;
-    case "statistic": return `${capital(String(row.stat))} ${min}+`;
+    case "statistic": return statisticPhrase(String(row.stat), min);
     case "has": return nameOf(String(row.id ?? ""));
     case "lacks": { const name = nameOf(String(row.id ?? "")); return name === null ? null : `No ${name}`; }
     default: return null;
