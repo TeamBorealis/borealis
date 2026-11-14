@@ -99,6 +99,10 @@ export interface AppSettings {
   autoContentUpdate: boolean;
   /** "Check for new versions of Borealis" (default on): at startup ask GitHub for the latest version number, nothing else. */
   checkAppUpdates: boolean;
+  /** Sources page "Restrict playtest content" (default off): playtest books start unchecked for new characters. */
+  restrictPlaytest: boolean;
+  /** Sources page "Restrict third-party content" (default off): books not marked official start unchecked for new characters. */
+  restrictThirdParty: boolean;
   rowHeight: RowHeight;
   /** Classic builder "Skills Panel Expanded" (default on). */
   skillsPanelExpanded: boolean;

@@ -3,6 +3,7 @@ import type { Api, CharacterSnapshot } from "../../api/contract";
 import { useConfirm } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
+import { withToggles } from "./sourceFilters";
 
 /**
  * Commit a per-character source restriction (null = every source): preview what would be removed, confirm, then apply.
@@ -55,10 +56,15 @@ export function defaultRestriction(saved: readonly string[] | null, installed: r
   return kept.length === known.size ? null : kept;
 }
 
-/** A new character starts on the saved default sources (Aurora's "apply default restrictions on new character"). */
+/**
+ * A new character starts on the saved default sources (Aurora's "apply default restrictions on new character"), less the
+ * playtest and third-party books when the Sources page toggles restrict them.
+ */
 export async function applyDefaultSources(api: Api, snap: CharacterSnapshot): Promise<CharacterSnapshot> {
   const saved = loadDefaultSources();
-  if (!saved) return snap;
-  const enabled = defaultRestriction(saved, (await api.listSources()).map((s) => s.id));
+  const toggles = await api.getSettings().catch(() => null);
+  if (!saved && !toggles?.restrictPlaytest && !toggles?.restrictThirdParty) return snap;
+  const sources = await api.listSources();
+  const enabled = withToggles(defaultRestriction(saved, sources.map((s) => s.id)), sources, toggles ?? {});
   return enabled ? api.setSourceRestrictions({ characterId: snap.id, enabledSources: enabled }) : snap;
 }

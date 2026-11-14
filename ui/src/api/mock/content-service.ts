@@ -161,7 +161,7 @@ export class ContentService {
       return {
         id, name, group: p.name, packId: p.id,
         elementCount: ELEMENTS.filter((e) => e.source === id).length + this.extra.filter((e) => e.source === id).length,
-        description: `Content from ${p.name}.`, playtest: false, ...this.editions.fields(name, p),
+        description: `Content from ${p.name}.`, playtest: false, thirdParty: false, ...this.editions.fields(name, p),
       };
     }));
   }

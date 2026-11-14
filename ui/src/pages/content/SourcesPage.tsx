@@ -5,12 +5,14 @@ import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useAsync } from "../../state/useAsync";
 import { useShell } from "../../components/shell/ShellContext";
-import { mdiAlertCircleOutline, mdiBookSearch, mdiContentSave, mdiFlask, mdiFolderOpen, mdiInformationOutline } from "@mdi/js";
+import { mdiAlertCircleOutline, mdiBookSearch, mdiContentSave, mdiFlask, mdiFolderOpen, mdiInformationOutline, mdiPuzzleOutline } from "@mdi/js";
 import { CheckBox, triState } from "../../components/controls";
 import { PaneShell } from "../builder/DescriptionPane";
 import "../builder/builder.css";
 import { defaultRestriction, loadDefaultSources, saveDefaultSources, useApplySourceRestrictions } from "./applySources";
 import { SourceMenu, type MenuItem } from "./SourceMenu";
+import { useSettings } from "../../state/SettingsContext";
+import { idsOfKind, KIND_LABEL, KIND_SETTING, restrictedCount, restrictedNote, withToggles, type SourceKind } from "./sourceFilters";
 import { BookEdition } from "./BookEdition";
 import "./content.css";
 
@@ -23,6 +25,8 @@ export function SourcesPage() {
   const { snapshot } = useCharacter();
   const applyRestrictions = useApplySourceRestrictions();
   const { openCompendium } = useShell();
+  const { settings, update } = useSettings();
+  const { restrictPlaytest, restrictThirdParty } = settings;
   const sources = useAsync(() => api.listSources(), [api]);
   const packs = useAsync(() => api.listPacks(), [api]);
   const [query, setQuery] = useState("");
@@ -35,7 +39,10 @@ export function SourcesPage() {
   const ids = useMemo(() => all.map((s) => s.id), [all]);
   // No character loaded (as at start): show the saved default sources, as Aurora's blank start character does (GitHub #22).
   const hasCharacter = snapshot != null;
-  const startDefault = useMemo(() => (hasCharacter ? null : defaultRestriction(stored, ids)), [hasCharacter, stored, ids]);
+  const startDefault = useMemo(
+    () => (hasCharacter ? null : withToggles(defaultRestriction(stored, ids), all, { restrictPlaytest, restrictThirdParty })),
+    [hasCharacter, stored, ids, all, restrictPlaytest, restrictThirdParty],
+  );
   const base = hasCharacter ? saved : startDefault;
   const [draft, setDraft] = useState<string[] | null>(base);
   useEffect(() => setDraft(base), [base]);
@@ -50,6 +57,33 @@ export function SourcesPage() {
     setDraft(normalise(cur));
   };
   const toggle = (s: ContentSource) => setMany([s.id], !allowed.has(s.id));
+  /** Restrict (or allow again) every book of a kind, remember the choice, and apply it to the loaded character. */
+  const toggleKind = (kind: SourceKind) => {
+    const on = !settings[KIND_SETTING[kind]];
+    void update({ [KIND_SETTING[kind]]: on }).catch(() => undefined);
+    const cur = new Set(allowed);
+    for (const id of idsOfKind(all, kind)) { if (on) cur.delete(id); else cur.add(id); }
+    const next = normalise(cur);
+    setDraft(next);
+    if (snapshot) void applyRestrictions(next);
+  };
+  const kindButton = (kind: SourceKind, icon: string) => {
+    const on = settings[KIND_SETTING[kind]];
+    const total = idsOfKind(all, kind).length;
+    const label = KIND_LABEL[kind];
+    const name = `Restrict ${label} content`;
+    const tip = on
+      ? `${name} is on: ${label} sources start unchecked. Click to allow them again.`
+      : total === 0 ? `${name}: no ${label} sources are installed`
+        : `${name}: uncheck the ${total} ${label} source${total === 1 ? "" : "s"}${snapshot ? " on this character" : ""} and on new characters`;
+    return (
+      <button type="button" className={`v4-grid-cmd v4-grid-toggle${on ? " on" : ""}`} aria-label={name} aria-pressed={on} title={tip}
+        disabled={!on && total === 0} onClick={() => toggleKind(kind)}><Svg d={icon} /></button>
+    );
+  };
+  const notes = (["playtest", "thirdParty"] as const)
+    .filter((k) => settings[KIND_SETTING[k]])
+    .map((k) => restrictedNote(restrictedCount(all, k, allowed), k));
   const sel = all.find((s) => s.id === described) ?? null;
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [anchor, setAnchor] = useState<string | null>(null);
@@ -116,11 +150,13 @@ export function SourcesPage() {
         <SearchInput value={query} onChange={setQuery} label="Search sources" placeholder="Search sources" />
         <span className="v4-grid-cmds" role="toolbar" aria-label="Source commands">
           <button type="button" className="v4-grid-cmd" aria-label="Save as default" title="Save the allowed sources as the default" onClick={() => { saveDefaultSources([...allowed]); setStored([...allowed]); }}><Svg d={mdiContentSave} /></button>
-          <button type="button" className="v4-grid-cmd" aria-label="Load default" title="Load the saved default sources" disabled={!stored} onClick={() => setDraft(defaultRestriction(stored, ids))}><Svg d={mdiFolderOpen} /></button>
+          <button type="button" className="v4-grid-cmd" aria-label="Load default" title="Load the saved default sources" disabled={!stored} onClick={() => setDraft(withToggles(defaultRestriction(stored, ids), all, { restrictPlaytest, restrictThirdParty }))}><Svg d={mdiFolderOpen} /></button>
           <button type="button" className="v4-apply" disabled={!snapshot || !dirty} title={snapshot ? "Restrict the loaded character to the allowed sources" : "Load a character first"} onClick={() => void applyRestrictions(draft)}>Apply to character</button>
-          <button type="button" className="v4-grid-cmd" aria-label="Restrict all playtest material" title="Restrict all playtest material" onClick={() => setMany(all.filter((a) => a.playtest).map((a) => a.id), false)}><Svg d={mdiFlask} /></button>
+          {kindButton("playtest", mdiFlask)}
+          {kindButton("thirdParty", mdiPuzzleOutline)}
           <button type="button" className="v4-grid-cmd" aria-label="View selected source in compendium" title="View selected source in compendium" disabled={!sel} onClick={() => sel && openCompendium({ source: sel.id })}><Svg d={mdiBookSearch} /></button>
         </span>
+        <span className="v4-restrict-note" role="status" aria-label="Restricted sources">{notes.join(" · ")}</span>
       </div>
       <div className="v4-grid" role="grid" aria-label="Sources" aria-multiselectable="true" tabIndex={0} onKeyDown={onGridKey} aria-rowcount={rows.length + 1}>
         <div className="v4-grid-head" role="row">
