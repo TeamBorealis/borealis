@@ -145,6 +145,9 @@
 .v4-new .v4-plain .sub { margin: -4px 0 8px; }
 .v4-new .aur-combo.light select { height: 26px; min-height: 0; }
 .v4-new .aur-textbox.light input:focus { outline: 0; }
+/* HC13 (3), H-arI: a subtle 1 px focus ring, the 1 px border in Highlight as Aurora's focused MetroTextBox draws it (an
+   accessibility exception to U7). Phones draw their own focused field (styles/phone/controls.css). */
+html:not(.phone) .v4-new .aur-textbox.light input:focus-visible:not([aria-invalid="true"]) { border-color: var(--accent-base); }
 .v4-new .aur-combo { margin-top: -3px; }
 .v4-new .v4-row + .v4-fl { margin-top: 10px; }
 .v4-new .v4-row + .v4-fl + .aur-combo { margin-top: -2px; }
