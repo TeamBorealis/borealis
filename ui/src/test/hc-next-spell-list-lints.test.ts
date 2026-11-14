@@ -17,6 +17,8 @@ async function spellWith(lists: string[]) {
 describe("spell list lints (mock)", () => {
   it("a declared list is clean; a misspelled or unknown one is a warning", async () => {
     expect(await spellWith(["Wizard"])).toEqual([]);
+    // the SRD lists the mock's real SRD copies carry are known, as the backend's loaded SRD classes declare them
+    expect(await spellWith(["Sorcerer", "Bard"])).toEqual([]);
     expect(await spellWith(["Wizard", "Wizzard"])).toEqual([
       ["lint.unknown_spell_list", "warning", "No loaded class or choice uses the spell list \"Wizzard\". Check the spelling: there is a list \"Wizard\"."],
     ]);

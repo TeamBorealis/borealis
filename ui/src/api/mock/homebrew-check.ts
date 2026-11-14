@@ -35,9 +35,13 @@ function listClasses(loaded: readonly ElementSummary[]): ElementSummary[] {
   return loaded.filter((e) => e.type === "class" && (tags.has(e.id.toLowerCase()) || tags.has(e.name.toLowerCase())));
 }
 
-/** The spell lists the mock's loaded classes declare, by name. */
+/** The lists the bundled SRD caster classes declare, always loaded in the app (`homebrew_spell.rs`
+ * `the_spell_lists_offered_are_the_lists_loaded_classes_declare`): the mock's real SRD copies carry them. */
+const SRD_SPELL_LISTS = ["Bard", "Cleric", "Druid", "Paladin", "Ranger", "Sorcerer", "Warlock", "Wizard"];
+
+/** The spell lists the spell list lints know on the mock: the SRD casters' and the mock's loaded classes', by name. */
 export function spellListNames(loaded: readonly ElementSummary[]): string[] {
-  return [...new Set(listClasses(loaded).map((e) => e.name))];
+  return [...new Set([...SRD_SPELL_LISTS, ...listClasses(loaded).map((e) => e.name)])];
 }
 
 /** The Spell List picker rows (`homebrew_refs::SPELL_LIST_TYPE`). */
