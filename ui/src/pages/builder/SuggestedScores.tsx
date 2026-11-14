@@ -31,7 +31,7 @@ export function SuggestedScoresCard({ abilities, suggested }: { abilities: Abili
   return (
     <section className="abil-suggest" role="region" aria-label={title}>
       <div className="abil-suggest-text">
-        <h3 className="abil-suggest-title">{title}</h3>
+        <h2 className="abil-suggest-title">{title}</h2>
         <p className="abil-suggest-scores">
           {ABILITY_KEYS.map((k) => <span key={k}>{`${SHORT(k)} ${suggested.scores[k]}`}</span>)}
         </p>

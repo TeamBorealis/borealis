@@ -36,7 +36,7 @@ interface GrantedFeatsProps {
 export function GrantedFeats({ feats, onDescribe }: GrantedFeatsProps) {
   return (
     <section className="added-picks granted-feats" aria-label="Granted feats section">
-      <h3 className="pick-group-label">Granted feats</h3>
+      <h2 className="pick-group-label">Granted feats</h2>
       <ul className="added-list" aria-label="Granted feats">
         {feats.map((f) => (
           <li key={f.id}>

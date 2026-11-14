@@ -86,7 +86,7 @@ export function SlotList({ slots, emptyText = EMPTY_TEXT, describedId, onDescrib
     <div className="pick-stack" ref={stackRef}>
       {groups.map((g, i) => (
         <section key={g.key} aria-label={regionNames[i]}>
-          {g.label && (i === 0 || groups[i - 1]!.label !== g.label) && <h3 className="pick-group-label">{g.label}</h3>}
+          {g.label && (i === 0 || groups[i - 1]!.label !== g.label) && <h2 className="pick-group-label">{g.label}</h2>}
           <PickerGroup characterId={snapshot.id} group={g} isNext={g.slots.some((s) => s.id === wanted)}
             open={isOpen(g)} onToggle={(o) => setOpenKeys((m) => ({ ...m, [g.key]: o }))}
             describedId={described} onDescribe={describe} onChoose={(s, e) => void choose(s, e)} onClear={clear}

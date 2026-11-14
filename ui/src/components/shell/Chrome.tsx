@@ -76,7 +76,8 @@ export function MainTabs() {
   );
 }
 
-/** Character profile block (right of the tab row): name, build line, XP line, portrait; a ringed plus button when nothing is open. */
+/** Character profile block (right of the tab row): name, build line, XP line, portrait; a ringed plus button when nothing is open.
+ * IoeL0: a landmark of its own, so its build and XP lines are inside one (axe `region`). */
 export function ProfileBlock() {
   const nav = useNavigate();
   const { snapshot } = useShellActions();
@@ -93,7 +94,7 @@ export function ProfileBlock() {
   const openQuickView = () => setQuickOpen(true);
   const openPortraits = () => setPortraitsOpen(true);
   return (
-    <div className="aur-profile">
+    <section className="aur-profile" aria-label="Character profile">
       {quickOpen && <QuickViewFlyout snapshot={snapshot} onClose={() => setQuickOpen(false)} />}
       <div className="aur-profile-text">
         <button type="button" className="name" onClick={openQuickView}>{snapshot.name}</button>
@@ -103,7 +104,7 @@ export function ProfileBlock() {
       <button type="button" className="aur-portrait-btn" aria-label="Open portraits" onClick={openPortraits}>
         <Portrait src={snapshot.portrait} name={snapshot.name} className="aur-portrait" />
       </button>
-    </div>
+    </section>
   );
 }
 

@@ -46,7 +46,7 @@ export function AddedPicks({ kind, spellcasting, onDescribe }: AddedPicksProps) 
   return (
     <section className="added-picks" aria-label={`Added ${PLURAL[kind]}`}>
       <div className="added-head">
-        <h3 className="pick-group-label">Added {PLURAL[kind]}</h3>
+        <h2 className="pick-group-label">Added {PLURAL[kind]}</h2>
         <Button small icon="plus" className="added-add" disabled={busy} onClick={() => setAdding(true)}>{addLabel}</Button>
       </div>
       {picks.length === 0
