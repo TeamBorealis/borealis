@@ -357,8 +357,10 @@ export async function device(platform, evidence) {
         // the phone status line folded after a save, and every retry went to the old point)
         const { x, y, aimed } = await aim(sel, text);
         if (!aimed) t.stats.unaimed += 1;
-        const since = await ev(`(() => { window.__dv.clicked = false;
-          window.__dv.q(${arg(sel)}, ${arg(text)})?.addEventListener('click', () => { window.__dv.clicked = true; }, { capture: true, once: true });
+        // reached = the target got the touch's click or its pointer up (a press the runner delivered tens of seconds late
+        // reached a select, whose sheet then opened, and the harness kept touching the sheet's title)
+        const since = await ev(`(() => { window.__dv.clicked = false; const e = window.__dv.q(${arg(sel)}, ${arg(text)});
+          for (const type of ['click', 'pointerup']) e?.addEventListener(type, () => { window.__dv.clicked = true; }, { capture: true, once: true });
           return window.__dv.now(); })()`);
         const touchedAt = Date.now();
         const sent = await d.touch(x, y);
