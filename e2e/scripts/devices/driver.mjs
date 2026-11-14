@@ -37,6 +37,8 @@ const TAP_TRIES = 4;
 /** The phone status line folds this long after a plain message (ui/src/components/shell/Chrome.tsx STATUS_FOLD_MS). */
 const STATUS_FOLD_MS = 4_000;
 const STATUS_FOLD_MARGIN_MS = 600;
+/** The soft keyboard takes this long to go away after its field gives up the focus. */
+const KEYBOARD_AWAY_MS = 800;
 /** iOS: tries of one XCTest press, and the pause between them. */
 const PRESS_TRIES = 5;
 const PRESS_RETRY_MS = 8_000;
@@ -101,7 +103,9 @@ const HELPERS = `(() => {
       const e = this.q(sel, text); if (!e) return null;
       const r = e.getBoundingClientRect(); const x = r.x + r.width / 2; const y = r.y + r.height / 2;
       const h = document.elementFromPoint(x, y);
-      return { x, y, hit: !!h && (h === e || e.contains(h)) };
+      // the soft keyboard is up and the target is not the focused field's own control
+      const kb = document.documentElement.classList.contains('kb-open') && !e.contains(document.activeElement) && !document.activeElement?.contains(e);
+      return { x, y, hit: !!h && (h === e || e.contains(h)), kb };
     },
     reveal(sel, text) {
       const e = this.q(sel, text); if (!e) return false;
@@ -291,6 +295,14 @@ export async function device(platform, evidence) {
     for (let i = 0; i < STILL_READS_MAX; i += 1) {
       await sleep(STILL_POLL_MS);
       const next = await ev(`window.__dv.aim(${arg(sel)}, ${arg(text)})`);
+      if (next && !next.hit && next.kb) {
+        // the keyboard covers the target (a field kept the focus): put it away, as a tap outside the field does
+        await ev(`document.activeElement instanceof HTMLElement && document.activeElement.blur(); true`);
+        await sleep(KEYBOARD_AWAY_MS);
+        await ev(`window.__dv.reveal(${arg(sel)}, ${arg(text)})`);
+        r = null;
+        continue;
+      }
       if (r && next && next.hit && Math.abs(next.x - r.x) < 1 && Math.abs(next.y - r.y) < 1) return { x: next.x, y: next.y, aimed: true };
       r = next ?? r;
     }
