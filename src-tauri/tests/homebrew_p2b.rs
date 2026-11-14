@@ -3,7 +3,8 @@
 //!
 //! * Try it's level ladder tells a subclass's level problems in the creator's plain words (WB-07's sentences);
 //! * a homebrew weapon tried out is a weapon: carried and equipped (never attuned when it needs no attunement), an
-//!   attack, never a feature, and offered by the Weapon Mastery choice;
+//!   attack, never a feature, and offered by the Weapon Mastery choice; an armor is worn and sets the Armor Class, and
+//!   a magic weapon or armor on one base item adds its +1 to the attack line or the AC (HmG6I);
 //! * a weapon's live preview gives its damage and type, properties, mastery, weapon category, cost with its coin and
 //!   weight;
 //! * a creature's live preview (the compendium's monster entry) is the whole stat block: size, type and alignment,
@@ -482,4 +483,113 @@ fn spell_lists_edit_an_own_subclass_s_expanded_list_in_its_extends() {
     let spells = warlock_spells(&app.state.hub().unwrap().engine, &sub);
     assert!(spells.contains(&CURE_WOUNDS.to_string()), "{spells:?}");
     assert!(!spells.contains(&BURNING_HANDS.to_string()), "{spells:?}");
+}
+
+/// A new item draft of `kind` with these field values.
+fn item_draft(app: &App, pack: &str, kind: &str, fields: serde_json::Value) -> HomebrewDraftView {
+    let v = app
+        .state
+        .homebrew_new_draft(pack, kind, None, None, None)
+        .unwrap();
+    let mut form = v.form.clone();
+    for (k, val) in fields.as_object().unwrap() {
+        form.fields.insert(k.clone(), val.clone());
+    }
+    app.update(&v, &form)
+}
+
+/// "Applies to" naming one element (the magic item form's base item builder, Specific elements).
+fn applies_to(id: &str) -> serde_json::Value {
+    json!({"value": {"shape": "model", "model": {"specific": true,
+        "root": {"node": "row", "row": {"row": "element", "id": id}}}}})
+}
+
+fn attack<'s>(snap: &'s serde_json::Value, name: &str) -> &'s serde_json::Value {
+    snap["attacks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|a| a["name"] == name)
+        .unwrap_or_else(|| panic!("an attack {name}: {}", snap["attacks"]))
+}
+
+fn carried<'s>(snap: &'s serde_json::Value, name: &str) -> &'s serde_json::Value {
+    snap["inventory"]["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["name"] == name)
+        .unwrap_or_else(|| panic!("{name} carried: {}", snap["inventory"]["items"]))
+}
+
+/// HmG6I: item drafts in Try it, past the plain weapon above: an armor is worn and sets the Armor Class; a magic
+/// weapon on one base item is held and its attack line has its +1 to hit and damage; a magic armor on one base adds
+/// its +1 to that armor's AC. The test character is the edition's SRD fighter (Strength +2, proficiency +2).
+#[test]
+fn item_drafts_tried_out_are_equipped_with_their_attack_line_and_armor_class() {
+    const LONGSWORD: &str = "ID_2024_WEAPON_LONGSWORD";
+    const CHAIN_MAIL: &str = "ID_2024_ARMOR_CHAIN_MAIL";
+    let app = App::new();
+    let pack = app.pack(Ruleset::Dnd2024);
+
+    let plate = item_draft(
+        &app,
+        &pack,
+        "armor",
+        json!({"name": "Ember Plate", "armorType": "Heavy", "baseAc": 17, "stealth": true, "strength": 15}),
+    );
+    let view = app.try_it(&plate, 1);
+    let snap = serde_json::to_value(&view.snapshot).unwrap();
+    assert_eq!(carried(&snap, "Ember Plate")["equipped"], "worn");
+    assert_eq!(
+        snap["stats"]["armorClass"], 17,
+        "heavy armor adds no Dexterity"
+    );
+    assert!(
+        view.changed.iter().any(|c| c == "stats.armorClass"),
+        "{:?}",
+        view.changed
+    );
+    app.state.homebrew_trial_end(&view.trial_id).unwrap();
+
+    let blade = item_draft(
+        &app,
+        &pack,
+        "magicItem",
+        json!({"name": "Emberblade", "magicType": "Weapon", "rarity": "Uncommon",
+            "appliesToWeapon": applies_to(LONGSWORD), "enhancement": 1}),
+    );
+    let view = app.try_it(&blade, 1);
+    let snap = serde_json::to_value(&view.snapshot).unwrap();
+    assert_eq!(carried(&snap, "Emberblade")["equipped"], "primary");
+    let unarmed = attack(&snap, "Unarmed Strike")["toHit"].as_i64().unwrap();
+    let line = attack(&snap, "Emberblade");
+    assert_eq!(
+        line["toHit"].as_i64(),
+        Some(unarmed + 1),
+        "+1 to hit: {line}"
+    );
+    assert_eq!(
+        line["damage"], "1d8+3 slashing",
+        "the Longsword's die, Strength +2 and +1"
+    );
+    assert!(
+        view.changed.iter().any(|c| c == "attacks:Emberblade"),
+        "{:?}",
+        view.changed
+    );
+    app.state.homebrew_trial_end(&view.trial_id).unwrap();
+
+    let mail = item_draft(
+        &app,
+        &pack,
+        "magicItem",
+        json!({"name": "Ember Mail", "magicType": "Armor", "rarity": "Rare",
+            "appliesToArmor": applies_to(CHAIN_MAIL), "enhancement": 1}),
+    );
+    let view = app.try_it(&mail, 1);
+    let snap = serde_json::to_value(&view.snapshot).unwrap();
+    assert_eq!(carried(&snap, "Ember Mail")["equipped"], "worn");
+    assert_eq!(snap["stats"]["armorClass"], 17, "Chain Mail 16, +1");
+    app.state.homebrew_trial_end(&view.trial_id).unwrap();
 }
