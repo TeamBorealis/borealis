@@ -91,14 +91,15 @@ and its agent-device session itself; it leaves the emulator and the simulator ru
 - Every tap is aimed afresh before each touch: the target's centre once it reads the same twice and the page's own hit
   test there lands on it, and not while the phone status line is open and about to fold (it opens on a new message and
   folds 4 s later, moving the pinned row 36 pt; the driver waits for the fold itself, since a slow page folds late). If
-  the soft keyboard covers the target, the focused field gives up the focus first. A touch that does not reach its
-  target is made again (6 touches in all), aimed again.
+  the soft keyboard covers the target, the focused field gives up the focus first. A touch reached its target when the
+  page's touch log has a click or pointer up inside it (the element aimed at, or the one matching now after a
+  re-render); one that did not is made again (6 touches in all), aimed again.
   Why (IDpjU): an iOS XCTest press lands 1-5 s after it is sent; measured once while "Saved '...'" was showing, the
   pinned Save had moved by the time the touch came, and every retry went to the same old point (the page received the
   touches, on the field above the row, and a select's label there opened its sheet).
 - iOS taps use agent-device's XCTest runner; under heavy load its press can hit the runner's watchdog and still land
   later. Such a press is never sent again blindly (suspected in one loaded run: after an option was chosen, the select
-  below the closed sheet opened): the driver waits up to 10 s for the target's click, then aims and touches again (6
+  below the closed sheet opened): the driver waits up to 10 s for the touch to reach the target, then aims and touches again (6
   touches in all), and restarts the runner after two timeouts in a row.
 - The Try it trial is the real engine on the device, so it stands for "a character takes it" there. The full character
   halves (Build pages, casting, levelling, multiclassing, equipping) run on the real backend in
