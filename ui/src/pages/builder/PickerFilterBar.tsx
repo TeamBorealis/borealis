@@ -86,6 +86,8 @@ export function SourceFilterButton({ filter, onChange, sources }: SourceProps) {
 interface Props {
   /** The slot title, lower-cased into the placeholder ("Search species"). */
   title: string;
+  /** The bar's name when the title is not unique on the page ("Fighter skill 1 of 2", H-ajc); the title otherwise. */
+  name?: string;
   filter: PickerFilter;
   onChange: (f: PickerFilter) => void;
   sources: SourceEntry[];
@@ -98,12 +100,12 @@ interface Props {
 }
 
 /** B-55 sec. 1.5: search, Edition All/2024/2014, a Source checklist, the entry count and Clear, above a picker list. */
-export function PickerFilterBar({ title, filter, onChange, sources, editions, cleared = NO_FILTER, shown, total }: Props) {
+export function PickerFilterBar({ title, name, filter, onChange, sources, editions, cleared = NO_FILTER, shown, total }: Props) {
   const placeholder = `Search ${title.toLowerCase()}`;
   const phone = usePhone();
   const count = countText(shown, total);
   return (
-    <div className="pick-fbar" role="search" aria-label={`Filter ${title}`}>
+    <div className="pick-fbar" role="search" aria-label={`Filter ${name ?? title}`}>
       <input type="search" className="pick-fsearch" placeholder={placeholder} aria-label={placeholder} value={filter.text}
         onChange={(e) => onChange({ ...filter, text: e.target.value })} />
       <span className="pick-frow">

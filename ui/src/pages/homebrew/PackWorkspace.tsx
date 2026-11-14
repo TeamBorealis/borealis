@@ -7,7 +7,7 @@ import { useApi } from "../../state/ApiContext";
 import { haptic } from "../../lib/haptics";
 import { setStatus } from "../../state/status";
 import { errorMessage, useAsync } from "../../state/useAsync";
-import { DescriptionPane, ElementDetailView } from "../builder/DescriptionPane";
+import { DescriptionPane, ElementDetailView, EmptyPane } from "../builder/DescriptionPane";
 import { Editor, editionOf, editorTabs } from "./Editor";
 import { BulkActions, type BulkDone } from "./BulkActions";
 import { Categories, ElementList, type ExtraCategory, KindChips } from "./ElementList";
@@ -420,7 +420,7 @@ export function PackWorkspace() {
   );
   const preview = (
     <>
-      {draft.view?.preview ? <ElementDetailView d={draft.view.preview} /> : <aside className="desc-pane" aria-label="Description" />}
+      {draft.view?.preview ? <ElementDetailView d={draft.view.preview} /> : <EmptyPane />}
       {whereUsed(openId)}
     </>
   );

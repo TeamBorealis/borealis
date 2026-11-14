@@ -16,6 +16,7 @@ import { TryIt } from "./TryIt";
 import { PROPERTIES_FIELD, WEAPON_KIND, withWeaponProperties } from "./weaponHands";
 import { CLASS_KIND, GROUP_FIELDS, withClassProficiencies } from "./proficiencyGroups";
 import { setStatus } from "../../state/status";
+import { NestedPane } from "../builder/DescriptionPane";
 import type { DraftController } from "./useDraft";
 import type { AutosaveState } from "./draftSession";
 
@@ -205,7 +206,7 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
           <>{band}<div className="hb-cmdrow">{commands}{hasExpert && expertSwitch}</div>{error}{savedWith}{problemsPanel}{tabBand}</>
         )}
         <div role="tabpanel" id="hb-tab-panel" aria-labelledby={`hb-tab-${current}`} className="hb-tabpanel" ref={panelRef}>
-          {current === PREVIEW_TAB.id ? preview : current === DATA_TAB.id ? <DataView generated={draft.view?.generated} /> : current === SPELLCASTING_TAB && (kind.id === "class" || kind.id === "subclass")
+          {current === PREVIEW_TAB.id ? <NestedPane.Provider value>{preview}</NestedPane.Provider> : current === DATA_TAB.id ? <DataView generated={draft.view?.generated} /> : current === SPELLCASTING_TAB && (kind.id === "class" || kind.id === "subclass")
             ? <SpellcastingTab editing={childEditing} expert={expert} />
             : current === SPELLCASTING_TAB
               ? <CasterSection fields={fields} form={form} problems={draft.problems} edition={edition} expert={expert}

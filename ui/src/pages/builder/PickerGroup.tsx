@@ -26,6 +26,23 @@ export const PICKER_ROW_PX: Record<RowHeight, number> = { small: 17, medium: 21,
 export interface SlotGroup { key: string; label: string | null; title: string; slots: SelectionSlot[] }
 
 /**
+ * Names that tell apart pickers of the same name (H-ajc, axe `landmark-unique`): "Fighter skill 1 of 2", "Fighter skill 2
+ * of 2"; a name used once is left as it is.
+ */
+export function numberedNames(names: readonly string[]): string[] {
+  const total = new Map<string, number>();
+  names.forEach((n) => total.set(n, (total.get(n) ?? 0) + 1));
+  const seen = new Map<string, number>();
+  return names.map((n) => {
+    const of = total.get(n)!;
+    if (of === 1) return n;
+    const k = (seen.get(n) ?? 0) + 1;
+    seen.set(n, k);
+    return `${n} ${k} of ${of}`;
+  });
+}
+
+/**
  * One expander per pick: a "2 of 3" rule is three separate pickers, each with its own footer line. The species picker takes
  * the character's ruleset word (A15), as its tab does.
  */
@@ -71,6 +88,8 @@ interface Props {
   onClear: (slotId: string) => void;
   /** A2 / TV1 (phones): the element whose description opens inline, directly under its row in this picker. */
   inlineId?: string | null;
+  /** The picker's name where another picker has the same title ("Fighter skill 1 of 2", H-ajc): its filter bar's name. */
+  name?: string;
 }
 
 /** Up/Down on a row moves to the next or previous row and describes it. */
@@ -90,7 +109,7 @@ function onKeyNav(e: KeyboardEvent<HTMLButtonElement>) {
  * One classic builder selection picker: focus bar + expander (filter bar, one row per name) + chosen/remaining footer.
  * B-55: rows group same-name versions; the version column's menu picks the shown version (and switches a chosen row).
  */
-export function PickerGroup({ characterId, group, isNext, open, onToggle, describedId, onDescribe, onChoose, onClear, inlineId = null }: Props) {
+export function PickerGroup({ characterId, group, isNext, open, onToggle, describedId, onDescribe, onChoose, onClear, inlineId = null, name }: Props) {
   const navigate = useNavigate();
   const { settings } = useSettings();
   const rowPx = PICKER_ROW_PX[settings.rowHeight] ?? PICKER_ROW_PX.medium;
@@ -143,7 +162,7 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
             <EmptyListNote slot={slot} ruleset={ruleset} onManageSources={() => navigate(SOURCES_ROUTE)} onStartOver={(ed) => void startOver(ed)} onEditionOptions={openEditionFlyout} />
           )}
           {picker.showBar && (
-            <PickerFilterBar title={group.title} filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} editions={picker.editions} cleared={picker.cleared} shown={visible.length} total={rows.length} />
+            <PickerFilterBar title={group.title} name={name} filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} editions={picker.editions} cleared={picker.cleared} shown={visible.length} total={rows.length} />
           )}
           {rows.length > 0 && visible.length === 0 && (
             <p className="pick-empty pick-fempty">Nothing matches these filters. <button type="button" className="pick-fclear" onClick={() => picker.setFilter(picker.cleared)}>Clear</button></p>

@@ -128,8 +128,9 @@ export function SubBand() {
   useEffect(() => {
     strip.current?.querySelector<HTMLElement>('[aria-current="page"]')?.scrollIntoView?.({ inline: "nearest", block: "nearest" });
   }, [activeSub]);
+  // H-ajc: the band is a landmark of its own, so the quick bar beside the sub-tabs is inside one (axe `region`)
   return (
-    <div className="aur-subband">
+    <section className="aur-subband" aria-label="Sections and quick actions">
       <div className="aur-subtabs">
         {start && single && <div className="tabs sub"><span className="tab" aria-current="page">{single.label}</span></div>}
         {start && !single && (
@@ -140,7 +141,7 @@ export function SubBand() {
         <div className="aur-subtabs-host" ref={setHost} />
       </div>
       <QuickBar />
-    </div>
+    </section>
   );
 }
 

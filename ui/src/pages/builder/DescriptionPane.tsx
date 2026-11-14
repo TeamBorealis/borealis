@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { createContext, Fragment, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { mdiImage } from "@mdi/js";
 import { Alert, Icon, SafeHtml } from "../../components";
 import { useShell } from "../../components/shell/ShellContext";
@@ -27,6 +27,26 @@ function useReadAloud() {
   return { supported, speaking, toggle, stop };
 }
 
+/**
+ * True where the pane is drawn inside another landmark (the creator's phone PREVIEW sub-tab, in the editor's region): it
+ * is then a named region, not an aside, since an aside belongs at the top level (H-ajc, axe
+ * `landmark-complementary-is-top-level`).
+ */
+export const NestedPane = createContext(false);
+
+/** The pane's landmark: an aside, or a region where it is nested ([`NestedPane`]). */
+function PaneLandmark({ children }: { children?: ReactNode }) {
+  const nested = useContext(NestedPane);
+  return nested
+    ? <section className="desc-pane" aria-label="Description">{children}</section>
+    : <aside className="desc-pane" aria-label="Description">{children}</aside>;
+}
+
+/** An empty description pane (nothing described yet). */
+export function EmptyPane() {
+  return <PaneLandmark />;
+}
+
 /** The right-hand ElementDescriptionPanel: command icons, big uppercase title, italic intro, ruled section headings. */
 export function PaneShell({ title, intro, children, readText, imageIcon = true, commands }: {
   title: ReactNode; intro?: ReactNode; children?: ReactNode; readText?: string; imageIcon?: boolean;
@@ -38,7 +58,7 @@ export function PaneShell({ title, intro, children, readText, imageIcon = true, 
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { ref.current?.scrollTo?.({ top: 0 }); stopVoice(); }, [readText, stopVoice]);
   return (
-    <aside className="desc-pane" aria-label="Description">
+    <PaneLandmark>
       <div className="desc-cmds">
         {imageIcon && <button type="button" className="desc-cmd" disabled title="No image available" aria-label="Image (none available)"><svg className="icon desc-image-icon" viewBox="3 3 18 18" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d={mdiImage} /></svg></button>}
         <button type="button" className={`desc-cmd desc-voice ${voice.speaking ? "active" : ""}`} disabled={!voice.supported || !readText}
@@ -53,7 +73,7 @@ export function PaneShell({ title, intro, children, readText, imageIcon = true, 
         {intro && <p className="desc-intro">{intro}</p>}
         {children}
       </div>
-    </aside>
+    </PaneLandmark>
   );
 }
 

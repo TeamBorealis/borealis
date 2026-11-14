@@ -21,7 +21,8 @@ function Val({ on, children }: { on: boolean; children: ReactNode }) {
 }
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
-  return <section className="hb-try-panel" aria-label={title}><h4 className="v4-fl">{title}</h4>{children}</section>;
+  // H-ajc: h3 under the flyout's h2 (axe `heading-order`); the look is the class's
+  return <section className="hb-try-panel" aria-label={title}><h3 className="v4-fl">{title}</h3>{children}</section>;
 }
 
 /** One line per entry of a list, each marked when the draft added or changed it. */
