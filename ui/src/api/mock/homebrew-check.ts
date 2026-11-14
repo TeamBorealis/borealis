@@ -231,12 +231,32 @@ function skillNameProblems(form: HomebrewForm, elementId: string | null): Homebr
     message: "A skill can't be named like an ability or another statistic (Strength, AC, Level), or hold a colon: rename it." }];
 }
 
+/** Most skills a class's character chooses from (`codec/class.rs` `write_skills`). */
+const MAX_SKILL_CHOICE = 18;
+
+/** A class's skill choice, as the backend's class codec refuses it (`write_skills`, IDprw): pinned by
+ * `__fixtures__/homebrew-class-skills.json` (`crates/borealis-authoring/tests/mock_class_skills.rs`). */
+function classSkillProblems(form: HomebrewForm, elementId: string | null): HomebrewProblem[] {
+  if (form.kind !== "class") return [];
+  const v = form.fields.skills as { count?: unknown; skills?: unknown; tagged?: unknown } | undefined;
+  if (!v || typeof v !== "object") return [];
+  const count = Number(v.count ?? 0);
+  const tagged = typeof v.tagged === "string" ? v.tagged.trim() : "";
+  const ids = (Array.isArray(v.skills) ? v.skills : []).map((s) => String((s as { id?: unknown })?.id ?? "").trim()).filter(Boolean);
+  const problem = (message: string): HomebrewProblem[] => [{ severity: "error", path: "fields.skills", elementId, code: "form", message }];
+  if (!tagged && ids.length === 0) return count === 0 ? [] : problem("Pick the skills the character chooses from.");
+  if (count === 0 || count > MAX_SKILL_CHOICE) return problem(`The character chooses from 1 to ${MAX_SKILL_CHOICE} skills.`);
+  if (!tagged && count > ids.length) return problem("Offer at least as many skills as the character chooses.");
+  return [];
+}
+
 /** The mock's live problems of a form: required fields, the prerequisite's rows, every block. The engine checks
  * (`homebrew_check_draft`: test character, level sweep, balance) are the backend's only; the mock has none. */
 export function formProblems(form: HomebrewForm, catalog: readonly HomebrewBlockSpec[], elementId: string | null, kind?: HomebrewKindDescriptor): HomebrewProblem[] {
   return [
     ...requiredProblems(form, kind, elementId),
     ...skillNameProblems(form, elementId),
+    ...classSkillProblems(form, elementId),
     ...exprProblems(form.fields.requirements, "fields.requirements", elementId),
     ...form.blocks.flatMap((b, i) => blockProblems(b, i, catalog, elementId)),
   ];

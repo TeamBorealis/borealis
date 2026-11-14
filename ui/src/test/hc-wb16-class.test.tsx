@@ -110,6 +110,12 @@ describe("WB-16 class form (mock)", () => {
       expect((f.fields.table as { values: unknown[] }[])[0]!.values[2]).toBe(2);
     });
 
+    // a class whose character chooses skills must offer some (the backend refuses it, IDprw): this one chooses none
+    await user.click(within(editor()).getByRole("tab", { name: "PROFICIENCIES" }));
+    const skillCount = screen.getByRole("spinbutton", { name: "Skills: how many" });
+    await user.clear(skillCount);
+    await user.type(skillCount, "0");
+    await waitFor(() => expect(last().fields.skills).toMatchObject({ count: 0 }));
     await user.click(within(editor()).getByRole("tab", { name: "GENERAL" }));
     await user.selectOptions(screen.getByRole("combobox", { name: /^Hit die/ }), "d10");
     await waitFor(() => expect(last().fields.hitDie).toBe("d10"));

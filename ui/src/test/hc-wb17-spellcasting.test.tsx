@@ -124,6 +124,12 @@ describe("WB-17 spellcasting section", () => {
     await user.click(within(editor()).getByRole("tab", { name: "LEVELS" }));
     const grid = await screen.findByRole("table", { name: "Features by level" });
     expect(within(grid.querySelector<HTMLElement>('tr[data-level="1"]')!).getByRole("button", { name: "Spellcasting" })).toBeTruthy();
+    // a class whose character chooses skills must offer some (the backend refuses it, IDprw): this one chooses none
+    await user.click(within(editor()).getByRole("tab", { name: "PROFICIENCIES" }));
+    const skillCount = screen.getByRole("spinbutton", { name: "Skills: how many" });
+    await user.clear(skillCount);
+    await user.type(skillCount, "0");
+    await waitFor(() => expect((update.mock.lastCall![0].form as HomebrewForm).fields.skills).toMatchObject({ count: 0 }));
     await user.click(within(editor()).getByRole("tab", { name: "GENERAL" }));
     await user.selectOptions(screen.getByRole("combobox", { name: /^Hit die/ }), "d10");
     await user.click(within(editor()).getByRole("button", { name: "Save" }));

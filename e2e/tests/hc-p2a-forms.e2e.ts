@@ -3,6 +3,7 @@ import { expect } from 'e2e';
 import { bootToHome } from '../support/index.js';
 import { pressKey } from '../support/flows-b.js';
 import { waitFor, type Ctx } from '../support/flows-a.js';
+import { noSkillChoice } from '../support/creator.js';
 
 // Homebrew P2a (1.5.0, the web mock, desktop 1355x847): children made inside children and a class option group made in
 // one flow. A species' racial trait made inside the species and the trait's lineage option made inside the trait; a 2014
@@ -121,6 +122,7 @@ describe('hc-p2a homebrew children inside children and class option groups (web 
     await newPack(ctx, '2024');
     await newElement(ctx, /^Class A class/, 'Ember Knight');
     await ctx.browser.locator('#hb-f-hitDie-input').selectOption('d10');
+    await noSkillChoice(ctx);
 
     await ctx.screen.getByRole('tab', 'RULES').tap();
     await ctx.screen.getByRole('button', 'Add rule').tap();

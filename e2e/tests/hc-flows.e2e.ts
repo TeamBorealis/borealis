@@ -7,7 +7,7 @@ import { bootToHome, expectEqual } from '../support/index.js';
 import { pressKey } from '../support/flows-b.js';
 import { clickCss, dblClickCss, statusMsg, textOf, waitFor, type Ctx } from '../support/flows-a.js';
 import {
-  addRule, autosaved, catchDownloads, chooseIn, doneChild, kindCount, LOAD_MS, NAME, nameChild, newElement, newPack, pickRow, reveal, save, setNumber, takeDownload, trialLevel, waitValue,
+  addRule, autosaved, catchDownloads, chooseIn, doneChild, kindCount, LOAD_MS, NAME, nameChild, newElement, newPack, noSkillChoice, pickRow, reveal, save, setNumber, takeDownload, trialLevel, waitValue,
 } from '../support/creator.js';
 
 // Homebrew WB-27 (spec 18.4): the ten end-to-end flows on the desktop web target (1355x847) with the mock and the
@@ -120,6 +120,7 @@ describe('hc-flows homebrew creator end-to-end flows, spec 18.4 (web mock)', { t
     await newPack(ctx, PACK);
     await newElement(ctx, 'Gloom Knight', /^Class A class/);
     await ctx.browser.locator('#hb-f-hitDie-input').selectOption('d10');
+    await noSkillChoice(ctx);
 
     // LEVELS: the subclass choice at 3 and the ability score improvements from 4 come with a new class.
     await ctx.screen.getByRole('tab', 'LEVELS').tap();
@@ -276,11 +277,12 @@ describe('hc-flows homebrew creator end-to-end flows, spec 18.4 (web mock)', { t
     await waitValue(ctx, '[data-field="enhancement"] input[role="spinbutton"]', '1');
     await expect(ctx.screen.getByRole('button', /Problems \(0\)/)).toBeVisible();
     await save(ctx, 'Ember Blade', PACK);
-    // Try it: the test character carries it (the mock makes no attack of a magic item: the +1 to hit and damage on the
-    // sheet is checked on the real backend, homebrew_flows.rs flow 6).
+    // Try it: the test character holds it as a Longsword +1, an attack (the backend's homebrew_p2b.rs
+    // item_drafts_tried_out_are_equipped_with_their_attack_line_and_armor_class; the sheet: homebrew_flows.rs flow 6).
     await openTryIt(ctx);
     await trialLevel(ctx, 1);
-    await expect(ctx.screen.getByText('Added to the inventory.')).toBeVisible();
+    await expect(ctx.screen.getByText('Added to the inventory and equipped.')).toBeVisible();
+    await expect(ctx.screen.getByRole('region', 'Attacks')).toContainText('Ember Blade');
     await closeTryIt(ctx);
 
     // Armor: heavy, AC 17, disadvantage on Stealth; a new armor is worn on the body, so a character can put it on.

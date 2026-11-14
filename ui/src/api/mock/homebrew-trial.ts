@@ -4,7 +4,7 @@ import type {
 } from "../types";
 import type { MockElement } from "./data-types";
 import { ABILITY_KEYS } from "../types";
-import { getClass } from "./content";
+import { getClass, getElement } from "./content";
 import { apiError } from "./errors";
 import { createCharacter } from "./library";
 import { buildSlotDefs, type SlotDef } from "./slots";
@@ -95,8 +95,34 @@ export function needsAttunement(fields: Readonly<Record<string, unknown>>): bool
   return v === true || (typeof v === "string" && v.trim() !== "" && v.trim().toLowerCase() !== "false");
 }
 
-/** A weapon draft's weapon facts, as the backend reads them from what the form writes. */
+/** The one weapon a magic weapon draft's "Applies to" names (Specific elements, one of them), or null: the backend
+ * uses such a magic item as that weapon adorned with itself (`item_base::implied_base`); a group or several bases
+ * name none. */
+function namedBase(draft: TrialDraft): WeaponFacts | null {
+  if (draft.kind.elementTypes[0] !== "Magic Item" || fieldText(draft, "magicType").toLowerCase() !== "weapon") return null;
+  type Node = { node: string; row?: { row?: string; id?: string }; items?: Node[] };
+  const model = (draft.view.form.fields.appliesToWeapon as { value?: { shape?: string; model?: { specific?: boolean; root?: Node } } } | undefined)?.value;
+  if (model?.shape !== "model" || model.model?.specific !== true || !model.model.root) return null;
+  const root = model.model.root;
+  const rows = root.node === "row" ? [root] : root.items ?? [];
+  const ids = rows.map((n) => (n.node === "row" && n.row?.row === "element" ? n.row.id ?? "" : "")).filter(Boolean);
+  return ids.length === 1 ? getElement(ids[0]!)?.weapon ?? null : null;
+}
+
+/** A magic item draft's bonus to attack and damage rolls (its Enhancement). */
+const enhancementOf = (draft: TrialDraft): number => {
+  const n = Number(draft.view.form.fields.enhancement);
+  return draft.kind.elementTypes[0] === "Magic Item" && Number.isInteger(n) ? n : 0;
+};
+
+/** "1d8" with a modifier, as the engine writes an attack's damage ("1d8+3", "1d8-1", "1d8"). */
+const withModifier = (dice: string, n: number): string => (n === 0 ? dice : n > 0 ? `${dice}+${n}` : `${dice}${n}`);
+
+/** A weapon draft's weapon facts, as the backend reads them from what the form writes; a magic weapon on one base
+ * item has that base's. */
 function weaponFacts(draft: TrialDraft): WeaponFacts | null {
+  const base = namedBase(draft);
+  if (base) return base;
   if (draft.kind.elementTypes[0] !== "Weapon") return null;
   const category = refName(draft.view.form.fields.weaponCategory);
   const [proficiency = "", kind = ""] = category.split(" ");
@@ -109,7 +135,7 @@ function weaponFacts(draft: TrialDraft): WeaponFacts | null {
 
 /** The weapon draft as a loaded weapon (the Weapon Mastery choice offers it, P2b), or null for any other draft. */
 export function draftWeapon(draft: TrialDraft): MockElement | null {
-  const weapon = weaponFacts(draft);
+  const weapon = draft.kind.elementTypes[0] === "Weapon" ? weaponFacts(draft) : null;
   if (!weapon) return null;
   const p = draft.view.preview;
   return {
@@ -148,11 +174,11 @@ function withItem(s: CharacterSnapshot, draft: TrialDraft): { snapshot: Characte
   let next: CharacterSnapshot = { ...s, inventory: { ...s.inventory, items: [...s.inventory.items, item] } };
   const changed = [`inventory.items:${name}`];
   if (weapon) {
-    const toHit = s.stats.proficiencyBonus + mod;
-    const bonus = mod === 0 ? "" : mod > 0 ? ` + ${mod}` : ` - ${-mod}`;
+    const enhancement = enhancementOf(draft);
+    const toHit = s.stats.proficiencyBonus + mod + enhancement;
     const attack: Attack = {
       id: item.id, name, range: weapon.range ?? "5 ft.", attackBonus: toHit >= 0 ? `+${toHit}` : String(toHit),
-      damage: `${weapon.damage}${bonus} ${weapon.damageType}`.trim(), description: "", ability, auto: true, showInCombat: true, card: true, toHit,
+      damage: `${withModifier(weapon.damage, mod + enhancement)} ${weapon.damageType}`.trim(), description: "", ability, auto: true, showInCombat: true, card: true, toHit,
     };
     next = { ...next, attacks: [...next.attacks, attack] };
     changed.push(`attacks:${name}`);

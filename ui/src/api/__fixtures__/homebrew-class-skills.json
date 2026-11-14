@@ -1,0 +1,361 @@
+{
+  "cases": [
+    {
+      "case": "a new class: chooses two, none offered",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "armor": [],
+          "equipment": [],
+          "levels": [],
+          "mcPrerequisite": "",
+          "mcProficiencies": [],
+          "mcProficiencyText": "",
+          "multiclass": true,
+          "name": "Gloom Knight",
+          "primaryAbilities": [],
+          "savingThrows": [],
+          "skills": {
+            "count": 2,
+            "skills": []
+          },
+          "table": [],
+          "tools": [],
+          "weapons": []
+        },
+        "key": "e",
+        "kind": "class",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "message": "Pick the skills the character chooses from.",
+          "path": "fields.skills"
+        }
+      ]
+    },
+    {
+      "case": "no skill choice",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "armor": [],
+          "equipment": [],
+          "levels": [],
+          "mcPrerequisite": "",
+          "mcProficiencies": [],
+          "mcProficiencyText": "",
+          "multiclass": true,
+          "name": "Gloom Knight",
+          "primaryAbilities": [],
+          "savingThrows": [],
+          "skills": {
+            "count": 0,
+            "skills": []
+          },
+          "table": [],
+          "tools": [],
+          "weapons": []
+        },
+        "key": "e",
+        "kind": "class",
+        "preserved": []
+      },
+      "problems": []
+    },
+    {
+      "case": "two of two",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "armor": [],
+          "equipment": [],
+          "levels": [],
+          "mcPrerequisite": "",
+          "mcProficiencies": [],
+          "mcProficiencyText": "",
+          "multiclass": true,
+          "name": "Gloom Knight",
+          "primaryAbilities": [],
+          "savingThrows": [],
+          "skills": {
+            "count": 2,
+            "skills": [
+              {
+                "id": "ID_PROFICIENCY_SKILL_ATHLETICS",
+                "name": "Athletics",
+                "type": "Proficiency"
+              },
+              {
+                "id": "ID_PROFICIENCY_SKILL_SURVIVAL",
+                "name": "Survival",
+                "type": "Proficiency"
+              }
+            ]
+          },
+          "table": [],
+          "tools": [],
+          "weapons": []
+        },
+        "key": "e",
+        "kind": "class",
+        "preserved": []
+      },
+      "problems": []
+    },
+    {
+      "case": "three of two",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "armor": [],
+          "equipment": [],
+          "levels": [],
+          "mcPrerequisite": "",
+          "mcProficiencies": [],
+          "mcProficiencyText": "",
+          "multiclass": true,
+          "name": "Gloom Knight",
+          "primaryAbilities": [],
+          "savingThrows": [],
+          "skills": {
+            "count": 3,
+            "skills": [
+              {
+                "id": "ID_PROFICIENCY_SKILL_ATHLETICS",
+                "name": "Athletics",
+                "type": "Proficiency"
+              },
+              {
+                "id": "ID_PROFICIENCY_SKILL_SURVIVAL",
+                "name": "Survival",
+                "type": "Proficiency"
+              }
+            ]
+          },
+          "table": [],
+          "tools": [],
+          "weapons": []
+        },
+        "key": "e",
+        "kind": "class",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "message": "Offer at least as many skills as the character chooses.",
+          "path": "fields.skills"
+        }
+      ]
+    },
+    {
+      "case": "none of two",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "armor": [],
+          "equipment": [],
+          "levels": [],
+          "mcPrerequisite": "",
+          "mcProficiencies": [],
+          "mcProficiencyText": "",
+          "multiclass": true,
+          "name": "Gloom Knight",
+          "primaryAbilities": [],
+          "savingThrows": [],
+          "skills": {
+            "count": 0,
+            "skills": [
+              {
+                "id": "ID_PROFICIENCY_SKILL_ATHLETICS",
+                "name": "Athletics",
+                "type": "Proficiency"
+              },
+              {
+                "id": "ID_PROFICIENCY_SKILL_SURVIVAL",
+                "name": "Survival",
+                "type": "Proficiency"
+              }
+            ]
+          },
+          "table": [],
+          "tools": [],
+          "weapons": []
+        },
+        "key": "e",
+        "kind": "class",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "message": "The character chooses from 1 to 18 skills.",
+          "path": "fields.skills"
+        }
+      ]
+    },
+    {
+      "case": "nineteen",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "armor": [],
+          "equipment": [],
+          "levels": [],
+          "mcPrerequisite": "",
+          "mcProficiencies": [],
+          "mcProficiencyText": "",
+          "multiclass": true,
+          "name": "Gloom Knight",
+          "primaryAbilities": [],
+          "savingThrows": [],
+          "skills": {
+            "count": 19,
+            "skills": [
+              {
+                "id": "ID_PROFICIENCY_SKILL_ATHLETICS",
+                "name": "Athletics",
+                "type": "Proficiency"
+              },
+              {
+                "id": "ID_PROFICIENCY_SKILL_SURVIVAL",
+                "name": "Survival",
+                "type": "Proficiency"
+              }
+            ]
+          },
+          "table": [],
+          "tools": [],
+          "weapons": []
+        },
+        "key": "e",
+        "kind": "class",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "message": "The character chooses from 1 to 18 skills.",
+          "path": "fields.skills"
+        }
+      ]
+    },
+    {
+      "case": "an empty pick is not a skill",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "armor": [],
+          "equipment": [],
+          "levels": [],
+          "mcPrerequisite": "",
+          "mcProficiencies": [],
+          "mcProficiencyText": "",
+          "multiclass": true,
+          "name": "Gloom Knight",
+          "primaryAbilities": [],
+          "savingThrows": [],
+          "skills": {
+            "count": 2,
+            "skills": [
+              {
+                "id": "ID_PROFICIENCY_SKILL_ATHLETICS",
+                "name": "Athletics",
+                "type": "Proficiency"
+              },
+              {
+                "id": " ",
+                "name": "",
+                "type": "Proficiency"
+              }
+            ]
+          },
+          "table": [],
+          "tools": [],
+          "weapons": []
+        },
+        "key": "e",
+        "kind": "class",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "message": "Offer at least as many skills as the character chooses.",
+          "path": "fields.skills"
+        }
+      ]
+    },
+    {
+      "case": "a kept tag filter",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "armor": [],
+          "equipment": [],
+          "levels": [],
+          "mcPrerequisite": "",
+          "mcProficiencies": [],
+          "mcProficiencyText": "",
+          "multiclass": true,
+          "name": "Gloom Knight",
+          "primaryAbilities": [],
+          "savingThrows": [],
+          "skills": {
+            "count": 2,
+            "skills": [],
+            "tagged": "Skill,Fighter"
+          },
+          "table": [],
+          "tools": [],
+          "weapons": []
+        },
+        "key": "e",
+        "kind": "class",
+        "preserved": []
+      },
+      "problems": []
+    },
+    {
+      "case": "a kept tag filter and too many",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "armor": [],
+          "equipment": [],
+          "levels": [],
+          "mcPrerequisite": "",
+          "mcProficiencies": [],
+          "mcProficiencyText": "",
+          "multiclass": true,
+          "name": "Gloom Knight",
+          "primaryAbilities": [],
+          "savingThrows": [],
+          "skills": {
+            "count": 20,
+            "skills": [],
+            "tagged": "Skill"
+          },
+          "table": [],
+          "tools": [],
+          "weapons": []
+        },
+        "key": "e",
+        "kind": "class",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "message": "The character chooses from 1 to 18 skills.",
+          "path": "fields.skills"
+        }
+      ]
+    }
+  ]
+}

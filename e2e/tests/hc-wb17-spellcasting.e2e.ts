@@ -3,6 +3,7 @@ import { expect } from 'e2e';
 import { bootToHome, expectEqual } from '../support/index.js';
 import { pressKey } from '../support/flows-b.js';
 import { statusMsg, waitFor, type Ctx } from '../support/flows-a.js';
+import { noSkillChoice } from '../support/creator.js';
 
 // Homebrew WB-17 (spec 4.6, 18.4 flow 3 on the web mock): the class's SPELLCASTING tab with the creator switched on
 // (`?creator=1`, desktop 1355x847). Create a 2024 class, add spellcasting (a Spellcasting feature at level 1, made
@@ -46,6 +47,7 @@ describe('hc-wb17 homebrew spellcasting section (web mock)', { tags: ['homebrew'
     await ctx.screen.getByRole('button', 'Create').tap();
     await waitValue(ctx, NAME, 'Warden');
     await ctx.browser.locator('#hb-f-hitDie-input').selectOption('d10');
+    await noSkillChoice(ctx);
 
     // SPELLCASTING: no spellcasting yet; add it (a full caster to start with)
     await ctx.screen.getByRole('tab', 'SPELLCASTING').tap();

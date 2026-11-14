@@ -3,6 +3,7 @@ import { expect } from 'e2e';
 import { bootToHome, expectEqual } from '../support/index.js';
 import { pressKey } from '../support/flows-b.js';
 import { statusMsg, waitFor, type Ctx } from '../support/flows-a.js';
+import { noSkillChoice } from '../support/creator.js';
 
 // Homebrew WB-16 (spec 4.5, 13.8, 18.4 flow 3 on the web mock): the class form with the creator switched on
 // (`?creator=1`, desktop 1355x847). Create a 2024 class with a d10; the LEVELS grid shows its generated features
@@ -45,6 +46,7 @@ describe('hc-wb16 homebrew class form (web mock)', { tags: ['homebrew'] }, () =>
     await ctx.screen.getByRole('button', 'Create').tap();
     await waitValue(ctx, NAME, 'Gloom Knight');
     await ctx.browser.locator('#hb-f-hitDie-input').selectOption('d10');
+    await noSkillChoice(ctx);
 
     // The class's sub-tabs, then the LEVELS grid with the generated features.
     const tabs = await ctx.browser.evaluate((_: null) => [...document.querySelectorAll('.hb-band [role="tab"]')].map((t) => t.textContent ?? ''), null);

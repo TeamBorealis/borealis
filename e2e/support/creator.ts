@@ -142,6 +142,16 @@ export async function setNumber(ctx: Ctx, key: string, value: number): Promise<v
 }
 
 /**
+ * A class whose character chooses no skills (PROFICIENCIES > Skills: 0), then back to GENERAL: a new class chooses two,
+ * and the backend refuses a skill choice that offers none (the mock too, IDprw).
+ */
+export async function noSkillChoice(ctx: Ctx): Promise<void> {
+  await ctx.screen.getByRole('tab', 'PROFICIENCIES').tap();
+  await setNumber(ctx, 'skills', 0);
+  await ctx.screen.getByRole('tab', 'GENERAL').tap();
+}
+
+/**
  * Chooses `value` in the native select `css` through the page (the input event React listens to). For a select whose
  * locator never reports actionable while the form re-renders around it (the magic item's "Made from" filter).
  */
