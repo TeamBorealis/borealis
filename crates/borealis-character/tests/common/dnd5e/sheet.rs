@@ -10,6 +10,7 @@
 //! `attack` (attack bonus and damage) and the `sum` manifest (a coverage signal only).
 
 use borealis_content::ContentStore;
+use borealis_engine::snapshot::SpellcastingSnapshot;
 use borealis_engine::CharacterSnapshot;
 use borealis_migrate::dom::XmlElement;
 use std::collections::{BTreeMap, BTreeSet};
@@ -247,18 +248,18 @@ fn header(snap: &CharacterSnapshot, store: &ContentStore, s: &mut Sheet) {
     };
 }
 
-/// The same values computed by Borealis.
-pub fn from_snapshot(snap: &CharacterSnapshot, store: &ContentStore) -> Sheet {
-    let mut s = Sheet {
-        level: snap.level,
-        ..Sheet::default()
-    };
-    header(snap, store, &mut s);
-    for (i, name) in ABILITIES.iter().enumerate() {
-        s.base[i] = snap.ability(name).map_or(0, |a| a.base);
-    }
+/// Borealis's spellcasting blocks as Aurora writes them: one `magic/spellcasting` per block, and
+/// `magic/additional` = the registered spells (`spells`) that no block lists (Aurora's magic
+/// writer removes each block's spells from the registered spells and writes the rest).
+/// Borealis's "Other Spells" block (`other`, U19) is Aurora's sheet section for those same
+/// spells, not a spellcasting block, so it is not one here and its spells stay additional.
+fn spell_blocks(
+    blocks: &[SpellcastingSnapshot],
+    spells: &BTreeSet<String>,
+) -> (BTreeMap<String, Casting>, BTreeSet<String>) {
+    let mut casting = BTreeMap::new();
     let mut in_blocks = BTreeSet::new();
-    for sc in &snap.spellcasting {
+    for sc in blocks.iter().filter(|b| !b.other) {
         let mut c = Casting {
             ability: sc.ability.clone(),
             attack: sc.attack,
@@ -288,14 +289,29 @@ pub fn from_snapshot(snap: &CharacterSnapshot, store: &ContentStore) -> Sheet {
                 c.known.insert(sp.id.clone());
             }
         }
-        s.casting.insert(sc.name.clone(), c);
+        casting.insert(sc.name.clone(), c);
     }
-    s.additional = snap
+    let additional = spells.difference(&in_blocks).cloned().collect();
+    (casting, additional)
+}
+
+/// The same values computed by Borealis.
+pub fn from_snapshot(snap: &CharacterSnapshot, store: &ContentStore) -> Sheet {
+    let mut s = Sheet {
+        level: snap.level,
+        ..Sheet::default()
+    };
+    header(snap, store, &mut s);
+    for (i, name) in ABILITIES.iter().enumerate() {
+        s.base[i] = snap.ability(name).map_or(0, |a| a.base);
+    }
+    let spells: BTreeSet<String> = snap
         .elements
         .iter()
-        .filter(|r| r.element.ty == "Spell" && !in_blocks.contains(&r.element.id))
+        .filter(|r| r.element.ty == "Spell")
         .map(|r| r.element.id.clone())
         .collect();
+    (s.casting, s.additional) = spell_blocks(&snap.spellcasting, &spells);
     s.attacks = snap
         .attacks
         .iter()
@@ -349,4 +365,96 @@ pub fn damage_key(text: &str) -> (String, i32, String) {
     };
     let dice = dice.trim_matches(|c| c == '\u{2014}' || c == '-' || c == '+');
     (dice.to_string(), m, ty.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A block as the engine derives it (only the fields the comparison reads vary).
+    fn block(
+        name: &str,
+        ability: &str,
+        other: bool,
+        spells: &[(&str, u32, bool)],
+    ) -> SpellcastingSnapshot {
+        let spells: Vec<_> = spells
+            .iter()
+            .map(|(id, level, prepared)| {
+                serde_json::json!({"id": id, "name": id, "level": level, "prepared": prepared,
+                    "always_prepared": prepared, "known": true})
+            })
+            .collect();
+        serde_json::from_value(serde_json::json!({
+            "name": name, "ability": ability, "prepare": false, "allow_replace": false,
+            "dc": 13, "attack": 5, "slots": [0, 0, 0, 0, 0, 0, 0, 0, 0], "pact": null, "prepare_limit": null,
+            "prepared_count": 0, "spells": spells, "prepare_from_list": false, "other": other,
+        }))
+        .expect("spellcasting block")
+    }
+
+    fn ids(v: &[&str]) -> BTreeSet<String> {
+        v.iter().map(ToString::to_string).collect()
+    }
+
+    /// Aurora writes the spells no spellcasting page lists into `magic/additional` (its magic
+    /// writer: every registered spell minus each block's spells), not into a `spellcasting`
+    /// block. Borealis gathers the same spells in its last block, "Other Spells" (`other`), so
+    /// that block is Aurora's `additional`, never an extra spellcasting block.
+    #[test]
+    fn the_other_spells_block_is_what_aurora_writes_as_additional_spells() {
+        let blocks = [
+            block(
+                "Warlock",
+                "Charisma",
+                false,
+                &[("ID_HEX", 1, false), ("ID_BLADE", 0, false)],
+            ),
+            block(
+                "Other Spells",
+                "",
+                true,
+                &[("ID_MAGE_ARMOR", 1, false), ("ID_DISGUISE", 1, false)],
+            ),
+        ];
+        let registered = ids(&["ID_HEX", "ID_BLADE", "ID_MAGE_ARMOR", "ID_DISGUISE"]);
+        let (casting, additional) = spell_blocks(&blocks, &registered);
+        assert_eq!(casting.keys().collect::<Vec<_>>(), vec!["Warlock"]);
+        assert_eq!(additional, ids(&["ID_DISGUISE", "ID_MAGE_ARMOR"]));
+        assert_eq!(casting["Warlock"].list, ids(&["ID_HEX"]));
+        assert_eq!(casting["Warlock"].cantrips, ids(&["ID_BLADE"]));
+    }
+
+    /// A spell a class block lists (known, or only on its list) is never additional, as in
+    /// Aurora, whether or not Borealis also shows it under Other Spells.
+    #[test]
+    fn a_spell_a_class_block_lists_is_not_additional() {
+        let blocks = [
+            block(
+                "Cleric",
+                "Wisdom",
+                false,
+                &[("ID_BLESS", 1, true), ("ID_SHIELD_OF_FAITH", 1, false)],
+            ),
+            block(
+                "Other Spells",
+                "",
+                true,
+                &[
+                    ("ID_SHIELD_OF_FAITH", 1, false),
+                    ("ID_DRUIDCRAFT", 0, false),
+                ],
+            ),
+        ];
+        let registered = ids(&[
+            "ID_BLESS",
+            "ID_SHIELD_OF_FAITH",
+            "ID_DRUIDCRAFT",
+            "ID_LOOSE",
+        ]);
+        let (casting, additional) = spell_blocks(&blocks, &registered);
+        assert!(!casting.contains_key("Other Spells"));
+        assert_eq!(additional, ids(&["ID_DRUIDCRAFT", "ID_LOOSE"]));
+        assert_eq!(casting["Cleric"].prepared, ids(&["ID_BLESS"]));
+    }
 }
