@@ -4,7 +4,7 @@ import type {
   HomebrewPickerRow, HomebrewProblem, HomebrewSaveResult, HomebrewSpellListRow, HomebrewSpellListView, Ruleset,
   HomebrewExportResult, ImportFileInput, ImportPackResult, ImportPreview, TypeCount,
 } from "../types";
-import { formUse, generatedOf, hasTag, listingClasses, loadedListRow, tagsOf, textOf, withTags } from "./homebrew-expert";
+import { copiedGenerated, formUse, generatedOf, hasTag, listingClasses, loadedListRow, tagsOf, textOf, withTags } from "./homebrew-expert";
 import { apiError } from "./errors";
 import { descriptionHtml, formProblems, pickerRow, spellListProblems } from "./homebrew-check";
 import { addChild, addChildIn, newChildKey, newClassForm, newForm } from "./homebrew-class";
@@ -14,7 +14,7 @@ import { featPrerequisite } from "./homebrew-feat";
 import { refreshSubclass, subclassProblems } from "./homebrew-subclass";
 import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
 import { CORE_PICKER_ROWS } from "./homebrew-core-rows";
-import { MOCK_COPY_SOURCES } from "./homebrew-copies";
+import { MOCK_COPY_SOURCES, type MockCopySource } from "./homebrew-copies";
 import { MOCK_KIND_DESCRIPTORS } from "./homebrew-kinds";
 import type { TrialDraft } from "./homebrew-trial";
 import { copyCode, copyOf, type MockPackData, packFile, packFileName, readPackFile } from "./homebrew-transfer";
@@ -119,6 +119,8 @@ export class MockHomebrew {
   /** Drafts copied from loaded sample content that is not an SRD copy source: they stand for text copied from the user's
    * own imports (CS1, HC8), so their saved elements are `copiedText`. */
   private copiedText = new Set<string>();
+  /** Drafts copied from a real copy source (`homebrew-copies.ts`): their DATA view is the backend's copy. */
+  private copySources = new Map<string, MockCopySource>();
   /** Pack files waiting in an import preview (spec 14.2). */
   private stagedFiles = new Map<string, { fileName: string; data: MockPackData }>();
   private nextPreview = 1;
@@ -186,10 +188,15 @@ export class MockHomebrew {
     return this.store(packId, null, form);
   }
 
-  /** A copy (spec 11, WB-22): the real backend's copy of an SRD source (`homebrew-copies.ts`), an own element's form, or
-   * for other sample content a blank form of its kind named "<Name> (copy)". A deep class copy saves its subclasses too. */
+  /** A copy (spec 11, WB-22): the real backend's copy of an SRD source (`homebrew-copies.ts`; a sample weapon or armor
+   * takes the SRD one of its name, H10ac), an own element's form, or for other sample content a blank form of its kind
+   * named "<Name> (copy)". A deep class copy saves its subclasses too. */
   private copy(own: OwnPack, id: string, deep: boolean, loaded?: { name: string; type: ElementType }): HomebrewDraftView {
-    const source = MOCK_COPY_SOURCES.find((c) => c.row.id === id);
+    // an SRD copy source, or the one a loaded sample weapon or armor stands for (same name and type, H10ac)
+    const srd = MOCK_COPY_SOURCES.find((c) => c.row.id === id);
+    const sameItem = loaded && (loaded.type === "weapon" || loaded.type === "armor")
+      ? MOCK_COPY_SOURCES.find((c) => c.row.name === loaded.name && c.row.type.toLowerCase() === loaded.type) : undefined;
+    const source = srd ?? sameItem;
     const saved = [...this.packs.values()].map((p) => p.elements.get(id)).find((e) => e !== undefined);
     let form: HomebrewForm;
     let companions: HomebrewForm[] = [];
@@ -206,8 +213,10 @@ export class MockHomebrew {
     } else {
       throw apiError("not_found", "That element isn't loaded any more.");
     }
-    const view = this.store(own.pack.id, null, form);
-    if (!source && !saved) this.copiedText.add(view.draftId);
+    const draftId = `draft-${this.nextDraft++}`;
+    if (source) this.copySources.set(draftId, source);
+    const view = this.store(own.pack.id, null, form, draftId);
+    if (!srd && !saved) this.copiedText.add(view.draftId);
     if (!companions.length) return view;
     this.companions.set(view.draftId, companions);
     const named = { ...view, ...this.savedWith(view.draftId) };
@@ -283,12 +292,14 @@ export class MockHomebrew {
     this.drafts.delete(draftId);
     this.touched.delete(draftId);
     this.copiedText.delete(draftId);
+    this.copySources.delete(draftId);
     return { pack: this.putPack(pack), elementIds: [id, ...savedWith] };
   }
 
   discardDraft(draftId: string): void {
     this.draft(draftId);
     this.companions.delete(draftId);
+    this.copySources.delete(draftId);
     this.drafts.delete(draftId);
     this.touched.delete(draftId);
   }
@@ -601,12 +612,15 @@ export class MockHomebrew {
   }
 
   /** The DATA view (spec 12.1) of a draft: the element the mock would store. */
-  private generated(packId: string, elementId: string | null, form: HomebrewForm): HomebrewDraftView["generated"] {
+  private generated(packId: string, elementId: string | null, form: HomebrewForm, draftId: string): HomebrewDraftView["generated"] {
     const own = this.own(packId);
     const k = KINDS.find((x) => x.id === form.kind);
     const type = k?.elementTypes[0] ?? (String(form.fields.type ?? "").trim() || "Element");
     const id = elementId ?? `ID_${own.code}_${TYPE_TOKENS[type] ?? slug(type)}_${slug(String(form.fields.name ?? ""))}`;
-    return generatedOf(form, id, type, own.pack.name, descriptionHtml(form.fields.description));
+    const description = descriptionHtml(form.fields.description);
+    const copied = this.copySources.get(draftId);
+    if (copied) return copiedGenerated(copied.generated, { id, name: String(form.fields.name ?? "").trim(), source: own.pack.name, description });
+    return generatedOf(form, id, type, own.pack.name, description);
   }
 
   /** `savedWith` of a draft's view: the names of the forms a deep copy saves with it (the backend's `HomebrewDraftView`). */
@@ -654,7 +668,7 @@ export class MockHomebrew {
     ];
     const view: HomebrewDraftView = {
       draftId, packId, elementId, form, preview: this.preview(packId, elementId ?? draftId, form), problems, updatedAt: now(), baseChanged: false,
-      generated: this.generated(packId, elementId, form), ...this.savedWith(draftId),
+      generated: this.generated(packId, elementId, form, draftId), ...this.savedWith(draftId),
     };
     this.drafts.set(draftId, view);
     return view;

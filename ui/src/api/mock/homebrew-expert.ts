@@ -51,6 +51,27 @@ export function generatedOf(form: HomebrewForm, id: string, type: string, source
   return { json: `${JSON.stringify(element, null, 2)}\n`, tree };
 }
 
+/** The DATA view of a copy (H10ac): the element the real backend wrote for it (`homebrew-copies.ts`), with the draft's
+ * own id, name, book and description. The mock writes no element, so the copy's other keys stay as they were copied. */
+export function copiedGenerated(real: HomebrewGeneratedView, own: { id: string; name: string; source: string; description: string }): HomebrewGeneratedView {
+  const parsed: unknown = JSON.parse(real.json);
+  if (Array.isArray(parsed) || typeof parsed !== "object" || parsed === null) return real;
+  const element: Record<string, unknown> = { ...(parsed as Record<string, unknown>), id: own.id, name: own.name, source: own.source };
+  if (own.description) element.description = own.description;
+  else delete element.description;
+  const values: Record<string, string> = { id: own.id, name: own.name, source: own.source };
+  const top = real.tree[0];
+  const tree: HomebrewDataNode[] = top ? [{
+    ...top, key: own.name,
+    children: (top.children ?? []).flatMap((n): HomebrewDataNode[] => {
+      if (n.key in values) return [{ ...n, text: values[n.key] }];
+      if (n.key === "description") return own.description ? [{ ...n, text: own.description }] : [];
+      return [n];
+    }),
+  }] : [];
+  return { json: `${JSON.stringify(element, null, 2)}\n`, tree };
+}
+
 /** True when `id` stands in `v` as a whole token, anywhere (the backend's `pack::mentions`). */
 export function mentions(v: unknown, id: string): boolean {
   if (typeof v === "string") return v.split(/[^A-Za-z0-9_]+/).includes(id);
