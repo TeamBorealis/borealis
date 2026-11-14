@@ -47,6 +47,46 @@ describe("class table", () => {
     expect(rows[20]?.slice(0, 2)).toEqual(["20th", "+6"]);
   });
 
+  // Im8nQ: a 2014 caster's slots live in its Spellcasting feature (the caster type or a custom table), not in the class
+  // table; the inserted table adds them as the SRD 5.1 class tables write them: cantrips known, spells known for a
+  // known caster, then the slots of each slot level the class reaches (a pact caster: Spell Slots and Slot Level).
+  const caster2014 = (fields: Record<string, unknown>): HomebrewForm => ({
+    ...ember,
+    fields: { ...ember.fields, edition: "dnd2014", table: [ember.fields.table as unknown[]][0]!.slice(1) },
+    children: [...ember.children, child("n5", { name: "Spellcasting", casts: true, ...fields })],
+  }) as unknown as HomebrewForm;
+  const cantrips = { levels: [3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5], statistic: false };
+
+  it("adds a 2014 full caster's cantrips and spell slots", () => {
+    const rows = classTableRows(caster2014({ casterType: "full", preparation: "prepared", cantrips }));
+    expect(rows[0]).toEqual(["Level", "Proficiency Bonus", "Features", "Embers", "Flare Damage", "Cantrips Known", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]);
+    expect(rows[1]?.slice(5)).toEqual(["3", "2", "—", "—", "—", "—", "—", "—", "—", "—"]);
+    expect(rows[5]?.slice(5)).toEqual(["4", "4", "3", "2", "—", "—", "—", "—", "—", "—"]);
+    expect(rows[20]?.slice(5)).toEqual(["5", "4", "3", "3", "3", "3", "2", "2", "1", "1"]);
+  });
+
+  it("adds a 2014 half caster's spells known and the slot levels it reaches", () => {
+    const known = { levels: [0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11], statistic: false };
+    const rows = classTableRows(caster2014({ casterType: "halfDown", preparation: "known", known }));
+    expect(rows[0]?.slice(5)).toEqual(["Spells Known", "1st", "2nd", "3rd", "4th", "5th"]);
+    expect(rows[1]?.slice(5)).toEqual(["—", "—", "—", "—", "—", "—"]);
+    expect(rows[2]?.slice(5)).toEqual(["2", "2", "—", "—", "—", "—"]);
+  });
+
+  it("adds a 2014 pact caster's slots and their level", () => {
+    const rows = classTableRows(caster2014({ casterType: "pact", preparation: "known", cantrips: { ...cantrips, levels: Array(20).fill(2) } }));
+    expect(rows[0]?.slice(5)).toEqual(["Cantrips Known", "Spells Known", "Spell Slots", "Slot Level"]);
+    expect(rows[1]?.slice(5)).toEqual(["2", "—", "1", "1st"]);
+    expect(rows[11]?.slice(7)).toEqual(["3", "5th"]);
+  });
+
+  it("adds nothing for a class without spellcasting or one whose table holds its spellcasting (2024)", () => {
+    expect(classTableRows(caster2014({ casts: false, casterType: "full" }))[0]).toHaveLength(5);
+    const with2024 = { ...ember, children: [...ember.children, child("n5", { name: "Spellcasting", casts: true, casterType: "full" })],
+      fields: { ...ember.fields, table: [...(ember.fields.table as unknown[]), { key: "slot_1", label: "1st", values: Array(20).fill(2) }] } } as unknown as HomebrewForm;
+    expect(classTableRows(with2024)[0]).toEqual(["Level", "Proficiency Bonus", "Features", "Embers", "Flare Damage", "1st"]);
+  });
+
   it("the description's Insert class table button adds it at the end", async () => {
     const onChange = vi.fn<(doc: DocJson, typing: boolean) => void>();
     const value: DocJson = { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Fire folk." }] }] } as DocJson;
