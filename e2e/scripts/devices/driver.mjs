@@ -56,16 +56,19 @@ const HELPERS_SOURCE = `(() => {
   const visible = (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
   const describe = (e) => !(e instanceof Element) ? String(e) : e.tagName.toLowerCase() + (e.id ? '#' + e.id : '')
     + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\\s+/).slice(0, 2).join('.') : '');
-  // every touch the page receives, so a touch that never reached its target can be told apart (IDpjU); logged once per page
-  const seen = window.__dvSeen ?? [];
-  if (!window.__dvSeen) for (const type of ['touchstart', 'touchend', 'pointerdown', 'pointerup', 'click']) {
+  // every touch the page receives, so a touch that never reached its target can be told apart (IDpjU); a newer driver
+  // logs into its own list (the listeners of an older one keep filling theirs)
+  const seen = [];
+  for (const type of ['touchstart', 'touchend', 'pointerdown', 'pointerup', 'click']) {
     document.addEventListener(type, (ev) => {
       const p = ev.touches?.[0] ?? ev.changedTouches?.[0] ?? ev;
-      seen.push({ type, x: Math.round(p.clientX ?? -1), y: Math.round(p.clientY ?? -1), target: describe(ev.target), t: Math.round(performance.now()) });
+      const entry = { type, x: Math.round(p.clientX ?? -1), y: Math.round(p.clientY ?? -1), target: describe(ev.target), t: Math.round(performance.now()) };
+      // the element itself, kept out of the JSON the probe returns
+      Object.defineProperty(entry, 'el', { value: ev.target, enumerable: false });
+      seen.push(entry);
       if (seen.length > 40) seen.shift();
     }, { capture: true, passive: true });
   }
-  window.__dvSeen = seen;
   window.__dv = {
     version: '__VERSION__',
     seen,
@@ -98,6 +101,15 @@ const HELPERS_SOURCE = `(() => {
       };
     },
     now() { return Math.round(performance.now()); },
+    /**
+     * Whether a touch since the given time reached the target: a click or pointer up inside the element armed before the touch
+     * or the one matching now (a re-render can replace the node between the two).
+     */
+    reached(sel, text, since) {
+      const now = this.q(sel, text);
+      return seen.some((s) => s.t >= since && (s.type === 'click' || s.type === 'pointerup') && s.el instanceof Node
+        && (this.armed?.contains(s.el) || now?.contains(s.el)));
+    },
     q(sel, text) {
       const all = [...document.querySelectorAll(sel)].filter(visible);
       if (text === undefined || text === null) return all[all.length - 1] ?? null;
@@ -357,11 +369,9 @@ export async function device(platform, evidence) {
         // the phone status line folded after a save, and every retry went to the old point)
         const { x, y, aimed } = await aim(sel, text);
         if (!aimed) t.stats.unaimed += 1;
-        // reached = the target got the touch's click or its pointer up (a press the runner delivered tens of seconds late
-        // reached a select, whose sheet then opened, and the harness kept touching the sheet's title)
-        const since = await ev(`(() => { window.__dv.clicked = false; const e = window.__dv.q(${arg(sel)}, ${arg(text)});
-          for (const type of ['click', 'pointerup']) e?.addEventListener(type, () => { window.__dv.clicked = true; }, { capture: true, once: true });
-          return window.__dv.now(); })()`);
+        // reached = a click or pointer up inside the target (a select opens its sheet on the click, which can then cover it;
+        // a press the iOS runner delivers late can land after the node was re-rendered)
+        const since = await ev(`(() => { window.__dv.armed = window.__dv.q(${arg(sel)}, ${arg(text)}); return window.__dv.now(); })()`);
         const touchedAt = Date.now();
         const sent = await d.touch(x, y);
         const touchMs = Date.now() - touchedAt;
@@ -369,7 +379,7 @@ export async function device(platform, evidence) {
         if (!sent) t.stats.pressTimeouts += 1;
         const end = Date.now() + (sent ? CLICK_WAIT_MS : LATE_PRESS_WAIT_MS);
         let clicked = false;
-        while (!clicked && Date.now() < end) { await sleep(POLL_MS); clicked = await ev('window.__dv.clicked === true').catch(() => true); }
+        while (!clicked && Date.now() < end) { await sleep(POLL_MS); clicked = await ev(`window.__dv.reached(${arg(sel)}, ${arg(text)}, ${since})`).catch(() => true); }
         // the click can also take the target away (a sheet closes): a missing target counts as clicked
         if (clicked || !(await ev(`window.__dv.q(${arg(sel)}, ${arg(text)}) !== null`).catch(() => false))) break;
         // a touch that did not reach its target: what the page received and how it looked
