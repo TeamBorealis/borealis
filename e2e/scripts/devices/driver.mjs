@@ -36,7 +36,7 @@ const CLICK_WAIT_MS = 3_000;
 const TAP_TRIES = 4;
 /** The phone status line folds this long after a plain message (ui/src/components/shell/Chrome.tsx STATUS_FOLD_MS). */
 const STATUS_FOLD_MS = 4_000;
-const STATUS_FOLD_MARGIN_MS = 600;
+const STATUS_WAIT_MS = 3 * STATUS_FOLD_MS;
 /** The soft keyboard takes this long to go away after its field gives up the focus. */
 const KEYBOARD_AWAY_MS = 800;
 /** iOS: tries of one XCTest press, and the pause between them. */
@@ -62,18 +62,17 @@ const HELPERS = `(() => {
       if (seen.length > 40) seen.shift();
     }, { capture: true, passive: true });
   }
-  // the phone status line opens on a new message and folds 4 s later (STATUS_FOLD_MS in Chrome.tsx), moving everything
-  // pinned above it: when it last changed, so a tap is not aimed at a row about to move
-  let statusAt = performance.now();
-  new MutationObserver((records) => {
-    if (records.some((r) => (r.target instanceof Element ? r.target : r.target.parentElement)?.closest('.aur-status'))) statusAt = performance.now();
-  }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['data-collapsed', 'data-pending'] });
   window.__dv = {
     seen,
-    /** True once the status line can no longer fold or open on its own: folded, or unchanged for longer than its fold delay. */
-    statusSettled(foldMs) {
+    /**
+     * False while the phone status line is open and will fold by itself (a plain message folds 4 s after it shows,
+     * STATUS_FOLD_MS in Chrome.tsx, moving everything pinned above it). A folded line, or one held open (a pending
+     * choice, a running command, an offer), will not move on its own.
+     */
+    statusSettled() {
       const st = document.querySelector('.aur-status');
-      return !st || st.dataset.collapsed !== 'false' || performance.now() - statusAt > foldMs;
+      if (!st || st.dataset.collapsed !== 'false') return true;
+      return st.dataset.pending === 'true' || st.querySelector('.aur-status-busyline, button') !== null;
     },
     /** What the page looked like around a touch that did not reach its target. */
     probe(x, y, since, sel, text) {
@@ -290,7 +289,8 @@ export async function device(platform, evidence) {
    */
   const aim = async (sel, text) => {
     // a touch can land seconds after it is aimed (an iOS XCTest press takes 1-5 s): wait out the status line's fold
-    await t.waitFor(`window.__dv.statusSettled(${STATUS_FOLD_MS + STATUS_FOLD_MARGIN_MS})`, 'the status line settled', STATUS_FOLD_MS * 3);
+    // (a slow page folds it late: wait for the fold itself, at most STATUS_WAIT_MS, then aim anyway)
+    await t.waitFor('window.__dv.statusSettled()', 'the status line folded', STATUS_WAIT_MS).catch(() => { t.stats.statusWaits += 1; });
     let r = null;
     for (let i = 0; i < STILL_READS_MAX; i += 1) {
       await sleep(STILL_POLL_MS);
@@ -313,7 +313,7 @@ export async function device(platform, evidence) {
     ...d,
     ev,
     /** Real taps made, and every touch that did not reach its target (with what the page saw). */
-    stats: { taps: 0, unaimed: 0, misses: [] },
+    stats: { taps: 0, unaimed: 0, statusWaits: 0, misses: [] },
     async waitFor(expr, what, ms = WAIT_MS) {
       const end = Date.now() + ms;
       for (;;) {

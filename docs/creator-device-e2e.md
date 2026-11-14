@@ -89,8 +89,10 @@ and its agent-device session itself; it leaves the emulator and the simulator ru
   adb). iOS reads it through the simulator's inspector socket (`RWI_LISTEN_SOCKET`): the debug build's WKWebView is
   inspectable; nothing in the app is changed for the tests.
 - Every tap is aimed afresh before each touch: the target's centre once it reads the same twice and the page's own hit
-  test there lands on it, and not while the phone status line is about to fold (it opens on a new message and folds 4 s
-  later, moving the pinned row 36 pt). A touch that does not reach its target is made again (4 tries), aimed again.
+  test there lands on it, and not while the phone status line is open and about to fold (it opens on a new message and
+  folds 4 s later, moving the pinned row 36 pt; the driver waits for the fold itself, since a slow page folds late). If
+  the soft keyboard covers the target, the focused field gives up the focus first. A touch that does not reach its
+  target is made again (4 tries), aimed again.
   Why (IDpjU): an iOS XCTest press lands 1-5 s after it is sent; measured once while "Saved '...'" was showing, the
   pinned Save had moved by the time the touch came, and every retry went to the same old point (the page received the
   touches, on the field above the row, and a select's label there opened its sheet).
