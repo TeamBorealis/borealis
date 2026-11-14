@@ -73,7 +73,8 @@ const HELPERS = `(() => {
       const st = document.querySelector('.aur-status');
       if (!st || st.dataset.collapsed !== 'false') return true;
       if (st.querySelector('.aur-status-busyline')) return false;
-      return st.dataset.pending === 'true' || st.querySelector('button') !== null;
+      // held open: Next selection, or the complete moment's offer (both .next; the line's other buttons do not hold it)
+      return st.dataset.pending === 'true' || st.querySelector('.next') !== null;
     },
     /** What the page looked like around a touch that did not reach its target. */
     probe(x, y, since, sel, text) {
@@ -105,7 +106,7 @@ const HELPERS = `(() => {
       const h = document.elementFromPoint(x, y);
       // the soft keyboard is up and the target is not the focused field's own control
       const kb = document.documentElement.classList.contains('kb-open') && !e.contains(document.activeElement) && !document.activeElement?.contains(e);
-      return { x, y, hit: !!h && (h === e || e.contains(h)), kb };
+      return { x, y, hit: !!h && (h === e || e.contains(h)), kb, settled: this.statusSettled() };
     },
     reveal(sel, text) {
       const e = this.q(sel, text); if (!e) return false;
@@ -298,7 +299,10 @@ export async function device(platform, evidence) {
   const aim = async (sel, text) => {
     // a touch can land seconds after it is aimed (an iOS XCTest press takes 1-5 s): wait out the status line's fold
     // (a slow page folds it late: wait for the fold itself, at most STATUS_WAIT_MS, then aim anyway)
-    await t.waitFor('window.__dv.statusSettled()', 'the status line folded', STATUS_WAIT_MS).catch(() => { t.stats.statusWaits += 1; });
+    const waitStatus = () => t.waitFor('window.__dv.statusSettled()', 'the status line folded', STATUS_WAIT_MS)
+      .then(() => true, () => { t.stats.statusWaits += 1; return false; });
+    // a line that never folds within the wait is not waited for again during this aim
+    let watchStatus = await waitStatus();
     let r = null;
     for (let i = 0; i < STILL_READS_MAX; i += 1) {
       await sleep(STILL_POLL_MS);
@@ -308,6 +312,12 @@ export async function device(platform, evidence) {
         await ev(`document.activeElement instanceof HTMLElement && document.activeElement.blur(); true`);
         await sleep(KEYBOARD_AWAY_MS);
         await ev(`window.__dv.reveal(${arg(sel)}, ${arg(text)})`);
+        r = null;
+        continue;
+      }
+      if (watchStatus && next && !next.settled) {
+        // the status line opened while the target was being measured: wait for its fold again
+        watchStatus = await waitStatus();
         r = null;
         continue;
       }
