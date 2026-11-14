@@ -1,4 +1,4 @@
-import type { HomebrewElementSummary, HomebrewKindDescriptor } from "../../api/contract";
+import type { ContentPack, HomebrewElementSummary, HomebrewKindDescriptor } from "../../api/contract";
 
 /** The element list filter (spec 12.3): typed words and the "has problems" switch. */
 export interface ListFilter {
@@ -25,8 +25,29 @@ function haystack(r: HomebrewElementSummary, kinds: readonly HomebrewKindDescrip
  */
 export function filterRows(rows: readonly HomebrewElementSummary[], kindId: string | null, filter: ListFilter, kinds: readonly HomebrewKindDescriptor[]): HomebrewElementSummary[] {
   if (!isSearching(filter)) return rows.filter((r) => r.kind === kindId);
-  const words = filter.text.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const words = wordsOf(filter.text);
   return rows.filter((r) => (!filter.problemsOnly || hasProblems(r)) && words.every((w) => haystack(r, kinds).includes(w)));
+}
+
+const wordsOf = (text: string): string[] => text.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+/** An element found by the search over every own pack (H0eMM), with its pack. */
+export interface FoundElement {
+  pack: ContentPack;
+  row: HomebrewElementSummary;
+}
+
+/**
+ * The search over every own pack's elements (H0eMM, the HOMEBREW pack list's search box): the element list filter's
+ * rule (every typed word in the name, kind, tags or text) over each pack's rows, by name then pack name. No words find
+ * nothing.
+ */
+export function searchElements(packs: readonly ContentPack[], lists: ReadonlyMap<string, readonly HomebrewElementSummary[]>, text: string, kinds: readonly HomebrewKindDescriptor[]): FoundElement[] {
+  const words = wordsOf(text);
+  if (words.length === 0) return [];
+  return packs
+    .flatMap((pack) => (lists.get(pack.id) ?? []).filter((r) => words.every((w) => haystack(r, kinds).includes(w))).map((row) => ({ pack, row })))
+    .sort((a, b) => a.row.name.localeCompare(b.row.name) || a.pack.name.localeCompare(b.pack.name));
 }
 
 /**

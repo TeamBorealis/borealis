@@ -6,6 +6,10 @@
 .hb-pack-grid .v4-grid-head, .hb-pack-grid .v4-grid-row { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) 90px 90px; }
 .hb-pack-grid .v4-grid-row { cursor: default; }
 .hb-open { margin: 14px 0 0; }
+/* H0eMM: the elements the search box finds sit under the packs, in the same grid look; the two share the column */
+.hb-found-grid { margin-top: 12px; }
+.hb-found-grid .v4-grid-head, .hb-found-grid .v4-grid-row { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr); }
+.hb-found-grid .v4-grid-row { cursor: default; }
 .hb-mark { display: inline-block; margin-left: 8px; padding: 0 4px; font-size: 9px; font-weight: 600; line-height: 14px; border: 1px solid currentColor; vertical-align: middle; }
 .hb-mark.hb-error { color: var(--aur-danger-bright); }
 .hb-mark.hb-warning { color: var(--aur-warning); }
@@ -144,6 +148,8 @@ html.phone .hb-editor { --eq-pin-gap: 8px; }
 html.phone .hb-tool { min-height: var(--ph-hit); height: auto; padding: 0 16px; border-radius: var(--ph-r-md); background: var(--ph-raised); color: var(--ph-text); font: 600 var(--ph-t-foot)/1.2 var(--ph-font-ui); text-transform: none; }
 html.phone .hb-tool:disabled { color: var(--ph-text-3); }
 html.phone .hb-pack-grid .v4-grid-head, html.phone .hb-pack-grid .v4-grid-row { grid-template-columns: minmax(0, 1fr); }
+html.phone .hb-found-grid .v4-grid-head, html.phone .hb-found-grid .v4-grid-row { grid-template-columns: minmax(0, 1fr); }
+html.phone .hb-found-grid .v4-grid-head > :nth-child(n+2), html.phone .hb-found-grid .v4-grid-row > :nth-child(n+2) { display: none; }
 html.phone .hb-pack-grid .v4-grid-head > :nth-child(n+2), html.phone .hb-pack-grid .v4-grid-row > :nth-child(n+2) { display: none; }
 html.phone .hb-chip { min-height: var(--ph-hit); border-radius: var(--ph-r-pill); border-color: var(--ph-field-line); background: transparent; color: var(--ph-text); font: 500 var(--ph-t-foot)/1.2 var(--ph-font-ui); padding: 0 14px; }
 html.phone .hb-chip[aria-pressed="true"] { background: var(--ph-accent); border-color: var(--ph-accent); color: var(--ph-on-accent); }
