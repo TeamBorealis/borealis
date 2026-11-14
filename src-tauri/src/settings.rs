@@ -170,6 +170,10 @@ pub struct AppSettings {
     pub check_app_updates: bool,
     /// Local search (local-search-spec.md section 9).
     pub search: SearchSettings,
+    /// Element ids never offered for new picks ([`EngineSettings::hidden_elements`]); set by an app built on
+    /// Borealis, empty by default. Stored choices of them still load.
+    #[serde(skip_serializing_if = "std::collections::BTreeSet::is_empty")]
+    pub hidden_elements: std::collections::BTreeSet<String>,
 }
 
 /// Device tier override for semantic search (S3; keyword search ignores it).
@@ -289,9 +293,13 @@ impl Default for AppSettings {
             show_import_notice: true,
             check_app_updates: true,
             search: SearchSettings::default(),
+            hidden_elements: std::collections::BTreeSet::new(),
         }
     }
 }
+
+/// Most element ids [`AppSettings::hidden_elements`] may list.
+pub const MAX_HIDDEN_ELEMENTS: usize = 20_000;
 
 /// This build runs on a phone or tablet (no claude/codex CLI there, so no AI at all).
 pub const IS_MOBILE: bool = cfg!(any(target_os = "android", target_os = "ios"));
@@ -327,6 +335,16 @@ impl AppSettings {
     /// # Errors
     /// [`ApiError`] with code `invalid_argument`.
     pub fn validate(&self) -> ApiResult<()> {
+        if self.hidden_elements.len() > MAX_HIDDEN_ELEMENTS
+            || self
+                .hidden_elements
+                .iter()
+                .any(|id| id.is_empty() || id.len() > 200)
+        {
+            return Err(ApiError::invalid(
+                "Too many hidden elements, or an invalid element id.",
+            ));
+        }
         if !(1..=100).contains(&self.point_buy_budget) {
             return Err(ApiError::invalid("The point buy budget must be 1 to 100."));
         }
@@ -366,6 +384,7 @@ impl AppSettings {
             point_buy_budget: Some(self.point_buy_budget),
             min_base_score: self.ability_min_base,
             max_base_score: self.ability_max_base,
+            hidden_elements: self.hidden_elements.clone(),
             ..EngineSettings::default()
         }
     }

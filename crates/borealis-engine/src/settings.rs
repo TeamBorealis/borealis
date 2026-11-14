@@ -19,6 +19,9 @@ pub struct EngineSettings {
     pub default_average_hp: bool,
     /// Include option lists in snapshots (large for spell slots).
     pub include_options: bool,
+    /// Element ids never offered for new picks (an app's own choice, for example one copy of a spell
+    /// printed in several installed sources). A stored choice of one still replays.
+    pub hidden_elements: std::collections::BTreeSet<String>,
 }
 
 impl Default for EngineSettings {
@@ -31,6 +34,7 @@ impl Default for EngineSettings {
             max_base_score: 30,
             default_average_hp: true,
             include_options: true,
+            hidden_elements: std::collections::BTreeSet::new(),
         }
     }
 }

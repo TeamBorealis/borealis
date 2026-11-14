@@ -1231,6 +1231,7 @@ impl<'u> Graph<'u> {
     pub(crate) fn offers_edition(&self, cand: &UElem) -> bool {
         cand.edition.is_accepted()
             && !cand.superseded
+            && !cand.hidden
             && (self.allow_cross_edition || !cand.edition.is_foreign())
     }
 
