@@ -321,6 +321,34 @@ pub fn lore_packs(store: &ContentStore) -> Vec<PackInput> {
     group_by_pack(store.iter().flat_map(element_chunks))
 }
 
+/// The elements of `store` by the Lore pack their chunks go to, each pack's in load order (the packs in id order, as
+/// [`lore_packs`] lists them): with [`lore_pack`], the Lore corpus one pack at a time (the app re-chunks only the packs
+/// whose elements changed since its last sync).
+#[must_use]
+pub fn lore_pack_elements(store: &ContentStore) -> BTreeMap<String, Vec<&StoredElement>> {
+    let mut groups: BTreeMap<String, Vec<&StoredElement>> = BTreeMap::new();
+    for stored in store.iter() {
+        groups.entry(pack_of(stored)).or_default().push(stored);
+    }
+    groups
+}
+
+/// The Lore input of one pack from its elements ([`lore_pack_elements`]): `None` when none of them has text (such a
+/// pack is not in [`lore_packs`] either).
+#[must_use]
+pub fn lore_pack(pack: &str, elements: &[&StoredElement]) -> Option<PackInput> {
+    let chunks: Vec<Chunk> = elements.iter().flat_map(|s| element_chunks(s)).collect();
+    (!chunks.is_empty()).then(|| PackInput::new(pack, chunks))
+}
+
+/// The elements of `store` the Rules corpus takes besides the rules-text packs (conditions and glossary entries), in
+/// load order: [`rules_packs`] depends on the store through these alone.
+pub fn rules_elements(store: &ContentStore) -> impl Iterator<Item = &StoredElement> {
+    store
+        .iter()
+        .filter(|s| RULES_ELEMENT_TYPES.contains(&s.element.ty.as_str()))
+}
+
 /// Normalised names of the Condition / glossary elements of `store`, to de-duplicate rules-text sections.
 fn rules_element_titles(store: &ContentStore) -> HashSet<String> {
     store
@@ -354,6 +382,22 @@ pub fn rules_packs(docs_json: &[&str], store: &ContentStore) -> Result<Vec<PackI
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_lore_corpus_one_pack_at_a_time_is_the_whole_corpus() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let mut builder = borealis_content::ContentStoreBuilder::new();
+        for pack in ["core", "srd-5.1", "srd-5.2.1", "srd-5.1-monsters"] {
+            builder = builder.add_pack_dir(&root.join(pack)).unwrap();
+        }
+        let store = builder.build();
+        let by_pack: Vec<PackInput> = lore_pack_elements(&store)
+            .iter()
+            .filter_map(|(pack, elements)| lore_pack(pack, elements))
+            .collect();
+        assert_eq!(by_pack, lore_packs(&store));
+        assert!(by_pack.len() > 1);
+    }
 
     const DOCS: &str = r#"{
       "format": "borealis-docs/1",

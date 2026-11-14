@@ -33,6 +33,8 @@ pub const FAST_RELOAD: &str = "homebrew-saved";
 /// The reason of a save to a pack the loaded content does not hold (turned off, or failed to load): everything is
 /// read again.
 pub const FULL_RELOAD: &str = "homebrew-saved-full-reload";
+/// The `content-reloaded` reason of NEW PACK.
+pub const PACK_CREATED: &str = "homebrew-pack-created";
 /// Most initials [`suggest_code`] takes from a pack name.
 const SUGGESTED_CODE_MAX: usize = 4;
 
@@ -117,6 +119,43 @@ fn book_codes(store: &ContentStore, except_pack: Option<&str>) -> HashSet<String
         .map(|a| a.trim().to_ascii_uppercase())
         .filter(|a| !a.is_empty())
         .collect()
+}
+
+/// Where a full load of the library would read the pack folder `target` (not loaded yet) among the packs `hub` holds:
+/// after the bundled packs and the loaded library packs whose folders sort before it. `None` when that can't be told
+/// for sure (a loaded pack that is no library folder, two folders of one pack id, or packs out of folder order).
+fn load_position(
+    hub: &ContentHub,
+    library: &std::path::Path,
+    prefs: &crate::content_prefs::ContentPrefs,
+    target: &std::path::Path,
+) -> Option<usize> {
+    let mut folders: HashMap<String, std::path::PathBuf> = HashMap::new();
+    for dir in crate::state::user_pack_dirs(library) {
+        if dir == target {
+            return None;
+        }
+        let id = crate::state::pack_id_of(&dir)?;
+        if prefs.disabled_packs.contains(&id) {
+            continue;
+        }
+        if folders.insert(id, dir).is_some() {
+            return None;
+        }
+    }
+    let before: Vec<bool> = hub
+        .builder
+        .pack_ids()
+        .map(|id| {
+            if crate::state::BUNDLED_PACKS.contains(&id) {
+                Some(true)
+            } else {
+                folders.get(id).map(|dir| dir.as_path() < target)
+            }
+        })
+        .collect::<Option<_>>()?;
+    let at = before.iter().take_while(|b| **b).count();
+    before[at..].iter().all(|b| !b).then_some(at)
 }
 
 impl AppState {
@@ -219,6 +258,7 @@ impl AppState {
         check_ids: &[String],
         sink: &dyn EventSink,
     ) -> Result<(), CommitError> {
+        let mut timer = crate::load_timing::LoadTimer::named("homebrew save");
         let hub = self.hub()?;
         let mut builder = hub.builder.as_ref().clone();
         let mut fast = true;
@@ -236,12 +276,15 @@ impl AppState {
                 builder.add_parsed_pack(parsed)
             };
         }
-        let store = builder.clone().build();
+        timer.step("builder", &format!("{} packs", writes.len()));
+        let store = builder.clone().build_reusing(Some(&hub.store));
+        timer.step("build", &format!("{} elements", store.len()));
         let ids: HashSet<&str> = check_ids.iter().map(String::as_str).collect();
         let errors: Vec<Issue> = validate_elements(&store, &ids)
             .into_iter()
             .filter(|i| i.severity == Severity::Error)
             .collect();
+        timer.step("check", &format!("{} elements", ids.len()));
         if !errors.is_empty() {
             return Err(CommitError::Problems(errors));
         }
@@ -249,20 +292,27 @@ impl AppState {
         for (pack, next) in writes {
             write_pack(&pack.disk, next, at)?;
         }
+        timer.step("write", "");
         let prefs = self.content_prefs();
         if fast {
             let settings = self.settings()?;
             let next_hub =
                 ContentHub::from_built(builder, store, hub.load_warnings.clone(), &settings);
+            timer.step("engine", "");
             self.set_hub(next_hub)?;
+            timer.step("swap", "");
             if let Err(e) = self.recheck_missing_content() {
                 tracing::warn!("re-checking imported characters failed: {e}");
             }
+            timer.step("characters", "");
             sink.content_reloaded(FAST_RELOAD);
             self.hub()?.save_cache(&self.paths, &prefs);
+            timer.step("cache", "");
         } else {
             self.reload_content(&prefs, sink, FULL_RELOAD)?;
+            timer.step("full reload", "");
         }
+        timer.total("");
         Ok(())
     }
 
@@ -312,8 +362,58 @@ impl AppState {
         let scratch = Scratch::new(&self.paths.data)?;
         let staged = scratch.0.join("pack");
         write_new_pack(&staged, &next, CONTENT_FILE)?;
-        self.install_packs(&[(staged, pack_id.clone())], sink, "homebrew-pack-created")?;
+        drop(hub);
+        self.hb_install_new(staged, &pack_id, sink)?;
         self.hb_pack_dto(&pack_id)
+    }
+
+    /// Install a new pack folder and load it (NEW PACK): the loaded content with the pack added where a full load of
+    /// the library would read it (no other pack is read again, every loaded element is shared), the same content as
+    /// [`AppState::install_packs`] reloading everything, which is the way when the load order can't be told.
+    fn hb_install_new(
+        &self,
+        staged: std::path::PathBuf,
+        pack_id: &str,
+        sink: &dyn EventSink,
+    ) -> ApiResult<()> {
+        let mut timer = crate::load_timing::LoadTimer::named("new pack");
+        let target = self.paths.library().join(slug(pack_id));
+        let hub = self.hub()?;
+        let mut prefs = self.content_prefs();
+        prefs.disabled_packs.remove(pack_id);
+        let Some(at) = load_position(&hub, &self.paths.library(), &prefs, &target) else {
+            drop(hub);
+            self.install_packs(&[(staged, pack_id.to_string())], sink, PACK_CREATED)?;
+            timer.total("full reload");
+            return Ok(());
+        };
+        std::fs::rename(&staged, &target).map_err(|e| ApiError::io("install a pack", e))?;
+        let parsed = match ParsedPack::read(&target) {
+            Ok(p) if p.info().id == pack_id => p,
+            _ => {
+                let _ = std::fs::remove_dir_all(&target);
+                return Err(ApiError::new(
+                    crate::error::ErrorCode::ContentError,
+                    format!("The pack \"{pack_id}\" could not be loaded; it was not installed."),
+                ));
+            }
+        };
+        let builder = hub.builder.as_ref().clone().insert_parsed_pack(at, parsed);
+        let store = builder.clone().build_reusing(Some(&hub.store));
+        timer.step("build", &format!("{} elements", store.len()));
+        let settings = self.settings()?;
+        let next = ContentHub::from_built(builder, store, hub.load_warnings.clone(), &settings);
+        drop(hub);
+        timer.step("engine", "");
+        prefs.save(&self.paths.prefs_file())?;
+        self.set_hub(next)?;
+        if let Err(e) = self.recheck_missing_content() {
+            tracing::warn!("re-checking imported characters failed: {e}");
+        }
+        sink.content_reloaded(PACK_CREATED);
+        self.hub()?.save_cache(&self.paths, &prefs);
+        timer.total("");
+        Ok(())
     }
 
     /// Pack settings (spec 13.10): name, edition, author, description, licence. The code never changes. The pack's

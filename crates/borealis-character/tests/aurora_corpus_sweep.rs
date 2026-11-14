@@ -869,7 +869,7 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
     let elements: Vec<Element> = store
         .iter()
         .filter(|s| s.file.starts_with(&prefix))
-        .map(|s| s.element.clone())
+        .map(|s| s.element.as_ref().clone())
         .collect();
     let ours: HashSet<String> = elements.iter().map(|e| e.id.clone()).collect();
     let mut types = Counts::new();

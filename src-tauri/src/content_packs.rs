@@ -217,7 +217,7 @@ impl AppState {
                 .find(|e| e.element.ty == "Source")
                 .map(|e| plain_text(&e.element.description))
                 .unwrap_or_default();
-            let flags = source_flags(elements.iter().map(|e| &e.element));
+            let flags = source_flags(elements.iter().map(|e| e.element.as_ref()));
             let (edition, imported) =
                 crate::book_editions::loaded_edition(elements.iter().copied());
             out.push(ContentSource {
@@ -249,15 +249,22 @@ impl AppState {
         sink: &dyn EventSink,
         reason: &str,
     ) -> ApiResult<()> {
+        let mut timer = crate::load_timing::LoadTimer::named("content reload");
         let settings = self.settings()?;
-        let hub = ContentHub::load_with(&self.paths, &settings, prefs)?;
+        let previous = self.hub()?;
+        let hub = ContentHub::reload(&self.paths, &settings, prefs, &previous)?;
+        drop(previous);
+        timer.step("load", "");
         prefs.save(&self.paths.prefs_file())?;
         self.set_hub(hub)?;
+        timer.step("swap", "");
         // Characters imported earlier pick up newly available content without a re-import.
         if let Err(e) = self.recheck_missing_content() {
             tracing::warn!("re-checking imported characters failed: {e}");
         }
+        timer.step("characters", "");
         sink.content_reloaded(reason);
+        timer.total(reason);
         Ok(())
     }
 

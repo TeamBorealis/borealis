@@ -337,7 +337,7 @@ fn worn_counters_exclusive(
     let setters = |key: &str| -> Vec<&Element> {
         store
             .iter()
-            .map(|se| &se.element)
+            .map(|se| se.element.as_ref())
             .filter(|e| holdable(&e.id))
             .filter(|e| {
                 e.rules.iter().any(|r| {

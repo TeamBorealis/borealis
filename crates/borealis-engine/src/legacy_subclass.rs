@@ -32,6 +32,7 @@ use borealis_content::expr::{BoolExpr, RequirementsExpr, SupportsExpr, SupportsL
 use borealis_content::Rule;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 const SUBCLASS: &str = "Archetype";
 const SUBCLASS_FEATURE: &str = "Archetype Feature";
@@ -413,7 +414,7 @@ fn gate_overlaps(
 /// Add `gate` to the requirements of grant rule `k` (parsed copy included). False when the
 /// combined expression does not parse (the rule is left as it was).
 fn gate_grant(u: &mut UElem, k: usize, gate: &str) -> bool {
-    let Rule::Grant(g) = &mut u.el.rules[k] else {
+    let Rule::Grant(g) = &mut Arc::make_mut(&mut u.el).rules[k] else {
         return false;
     };
     let text = match g.requirements.as_deref().map(str::trim) {

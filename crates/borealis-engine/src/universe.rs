@@ -8,8 +8,10 @@ use crate::ids;
 use crate::profile::{profile_for, RulesetProfile};
 use crate::tables::ProfileTables;
 use borealis_content::expr::{EquippedExpr, RequirementsExpr, SupportsExpr};
-use borealis_content::{ContentStore, Element, Rule, Ruleset, Setter};
+use borealis_content::{ContentStore, Element, Rule, Ruleset, Setter, StoredElement};
+use rayon::prelude::*;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 /// Class levels that get Ability Score Improvement / Feat alternatives.
 pub const ASI_LEVELS: [u32; 9] = [4, 6, 8, 10, 12, 14, 16, 18, 19];
@@ -185,8 +187,9 @@ impl EditionStatus {
 /// An element prepared for evaluation.
 #[derive(Debug, Clone)]
 pub struct UElem {
-    /// The element (store element or derived).
-    pub el: Element,
+    /// The element (store element or derived). An element the engine uses as the store holds it is the store's own
+    /// allocation (shared, not copied); one it changes (an adapted or normalised copy, a patched class) is its own.
+    pub el: Arc<Element>,
     /// Parsed rules.
     pub rules: Vec<URule>,
     /// Element-level requirements.
@@ -235,14 +238,37 @@ pub struct UElem {
 
 impl UElem {
     pub(crate) fn build(
-        mut el: Element,
+        el: Element,
         copied_rules: usize,
         derived: bool,
         edition: EditionStatus,
         supports: Vec<String>,
     ) -> Self {
-        crate::item_conds::normalize(&mut el);
-        let list_effects = crate::custom_rules::normalize(&mut el);
+        Self::build_shared(Arc::new(el), copied_rules, derived, edition, supports)
+    }
+
+    /// [`UElem::build`] of an element that may be shared (the store's own): it stays shared unless normalising it
+    /// changes it, then the universe keeps the normalised copy.
+    pub(crate) fn build_shared(
+        mut el: Arc<Element>,
+        copied_rules: usize,
+        derived: bool,
+        edition: EditionStatus,
+        supports: Vec<String>,
+    ) -> Self {
+        // normalising leaves every other element as it is (both return at once for them)
+        let list_effects =
+            if crate::item_conds::normalizes(&el) || crate::custom_rules::normalizes(&el) {
+                let mut own = el.as_ref().clone();
+                crate::item_conds::normalize(&mut own);
+                let effects = crate::custom_rules::normalize(&mut own);
+                if own != *el {
+                    el = Arc::new(own);
+                }
+                effects
+            } else {
+                crate::custom_rules::Effects::new()
+            };
         let repeatable = crate::custom_rules::is_repeatable(&el);
         let prereq = crate::custom_rules::Prereq::from_element(&el);
         let owner_name = el.name.clone();
@@ -526,13 +552,13 @@ fn equivalence_classes(edges: &[(String, String)]) -> (HashMap<String, usize>, V
 
 /// Decides how an element relates to the profile's edition and applies the adapter.
 fn classify(
-    el: &Element,
+    el: &Arc<Element>,
     profile: &dyn RulesetProfile,
     adapter: &dyn EditionAdapter,
-) -> (Element, EditionStatus) {
+) -> (Arc<Element>, EditionStatus) {
     let target = profile.ruleset();
     let Some(from) = el.ruleset.filter(|r| !r.compatible_with(target)) else {
-        return (el.clone(), EditionStatus::Native);
+        return (Arc::clone(el), EditionStatus::Native);
     };
     let rejected = |reason: String| EditionStatus::Foreign {
         from,
@@ -548,11 +574,11 @@ fn classify(
             el.ty,
             profile.label()
         );
-        return (el.clone(), rejected(reason));
+        return (Arc::clone(el), rejected(reason));
     }
     match adapter.adapt(el, from, profile) {
         Adaptation::Unchanged => (
-            el.clone(),
+            Arc::clone(el),
             EditionStatus::Foreign {
                 from,
                 accepted: true,
@@ -566,7 +592,7 @@ fn classify(
             },
         ),
         Adaptation::Converted { element, notes } => (
-            *element,
+            Arc::new(*element),
             EditionStatus::Foreign {
                 from,
                 accepted: true,
@@ -574,7 +600,7 @@ fn classify(
                 notes,
             },
         ),
-        Adaptation::Rejected { reason } => (el.clone(), rejected(reason)),
+        Adaptation::Rejected { reason } => (Arc::clone(el), rejected(reason)),
     }
 }
 
@@ -729,39 +755,47 @@ impl Universe {
             s.dedup();
             s
         };
-        let mut classes: Vec<Element> = Vec::new();
-        for stored in store.iter() {
-            uni.diagnostics
-                .extend(crate::custom_rules::content_diagnostics(
-                    &stored.element,
-                    stored.origin,
-                ));
+        // each element is prepared on its own (in parallel), then the universe takes them in load order
+        let prepare = |stored: &&StoredElement| {
+            let diagnostics =
+                crate::custom_rules::content_diagnostics(&stored.element, stored.origin);
             let (mut el, edition) = classify(&stored.element, profile, adapter);
+            let mut class = None;
+            let mut multi = None;
             if el.ty == "Class" {
-                classes.push(el.clone());
+                class = Some(el.as_ref().clone());
                 if let Some(mc) = el.multiclass.clone() {
                     let derived = Self::multiclass_element(&el, &mc);
-                    patch_class(&mut el, &mc);
+                    patch_class(Arc::make_mut(&mut el), &mc);
                     let supports = eff(&derived);
-                    let mut multi = UElem::build(
+                    let mut m = UElem::build(
                         derived,
                         el.rules.len().saturating_sub(1),
                         true,
                         edition.clone(),
                         supports,
                     );
-                    multi
-                        .user_edition_book
-                        .clone_from(&stored.user_edition_book);
-                    uni.push(multi);
+                    m.user_edition_book.clone_from(&stored.user_edition_book);
+                    multi = Some(m);
                     // the copied-rule count is the class rules *before* the patch appended one rule
                 }
             }
             let supports = eff(&el);
             let legacy = legacy_alias_accepted(&stored.element, profile).is_some();
-            let mut u = UElem::build(el, 0, false, edition, supports);
+            let mut u = UElem::build_shared(el, 0, false, edition, supports);
             u.legacy_accepted = legacy && u.edition.is_accepted();
             u.user_edition_book.clone_from(&stored.user_edition_book);
+            (diagnostics, class, multi, u)
+        };
+        let stored: Vec<&StoredElement> = store.iter().collect();
+        let prepared: Vec<_> = stored.par_iter().map(prepare).collect();
+        let mut classes: Vec<Element> = Vec::new();
+        for (diagnostics, class, multi, u) in prepared {
+            uni.diagnostics.extend(diagnostics);
+            classes.extend(class);
+            if let Some(m) = multi {
+                uni.push(m);
+            }
             uni.push(u);
         }
         // fix copied_rules of multiclass elements: class rules before patching
@@ -796,7 +830,7 @@ impl Universe {
         };
         let native = of_type().filter(|u| !u.edition.is_foreign());
         let foreign = of_type().filter(|u| u.edition.is_foreign());
-        crate::content_skills::collect(native.chain(foreign).map(|u| &u.el))
+        crate::content_skills::collect(native.chain(foreign).map(|u| u.el.as_ref()))
     }
 
     /// Skills content adds besides the eighteen, in load order.
@@ -1035,11 +1069,9 @@ impl Universe {
     /// (any edition) whose parts raise a score are passed along, so the added increase applies
     /// only while the character has none of them.
     fn add_origin_increases(&mut self, profile: &dyn RulesetProfile, adapter: &dyn EditionAdapter) {
-        let with_own_increase: Vec<String> = self
-            .by_type
-            .get("Background")
-            .into_iter()
-            .flatten()
+        let backgrounds: &[usize] = self.by_type.get("Background").map_or(&[], Vec::as_slice);
+        let with_own_increase: Vec<String> = backgrounds
+            .par_iter()
             .filter(|&&i| self.raises_ability_in(i, is_background_part))
             .map(|&i| self.elems[i].el.id.clone())
             .collect();

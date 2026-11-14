@@ -401,13 +401,13 @@ fn resource_hosts<'g, 'u>(graph: &'g Graph<'u>) -> Vec<(&'u Element, RuleHost<'g
     let mut out: Vec<(&'u Element, RuleHost<'g>)> = graph
         .preorder()
         .into_iter()
-        .map(|id| (&graph.nodes[id].e.el, RuleHost::Node(id)))
+        .map(|id| (graph.nodes[id].e.el.as_ref(), RuleHost::Node(id)))
         .collect();
     out.extend(
         graph
             .carried_items()
             .iter()
-            .map(|c| (&c.e.el, RuleHost::Carried(c.uid.as_str()))),
+            .map(|c| (c.e.el.as_ref(), RuleHost::Carried(c.uid.as_str()))),
     );
     out
 }

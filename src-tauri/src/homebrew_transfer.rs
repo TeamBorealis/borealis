@@ -293,7 +293,7 @@ impl AppState {
         } else {
             builder.add_parsed_pack(parsed)
         };
-        let store = builder.build();
+        let store = builder.build_reusing(Some(&hub.store));
         let ids: HashSet<&str> = pack
             .content
             .elements

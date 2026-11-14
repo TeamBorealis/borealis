@@ -842,7 +842,7 @@ mod tests {
         let _ = &mut u;
         let ue = crate::universe::UElem {
             supports: e.supports.clone(),
-            el: e,
+            el: std::sync::Arc::new(e),
             rules: vec![],
             req: Cond::None,
             copied_rules: 0,

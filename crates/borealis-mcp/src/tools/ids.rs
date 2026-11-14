@@ -49,7 +49,7 @@ pub fn run(tools: &Tools, args: &Value) -> Result<Value, String> {
     let mut rows: Vec<Value> = tools
         .store
         .iter()
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| matches(&a.category, e))
         .filter(|e| match (ruleset, e.ruleset) {
             (Some(want), Some(have)) => have.compatible_with(want),

@@ -118,6 +118,7 @@ impl AppState {
             form: &form,
             written: written.as_deref(),
             cx: &cx,
+            loaded: Some(&hub.store),
         })
         .into_iter()
         .map(|p| wire_problem(p, &saved))

@@ -38,7 +38,7 @@ pub(crate) fn exemplar(
 ) -> Option<Value> {
     let mut found: Vec<&Element> = store
         .by_type(ty)
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| in_edition(e, edition) && e.source.to_ascii_uppercase().contains("SRD"))
         .collect();
     found.sort_by(|a, b| a.id.cmp(&b.id));

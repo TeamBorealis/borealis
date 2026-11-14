@@ -456,7 +456,7 @@ pub fn threads() -> usize {
 pub fn by_name(store: &ContentStore, ty: &str, name: &str, prefix: &str) -> Result<String, String> {
     let hits: Vec<&str> = store
         .iter()
-        .map(|se| &se.element)
+        .map(|se| se.element.as_ref())
         .filter(|e| e.ty == ty && e.name == name && e.id.starts_with(prefix))
         .map(|e| e.id.as_str())
         .collect::<BTreeSet<_>>()

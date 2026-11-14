@@ -40,7 +40,7 @@ fn in_scope(el: &Element, ruleset: Ruleset) -> bool {
 impl Baselines {
     /// Measure every element of the enabled packs that belongs to `ruleset`.
     pub fn from_store(store: &ContentStore, ruleset: Ruleset) -> Self {
-        Self::from_elements(store.iter().map(|s| &s.element), ruleset)
+        Self::from_elements(store.iter().map(|s| s.element.as_ref()), ruleset)
     }
 
     /// Measure every one of `elements` that belongs to `ruleset` (the homebrew creator leaves the draft out, so a draft

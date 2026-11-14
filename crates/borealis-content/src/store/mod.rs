@@ -24,8 +24,9 @@ use std::sync::Arc;
 /// An element together with where it came from.
 #[derive(Debug, Clone, PartialEq)]
 pub struct StoredElement {
-    /// The element after `<append>` merging.
-    pub element: Element,
+    /// The element after `<append>` merging (shared with the engine's universes and with the next store built
+    /// over an unchanged element: [`ContentStoreBuilder::build_reusing`]).
+    pub element: Arc<Element>,
     /// The file it was loaded from.
     pub file: Arc<str>,
     /// Core or custom load semantics of that file.
@@ -139,10 +140,16 @@ impl ContentStore {
             .map(|&i| &self.elements[i])
     }
 
+    /// Look an element up by its own id only (not a `renamed_from` alias).
+    #[must_use]
+    pub fn get_exact(&self, id: &str) -> Option<&StoredElement> {
+        self.by_id.get(id).map(|&i| &self.elements[i])
+    }
+
     /// Look an element up by id and return just the element.
     #[must_use]
     pub fn element(&self, id: &str) -> Option<&Element> {
-        self.get(id).map(|s| &s.element)
+        self.get(id).map(|s| s.element.as_ref())
     }
 
     /// True if `id` is an element id or the id of a synthesized multiclass sibling.

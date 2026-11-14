@@ -67,7 +67,7 @@ fn find(store: &ContentStore, edition: Edition, ty: &str, name: &str) -> Option<
     let hits: Vec<&borealis_content::Element> = store
         .by_type(ty)
         .filter(|s| in_edition(&s.element, edition))
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| key(&e.name) == want || key(inner(&e.name)) == want)
         .filter(|e| !e.name.to_lowercase().contains("expertise"))
         .collect();

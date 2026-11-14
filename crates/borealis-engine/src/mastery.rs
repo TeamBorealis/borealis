@@ -137,10 +137,10 @@ pub fn display_name(name: &str) -> String {
 /// defines a written name).
 #[must_use]
 pub fn properties_of(uni: &Universe, weapon: &Element) -> Vec<MasteryProperty> {
-    let get = |id: &str| uni.get(id).map(|u| &u.el);
+    let get = |id: &str| uni.get(id).map(|u| u.el.as_ref());
     let named = |name: &str| {
         uni.by_type(MASTERY_PROPERTY_TYPE)
-            .map(|u| &u.el)
+            .map(|u| u.el.as_ref())
             .find(|m| m.name.eq_ignore_ascii_case(name))
     };
     mastery_links(weapon, get, named)
@@ -160,7 +160,7 @@ pub fn properties_of(uni: &Universe, weapon: &Element) -> Vec<MasteryProperty> {
 /// True if the weapon has at least one Mastery property (a Weapon Mastery slot may take it).
 #[must_use]
 pub fn has_mastery(uni: &Universe, weapon: &Element) -> bool {
-    !mastery_links(weapon, |id| uni.get(id).map(|u| &u.el), |_| None).is_empty()
+    !mastery_links(weapon, |id| uni.get(id).map(|u| u.el.as_ref()), |_| None).is_empty()
 }
 
 /// Prefix of Aurora's weapon category tags (`ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE`).

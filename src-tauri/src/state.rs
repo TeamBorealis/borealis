@@ -101,7 +101,7 @@ impl ContentHub {
         self.store.element(id).or_else(|| {
             Self::UNIVERSE_RULESETS
                 .iter()
-                .find_map(|r| self.engine.universe(*r).get(id).map(|u| &u.el))
+                .find_map(|r| self.engine.universe(*r).get(id).map(|u| u.el.as_ref()))
         })
     }
 
@@ -130,7 +130,7 @@ impl ContentHub {
         Self::UNIVERSE_RULESETS
             .iter()
             .flat_map(move |r| self.engine.universe(*r).by_type(ty))
-            .map(|u| &u.el)
+            .map(|u| u.el.as_ref())
             .filter(|el| self.store.element(&el.id).is_none())
             .filter(move |el| seen.insert(el.id.clone()))
     }
@@ -167,7 +167,33 @@ impl ContentHub {
         prefs: &ContentPrefs,
         on_step: &mut dyn FnMut(LoadStep),
     ) -> ApiResult<Self> {
+        Self::load_from(paths, settings, prefs, on_step, None)
+    }
+
+    /// Load everything again to replace `previous` (a pack added, removed, switched on or off; New pack): the same
+    /// hub as [`ContentHub::load_with`] gives, sharing with `previous` every pack file and element that did not
+    /// change, so the two hubs together cost one hub plus what changed (item Isq-Y).
+    ///
+    /// # Errors
+    /// `content_error` if a bundled pack is missing or invalid.
+    pub fn reload(
+        paths: &AppPaths,
+        settings: &AppSettings,
+        prefs: &ContentPrefs,
+        previous: &Self,
+    ) -> ApiResult<Self> {
+        Self::load_from(paths, settings, prefs, &mut |_| {}, Some(previous))
+    }
+
+    fn load_from(
+        paths: &AppPaths,
+        settings: &AppSettings,
+        prefs: &ContentPrefs,
+        on_step: &mut dyn FnMut(LoadStep),
+        previous: Option<&Self>,
+    ) -> ApiResult<Self> {
         let mut timer = LoadTimer::new();
+        let old_builder = previous.map(|h| h.builder.as_ref());
         let (bundled, custom) = pack_dirs(paths, prefs);
         let total = bundled.len() + custom.len();
         let editions = prefs.source_editions();
@@ -188,12 +214,17 @@ impl ContentHub {
                     );
                 }
                 on_step(LoadStep::Engine);
+                let builder = match old_builder {
+                    Some(old) => cached.builder.sharing_files_with(old),
+                    None => cached.builder,
+                };
                 return Ok(Self::assemble(
-                    cached.builder,
+                    builder,
                     cached.load_warnings,
                     settings,
                     editions,
                     timer,
+                    previous,
                 ));
             }
             Err(miss) => {
@@ -208,7 +239,7 @@ impl ContentHub {
                 total,
                 custom: false,
             });
-            builder = builder.add_pack_dir(dir)?;
+            builder = builder.add_parsed_pack_sharing(ParsedPack::read(dir)?, old_builder);
         }
         timer.step("bundled packs", &format!("{} packs", bundled.len()));
         let mut load_warnings = Vec::new();
@@ -221,7 +252,7 @@ impl ContentHub {
             });
             // Read the pack on its own first: a broken pack leaves the builder untouched.
             match ParsedPack::read(dir) {
-                Ok(pack) => builder = builder.add_parsed_pack(pack),
+                Ok(pack) => builder = builder.add_parsed_pack_sharing(pack, old_builder),
                 Err(e) => {
                     tracing::warn!("skipping user pack {}: {e}", dir.display());
                     load_warnings.push(format!("A user content pack could not be loaded: {e}"));
@@ -233,7 +264,7 @@ impl ContentHub {
             &format!("{} packs, {} skipped", custom.len(), load_warnings.len()),
         );
         on_step(LoadStep::Engine);
-        let hub = Self::assemble(builder, load_warnings, settings, editions, timer);
+        let hub = Self::assemble(builder, load_warnings, settings, editions, timer, previous);
         let write = content_cache::save_in_background(
             cache_file,
             key,
@@ -254,18 +285,22 @@ impl ContentHub {
         }
     }
 
-    /// Build the store and the engine over a builder holding every enabled pack.
+    /// Build the store and the engine over a builder holding every enabled pack (sharing unchanged elements with
+    /// the `previous` hub's store, when it replaces one).
     fn assemble(
         builder: ContentStoreBuilder,
         load_warnings: Vec<String>,
         settings: &AppSettings,
         editions: BTreeMap<String, Ruleset>,
         mut timer: LoadTimer,
+        previous: Option<&Self>,
     ) -> Self {
         // IM14: books whose edition the user set are re-tagged at load (also in AI draft builds)
         let builder = builder.with_source_editions(editions);
-        // The builder is kept for later rebuilds, so the store is built from a copy.
-        let store = builder.clone().build();
+        // The builder is kept for later rebuilds, so the store is built from a copy (which shares its files).
+        let store = builder
+            .clone()
+            .build_reusing(previous.map(|h| h.store.as_ref()));
         timer.step("build", &format!("{} elements", store.len()));
         let engine = Engine::with_settings(&store, settings.engine_settings());
         timer.step("engine", "");

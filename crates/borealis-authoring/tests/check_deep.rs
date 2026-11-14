@@ -22,7 +22,7 @@ fn srd_2024_classes_and_subclasses_check_clean() {
     let store = base.clone().build();
     let codec = CatalogBlockCodec;
     let cx = FormContext::from_store(&store, &codec);
-    let all: Vec<Element> = store.iter().map(|s| s.element.clone()).collect();
+    let all: Vec<Element> = store.iter().map(|s| s.element.as_ref().clone()).collect();
     let roots: Vec<&Element> = all
         .iter()
         .filter(|e| {
@@ -41,6 +41,7 @@ fn srd_2024_classes_and_subclasses_check_clean() {
             form: &form,
             written: None,
             cx: &cx,
+            loaded: None,
         }) {
             assert!(!p.message.contains("ID_"), "{p:?}");
             if p.severity != ProblemSeverity::Info

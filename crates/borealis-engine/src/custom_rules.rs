@@ -534,6 +534,12 @@ fn ability_select(
     (rule, effects)
 }
 
+/// Can [`normalize`] change `el` at all (it rewrites custom rules only; an element without any is left as it is)?
+#[must_use]
+pub fn normalizes(el: &Element) -> bool {
+    el.rules.iter().any(|r| matches!(r, Rule::Custom(_)))
+}
+
 /// Rewrite the custom kinds of `el` into core rules; returns the ability effects per rule index.
 pub fn normalize(el: &mut Element) -> Effects {
     let mut effects = Effects::new();

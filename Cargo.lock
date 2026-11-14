@@ -778,6 +778,7 @@ version = "1.4.0"
 dependencies = [
  "borealis-content",
  "borealis-migrate",
+ "rayon",
  "serde",
  "serde_json",
  "thiserror 2.0.21",

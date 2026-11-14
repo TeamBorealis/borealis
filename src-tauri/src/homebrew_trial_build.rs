@@ -220,7 +220,11 @@ fn parents_of(root: &Element, store: &ContentStore) -> Vec<String> {
         })
     };
     let mut out: Vec<String> = Vec::new();
-    for owner in store.iter().map(|s| &s.element).filter(|e| offers(e)) {
+    for owner in store
+        .iter()
+        .map(|s| s.element.as_ref())
+        .filter(|e| offers(e))
+    {
         if is_parent(owner) {
             out.push(owner.id.clone());
             continue;
@@ -228,7 +232,7 @@ fn parents_of(root: &Element, store: &ContentStore) -> Vec<String> {
         out.extend(
             store
                 .iter()
-                .map(|s| &s.element)
+                .map(|s| s.element.as_ref())
                 .filter(|p| is_parent(p))
                 .filter(|p| {
                     p.rules

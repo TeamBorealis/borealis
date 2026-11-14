@@ -144,7 +144,7 @@ fn known_spell_lists(
     store: &ContentStore,
     pairs: &[(String, &FormState, &Element)],
 ) -> Vec<String> {
-    let loaded = store.iter().map(|s| &s.element);
+    let loaded = store.iter().map(|s| s.element.as_ref());
     let draft = pairs.iter().map(|(_, _, e)| *e);
     let mut out: Vec<String> = Vec::new();
     for e in loaded.chain(draft) {
@@ -179,7 +179,7 @@ fn group_not_offered(
     if group.is_empty() {
         return None;
     }
-    let loaded: Vec<&Element> = store.iter().map(|s| &s.element).collect();
+    let loaded: Vec<&Element> = store.iter().map(|s| s.element.as_ref()).collect();
     let everything = || loaded.iter().copied().chain(draft.iter().copied());
     let chosen = everything().flat_map(Element::all_rules).any(|r| match r {
         Rule::Select(s) => s
@@ -263,7 +263,7 @@ fn choice_noun(ty: &str) -> Option<&'static str> {
 
 /// A choice of `e`'s type somewhere in the loaded content or the draft names one of its tags or its id.
 fn offered(e: &Element, store: &ContentStore, draft: &[&Element]) -> bool {
-    let loaded = store.iter().map(|s| &s.element);
+    let loaded = store.iter().map(|s| s.element.as_ref());
     loaded
         .chain(draft.iter().copied())
         .flat_map(Element::all_rules)
@@ -292,7 +292,7 @@ fn defined_pools(
     store: &ContentStore,
     pairs: &[(String, &FormState, &Element)],
 ) -> HashSet<String> {
-    let loaded = store.iter().map(|s| &s.element);
+    let loaded = store.iter().map(|s| s.element.as_ref());
     let draft = pairs.iter().map(|(_, _, e)| *e);
     loaded
         .chain(draft)

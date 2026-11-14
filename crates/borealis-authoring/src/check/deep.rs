@@ -41,6 +41,8 @@ pub struct DeepInput<'a> {
     pub written: Option<&'a [Element]>,
     /// The form context over the loaded content.
     pub cx: &'a FormContext<'a>,
+    /// The loaded store, when `base` is its builder: the check's store shares its unchanged elements (item Isq-Y).
+    pub loaded: Option<&'a ContentStore>,
 }
 
 /// Types a test character takes (the others are only derived).
@@ -77,7 +79,7 @@ pub fn deep_problems(input: &DeepInput<'_>) -> Vec<Problem> {
             PackOrigin::Custom,
             ContentFile::new(elements.clone()),
         )
-        .build();
+        .build_reusing(input.loaded);
     let own: HashSet<&str> = ids.iter().map(String::as_str).collect();
     if validate_elements(&store, &own)
         .iter()
@@ -199,7 +201,7 @@ fn balance_problems(
     let own: std::collections::HashSet<&str> = elements.iter().map(|e| e.id.as_str()).collect();
     let others = store
         .iter()
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| !own.contains(e.id.as_str()));
     let baselines = Baselines::from_elements(others, input.ruleset);
     let mut out = Vec::new();
@@ -318,9 +320,13 @@ fn parent_class(sub: &Element, store: &ContentStore, ruleset: Ruleset) -> Option
             _ => false,
         })
     };
-    let classes: Vec<&Element> = store.by_type("Class").map(|s| &s.element).collect();
+    let classes: Vec<&Element> = store.by_type("Class").map(|s| s.element.as_ref()).collect();
     let mut parents: Vec<&Element> = Vec::new();
-    for owner in store.iter().map(|s| &s.element).filter(|e| offers(e)) {
+    for owner in store
+        .iter()
+        .map(|s| s.element.as_ref())
+        .filter(|e| offers(e))
+    {
         if owner.ty == "Class" {
             parents.push(owner);
         }

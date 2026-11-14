@@ -225,7 +225,7 @@ impl AppState {
             .elements
             .iter()
             .filter(|e| e.ty == "Spell")
-            .chain(hub.store.by_type("Spell").map(|s| &s.element))
+            .chain(hub.store.by_type("Spell").map(|s| s.element.as_ref()))
             .filter(|e| seen.insert(e.id.as_str()));
         let mut rows: Vec<HomebrewSpellListRow> = spells
             .map(|el| HomebrewSpellListRow {
@@ -414,7 +414,7 @@ impl AppState {
             .elements
             .iter()
             .filter(|e| e.ty == "Spell")
-            .chain(hub.store.by_type("Spell").map(|s| &s.element))
+            .chain(hub.store.by_type("Spell").map(|s| s.element.as_ref()))
             .filter(|e| seen.insert(e.id.as_str()))
             .map(|el| HomebrewSpellListRow {
                 row: picker_row(&hub.store, el, false),

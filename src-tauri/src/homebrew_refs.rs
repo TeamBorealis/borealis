@@ -339,7 +339,7 @@ impl AppState {
         }
         if target.types.iter().any(|t| t == SPELL_LIST_TYPE) {
             let own = drafted.iter().map(|e| (e, true));
-            let loaded = hub.store.iter().map(|s| (&s.element, false));
+            let loaded = hub.store.iter().map(|s| (s.element.as_ref(), false));
             return Ok(spell_list_rows(own.chain(loaded), &query, page));
         }
         // the generic form (spec 4.12): the open types loaded content uses, the setter names a type uses
@@ -405,7 +405,7 @@ impl AppState {
             hub.store
                 .iter()
                 .filter(|s| !srd_only || is_bundled(&s.file))
-                .map(|s| &s.element)
+                .map(|s| s.element.as_ref())
                 .filter(|e| passes(e, target, &query, filters))
                 .filter(|e| seen.insert(e.id.as_str()))
                 .map(|element| Candidate {

@@ -496,7 +496,7 @@ fn run_three_way(data: &Path, five: &Path, file: &Path) {
         let fs = fc.as_ref().ok().and_then(|c| {
             fstore
                 .iter()
-                .map(|se| &se.element)
+                .map(|se| se.element.as_ref())
                 .find(|e| {
                     e.ty == "Archetype" && &e.name == fsub && e.supports.iter().any(|s| s == c)
                 })

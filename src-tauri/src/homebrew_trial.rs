@@ -199,7 +199,7 @@ fn hub_with(
     let builder = hub
         .builder_with_pack(parsed.clone())
         .unwrap_or_else(|| hub.builder.as_ref().clone().add_parsed_pack(parsed));
-    let store = builder.clone().build();
+    let store = builder.clone().build_reusing(Some(&hub.store));
     ContentHub::from_built(builder, store, Vec::new(), settings)
 }
 

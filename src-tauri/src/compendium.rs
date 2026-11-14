@@ -127,7 +127,7 @@ impl AppState {
         let mut hits: Vec<(u8, &Element)> = hub
             .store
             .iter()
-            .map(|s| &s.element)
+            .map(|s| s.element.as_ref())
             .chain(hub.derived_elements(MULTICLASS_TYPE))
             .filter(|e| wanted(e))
             .filter_map(|e| {
@@ -195,7 +195,7 @@ impl AppState {
         let hub = self.hub()?;
         let mut types: BTreeMap<&str, usize> = BTreeMap::new();
         let mut sources: BTreeMap<&str, usize> = BTreeMap::new();
-        for e in hub.store.iter().map(|s| &s.element) {
+        for e in hub.store.iter().map(|s| s.element.as_ref()) {
             if !is_listed(e, None) {
                 continue;
             }
@@ -265,7 +265,7 @@ fn mastery_html(store: &ContentStore, el: &Element) -> String {
     let named = |name: &str| {
         store
             .iter()
-            .map(|s| &s.element)
+            .map(|s| s.element.as_ref())
             .filter(|m| m.ty == MASTERY_PROPERTY_TYPE)
             .find(|m| m.name.eq_ignore_ascii_case(name))
     };

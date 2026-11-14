@@ -299,7 +299,7 @@ impl Lookup for ContentStore {
     }
 
     fn loaded_of_type(&self, ty: &str) -> Vec<&Element> {
-        self.by_type(ty).map(|s| &s.element).collect()
+        self.by_type(ty).map(|s| s.element.as_ref()).collect()
     }
 
     fn loaded_types(&self) -> Vec<String> {
