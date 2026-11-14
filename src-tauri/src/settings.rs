@@ -28,6 +28,8 @@ pub struct SheetSettings {
     pub cards_new_page: CardsNewPage,
     /// Reference app "Legacy Spellcasting Page": the single-page basic spellcasting layout.
     pub legacy_spellcasting_page: bool,
+    /// Print a feature and the later features that improve it as one entry (default off).
+    pub fold_feature_upgrades: bool,
     /// Paper size (TV1, B-147). `None` until the user picks one: the sheet then uses the device
     /// region's paper, which the UI sends with each request (`SheetOptionsDto::default_paper`).
     pub paper: Option<SheetPaperSetting>,
@@ -237,6 +239,7 @@ impl Default for SheetSettings {
             open_after_save: true,
             cards_new_page: CardsNewPage::default(),
             legacy_spellcasting_page: false,
+            fold_feature_upgrades: false,
             paper: None,
         }
     }
