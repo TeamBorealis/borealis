@@ -47,22 +47,27 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const env = { ...process.env, DEVELOPER_DIR };
 const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { env, maxBuffer: 256 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"], ...opts });
 
-/** Page-side helpers, installed once per page load: query by CSS + text, fill through React's setter, rectangles. */
-const HELPERS = `(() => {
-  if (window.__dv) return true;
+/**
+ * Page-side helpers, installed once per page load and again when this file changes (a kept install's page keeps the
+ * helpers of an older driver): query by CSS + text, fill through React's setter, aiming, the touch log.
+ */
+const HELPERS_SOURCE = `(() => {
+  if (window.__dv?.version === '__VERSION__') return true;
   const visible = (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
   const describe = (e) => !(e instanceof Element) ? String(e) : e.tagName.toLowerCase() + (e.id ? '#' + e.id : '')
     + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\\s+/).slice(0, 2).join('.') : '');
-  // every touch the page receives, so a touch that never reached its target can be told apart (IDpjU)
-  const seen = [];
-  for (const type of ['touchstart', 'touchend', 'pointerdown', 'pointerup', 'click']) {
+  // every touch the page receives, so a touch that never reached its target can be told apart (IDpjU); logged once per page
+  const seen = window.__dvSeen ?? [];
+  if (!window.__dvSeen) for (const type of ['touchstart', 'touchend', 'pointerdown', 'pointerup', 'click']) {
     document.addEventListener(type, (ev) => {
       const p = ev.touches?.[0] ?? ev.changedTouches?.[0] ?? ev;
       seen.push({ type, x: Math.round(p.clientX ?? -1), y: Math.round(p.clientY ?? -1), target: describe(ev.target), t: Math.round(performance.now()) });
       if (seen.length > 40) seen.shift();
     }, { capture: true, passive: true });
   }
+  window.__dvSeen = seen;
   window.__dv = {
+    version: '__VERSION__',
     seen,
     /**
      * False while the phone status line is open and will fold by itself (a plain message folds 4 s after it shows,
@@ -128,6 +133,7 @@ const HELPERS = `(() => {
   };
   return true;
 })()`;
+const HELPERS = HELPERS_SOURCE.replaceAll('__VERSION__', createHash('sha256').update(HELPERS_SOURCE).digest('hex').slice(0, 12));
 
 const arg = (v) => (v === undefined ? 'undefined' : JSON.stringify(v));
 
