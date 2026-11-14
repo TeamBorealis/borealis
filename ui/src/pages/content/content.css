@@ -53,6 +53,10 @@
 .v4-pack-row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-bottom: 1px solid var(--light-2); }
 .v4-pack-row label { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 10rem; cursor: pointer; }
 .v4-grid-cmds { display: inline-flex; gap: 2px; }
+/* Restrict playtest / third-party toggles: pressed = on (classic ToggleButton look). */
+.v4-grid-toggle.on { background: var(--accent-80); color: #fff; box-shadow: inset 0 0 0 1px var(--accent-base); }
+@media (hover: hover) and (pointer: fine) { .v4-grid-toggle.on:hover:not(:disabled) { background: var(--accent-base); } }
+.v4-restrict-note { color: var(--text-secondary); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .v4-grid { flex: 1; min-height: 0; display: flex; flex-direction: column; font-size: var(--fs-md); }
 .v4-grid-head, .v4-grid-row { display: grid; grid-template-columns: 34px minmax(0, 3fr) minmax(0, 2fr) minmax(0, 2fr) 90px; align-items: center; }
 .v4-grid-head { background: var(--highlight, #293338); min-height: 26px; font-weight: 600; text-transform: uppercase; font-size: var(--fs-sm); padding-right: 17px; }
@@ -70,6 +74,7 @@
 html.phone .v4-sources-wrap { grid-template-columns: minmax(0, 1fr); }
 html.phone .v4-grid-tools { flex-wrap: wrap; row-gap: 8px; }
 html.phone .v4-grid-tools .search { width: 100%; }
+html.phone .v4-restrict-note { white-space: normal; flex-basis: 100%; }
 html.phone .v4-grid { min-height: 180px; }
 
 .v4-badge { margin-left: 6px; min-width: 16px; padding: 0 4px; background: var(--gold); color: #111; font-size: 10px; font-weight: 600; line-height: 16px; text-align: center; display: inline-block; }

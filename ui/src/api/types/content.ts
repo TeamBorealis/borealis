@@ -124,6 +124,8 @@ export interface ContentSource {
   elementCount: number;
   description: string;
   playtest: boolean;
+  /** Not official material: its Source element sets `third-party` or lacks `official` (playtest books are only `playtest`). */
+  thirdParty: boolean;
   /** The source is flagged incomplete (work in progress). */
   incomplete?: boolean;
   /** The source's own extra note; empty or absent when it has none. */

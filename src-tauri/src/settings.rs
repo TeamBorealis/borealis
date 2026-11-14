@@ -168,6 +168,11 @@ pub struct AppSettings {
     pub show_import_notice: bool,
     /// "Check for new versions of Borealis": at startup, ask GitHub for the latest version number (default on).
     pub check_app_updates: bool,
+    /// Sources page "Restrict playtest content": playtest books start unchecked in the default sources of new
+    /// characters, and turning it on unchecks them on the loaded character (default off).
+    pub restrict_playtest: bool,
+    /// Sources page "Restrict third-party content": the same for books not marked official (default off).
+    pub restrict_third_party: bool,
     /// Local search (local-search-spec.md section 9).
     pub search: SearchSettings,
 }
@@ -288,6 +293,8 @@ impl Default for AppSettings {
             portrait_size: 150,
             show_import_notice: true,
             check_app_updates: true,
+            restrict_playtest: false,
+            restrict_third_party: false,
             search: SearchSettings::default(),
         }
     }

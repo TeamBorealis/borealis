@@ -184,6 +184,14 @@ impl AppState {
             .into_iter()
             .map(|p| (p.manifest.id, p.manifest.name))
             .collect();
+        // A book's `Source` element names the book but usually belongs to the `Core` (Aurora) or `Internal`
+        // (5etools import) source, so it is found by name, not among the book's own elements.
+        let mut descriptors: BTreeMap<String, &borealis_content::Element> = BTreeMap::new();
+        for e in hub.store.by_type("Source") {
+            descriptors
+                .entry(borealis_content::source_key(&e.element.name))
+                .or_insert(&e.element);
+        }
         let mut out = Vec::new();
         for source in hub.store.source_names() {
             if borealis_content::is_unrestrictable_source(source) {
@@ -195,12 +203,19 @@ impl AppState {
                 .and_then(|e| e.file.split('/').next())
                 .unwrap_or_default()
                 .to_string();
-            let description = elements
-                .iter()
-                .find(|e| e.element.ty == "Source")
-                .map(|e| plain_text(&e.element.description))
+            let descriptor = descriptors
+                .get(&borealis_content::source_key(source))
+                .copied()
+                .or_else(|| {
+                    elements
+                        .iter()
+                        .find(|e| e.element.ty == "Source")
+                        .map(|e| &e.element)
+                });
+            let description = descriptor
+                .map(|e| plain_text(&e.description))
                 .unwrap_or_default();
-            let flags = source_flags(elements.iter().map(|e| &e.element));
+            let flags = source_flags(descriptor);
             let (edition, imported) =
                 crate::book_editions::loaded_edition(elements.iter().copied());
             out.push(ContentSource {
@@ -211,6 +226,7 @@ impl AppState {
                 element_count: elements.len(),
                 description,
                 playtest: flags.playtest,
+                third_party: flags.third_party,
                 incomplete: flags.incomplete,
                 info: flags.info,
                 edition,
@@ -326,13 +342,16 @@ impl AppState {
 #[derive(Debug, Default, PartialEq, Eq)]
 struct SourceFlags {
     playtest: bool,
+    third_party: bool,
     incomplete: bool,
     info: String,
 }
 
-/// Reads `playtest`/`beta`, `incomplete`/`wip` and `information` from the first `Source` element.
-fn source_flags<'a>(elements: impl Iterator<Item = &'a borealis_content::Element>) -> SourceFlags {
-    let Some(src) = elements.into_iter().find(|e| e.ty == "Source") else {
+/// Reads `playtest`/`beta`, `incomplete`/`wip` and `information` from a book's `Source` element. A book is
+/// third-party when its `Source` element sets `third-party`, or does not set `official`; playtest material
+/// counts only as playtest. A book without a `Source` element has no flags.
+fn source_flags(src: Option<&borealis_content::Element>) -> SourceFlags {
+    let Some(src) = src else {
         return SourceFlags::default();
     };
     let flag = |names: &[&str]| {
@@ -340,8 +359,10 @@ fn source_flags<'a>(elements: impl Iterator<Item = &'a borealis_content::Element
             .iter()
             .any(|n| src.setter(n).and_then(|s| s.as_bool()) == Some(true))
     };
+    let playtest = flag(&["playtest", "beta"]);
     SourceFlags {
-        playtest: flag(&["playtest", "beta"]),
+        playtest,
+        third_party: !playtest && (flag(&["third-party"]) || !flag(&["official"])),
         incomplete: flag(&["incomplete", "wip"]),
         info: src
             .setter_value("information")
@@ -371,15 +392,16 @@ mod source_flag_tests {
     #[test]
     fn flags_come_from_the_source_element_setters() {
         let e = source(&[
+            ("official", "true"),
             ("wip", "true"),
             ("beta", "true"),
             ("information", " Draft. "),
         ]);
-        let f = source_flags(std::iter::once(&e));
         assert_eq!(
-            f,
+            source_flags(Some(&e)),
             SourceFlags {
                 playtest: true,
+                third_party: false,
                 incomplete: true,
                 info: "Draft.".into()
             }
@@ -387,9 +409,25 @@ mod source_flag_tests {
     }
 
     #[test]
-    fn a_plain_source_has_no_flags() {
-        let e = source(&[("incomplete", "false")]);
-        assert_eq!(source_flags(std::iter::once(&e)), SourceFlags::default());
-        assert_eq!(source_flags(std::iter::empty()), SourceFlags::default());
+    fn an_official_source_has_no_flags() {
+        let e = source(&[("official", "true"), ("incomplete", "false")]);
+        assert_eq!(source_flags(Some(&e)), SourceFlags::default());
+        assert_eq!(source_flags(None), SourceFlags::default());
+    }
+
+    #[test]
+    fn a_source_not_marked_official_is_third_party() {
+        let plain = source(&[("author", "Someone")]);
+        assert!(source_flags(Some(&plain)).third_party);
+        let marked = source(&[("official", "true"), ("third-party", "true")]);
+        assert!(source_flags(Some(&marked)).third_party);
+    }
+
+    #[test]
+    fn playtest_material_is_not_also_third_party() {
+        // A 5etools UA import sets `third-party` and `playtest`; it is restricted as playtest.
+        let ua = source(&[("third-party", "true"), ("playtest", "true")]);
+        let f = source_flags(Some(&ua));
+        assert!(f.playtest && !f.third_party);
     }
 }
