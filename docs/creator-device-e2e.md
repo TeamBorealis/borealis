@@ -7,6 +7,7 @@ The creator's phone flows of spec 18.4 (flow 10: flows 1, 3, 4 and 8 on a phone)
 |---|---|
 | `run.mjs` | the runner: fresh install with the build-identity check, the creator switched on, the flows, `results.json` |
 | `flows.mjs` | the flows and the budget, as real touches through the phone UI |
+| `checks.mjs` | device checks of the phone UI: SPELL LISTS Select mode, the cell sheet's Bold / Italic, the accessibility tree, the Android share sheet |
 | `install.mjs` | install, identity (sha256 of the built product = the installed one; HEAD; a stale build is refused), launch, kill |
 | `driver.mjs` | reads the page through the WebView inspector, taps for real (Android `adb input tap`, iOS XCTest press) |
 | `rwi.py` | the iOS simulator's WebKit remote inspector as a small HTTP bridge (`POST /eval`) |
@@ -27,6 +28,19 @@ types for real):
 - **budget:** pinned Save timed in the page, from the tap's click event to the status line's "Saved '...'": three saves
   of a deep copy of the SRD 2024 Wizard (class, features, subclass) and three of a spell. Each must be under 4 s; every
   save of the flows is recorded too.
+- **spellLists:** SPELL LISTS on the Wizard list: Select, taps on Bless, Guidance and Cure Wounds twice choose two rows
+  ("2 spells chosen"), Add selected checks both ("(2 not saved)"), Select again clears the choice.
+- **cellMarks:** a description table, Edit cell, a tap in the cell box brings the real keyboard up (the box must stay
+  above it, the page unpanned), the text selected, Bold and Italic tapped: the selection stays and the cell reads
+  `<b><i>Column 1</i></b>`; the platform tree holds the box named "Cell text" and the Bold and Italic toggles; OK writes
+  the heading.
+- **a11y:** the platform accessibility tree (Android uiautomator, iOS XCTest through agent-device; the raw trees are
+  kept): New element's kind cards are radios with their state (Android RadioButton; iOS shows WebKit's radio trait as
+  "Other" with the value 1 / 0, as for `<input type="radio">`), and the spell's Concentration and Ritual check boxes are
+  in the tree. Android's tree reports every web check box and radio as `checkable=false` (also a plain `<input
+  type="checkbox" checked>` in Chrome 133 on API 36), so the state is not asserted there.
+- **share** (Android): Export pack > Share opens the share sheet without Borealis in it; Borealis's own exported file
+  sent back to it, and a `file:` URI, each show a message saying why the file was not opened.
 
 ## Build
 
@@ -49,12 +63,22 @@ Then, from `e2e/`:
     node scripts/devices/run.mjs android
     node scripts/devices/run.mjs ios
     node scripts/devices/run.mjs ios --only flow1,flow8      # some flows; --no-install keeps the installed app
+    node scripts/devices/run.mjs android --only flow1,budget --library ../target/device-library   # budget on a large library
 
 The run uninstalls the app (its data goes with it), installs the build, checks the installed bytes against the built
 ones, writes `settings.json` `{"creatorEnabled": true}` into the app's data folder (Android through `run-as`, iOS in the
 simulator's data container), launches it and runs the flows in order (each needs the ones before it). Evidence
 (`flowN-*.png`, `FAIL-*.png`) and `results.json` (identity, steps, every timed save) go to
 `target/creator-devices/<platform>/`. The exit code is 0 only if every step passed and every save was under 4 s.
+`results.json` also holds the packs and elements the app loaded (`content`), the checks' findings (`checks`) and the
+taps (`taps`: how many, and every touch that did not reach its target with what the page received and how it looked).
+
+**A large library** (`--library <dir>`): a data folder written by `src-tauri/tests/device_library.rs`, the local
+corpora imported through the real `AppState` as a user imports them (every 5etools source; each Aurora repository as a
+zip). Its `library/` and `content-prefs.json` are copied into the app's data folder with the install:
+
+    BOREALIS_DEVICE_LIBRARY_OUT=../target/device-library BOREALIS_5ETOOLS_DIR=<5etools data> BOREALIS_CORPUS_DIR=<aurora corpus> \
+      cargo test -p borealis --test device_library -- --ignored --nocapture      # from src-tauri/
 
 Ports: CDP on 9333 (`E2E_CDP_PORT`), the iOS bridge on 9334 (`E2E_RWI_PORT`). The runner starts and stops the bridge
 and its agent-device session itself; it leaves the emulator and the simulator running (shut them down when done).
@@ -64,6 +88,12 @@ and its agent-device session itself; it leaves the emulator and the simulator ru
 - Android reads the page through the debug WebView's DevTools socket (`webview_devtools_remote_<pid>`, forwarded by
   adb). iOS reads it through the simulator's inspector socket (`RWI_LISTEN_SOCKET`): the debug build's WKWebView is
   inspectable; nothing in the app is changed for the tests.
+- Every tap is aimed afresh before each touch: the target's centre once it reads the same twice and the page's own hit
+  test there lands on it, and not while the phone status line is about to fold (it opens on a new message and folds 4 s
+  later, moving the pinned row 36 pt). A touch that does not reach its target is made again (4 tries), aimed again.
+  Why (IDpjU): an iOS XCTest press lands 1-5 s after it is sent; measured once while "Saved '...'" was showing, the
+  pinned Save had moved by the time the touch came, and every retry went to the same old point (the page received the
+  touches, on the field above the row, and a select's label there opened its sheet).
 - iOS taps use agent-device's XCTest runner; under heavy load its press can hit the runner's watchdog. The driver tries
   such a press again (4 tries) before failing the step.
 - The Try it trial is the real engine on the device, so it stands for "a character takes it" there. The full character

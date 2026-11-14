@@ -28,12 +28,15 @@ const POLL_MS = 250;
 export const WAIT_MS = 30_000;
 /** Let a tap's animation (a sheet rising, a tab switching) run before reading the page again. */
 const AFTER_TAP_MS = 600;
-/** A target must read the same rectangle twice this far apart before it is touched (at most STILL_READS_MAX reads). */
+/** A target must read the same centre twice this far apart, and be hit there, before it is touched (at most STILL_READS_MAX reads). */
 const STILL_POLL_MS = 200;
 const STILL_READS_MAX = 25;
 /** How long a touch has to reach its target, and how often it is made. */
 const CLICK_WAIT_MS = 3_000;
 const TAP_TRIES = 4;
+/** The phone status line folds this long after a plain message (ui/src/components/shell/Chrome.tsx STATUS_FOLD_MS). */
+const STATUS_FOLD_MS = 4_000;
+const STATUS_FOLD_MARGIN_MS = 600;
 /** iOS: tries of one XCTest press, and the pause between them. */
 const PRESS_TRIES = 5;
 const PRESS_RETRY_MS = 8_000;
@@ -46,14 +49,60 @@ const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { env, maxBuffer: 
 const HELPERS = `(() => {
   if (window.__dv) return true;
   const visible = (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  const describe = (e) => !(e instanceof Element) ? String(e) : e.tagName.toLowerCase() + (e.id ? '#' + e.id : '')
+    + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\\s+/).slice(0, 2).join('.') : '');
+  // every touch the page receives, so a touch that never reached its target can be told apart (IDpjU)
+  const seen = [];
+  for (const type of ['touchstart', 'touchend', 'pointerdown', 'pointerup', 'click']) {
+    document.addEventListener(type, (ev) => {
+      const p = ev.touches?.[0] ?? ev.changedTouches?.[0] ?? ev;
+      seen.push({ type, x: Math.round(p.clientX ?? -1), y: Math.round(p.clientY ?? -1), target: describe(ev.target), t: Math.round(performance.now()) });
+      if (seen.length > 40) seen.shift();
+    }, { capture: true, passive: true });
+  }
+  // the phone status line opens on a new message and folds 4 s later (STATUS_FOLD_MS in Chrome.tsx), moving everything
+  // pinned above it: when it last changed, so a tap is not aimed at a row about to move
+  let statusAt = performance.now();
+  new MutationObserver((records) => {
+    if (records.some((r) => (r.target instanceof Element ? r.target : r.target.parentElement)?.closest('.aur-status'))) statusAt = performance.now();
+  }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['data-collapsed', 'data-pending'] });
   window.__dv = {
+    seen,
+    /** True once the status line can no longer fold or open on its own: folded, or unchanged for longer than its fold delay. */
+    statusSettled(foldMs) {
+      const st = document.querySelector('.aur-status');
+      return !st || st.dataset.collapsed !== 'false' || performance.now() - statusAt > foldMs;
+    },
+    /** What the page looked like around a touch that did not reach its target. */
+    probe(x, y, since, sel, text) {
+      const vv = window.visualViewport;
+      const re = text === undefined || text === null ? null : new RegExp(text);
+      const matches = [...document.querySelectorAll(sel)].filter((e) => !re || re.test((e.getAttribute('aria-label') ?? '').trim()) || re.test((e.textContent ?? '').trim()))
+        .map((e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e);
+          return { y: Math.round(r.y), h: Math.round(r.height), visibility: cs.visibility, hitSelf: e.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)), path: [...(function* up(n) { while (n && n !== document.body) { yield describe(n); n = n.parentElement; } })(e)].slice(1, 6).join(' < ') }; });
+      return {
+        matches,
+        viewport: vv && { offsetTop: Math.round(vv.offsetTop), offsetLeft: Math.round(vv.offsetLeft), pageTop: Math.round(vv.pageTop), scale: vv.scale, height: Math.round(vv.height), width: Math.round(vv.width) },
+        scrollY: Math.round(window.scrollY), innerHeight: window.innerHeight,
+        kbOpen: document.documentElement.classList.contains('kb-open'),
+        active: describe(document.activeElement), hit: describe(document.elementFromPoint(x, y)),
+        events: seen.filter((s) => s.t >= since),
+      };
+    },
+    now() { return Math.round(performance.now()); },
     q(sel, text) {
       const all = [...document.querySelectorAll(sel)].filter(visible);
       if (text === undefined || text === null) return all[all.length - 1] ?? null;
       const re = new RegExp(text);
       return all.filter((e) => re.test((e.getAttribute('aria-label') ?? '').trim()) || re.test((e.textContent ?? '').trim())).pop() ?? null;
     },
-    rect(sel, text) { const e = this.q(sel, text); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; },
+    /** The target's centre and whether the page's hit test there lands on it (or inside it). */
+    aim(sel, text) {
+      const e = this.q(sel, text); if (!e) return null;
+      const r = e.getBoundingClientRect(); const x = r.x + r.width / 2; const y = r.y + r.height / 2;
+      const h = document.elementFromPoint(x, y);
+      return { x, y, hit: !!h && (h === e || e.contains(h)) };
+    },
     reveal(sel, text) {
       const e = this.q(sel, text); if (!e) return false;
       // the pinned row is always on screen; scrolling "to" it scrolls the form to its end, and on iOS the touch right
@@ -142,6 +191,16 @@ async function android(evidence) {
     async type(text) { adb('shell', 'input', 'text', text.replace(/ /g, '%s')); },
     async hideKeyboard() { adb('shell', 'input', 'keyevent', 'KEYCODE_BACK'); },
     shot(name) { writeFileSync(join(evidence, `${name}.png`), adb('exec-out', 'screencap', '-p')); },
+    /** The platform accessibility tree (what TalkBack's tree holds), as uiautomator reads it; the raw dump is kept. */
+    axTree(name) {
+      const xml = adb('exec-out', 'uiautomator', 'dump', '/dev/tty').toString();
+      writeFileSync(join(evidence, `${name}.xml`), xml);
+      const attr = (n, a) => new RegExp(`\\s${a}="([^"]*)"`).exec(n)?.[1] ?? '';
+      return [...xml.matchAll(/<node [^>]*>/g)].map(([n]) => ({
+        type: attr(n, 'class'), label: attr(n, 'text') || attr(n, 'content-desc'), hint: attr(n, 'hint'), value: '',
+        checkable: attr(n, 'checkable') === 'true', checked: attr(n, 'checked') === 'true',
+      }));
+    },
     close() { cdp?.close(); },
   };
 }
@@ -203,6 +262,12 @@ async function ios(evidence) {
     async type(text) { ad('type', text); },
     async hideKeyboard() { ad('keyboard', 'dismiss'); },
     shot(name) { run('xcrun', ['simctl', 'io', udid, 'screenshot', join(evidence, `${name}.png`)], { stdio: 'ignore' }); },
+    /** The XCTest accessibility tree (what VoiceOver's tree holds), through agent-device; the raw snapshot is kept. */
+    axTree(name) {
+      const json = ad('snapshot', '--json', '--raw').toString();
+      writeFileSync(join(evidence, `${name}.json`), json);
+      return JSON.parse(json).data.nodes.map((n) => ({ type: n.type ?? '', label: n.label ?? '', hint: '', value: n.value === undefined ? '' : String(n.value), checkable: false, checked: false }));
+    },
     close() { try { ad('close'); } catch { /* session already gone */ } bridge?.kill(); },
   };
 }
@@ -214,9 +279,29 @@ export async function device(platform, evidence) {
   mkdirSync(evidence, { recursive: true });
   const d = platform === 'ios' ? await ios(evidence) : await android(evidence);
   const ev = async (expr) => { await d.eval(HELPERS); return d.eval(expr); };
+  /**
+   * Where to touch `sel`: its centre once it holds still (a sheet still rising, a list still scrolling or loading moves
+   * it) and the page's own hit test at that point finds the target (nothing covers it, it is where the page lays it
+   * out). `aimed` is false when the hit test never found it within the wait: the centre is touched anyway.
+   */
+  const aim = async (sel, text) => {
+    // a touch can land seconds after it is aimed (an iOS XCTest press takes 1-5 s): wait out the status line's fold
+    await t.waitFor(`window.__dv.statusSettled(${STATUS_FOLD_MS + STATUS_FOLD_MARGIN_MS})`, 'the status line settled', STATUS_FOLD_MS * 3);
+    let r = null;
+    for (let i = 0; i < STILL_READS_MAX; i += 1) {
+      await sleep(STILL_POLL_MS);
+      const next = await ev(`window.__dv.aim(${arg(sel)}, ${arg(text)})`);
+      if (r && next && next.hit && Math.abs(next.x - r.x) < 1 && Math.abs(next.y - r.y) < 1) return { x: next.x, y: next.y, aimed: true };
+      r = next ?? r;
+    }
+    if (!r) throw new Error(`${sel} ${text ?? ''} went away before the tap`);
+    return { x: r.x, y: r.y, aimed: false };
+  };
   const t = {
     ...d,
     ev,
+    /** Real taps made, and every touch that did not reach its target (with what the page saw). */
+    stats: { taps: 0, unaimed: 0, misses: [] },
     async waitFor(expr, what, ms = WAIT_MS) {
       const end = Date.now() + ms;
       for (;;) {
@@ -229,27 +314,27 @@ export async function device(platform, evidence) {
     async tap(sel, text) {
       await t.waitFor(`window.__dv.q(${arg(sel)}, ${arg(text)})`, `${sel} ${text ?? ''}`);
       await ev(`window.__dv.reveal(${arg(sel)}, ${arg(text)})`);
-      // touch only once the target holds still (a sheet still rising, a list still scrolling or loading moves it)
-      let r = null;
-      for (let i = 0; i < STILL_READS_MAX; i += 1) {
-        await sleep(STILL_POLL_MS);
-        const next = await ev(`window.__dv.rect(${arg(sel)}, ${arg(text)})`);
-        if (r && next && Math.abs(next.x - r.x) < 1 && Math.abs(next.y - r.y) < 1) { r = next; break; }
-        r = next;
-      }
-      if (!r) throw new Error(`${sel} ${text ?? ''} went away before the tap`);
-      // a touch the device drops (seen with XCTest presses on the simulator) is made again: the page records whether
-      // the target got its click
+      t.stats.taps += 1;
+      // a touch that does not reach its target is made again (TAP_TRIES); the page records whether the target got its click
       for (let attempt = 1; ; attempt += 1) {
-        await ev(`(() => { window.__dv.clicked = false;
+        // aimed afresh before every touch: the target can move after it was measured (IDpjU: the pinned row moved when
+        // the phone status line folded after a save, and every retry went to the old point)
+        const { x, y, aimed } = await aim(sel, text);
+        if (!aimed) t.stats.unaimed += 1;
+        const since = await ev(`(() => { window.__dv.clicked = false;
           window.__dv.q(${arg(sel)}, ${arg(text)})?.addEventListener('click', () => { window.__dv.clicked = true; }, { capture: true, once: true });
-          return true; })()`);
-        await d.touch(r.x + r.w / 2, r.y + r.h / 2);
+          return window.__dv.now(); })()`);
+        const touchedAt = Date.now();
+        await d.touch(x, y);
+        const touchMs = Date.now() - touchedAt;
         const end = Date.now() + CLICK_WAIT_MS;
         let clicked = false;
         while (!clicked && Date.now() < end) { await sleep(POLL_MS); clicked = await ev('window.__dv.clicked === true').catch(() => true); }
         // the click can also take the target away (a sheet closes): a missing target counts as clicked
         if (clicked || !(await ev(`window.__dv.q(${arg(sel)}, ${arg(text)}) !== null`).catch(() => false))) break;
+        // a touch that did not reach its target: what the page received and how it looked
+        const probe = await ev(`window.__dv.probe(${x}, ${y}, ${since}, ${arg(sel)}, ${arg(text)})`).catch((e) => ({ error: String(e) }));
+        t.stats.misses.push({ target: `${sel} ${text ?? ''}`.trim(), attempt, at: { x: Math.round(x), y: Math.round(y) }, aimed, touchMs, ...probe });
         if (attempt >= TAP_TRIES) throw new Error(`the touch on ${sel} ${text ?? ''} never reached it`);
       }
       await sleep(AFTER_TAP_MS);

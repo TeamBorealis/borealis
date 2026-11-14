@@ -15,14 +15,14 @@ const BUDGET_SAVES = 3;
 /** The iOS keyboard takes this long to come up after a field takes the focus. */
 const KEYBOARD_SETTLE_MS = 900;
 
-const re = (s) => `^${s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`;
+export const re = (s) => `^${s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`;
 
-async function check(d, expr, what) {
+export async function check(d, expr, what) {
   if (!(await d.ev(`(() => { try { return !!(${expr}); } catch { return false; } })()`))) throw new Error(`check failed: ${what}`);
 }
 
 /** A U22 select: the select button opens the bottom sheet, a tap on the option chooses it and closes the sheet. */
-async function sheetSelect(d, css, option) {
+export async function sheetSelect(d, css, option) {
   await d.tap(css);
   await d.waitFor(`document.querySelector('.select-sheet-list')`, `the sheet of ${css}`);
   await d.tap('.select-sheet-list [role="option"]', re(option));
@@ -30,7 +30,7 @@ async function sheetSelect(d, css, option) {
 }
 
 /** The pinned row steps aside while the keyboard is up (kb-open): put the keyboard away first, as a user does. */
-async function pinned(d, label) {
+export async function pinned(d, label) {
   // Undo / Redo put the focus back in the field they changed, and on iOS that brings the keyboard up (H-item in the
   // WB-27b handoff): let it come before looking
   await sleep(KEYBOARD_SETTLE_MS);
@@ -41,8 +41,8 @@ async function pinned(d, label) {
   }
   await d.tap(`.hb-commands.eq-pin button[aria-label="${label}"]`);
 }
-const autosaved = (d) => d.waitFor(`/All changes kept/i.test(document.querySelector('.hb-autosave')?.textContent ?? '')`, 'autosave');
-const tab = (d, name) => d.tap('[role="tab"]', re(name));
+export const autosaved = (d) => d.waitFor(`/All changes kept/i.test(document.querySelector('.hb-autosave')?.textContent ?? '')`, 'autosave');
+export const tab = (d, name) => d.tap('[role="tab"]', re(name));
 
 /** Pinned Save, timed in the page from the tap's click event to the status line's "Saved '<name>'". */
 export async function timedSave(d, name) {
@@ -63,7 +63,7 @@ export async function timedSave(d, name) {
   return Math.round(await d.ev('window.__save.t1 - window.__save.t0'));
 }
 
-async function openHomebrew(d) {
+export async function openHomebrew(d) {
   await d.ev(`location.hash = '#/homebrew'; true`);
   await d.waitFor(`document.querySelector('[aria-label="Homebrew packs"]')`, 'the pack list');
 }
@@ -75,7 +75,7 @@ async function openPack(d) {
   await d.waitFor(`[...document.querySelectorAll('h1, h2, h3')].some((h) => h.textContent === ${JSON.stringify(`Homebrew: ${PACK}`)})`, `the workspace of ${PACK}`);
 }
 
-async function newPack(d, name, edition) {
+export async function newPack(d, name, edition) {
   await openHomebrew(d);
   await d.tap('button', '^New pack$');
   await d.fill('#hb-pack-name', name);
@@ -84,7 +84,7 @@ async function newPack(d, name, edition) {
   await d.waitFor(`[...document.querySelectorAll('h1, h2, h3')].some((h) => h.textContent === ${JSON.stringify(`Homebrew: ${name}`)})`, `the workspace of ${name}`);
 }
 
-async function newElement(d, card, name) {
+export async function newElement(d, card, name) {
   await d.tap('.hb-tools button, button', '^New( element)?$');
   await d.waitFor(`document.querySelector('#hb-new-name')`, 'New element');
   await d.fill('#hb-new-name', name);
