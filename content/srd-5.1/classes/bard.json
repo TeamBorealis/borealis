@@ -527,21 +527,21 @@
         {
           "kind": "stat",
           "name": "bardic inspiration:die",
-          "value": "2",
+          "value": "8",
           "bonus": "bardic inspiration",
           "level": 5
         },
         {
           "kind": "stat",
           "name": "bardic inspiration:die",
-          "value": "2",
+          "value": "10",
           "bonus": "bardic inspiration",
           "level": 10
         },
         {
           "kind": "stat",
           "name": "bardic inspiration:die",
-          "value": "2",
+          "value": "12",
           "bonus": "bardic inspiration",
           "level": 15
         },
@@ -769,21 +769,21 @@
         {
           "kind": "stat",
           "name": "song of rest:die",
-          "value": "2",
+          "value": "8",
           "bonus": "song-of-rest",
           "level": 9
         },
         {
           "kind": "stat",
           "name": "song of rest:die",
-          "value": "2",
+          "value": "10",
           "bonus": "song-of-rest",
           "level": 13
         },
         {
           "kind": "stat",
           "name": "song of rest:die",
-          "value": "2",
+          "value": "12",
           "bonus": "song-of-rest",
           "level": 17
         }

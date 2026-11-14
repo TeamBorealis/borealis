@@ -81,9 +81,10 @@ m['features']={
  'Monk’s Focus':[res('focus points','Focus Points',tab('focus_points'),['short_rest','long_rest']),
                  stat('focus save dc','8'),stat('focus save dc','wisdom:modifier'),stat('focus save dc','proficiency'),
                  grant(idof('OPTION','Monk Focus','Flurry of Blows'),'Option'),grant(idof('OPTION','Monk Focus','Patient Defense'),'Option'),grant(idof('OPTION','Monk Focus','Step of the Wind'),'Option')],
- 'Unarmored Movement':[stat('speed','10',bonus='unarmored movement',level=2,equipped='[armor:none],[shield:none]'),stat('speed','5',bonus='unarmored movement',level=6,equipped='[armor:none],[shield:none]'),
-                       stat('speed','10',bonus='unarmored movement',level=10,equipped='[armor:none],[shield:none]') if False else stat('speed','5',bonus='unarmored movement',level=10,equipped='[armor:none],[shield:none]'),
-                       stat('speed','5',bonus='unarmored movement',level=14,equipped='[armor:none],[shield:none]'),stat('speed','5',bonus='unarmored movement',level=18,equipped='[armor:none],[shield:none]')],
+ # One bonus label: only the highest rule counts, so each carries the speed bonus at its level (+10 ft. to +30 ft.).
+ 'Unarmored Movement':[stat('speed','10',bonus='unarmored movement',level=2,equipped='[armor:none],[shield:none]'),stat('speed','15',bonus='unarmored movement',level=6,equipped='[armor:none],[shield:none]'),
+                       stat('speed','20',bonus='unarmored movement',level=10,equipped='[armor:none],[shield:none]'),
+                       stat('speed','25',bonus='unarmored movement',level=14,equipped='[armor:none],[shield:none]'),stat('speed','30',bonus='unarmored movement',level=18,equipped='[armor:none],[shield:none]')],
  'Uncanny Metabolism':[res('uncanny metabolism','Uncanny Metabolism',fx(1),['long_rest'])],
  'Deflect Attacks':[custom('damage_reduction',reaction=True,dice='1d10',plus=['dexterity:modifier','monk level'],damage_types=['bludgeoning','piercing','slashing']),
                     custom('damage_reduction_all_types',level=13)],

@@ -629,7 +629,7 @@
     {
      "kind": "stat",
      "name": "speed",
-     "value": "5",
+     "value": "15",
      "bonus": "unarmored movement",
      "level": 6,
      "equipped": "[armor:none],[shield:none]"
@@ -637,7 +637,7 @@
     {
      "kind": "stat",
      "name": "speed",
-     "value": "5",
+     "value": "20",
      "bonus": "unarmored movement",
      "level": 10,
      "equipped": "[armor:none],[shield:none]"
@@ -645,7 +645,7 @@
     {
      "kind": "stat",
      "name": "speed",
-     "value": "5",
+     "value": "25",
      "bonus": "unarmored movement",
      "level": 14,
      "equipped": "[armor:none],[shield:none]"
@@ -653,7 +653,7 @@
     {
      "kind": "stat",
      "name": "speed",
-     "value": "5",
+     "value": "30",
      "bonus": "unarmored movement",
      "level": 18,
      "equipped": "[armor:none],[shield:none]"

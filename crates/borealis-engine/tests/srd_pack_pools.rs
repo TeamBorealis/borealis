@@ -313,3 +313,49 @@ fn srd51_damage_cantrips_scale_at_5_11_and_17_from_their_text() {
         Some("1d10 force")
     );
 }
+
+/// Level-scaled stats that share a `bonus` label: only the highest rule counts, so each step must
+/// carry the absolute value. The SRD 5.1 Cleric's Channel Divinity stayed at 1 use (1, +1, +1
+/// under "base"), the Bard's dice stayed d6, and the SRD 5.2.1 Monk's Unarmored Movement stayed
+/// +10 ft.
+#[test]
+fn a_cleric_has_two_channel_divinity_uses_at_6_and_three_at_18() {
+    let Some(e) = engine("srd-5.1") else { return };
+    let s = hero(
+        &e,
+        Ruleset::Dnd2014,
+        &[("Race", "Human"), ("Class", "Cleric"), ("Divine Domain", "Life Domain")],
+        2,
+    );
+    assert_eq!(pool(&e.derive(&s), "Channel Divinity"), Some((1, short_rest())));
+    let s = level_to(&e, s, 2, 6);
+    assert_eq!(pool(&e.derive(&s), "Channel Divinity"), Some((2, short_rest())));
+    let s = level_to(&e, s, 6, 18);
+    assert_eq!(pool(&e.derive(&s), "Channel Divinity"), Some((3, short_rest())));
+}
+
+#[test]
+fn a_bards_inspiration_and_song_of_rest_dice_grow() {
+    let Some(e) = engine("srd-5.1") else { return };
+    let s = hero(&e, Ruleset::Dnd2014, &[("Race", "Human"), ("Class", "Bard")], 1);
+    assert_eq!(e.derive(&s).stat("bardic inspiration:die"), 6);
+    let s = level_to(&e, s, 1, 5);
+    assert_eq!(e.derive(&s).stat("bardic inspiration:die"), 8);
+    let s = level_to(&e, s, 5, 9);
+    assert_eq!(e.derive(&s).stat("song of rest:die"), 8);
+    let s = level_to(&e, s, 9, 15);
+    let snap = e.derive(&s);
+    assert_eq!(snap.stat("bardic inspiration:die"), 12);
+    assert_eq!(snap.stat("song of rest:die"), 10);
+}
+
+#[test]
+fn a_2024_monks_unarmored_movement_grows_to_30_feet() {
+    let Some(e) = engine("srd-5.2.1") else { return };
+    let s = hero(&e, Ruleset::Dnd2024, &[("Class", "Monk")], 2);
+    let at2 = e.derive(&s).stat("speed");
+    let s = level_to(&e, s, 2, 6);
+    assert_eq!(e.derive(&s).stat("speed"), at2 + 5, "+15 ft. at 6");
+    let s = level_to(&e, s, 6, 18);
+    assert_eq!(e.derive(&s).stat("speed"), at2 + 20, "+30 ft. at 18");
+}
