@@ -65,7 +65,7 @@ function StatTiles({ s }: { s: CharacterSnapshot }) {
 
 function selectionName(s: CharacterSnapshot, sel: PlaySelection): string | null {
   if (!sel) return null;
-  const list = sel.kind === "resource" ? s.play.resources : s.play.toggles;
+  const list = sel.kind === "resource" ? s.play.resources : sel.kind === "condition" ? s.play.conditions : s.play.toggles;
   return list.find((x) => x.id === sel.id)?.name ?? null;
 }
 
@@ -86,11 +86,12 @@ function Body({ s }: { s: CharacterSnapshot }) {
     // GitHub #2: the rests for the whole page first, then concentration pinned, then the stats and the cards the rests affect:
     // hit points and hit dice next to the rests (B-194), then slots, resources and trackers.
     play: () => <PlaySplit label="Play" title={selectionName(s, sel)} onClose={() => setSel(null)}
-      detail={<PlayDetail selected={sel} resources={play.resources} toggles={play.toggles} />}
+      detail={<PlayDetail selected={sel} resources={play.resources} toggles={play.toggles} conditions={play.conditions} />}
       list={(<><RestBar hp={play.hitPoints} /><ConcentrationBanner concentration={play.concentration} />{statRow}<HitPointsCard hp={play.hitPoints} />
         <HitDiceCard hitDice={play.hitDice} /><SpellSlotsCard play={play} />
         <ResourcesCard resources={play.resources} toggles={play.toggles} selected={sel} onSelect={setSel} /><TrackersCard trackers={play.trackers} />
-        <TogglesCard toggles={play.toggles} resources={play.resources} selected={sel} onSelect={setSel} /><ExhaustionCard exhaustion={play.exhaustion} inspiration={play.inspiration} /></>)} />,
+        <TogglesCard toggles={play.toggles} resources={play.resources} selected={sel} onSelect={setSel} /><ExhaustionCard exhaustion={play.exhaustion} inspiration={play.inspiration}
+          conditions={play.conditions} selected={sel} onSelect={setSel} /></>)} />,
     abilities: () => <PlaySplit label="Abilities" title={null} onClose={() => undefined}
       detail={<><h1 className="v5-desc-title">Abilities</h1><p className="v5-lead">Tap a value to roll it. Long-press, right-click or the arrow beside it rolls with advantage or disadvantage.</p></>}
       list={<div className="pr-cols"><RollBar s={s} /><AbilitiesPanel s={s} /></div>} />,

@@ -61,6 +61,8 @@ pub struct PlayStateDto {
     pub resource_costs: Value,
     pub toggles: Value,
     pub exhaustion: Value,
+    /// The conditions the character can switch on, with the switched-on ones marked (HC1).
+    pub conditions: Value,
     pub inspiration: bool,
     pub inspiration_sources: Value,
     pub martial_arts: Value,
@@ -109,6 +111,7 @@ pub fn play_state(s: &Engine, tracker: &TrackerView, play: &PlayState) -> PlaySt
         resource_costs: dto(&s.resource_costs),
         toggles: dto(&s.toggles),
         exhaustion: dto(&s.exhaustion),
+        conditions: dto(&s.conditions),
         inspiration: s.inspiration,
         inspiration_sources: dto(&s.inspiration_sources),
         martial_arts: dto(&s.martial_arts),

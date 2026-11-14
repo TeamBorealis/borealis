@@ -204,6 +204,7 @@ pub fn play_from_value(v: Value) -> PlayState {
             "resources_used" => p.resources_used = typed(&k, v),
             "toggles" => p.toggles = typed(&k, v),
             "exhaustion" => p.exhaustion = typed(&k, v),
+            "conditions" => p.conditions = typed(&k, v),
             "heroic_inspiration" => p.heroic_inspiration = typed(&k, v),
             "wild_shape_forms" => p.wild_shape_forms = typed(&k, v),
             "equipment_choices" => p.equipment_choices = typed(&k, v),

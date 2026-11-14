@@ -615,6 +615,7 @@ pub fn run() {
             commands_play::short_rest,
             commands_play::long_rest,
             commands_play::set_toggle,
+            commands_play::set_condition,
             commands_play::set_exhaustion,
             commands_play::set_heroic_inspiration,
             commands_play::choose_weapon_masteries,

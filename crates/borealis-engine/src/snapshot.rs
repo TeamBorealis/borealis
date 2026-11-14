@@ -661,6 +661,25 @@ pub struct RolledMaxSnapshot {
     pub max: u32,
 }
 
+/// A condition the character can switch on (Prone, a homebrew condition), and whether it is on.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConditionSnapshot {
+    /// The condition's element id.
+    pub id: String,
+    /// Its name.
+    pub name: String,
+    /// The user switched it on: its rules apply.
+    pub on: bool,
+    /// Its description (HTML).
+    #[serde(default)]
+    pub description: String,
+    /// One line per rule ("Speed -10"); empty when it only has its text (the SRD's).
+    #[serde(default)]
+    pub effects: Vec<String>,
+    /// The source it comes from.
+    pub source: String,
+}
+
 /// A switchable state such as Rage.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ToggleSnapshot {
@@ -850,6 +869,9 @@ pub struct CharacterSnapshot {
     /// Exhaustion.
     #[serde(default)]
     pub exhaustion: ExhaustionSnapshot,
+    /// The conditions the character can switch on, by name, with the switched-on ones marked.
+    #[serde(default)]
+    pub conditions: Vec<ConditionSnapshot>,
     /// The character holds (Heroic) Inspiration.
     #[serde(default)]
     pub inspiration: bool,

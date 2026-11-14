@@ -1,4 +1,4 @@
-import type { ConversionPreview, PlayFeature, PlayHitDice, PlayResource, PlayState, PlayToggle, PlayWildShape, SpellcastingState } from "../types";
+import type { ConversionPreview, PlayCondition, PlayFeature, PlayHitDice, PlayResource, PlayState, PlayToggle, PlayWildShape, SpellcastingState } from "../types";
 import { getClass, getElement, getItem, titleCase } from "./content";
 import { apiError } from "./errors";
 import { chargeResources } from "./rolled-charges";
@@ -20,6 +20,44 @@ export interface MockPlay {
   tracking?: MockTracking;
   /** Hit points lost, temporary hit points and spent hit dice (B-194); absent = full hit points. */
   hp?: MockHitPoints;
+  /** Ids of the switched-on conditions (HC1); absent = none. */
+  conditions?: string[];
+}
+
+/** The SRD's conditions the mock's content holds, without Exhaustion (its own levels): name and a line of its text. */
+const CONDITIONS: [name: string, text: string][] = [
+  ["Blinded", "You can't see, and attack rolls against you have Advantage."],
+  ["Charmed", "You can't attack the charmer."],
+  ["Deafened", "You can't hear."],
+  ["Frightened", "Disadvantage on ability checks and attack rolls while the source of fear is within line of sight."],
+  ["Grappled", "Your Speed is 0."],
+  ["Incapacitated", "You can't take any action, Bonus Action or Reaction."],
+  ["Invisible", "You can't be seen."],
+  ["Paralyzed", "You have the Incapacitated condition and your Speed is 0."],
+  ["Petrified", "You are turned to an inanimate substance."],
+  ["Poisoned", "Disadvantage on attack rolls and ability checks."],
+  ["Prone", "Your only movement option is to crawl."],
+  ["Restrained", "Your Speed is 0."],
+  ["Stunned", "You have the Incapacitated condition."],
+  ["Unconscious", "You have the Incapacitated and Prone conditions."],
+];
+
+/** As the host: the 2024 or the 2014 SRD's conditions, by name, with the switched-on ones marked; the SRD's have no rules. */
+function conditionsOf(c: MockCharacter): PlayCondition[] {
+  const on = playOf(c).conditions ?? [];
+  const [prefix, source] = c.ruleset === "dnd2024" ? ["ID_2024_CONDITION_", "SRD 5.2.1"] : ["ID_SRD51_CONDITION_", "SRD 5.1"];
+  return CONDITIONS.map(([name, text]) => {
+    const id = `${prefix}${name.toUpperCase()}`;
+    return { id, name, on: on.includes(id), description: `<p>${text}</p>`, effects: [], source };
+  });
+}
+
+/** As the host: only a listed condition is switched on; any id can be switched off; rests leave them as they are. */
+export function setCondition(c: MockCharacter, id: string, on: boolean): MockCharacter {
+  const current = playOf(c).conditions ?? [];
+  if (!on) return withPlay(c, (p) => ({ ...p, conditions: current.filter((x) => x !== id) }));
+  if (!conditionsOf(c).some((x) => x.id === id)) throw apiError("not_found", "Unknown condition.");
+  return current.includes(id) ? c : withPlay(c, (p) => ({ ...p, conditions: [...current, id] }));
 }
 
 export const emptyPlay = (): MockPlay => ({ used: {}, toggles: [], exhaustion: 0, inspiration: false, masteries: [], forms: [], packages: {} });
@@ -78,7 +116,7 @@ export function buildPlay(c: MockCharacter, sc: SpellcastingState, conMod = 0, h
   const walk = togglesOf(c).filter((t) => p.toggles.includes(t.id)).reduce((w, t) => w * t.factor, 30);
   return {
     speeds: { walk: walk - 5 * p.exhaustion, fly: 0, climb: 0, swim: 0, burrow: 0 },
-    resources, resourceCosts: [], toggles,
+    resources, resourceCosts: [], toggles, conditions: conditionsOf(c),
     exhaustion: { linear: c.ruleset === "dnd2024", level: p.exhaustion, maxLevels: MAX_EXHAUSTION, d20Penalty: -2 * p.exhaustion, speedPenalty: -5 * p.exhaustion, dead: p.exhaustion >= MAX_EXHAUSTION },
     inspiration: p.inspiration, inspirationSources: [], martialArts: null,
     // As the host: `weapon` is the element id, `name` the weapon's name, then each mastery property.

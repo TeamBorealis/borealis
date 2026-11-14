@@ -196,6 +196,7 @@
     "allow-short-rest",
     "allow-long-rest",
     "allow-set-toggle",
+    "allow-set-condition",
     "allow-set-exhaustion",
     "allow-set-heroic-inspiration",
     "allow-choose-weapon-masteries",

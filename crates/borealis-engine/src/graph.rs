@@ -363,6 +363,13 @@ impl<'u> Graph<'u> {
         for it in inputs.items {
             g.add_root(it.e, Some((it.uid, it.attuned)));
         }
+        // the conditions the user switched on (HC1): their rules apply while they are on; one whose content is gone,
+        // or that is no longer a condition one switches, is left out (it can still be switched off)
+        for id in &state.play.conditions {
+            if let Some(e) = uni.get(id).filter(|e| crate::conditions::is_switchable(e)) {
+                g.add_root(e, None);
+            }
+        }
         g.run();
         // choices under content that is gone (a removed race's sub race) have no slot in the
         // graph; they are still the character's and still lost

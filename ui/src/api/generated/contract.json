@@ -2005,6 +2005,18 @@
     "name": "CharacterSnapshot"
    }
   },
+  "set_condition": {
+   "args": {
+    "characterId": false,
+    "conditionId": false,
+    "on": false
+   },
+   "method": "setCondition",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "set_documents_dir": {
    "args": {
     "token": true
@@ -10378,6 +10390,50 @@
     }
    }
   },
+  "PlayCondition": {
+   "k": "object",
+   "props": {
+    "description": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "effects": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "on": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "PlayDefenseEntry": {
    "k": "object",
    "props": {
@@ -10954,6 +11010,16 @@
       "t": {
        "k": "ref",
        "name": "PlayConcentrationSpell"
+      }
+     }
+    },
+    "conditions": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayCondition"
       }
      }
     },

@@ -7,11 +7,13 @@
 //! * a new Skill is offered by a skill choice that asks for its tag, and a Proficiency group gives a character the
 //!   narrower proficiencies it covers (a new class, made in the class form, has both);
 //! * a new Deity points at each of its three required fields with a plain sentence until they are filled;
-//! * a new Condition keeps its rule blocks; the engine has no condition to switch on for a character (Open line);
+//! * a new Condition keeps its rule blocks, and a character who has it switched on gets its rules (HC1, HtCaM) and
+//!   keeps it switched on through a save and load;
 //! * the generic form offers the open types loaded content uses and the setter names a type uses.
 
 use borealis_authoring::expr_build::condition::ConditionContext;
 use borealis_authoring::form::{BlockCodec, CatalogBlockCodec, FormContext, FormState, NoLookup};
+use borealis_character::Character;
 use borealis_content::{Rule, Ruleset as ContentRuleset};
 use borealis_engine::commands::{self, slot_key};
 use borealis_engine::{CharacterState, Choice, Engine};
@@ -22,6 +24,7 @@ use borealis_lib::homebrew_dto::{
     HomebrewDraftView, HomebrewPackRequest, HomebrewPageRequest, HomebrewPickerFilters,
     HomebrewPickerTarget,
 };
+use borealis_lib::session::new_id;
 use borealis_lib::state::{AppPaths, AppState};
 use serde_json::{json, Value};
 use std::path::PathBuf;
@@ -563,5 +566,86 @@ fn item_categories_and_tags_loaded_content_uses_are_offered() {
         field("feat", "tags"),
         Some(vec!["Tag".to_string(), "Feat".to_string()]),
         "the tags of the kind's own element types"
+    );
+}
+
+/// A 2024 Dwarf (walking speed 30) opened as a character session; its id.
+fn dwarf(app: &App) -> String {
+    let hub = app.state.hub().unwrap();
+    let e = &hub.engine;
+    let s = commands::new_character(e, ContentRuleset::Dnd2024);
+    let key = slot_key(&e.derive(&s), "ID_LEVEL_1", "Race", 1).expect("species slot");
+    let s = commands::select(e, &s, &key, Choice::Element("ID_2024_SPECIES_DWARF".into()))
+        .unwrap()
+        .state;
+    let mut c = Character::new("Brakka");
+    c.build = s;
+    let id = new_id();
+    let path = app.state.character_path(&id).unwrap();
+    c.save(&path).unwrap();
+    app.state.insert_session(&id, c, path, false).unwrap();
+    id
+}
+
+fn condition<'a>(snap: &'a borealis_lib::dto::CharacterSnapshot, id: &str) -> &'a Value {
+    snap.play
+        .conditions
+        .as_array()
+        .expect("the conditions list")
+        .iter()
+        .find(|c| c["id"] == id)
+        .unwrap_or_else(|| panic!("{id} listed"))
+}
+
+#[test]
+fn a_new_condition_switched_on_applies_its_rules_and_is_saved_with_the_character() {
+    let app = App::new();
+    let v = app.new_draft("condition");
+    let mut form = v.form.clone();
+    form.fields.insert("name".into(), json!("Smoldering"));
+    form.fields.insert("edition".into(), json!("dnd2024"));
+    form.fields
+        .insert("description".into(), text("Embers slow you."));
+    form.blocks = vec![serde_json::from_value(block(
+        json!({"kind": "stat", "name": "speed", "value": "-10"}),
+        "b0",
+    ))
+    .unwrap()];
+    let v = app.update(&v, &form);
+    let cond = app
+        .state
+        .homebrew_save_draft(&v.draft_id, &Quiet)
+        .unwrap()
+        .element_ids[0]
+        .clone();
+    let id = dwarf(&app);
+    let before = app.state.get_snapshot(&id).unwrap();
+    assert_eq!(before.play.speeds.walk, 30);
+    let listed = condition(&before, &cond);
+    assert_eq!(listed["on"], false);
+    assert_eq!(listed["effects"], json!(["Speed -10"]));
+    assert_eq!(condition(&before, "ID_2024_CONDITION_PRONE")["on"], false);
+
+    let on = app.state.set_condition(&id, &cond, true).unwrap();
+    assert_eq!(condition(&on, &cond)["on"], true);
+    assert_eq!(on.play.speeds.walk, 20);
+    app.state.save_character(&id).unwrap();
+    app.state.close_character(&id, false).unwrap();
+    let again = app.state.load_character(&id).unwrap();
+    assert_eq!(
+        condition(&again, &cond)["on"],
+        true,
+        "kept with the character"
+    );
+    assert_eq!(again.play.speeds.walk, 20);
+    let off = app.state.set_condition(&id, &cond, false).unwrap();
+    assert_eq!(off.play.speeds.walk, 30);
+    assert_eq!(
+        app.state
+            .set_condition(&id, "ID_2024_CONDITION_EXHAUSTION", true)
+            .unwrap_err()
+            .code,
+        borealis_lib::error::ErrorCode::NotFound,
+        "Exhaustion has its levels"
     );
 }

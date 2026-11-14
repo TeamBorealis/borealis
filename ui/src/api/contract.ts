@@ -281,6 +281,8 @@ export interface ApiMethods {
   /** Refills resources, ends toggles, exhaustion -1 (2024). */
   longRest(args: Cid): Promise<CharacterSnapshot>;
   setToggle(args: Cid & { toggleId: string; on: boolean }): Promise<CharacterSnapshot>;
+  /** Switches a condition on or off (HC1): its rules apply while it is on; kept with the character, through rests. */
+  setCondition(args: Cid & { conditionId: string; on: boolean }): Promise<CharacterSnapshot>;
   setExhaustion(args: Cid & { level: number }): Promise<CharacterSnapshot>;
   setHeroicInspiration(args: Cid & { has: boolean }): Promise<CharacterSnapshot>;
   /* Spell tracker (GitHub #2). Rests are shortRest/longRest. Spends and restores are relative, like spendResource. */
@@ -749,6 +751,7 @@ export const COMMANDS = {
   shortRest: "short_rest",
   longRest: "long_rest",
   setToggle: "set_toggle",
+  setCondition: "set_condition",
   setExhaustion: "set_exhaustion",
   setHeroicInspiration: "set_heroic_inspiration",
   spendSpellSlot: "spend_spell_slot",

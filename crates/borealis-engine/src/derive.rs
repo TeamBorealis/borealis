@@ -800,6 +800,7 @@ impl<'u> Evaluation<'u> {
             resource_costs,
             toggles,
             exhaustion,
+            conditions: crate::conditions::snapshots(&self.graph, &state.play.conditions),
             inspiration,
             inspiration_sources,
             martial_arts,

@@ -62,6 +62,16 @@ pub fn set_toggle(
 }
 
 #[tauri::command(async)]
+pub fn set_condition(
+    state: S<'_>,
+    character_id: String,
+    condition_id: String,
+    on: bool,
+) -> ApiResult<CharacterSnapshot> {
+    state.set_condition(&character_id, &condition_id, on)
+}
+
+#[tauri::command(async)]
 pub fn set_exhaustion(
     state: S<'_>,
     character_id: String,

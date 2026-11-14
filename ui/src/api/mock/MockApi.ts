@@ -501,6 +501,7 @@ export class MockApi implements Api {
   async shortRest(a: { characterId: string }) { return this.mutate(a.characterId, play.shortRest); }
   async longRest(a: { characterId: string }) { return this.mutate(a.characterId, play.longRest); }
   async setToggle(a: { characterId: string; toggleId: string; on: boolean }) { return this.mutate(a.characterId, (c) => play.setToggle(c, a.toggleId, a.on)); }
+  async setCondition(a: { characterId: string; conditionId: string; on: boolean }) { return this.mutate(a.characterId, (c) => play.setCondition(c, a.conditionId, a.on)); }
   async setExhaustion(a: { characterId: string; level: number }) { return this.mutate(a.characterId, (c) => play.setExhaustion(c, a.level)); }
   async setHeroicInspiration(a: { characterId: string; has: boolean }) { return this.mutate(a.characterId, (c) => play.setInspiration(c, a.has)); }
   /** Spell tracker (GitHub #2); `sc` = the spellcasting the snapshot shows. */

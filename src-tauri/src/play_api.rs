@@ -89,6 +89,23 @@ impl AppState {
         })
     }
 
+    /// Switch a condition on or off (HC1): its rules apply while it is on, and it is kept with the character.
+    ///
+    /// # Errors
+    /// `not_found` when switching on an id that is no condition the character can switch on.
+    pub fn set_condition(
+        &self,
+        id: &str,
+        condition: &str,
+        on: bool,
+    ) -> ApiResult<CharacterSnapshot> {
+        self.mutate(id, |ctx, d| {
+            let out = commands::set_condition(&ctx.hub.engine, &d.character.build, condition, on)?;
+            apply(d, out);
+            Ok(())
+        })
+    }
+
     /// Set the exhaustion level.
     ///
     /// # Errors

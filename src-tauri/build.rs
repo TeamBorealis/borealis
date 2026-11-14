@@ -192,6 +192,7 @@ const COMMANDS: &[&str] = &[
     "short_rest",
     "long_rest",
     "set_toggle",
+    "set_condition",
     "set_exhaustion",
     "set_heroic_inspiration",
     "choose_weapon_masteries",
