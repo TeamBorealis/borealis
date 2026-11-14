@@ -548,6 +548,9 @@ pub enum Finding {
         /// Where elements of the type are made ("New element > Spell"); `None` for a managed type (Source).
         made_with: Option<String>,
     },
+    /// A skill's name the character sheet can't use: a statistic that is not a skill (`Strength`, `AC`), or one with
+    /// `:` in it.
+    SkillName,
     /// A subrace or race variant no loaded race's choice offers.
     NotOffered {
         /// "subrace", "variant".
@@ -593,6 +596,7 @@ impl Finding {
             Self::OnNoSpellList => "lint.no_spell_list",
             Self::GroupNotOffered { .. } => "lint.group_not_offered",
             Self::TypeNotHere { .. } => "form.type",
+            Self::SkillName => "form.skill_name",
         }
     }
 
@@ -607,7 +611,8 @@ impl Finding {
             | Self::BlockRange { .. }
             | Self::BlockChoice { .. }
             | Self::BlockShape
-            | Self::TypeNotHere { .. } => Error,
+            | Self::TypeNotHere { .. }
+            | Self::SkillName => Error,
             Self::BlockDice { .. }
             | Self::DuplicateName { .. }
             | Self::Escape
@@ -700,6 +705,11 @@ impl Finding {
                 ty,
                 made_with: Some(route),
             } => format!("{ty} elements have their own form: make it with {route}."),
+            Self::SkillName => {
+                "A skill can't be named like an ability or another statistic (Strength, AC, Level), or hold a colon: \
+                 rename it."
+                    .into()
+            }
             Self::TypeNotHere {
                 made_with: None, ..
             } => {

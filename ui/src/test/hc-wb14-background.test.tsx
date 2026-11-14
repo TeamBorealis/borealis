@@ -45,7 +45,7 @@ describe("WB-14 background form (mock)", () => {
     const f = new Map(bg.fields.map((x) => [x.key, x]));
     expect(f.get("abilityScores")).toMatchObject({ control: "chips", editions: ["dnd2024"], section: "Ability scores" });
     expect(f.get("originFeat")).toMatchObject({ control: "featGrant", picker: { types: ["Feat"] }, editions: ["dnd2024"] });
-    expect(f.get("skills")).toMatchObject({ control: "references", picker: { types: ["Proficiency"], tags: ["Skill"], multiple: true } });
+    expect(f.get("skills")).toMatchObject({ control: "references", picker: { types: ["Proficiency", "Skill"], tags: ["Skill"], multiple: true } });
     expect(f.get("choices")).toMatchObject({ control: "choices", section: "Proficiencies" });
     expect(f.get("feature")).toMatchObject({ control: "children", editions: ["dnd2014"] });
     expect(f.get("personalityTraits")).toMatchObject({ control: "writtenList", tab: "characteristics", default: { count: 2, items: [] } });

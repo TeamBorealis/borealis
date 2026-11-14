@@ -220,6 +220,9 @@ pub struct UElem {
     pub replaced_ids: Vec<String>,
     /// Stat rules of each `toggle` rule, applied only while the toggle is on.
     pub toggle_effects: Vec<crate::play_rules::ToggleEffects>,
+    /// A usable `Skill` element's own proficiency (`<skill>:proficiency`), applied while the character has it
+    /// ([`crate::content_skills`]).
+    pub skill_proficiency: Option<UStat>,
     /// Foreign element the profile accepts only as its `legacy_alias` type (a 2024 species
     /// that was a race, in a 2014 character). The foreign options of its own selects are
     /// accepted with it (`Graph::inherits_owner_acceptance`).
@@ -244,6 +247,7 @@ impl UElem {
         let prereq = crate::custom_rules::Prereq::from_element(&el);
         let owner_name = el.name.clone();
         let toggle_effects = crate::play_rules::toggle_stat_effects(&el);
+        let skill_proficiency = crate::content_skills::proficiency_stat(&el);
         let rules = el
             .rules
             .iter()
@@ -271,6 +275,7 @@ impl UElem {
             replaced_supports: Vec::new(),
             replaced_ids: Vec::new(),
             toggle_effects,
+            skill_proficiency,
             legacy_accepted: false,
             user_edition_book: None,
         }
@@ -363,6 +368,9 @@ pub fn type_family(ty: &str) -> &'static [&'static str] {
     match ty {
         "Race" | "Species" => &["Race", "Species"],
         "Companion" => &["Companion", "Monster"],
+        // a skill a `Skill` element adds is offered by the skill choices, which are `Proficiency` selects tagged Skill
+        // (`crate::content_skills`); imports never write `Skill` elements
+        "Proficiency" => &["Proficiency", "Skill"],
         _ => &[],
     }
 }
@@ -412,6 +420,8 @@ pub struct Universe {
     tables: ProfileTables,
     creation_roots: Vec<String>,
     exhaustion: crate::play_rules::ExhaustionRules,
+    /// Skills content adds besides the eighteen (`Skill` elements, [`crate::content_skills`]).
+    skills: Vec<crate::content_skills::ContentSkill>,
     /// Aurora's proxy items, indexed on the first lookup of a proxy id (B-06).
     proxies: std::sync::OnceLock<crate::proxy::ProxyTable>,
     /// `maps_to` kind `equivalent` pairs with both elements loaded: mapper id -> the
@@ -698,6 +708,7 @@ impl Universe {
             tables: ProfileTables::default(),
             creation_roots: Vec::new(),
             exhaustion: crate::play_rules::ExhaustionRules::default(),
+            skills: Vec::new(),
             proxies: std::sync::OnceLock::new(),
             equivalents: HashMap::new(),
             equivalent_class: HashMap::new(),
@@ -771,7 +782,27 @@ impl Universe {
         uni.load_profile_tables();
         uni.add_creation_languages(profile);
         uni.exhaustion = crate::play_rules::ExhaustionRules::load(&uni);
+        uni.skills = uni.collect_skills();
         uni
+    }
+
+    /// The usable `Skill` elements as skills: this edition's (and edition-neutral) ones first, then the accepted
+    /// other-edition ones.
+    fn collect_skills(&self) -> Vec<crate::content_skills::ContentSkill> {
+        let usable = |u: &&UElem| u.edition.is_accepted() && !u.superseded;
+        let of_type = || {
+            self.by_type(crate::content_skills::SKILL_TYPE)
+                .filter(usable)
+        };
+        let native = of_type().filter(|u| !u.edition.is_foreign());
+        let foreign = of_type().filter(|u| u.edition.is_foreign());
+        crate::content_skills::collect(native.chain(foreign).map(|u| &u.el))
+    }
+
+    /// Skills content adds besides the eighteen, in load order.
+    #[must_use]
+    pub fn content_skills(&self) -> &[crate::content_skills::ContentSkill] {
+        &self.skills
     }
 
     /// Exhaustion numbers and the stat rules of each level (`exhaustion` rule of the content).

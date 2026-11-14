@@ -713,6 +713,13 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   Familiar and Property types, then the loaded types with no form of their own); `["Setter Name", "<type>"]` lists
   the setter names the type requires and the ones its loaded elements use. A new or retyped generic element whose
   type has its own form, or is `Source`/`Multiclass`, has an error at `fields.type` (code `form.type`).
+- **Homebrew skills are character skills (1.5.1, HC1).** A `Skill` element with an `ability` setter adds a skill: the
+  character's `stats.skills` lists it after the eighteen (`key` = its name in lower case, `name` = the element's name,
+  `ability`, `bonus`, `proficiency`), the PDF and HTML sheets print it, and having the element (granted, or picked by
+  a `Proficiency` choice tagged Skill, which now also offers `Skill` elements) is proficiency in it. The background
+  `skills` field and the class `skills` choice have `picker.types` `["Proficiency", "Skill"]`; a background writes a
+  picked Skill as `grant type="Skill"`. A Skill named like an ability or another statistic (Strength, AC, Level), or
+  with a colon, has an error at `fields.name` (code `form.skill_name`). No new command or type.
 - **Suggestions from loaded content (1.5.1).** Two more pseudo picker types of `homebrew_reference_options`, one row
   per word: `["Item Category"]` lists the `category` setter values of loaded and drafted elements of the item forms'
   types (first spelling, sorted); the item forms' `category` combo (custom text) has `picker.types` `["Item Category"]`

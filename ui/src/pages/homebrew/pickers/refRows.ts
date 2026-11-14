@@ -40,6 +40,8 @@ export const sameId = (a: string, b: string): boolean => a.toLowerCase() === b.t
 
 /** "Spells", "Feats", "Elements": the noun a picker searches. */
 export function targetNoun(t: HomebrewPickerTarget): string {
+  // a skill picker offers the SRD skills' proficiencies and homebrew Skill elements (each its own proficiency, HC1)
+  if (t.types.length === 2 && t.types.includes("Proficiency") && t.types.includes("Skill")) return "proficiencies";
   if (t.types.length !== 1) return "elements";
   const one = t.types[0]!.toLowerCase();
   return one.endsWith("s") ? one : one.endsWith("y") ? `${one.slice(0, -1)}ies` : `${one}s`;

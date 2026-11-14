@@ -8,8 +8,8 @@ import { ReferencePicker } from "../pickers/ReferencePicker";
 import { ChildDialog, type ChildEditing, childKind, removeChecked } from "./ChildDialog";
 import { childOf, entriesOf, entryName, nameOf, withChild, withField, withoutChild, withoutEntry } from "./children";
 
-/** The skills a class offers: Proficiency elements tagged Skill. */
-const SKILLS: HomebrewPickerTarget = { types: ["Proficiency"], tags: ["Skill"], multiple: true };
+/** The skills a class offers: Proficiency elements tagged Skill, and homebrew Skill elements (a Skill is its own proficiency). */
+const SKILLS: HomebrewPickerTarget = { types: ["Proficiency", "Skill"], tags: ["Skill"], multiple: true };
 /** The most skills a class lets a character choose. */
 const MAX_SKILLS = 18;
 

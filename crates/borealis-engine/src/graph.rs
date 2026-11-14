@@ -1546,7 +1546,12 @@ impl<'u> Graph<'u> {
                 _ => None,
             });
             let toggled = crate::play_rules::active_toggle_stats(self, id);
-            for st in own.chain(self.list_effect_rules(id)).chain(toggled) {
+            let skill = n.e.skill_proficiency.iter();
+            for st in own
+                .chain(self.list_effect_rules(id))
+                .chain(toggled)
+                .chain(skill)
+            {
                 if st.inline {
                     continue;
                 }

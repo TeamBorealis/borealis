@@ -307,6 +307,7 @@ fn finding_samples() -> Vec<Finding> {
             ty: "Spell".into(),
             made_with: Some("New element > Spell".into()),
         },
+        Finding::SkillName,
     ]
 }
 

@@ -183,11 +183,25 @@ function requiredProblems(form: HomebrewForm, kind: HomebrewKindDescriptor | und
   }));
 }
 
+/** Statistics a skill can't be named like (the engine's built-in groups that are not skills, `content_skills::skill_key`). */
+const NOT_SKILL_NAMES = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma", "hp", "level", "proficiency", "ac",
+  "speed", "innate speed", "initiative", "ability checks"];
+
+/** A Skill whose name is a statistic or holds a colon is no character skill (`check::fields`, `form.skill_name`). */
+function skillNameProblems(form: HomebrewForm, elementId: string | null): HomebrewProblem[] {
+  if (form.kind !== "skill") return [];
+  const name = typeof form.fields.name === "string" ? form.fields.name.trim().split(/\s+/).join(" ").toLowerCase() : "";
+  if (!name || (!name.includes(":") && !NOT_SKILL_NAMES.includes(name))) return [];
+  return [{ severity: "error", path: "fields.name", elementId, code: "form.skill_name",
+    message: "A skill can't be named like an ability or another statistic (Strength, AC, Level), or hold a colon: rename it." }];
+}
+
 /** The mock's live problems of a form: required fields, the prerequisite's rows, every block. The engine checks
  * (`homebrew_check_draft`: test character, level sweep, balance) are the backend's only; the mock has none. */
 export function formProblems(form: HomebrewForm, catalog: readonly HomebrewBlockSpec[], elementId: string | null, kind?: HomebrewKindDescriptor): HomebrewProblem[] {
   return [
     ...requiredProblems(form, kind, elementId),
+    ...skillNameProblems(form, elementId),
     ...exprProblems(form.fields.requirements, "fields.requirements", elementId),
     ...form.blocks.flatMap((b, i) => blockProblems(b, i, catalog, elementId)),
   ];

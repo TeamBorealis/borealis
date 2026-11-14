@@ -20,6 +20,8 @@ pub type At = (String, Finding);
 
 /// "From level" of gated blocks.
 const LEVELS: (i32, i32) = (1, 20);
+/// The Skill form ([`crate::form::kinds`]).
+const SKILL_KIND: &str = "skill";
 
 /// Nothing filled in: absent, null, blank text, an empty list or object, a reference with no element picked.
 fn empty(v: Option<&Value>) -> bool {
@@ -76,6 +78,9 @@ fn one_form(form: &FormState, prefix: &str, cx: &FormContext<'_>, out: &mut Vec<
             out.push((format!("{prefix}fields.{}", def.key), finding));
         }
     }
+    if let Some(name) = skill_name_refused(form) {
+        out.push((format!("{prefix}fields.name"), name));
+    }
     if let Some(r) = crate::form::type_refusal(form) {
         let finding = Finding::TypeNotHere {
             ty: r.ty,
@@ -89,6 +94,17 @@ fn one_form(form: &FormState, prefix: &str, cx: &FormContext<'_>, out: &mut Vec<
     for (i, c) in form.children.iter().enumerate() {
         one_form(c, &format!("{prefix}children.{i}."), cx, out);
     }
+}
+
+/// A Skill form's name that the engine can't make a skill of (HC1, item HtCY8: a homebrew skill is a character skill
+/// keyed by its name).
+fn skill_name_refused(form: &FormState) -> Option<Finding> {
+    if form.kind != SKILL_KIND {
+        return None;
+    }
+    let name = form.fields.get("name").and_then(Value::as_str)?.trim();
+    (!name.is_empty() && borealis_engine::content_skills::skill_key(name).is_none())
+        .then_some(Finding::SkillName)
 }
 
 /// The keys of a block's rule kept from the original.

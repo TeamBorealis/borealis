@@ -69,8 +69,12 @@ pub struct SkillSnapshot {
     /// Remarkable Athlete).
     #[serde(default)]
     pub half_proficiency: bool,
-    /// Passive score (all 18 are computed).
+    /// Passive score (every skill's is computed).
     pub passive: i32,
+    /// The name to show for a skill a content `Skill` element adds (its element name); the
+    /// eighteen built-in skills have none (their name is the key).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
 }
 
 /// Speeds.

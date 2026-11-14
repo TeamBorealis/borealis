@@ -37,6 +37,9 @@ const CLASS_TABS: &[(&str, &str)] = &[
 
 const HIT_DICE: &[(&str, &str)] = &[("d6", "d6"), ("d8", "d8"), ("d10", "d10"), ("d12", "d12")];
 const PROFICIENCY: &[&str] = &["Proficiency"];
+/// What a skill choice offers: the SRD skills' proficiencies and homebrew skills (a `Skill` element is its own
+/// proficiency; the engine's `Proficiency` choices offer it).
+const SKILL_PICKER: &[&str] = &["Proficiency", "Skill"];
 const PACKAGE: &[&str] = &["Equipment Package"];
 const FEATURE: &[&str] = &["Class Feature"];
 
@@ -127,7 +130,7 @@ fn own_fields() -> Vec<FieldDef> {
                 Control::SkillChoice,
                 class(ClassField::Skills),
             )
-            .picker(PROFICIENCY)
+            .picker(SKILL_PICKER)
             .default("{\"count\":2,\"skills\":[]}"),
         ),
         field(

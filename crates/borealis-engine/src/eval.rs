@@ -856,6 +856,7 @@ mod tests {
             replaced_supports: Vec::new(),
             replaced_ids: Vec::new(),
             toggle_effects: Vec::new(),
+            skill_proficiency: None,
             legacy_accepted: false,
             user_edition_book: None,
         };

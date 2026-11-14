@@ -72,7 +72,8 @@ fn own_fields() -> Vec<FieldDef> {
             Control::References,
             bg(BackgroundField::Skills),
         )
-        .picker(&["Proficiency"])
+        // the SRD skills' proficiencies and homebrew skills (a `Skill` element is its own proficiency)
+        .picker(&["Proficiency", "Skill"])
         .picker_tags(&["Skill"])
         .section("Proficiencies")
         .default("[]"),

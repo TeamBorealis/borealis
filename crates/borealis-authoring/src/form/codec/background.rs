@@ -103,6 +103,8 @@ pub enum BackgroundField {
 
 const SKILL_PREFIX: &str = "ID_PROFICIENCY_SKILL_";
 const PROFICIENCY: &str = "Proficiency";
+/// A homebrew skill's element type: it is granted as itself (the engine counts it as the skill's proficiency).
+const SKILL: &str = "Skill";
 const PACKAGE_KIND: &str = "equipment_package";
 const MAX_CHOICE: u32 = 10;
 const MAX_PICKS: u32 = 10;
@@ -116,7 +118,11 @@ impl BackgroundField {
                 "data.origin_feat",
                 "data.origin_feat_params",
             ],
-            Self::Skills => &["rules:grant ID_PROFICIENCY_SKILL_*", "data.skills"],
+            Self::Skills => &[
+                "rules:grant ID_PROFICIENCY_SKILL_*",
+                "rules:grant Skill",
+                "data.skills",
+            ],
             Self::Tools => &["rules:grant Proficiency", "data.tool"],
             Self::Languages => &["rules:grant Language"],
             Self::Choices => &["rules:select Language", "rules:select Proficiency"],
@@ -188,6 +194,20 @@ fn grant(id: &str, ty: &str) -> Rule {
 
 fn is_skill(id: &str) -> bool {
     id.starts_with(SKILL_PREFIX)
+}
+
+/// The skill a plain grant gives: an SRD skill's proficiency, or a homebrew `Skill` element.
+fn skill_grant(rule: &Rule) -> Option<&str> {
+    plain_grant(rule, PROFICIENCY)
+        .filter(|id| is_skill(id))
+        .or_else(|| plain_grant(rule, SKILL))
+}
+
+/// A picked reference's element type: the loaded element's, else the one the picker sent.
+fn ref_type(r: &RefValue, cx: &FormContext<'_>) -> String {
+    cx.lookup
+        .find(r.id.trim())
+        .map_or_else(|| r.ty.trim().to_string(), |i| i.ty)
 }
 
 fn custom(rule: &Rule) -> Option<&CustomRule> {
@@ -272,12 +292,14 @@ pub(crate) fn read(field: BackgroundField, r: &mut Reader<'_>, cx: &FormContext<
             to_json(&grant)
         }
         BackgroundField::Skills => {
-            let rules = t.rules(
-                |x| plain_grant(x, PROFICIENCY).is_some_and(is_skill),
-                usize::MAX,
-            );
+            let rules = t.rules(|x| skill_grant(x).is_some(), usize::MAX);
             t.data("skills");
-            refs(&rules, PROFICIENCY)
+            let refs: Vec<RefValue> = rules
+                .iter()
+                .filter_map(|x| skill_grant(x))
+                .map(|id| RefValue::resolve(id, cx.lookup))
+                .collect();
+            to_json(&refs)
         }
         BackgroundField::Tools => {
             let rules = t.rules(
@@ -629,12 +651,16 @@ fn write_grants(
         }
         _ => {}
     }
-    let ty = if field == BackgroundField::Languages {
-        "Language"
-    } else {
-        PROFICIENCY
+    let ty = |r: &RefValue| {
+        if field == BackgroundField::Languages {
+            "Language"
+        } else if field == BackgroundField::Skills && ref_type(r, cx) == SKILL {
+            SKILL
+        } else {
+            PROFICIENCY
+        }
     };
-    Ok(refs.iter().map(|r| grant(r.id.trim(), ty)).collect())
+    Ok(refs.iter().map(|r| grant(r.id.trim(), ty(r))).collect())
 }
 
 /// A proficiency's name as the 2024 mirrors write it: "Tool Proficiency (Thieves’ tools)" is "Thieves’ tools".

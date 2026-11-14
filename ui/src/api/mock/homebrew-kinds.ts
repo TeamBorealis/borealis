@@ -1770,7 +1770,8 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "section": "First class only",
         "picker": {
           "types": [
-            "Proficiency"
+            "Proficiency",
+            "Skill"
           ]
         },
         "default": {
@@ -6848,12 +6849,14 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "required": false,
         "bindings": [
           "rules:grant ID_PROFICIENCY_SKILL_*",
+          "rules:grant Skill",
           "data.skills"
         ],
         "section": "Proficiencies",
         "picker": {
           "types": [
-            "Proficiency"
+            "Proficiency",
+            "Skill"
           ],
           "tags": [
             "Skill"
@@ -10176,7 +10179,7 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:ability"
         ],
-        "help": "The ability whose modifier the skill adds."
+        "help": "The ability whose modifier the skill adds. Every character sheet lists the skill; a background, class or feat can give proficiency in it."
       },
       {
         "key": "tags",

@@ -221,7 +221,7 @@ fn skill() -> Small {
     )
     .choices(ABILITIES, true)
     .required()
-    .help("The ability whose modifier the skill adds.")])
+    .help("The ability whose modifier the skill adds. Every character sheet lists the skill; a background, class or feat can give proficiency in it.")])
     .tags(
         "Skill choices offer skills by these tags: Skill, and the ability or class names a choice asks for.",
         Some("[\"Skill\"]"),

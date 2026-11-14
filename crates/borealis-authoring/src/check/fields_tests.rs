@@ -193,3 +193,35 @@ fn dice_text() {
         assert!(!is_dice(bad), "{bad}");
     }
 }
+
+#[test]
+fn a_skill_named_like_a_statistic_is_refused_at_its_name() {
+    with_cx(|cx| {
+        let skill = |name: &str| {
+            FormState::new("e", "skill")
+                .with_field("name", json!(name))
+                .with_field("ability", json!("Intelligence"))
+        };
+        for bad in ["Strength", "ac", "Level", "Lore: Tides"] {
+            let found = form_findings(&skill(bad), cx);
+            assert_eq!(
+                found
+                    .iter()
+                    .map(|(p, f)| (p.as_str(), f.code()))
+                    .collect::<Vec<_>>(),
+                [("fields.name", "form.skill_name")],
+                "{bad}"
+            );
+        }
+        for good in ["Linguistics", "Lore (Tides)", "Arcana"] {
+            assert!(form_findings(&skill(good), cx).is_empty(), "{good}");
+        }
+        // another kind may carry such a name
+        let deity = FormState::new("e", "deity")
+            .with_field("name", json!("Strength"))
+            .with_field("alignment", json!("Neutral"))
+            .with_field("domains", json!(["War"]))
+            .with_field("symbol", json!("A fist"));
+        assert!(form_findings(&deity, cx).is_empty());
+    });
+}

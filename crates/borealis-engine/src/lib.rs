@@ -13,6 +13,7 @@ pub mod cantrips;
 pub mod combat;
 pub mod commands;
 pub mod compat;
+pub mod content_skills;
 pub mod custom_rules;
 pub mod diag;
 pub mod engine;

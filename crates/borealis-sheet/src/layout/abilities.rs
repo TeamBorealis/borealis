@@ -223,7 +223,9 @@ pub(crate) fn column(c: &mut Canvas, g: &Grid, d: &SheetData, o: &LayoutOptions)
     if nested {
         let avail = g.body_bottom - y - 14.0 - 5.0 * CARD_GAP;
         let fixed = 6.0 * (HEADER_H + CARD_PAD_BOTTOM);
-        let row_h = ((avail - fixed) / 24.0).clamp(c.s(MIN_ROW), c.s(MAX_ROW_2024));
+        // one save row per ability and one row per skill (eighteen, more with homebrew skills)
+        let rows = (6 + d.skills.len()) as f32;
+        let row_h = ((avail - fixed) / rows).clamp(c.s(MIN_ROW), c.s(MAX_ROW_2024));
         for a in &d.abilities {
             let skills: Vec<&SkillData> = d.skills.iter().filter(|s| s.ability == a.key).collect();
             let h = HEADER_H + (skills.len() + 1) as f32 * row_h + CARD_PAD_BOTTOM;
