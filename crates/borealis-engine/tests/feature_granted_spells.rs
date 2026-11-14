@@ -1,5 +1,7 @@
 //! #39: spells a class or subclass feature grants are always prepared, so the sheet prints them
-//! with the always-prepared diamond and not the plain prepared dot.
+//! with the always-prepared diamond and not the plain prepared dot. That holds for 2024
+//! characters, where the rules call such spells always prepared; a 2014 known caster keeps them
+//! as plain known spells, as Aurora does (no mark without the grant's `prepared="true"`).
 //!
 //! Aurora-format XML models several 2024 casters as known casters (no `prepare="true"`) and grants
 //! their subclass spells (and capstone spells) with a plain `<grant type="Spell" spellcasting=..>`,
@@ -17,9 +19,10 @@ use std::path::Path;
 
 const SPELL: &str = r#"<description><p>Synthetic.</p></description>"#;
 
-/// A known caster ("Skald", no `prepare`) in Aurora's XML shape. Its level 1 feature grants a
-/// cantrip and two level 1 spells, one of them with `prepared="true"`; a select picks the rest.
-fn aurora_xml() -> ContentFile {
+/// A known caster ("Skald", no `prepare`) in Aurora's XML shape for `ruleset`. Its level 1
+/// feature grants a cantrip and two level 1 spells, one of them with `prepared="true"`; a select
+/// picks the rest.
+fn aurora_xml(ruleset: Ruleset) -> ContentFile {
     let spell = |id: &str, name: &str, level: u32| {
         format!(
             r#"<element name="{name}" type="Spell" source="Test" id="{id}">{SPELL}
@@ -67,15 +70,23 @@ fn aurora_xml() -> ContentFile {
     let Some(Document::Content(mut file)) = conv.document else {
         panic!("converted: {:?}", conv.issues)
     };
-    file.ruleset = Some(Ruleset::Dnd2024);
+    file.ruleset = Some(ruleset);
     file
 }
 
 fn engine(with_xml: bool) -> Option<Engine> {
+    engine_for(Ruleset::Dnd2024, with_xml)
+}
+
+/// The core pack, the SRD pack of `ruleset` and, with `with_xml`, the synthetic Skald.
+fn engine_for(ruleset: Ruleset, with_xml: bool) -> Option<Engine> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
-    let srd = root.join("srd-5.2.1");
+    let srd = root.join(match ruleset {
+        Ruleset::Dnd2014 => "srd-5.1",
+        _ => "srd-5.2.1",
+    });
     if !srd.join("pack.json").is_file() {
-        eprintln!("SKIPPED: content/srd-5.2.1 not present");
+        eprintln!("SKIPPED: {} not present", srd.display());
         return None;
     }
     let mut b = ContentStoreBuilder::new()
@@ -83,7 +94,7 @@ fn engine(with_xml: bool) -> Option<Engine> {
         .and_then(|b| b.add_pack_dir(&srd))
         .expect("packs load");
     if with_xml {
-        b = b.add_file("skald.json", PackOrigin::Custom, aurora_xml());
+        b = b.add_file("skald.json", PackOrigin::Custom, aurora_xml(ruleset));
     }
     Some(Engine::new(&b.build()))
 }
@@ -117,7 +128,11 @@ fn choose(e: &Engine, s: &CharacterState, slot: &str, pick: &str) -> CharacterSt
 }
 
 fn build(e: &Engine, picks: &[(&str, &str)], levels: u32) -> CharacterState {
-    let mut s = commands::new_character(e, Ruleset::Dnd2024);
+    build_for(e, Ruleset::Dnd2024, picks, levels)
+}
+
+fn build_for(e: &Engine, ruleset: Ruleset, picks: &[(&str, &str)], levels: u32) -> CharacterState {
+    let mut s = commands::new_character(e, ruleset);
     s.abilities.base = [10, 10, 10, 10, 14, 14];
     for (slot, pick) in picks {
         s = choose(e, &s, slot, pick);
@@ -168,6 +183,43 @@ fn aurora_feature_spells_of_a_known_caster_are_always_prepared() {
     }
     let spark = spell(c, "Spark");
     assert!(!spark.always_prepared, "cantrips keep their own mark");
+}
+
+/// A 2014 known caster: Aurora marks a spell a feature grants only when the grant says
+/// `prepared="true"` (`SpellcasterSelectionControlViewModel`: `IsChosen = IsAlwaysPrepared()`),
+/// so a plain grant stays a known spell with no mark (a 2014 Ranger's subclass spells).
+#[test]
+fn aurora_feature_spells_of_a_2014_known_caster_stay_known_spells() {
+    let Some(e) = engine_for(Ruleset::Dnd2014, true) else {
+        return;
+    };
+    let s = build_for(
+        &e,
+        Ruleset::Dnd2014,
+        &[
+            ("Class", "Skald"),
+            ("Spell (Skald)", "Alpha"),
+            ("Spell (Skald)", "Beta"),
+        ],
+        1,
+    );
+    let snap = e.derive(&s);
+    let c = snap.caster("Skald").expect("Skald block");
+    assert!(!c.prepare, "the synthetic class is a known caster");
+    let glamour = spell(c, "Glamour");
+    assert!(
+        glamour.known && !glamour.prepared && !glamour.always_prepared,
+        "a plain grant is a known spell, as in Aurora: {glamour:?}"
+    );
+    let ward = spell(c, "Ward");
+    assert!(
+        ward.known && ward.prepared && ward.always_prepared,
+        "prepared=\"true\" on the grant is always prepared, as in Aurora: {ward:?}"
+    );
+    for name in ["Alpha", "Beta"] {
+        let x = spell(c, name);
+        assert!(x.known && !x.always_prepared, "{name}: {x:?}");
+    }
 }
 
 /// The SRD 5.2.1 Fiend Patron says `always_prepared` on its grants; the Warlock's picks do not.

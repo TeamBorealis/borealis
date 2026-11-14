@@ -14,6 +14,7 @@ use crate::spell_rules::{class_rules, progression};
 use crate::state::CharacterState;
 use crate::stats::StatSet;
 use crate::universe::{UElem, URule, UStat, Universe};
+use borealis_content::Ruleset;
 
 /// Caster levels contributed by a class level for a slot-source kind (the suffix of
 /// `ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_<KIND>`).
@@ -190,13 +191,18 @@ fn add_prepared_extensions(
     }
 }
 
-/// A levelled spell a feature grants to a class that does not prepare is always prepared (#39).
-/// Such a spell is never learned in a known-spell slot. Aurora-format content grants subclass
-/// spells of its known casters (2024 Bard, Paladin, Warlock and others) with a plain
-/// `<grant type="Spell" spellcasting=..>`, without `prepared="true"`. Picks stay learned spells,
-/// and a class that prepares still needs the grant's own `prepared` flag.
-fn feature_given(n: &crate::graph::Node<'_>, class_prepares: bool) -> bool {
-    !class_prepares && matches!(n.origin, Origin::Granted(_)) && spell_level(n.e) > 0
+/// On a 2024 character, a levelled spell a feature grants to a class that does not prepare is
+/// always prepared (#39): the 2024 rules call subclass spells always prepared, and Aurora-format
+/// content grants those of its known casters (2024 Bard, Paladin, Warlock and others) with a
+/// plain `<grant type="Spell" spellcasting=..>`, without `prepared="true"`. Picks stay learned
+/// spells, and a class that prepares still needs the grant's own `prepared` flag. A 2014
+/// character keeps such a spell a plain known spell, as Aurora does (it marks a granted spell
+/// only for `prepared="true"`).
+fn feature_given(n: &crate::graph::Node<'_>, class_prepares: bool, ruleset: Ruleset) -> bool {
+    ruleset == Ruleset::Dnd2024
+        && !class_prepares
+        && matches!(n.origin, Origin::Granted(_))
+        && spell_level(n.e) > 0
 }
 
 /// The `grant_spell` mode of the grant that put spell node `n` on the character, if any.
@@ -319,7 +325,9 @@ pub fn spellcasting_snapshots(
                 .is_some_and(|c| same_spellcasting(c, &info.name))
         }) {
             let mode = grant_mode(graph, n);
-            let always = n.always_prepared || feature_given(n, prepare) || feature_cast(mode, n);
+            let always = n.always_prepared
+                || feature_given(n, prepare, state.ruleset)
+                || feature_cast(mode, n);
             let entry = SpellEntry {
                 id: n.e.el.id.clone(),
                 name: n.e.el.name.clone(),
