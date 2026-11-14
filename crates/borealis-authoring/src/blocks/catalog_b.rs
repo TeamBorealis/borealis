@@ -373,6 +373,9 @@ pub(super) const CUSTOM: &[BlockSpec] = &[
             )
             .req(),
             f("type_from", "Damage type", C::Text).note(),
+            f("dice", "Dice below the table", C::Dice)
+                .expert()
+                .help("A breath weapon's dice below the table's first level, or with no table."),
         ],
     ),
     gated(

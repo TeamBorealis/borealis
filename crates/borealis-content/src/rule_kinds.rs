@@ -311,12 +311,13 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
         &[("reaction", IMPLIED)],
     ),
     k("damage_reduction_all_types", COMBAT, true, &[]),
+    // `dice`: the dice when `levels` gives none (`breath::scaling_rows`; the note reads `levels` only)
     ku(
         "damage_scaling",
         NOTES,
         true,
-        &["name", "levels", "type_from"],
-        &[("dice", IMPLIED), ("scale", IMPLIED)],
+        &["name", "levels", "type_from", "dice"],
+        &[("scale", IMPLIED)],
     ),
     k(
         "death_save_rules",

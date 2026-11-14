@@ -2152,6 +2152,18 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
         ],
         "help": "Shown as a note; Borealis does not apply it.",
         "shownAsNote": true
+      },
+      {
+        "key": "dice",
+        "label": "Dice below the table",
+        "tab": "rules",
+        "control": "dice",
+        "required": false,
+        "bindings": [
+          "dice"
+        ],
+        "help": "A breath weapon's dice below the table's first level, or with no table.",
+        "expert": true
       }
     ]
   },
