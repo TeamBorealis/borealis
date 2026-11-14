@@ -166,6 +166,20 @@ export const FEATS: MockElement[] = [
   el("boon-of-fate", "feat", "Boon of Fate", "Roll 2d4 to change a nearby D20 Test once per rest.", { rulesets: ["dnd2024"], source: SOURCE_2024, prerequisites: "Level 19+", tags: ["epic boon"] }),
 ];
 
+/** Sample Racial Traits (SRD 5.1 names): the creator's species Traits picker offers loaded traits (Hn_IU), as the
+ * backend offers every loaded one. */
+export const RACIAL_TRAITS: MockElement[] = [
+  ["darkvision", "Darkvision", "See in dim light within 60 feet as if it were bright light."],
+  ["keen-senses", "Keen Senses", "Proficiency in the Perception skill."],
+  ["fey-ancestry", "Fey Ancestry", "Advantage on saves against being charmed; magic can't put you to sleep."],
+  ["trance", "Trance", "Four hours of meditation instead of sleep."],
+  ["dwarven-resilience", "Dwarven Resilience", "Advantage on saves against poison, and resistance to poison damage."],
+  ["stonecunning", "Stonecunning", "Expertise on History checks about stonework."],
+  ["lucky-halfling", "Lucky", "Reroll a 1 on an attack roll, ability check or saving throw."],
+  ["brave", "Brave", "Advantage on saves against being frightened."],
+  ["halfling-nimbleness", "Halfling Nimbleness", "Move through the space of any creature larger than you."],
+].map(([id, name, short]) => el(`trait-${id}`, "racial-trait", name!, short!, { description: `<p>${short}</p>` }));
+
 export const FIGHTING_STYLES = ["archery", "defense", "dueling", "great-weapon-fighting"].map((id) =>
   el(id, "fighting-style", title(id), `The ${title(id).toLowerCase()} fighting style.`),
 );
@@ -305,7 +319,7 @@ function mk(): MockElement[] {
     }));
   }
   for (const b of BACKGROUNDS) out.push(...backgroundAbilityOptions(b));
-  out.push(...FEATS, ...FIGHTING_STYLES);
+  out.push(...FEATS, ...FIGHTING_STYLES, ...RACIAL_TRAITS);
   for (const group of Object.values(LISTS)) out.push(...group);
   out.push(...MI_ABILITIES);
   for (const s of SPELLS) {
