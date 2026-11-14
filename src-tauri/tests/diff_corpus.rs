@@ -22,7 +22,8 @@
 //! indexes on core.index, such as `target/tmp/acceptance-core/data` after the acceptance
 //! harness) or else `BOREALIS_LIVE_INDEX_URL` (installed here through `update_indexes`, as the
 //! app does); F-full from `BOREALIS_5ETOOLS_DIR`; the private pair list from
-//! `BOREALIS_DIFF_PRIVATE` (default `../specs/acceptance-private/diff` next to the app repo).
+//! `BOREALIS_DIFF_PRIVATE` (default `../specs/acceptance-private/diff` next to the app repo, also
+//! from a git worktree of the app).
 //! Prints ids, keys and numbers only. Run in release mode:
 //!
 //! ```text
@@ -457,11 +458,21 @@ fn three_way(path: &Path) -> ThreeWay {
     ThreeWay { pairs, findings }
 }
 
-fn private_dir() -> PathBuf {
-    std::env::var_os("BOREALIS_DIFF_PRIVATE").map_or_else(
-        || PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../specs/acceptance-private/diff"),
-        PathBuf::from,
-    )
+fn private_dir() -> Option<PathBuf> {
+    if let Some(p) = std::env::var_os("BOREALIS_DIFF_PRIVATE") {
+        return Some(PathBuf::from(p));
+    }
+    find_private(Path::new(env!("CARGO_MANIFEST_DIR")))
+}
+
+/// The private folder `specs/acceptance-private/diff` of the workspace around the app: the
+/// nearest folder above `src-tauri` (at `crate_dir`) that holds it. The app's `src-tauri` is one
+/// level under the workspace's `app/`, a worktree's (`app/.claude/worktrees/<name>/`) deeper.
+fn find_private(crate_dir: &Path) -> Option<PathBuf> {
+    crate_dir
+        .ancestors()
+        .map(|d| d.join("specs/acceptance-private/diff"))
+        .find(|p| p.is_dir())
 }
 
 fn run_three_way(data: &Path, five: &Path, file: &Path) {
@@ -589,13 +600,13 @@ fn acore_matches_five_tools() {
     let Some(five) = std::env::var_os("BOREALIS_5ETOOLS_DIR").map(PathBuf::from) else {
         return skip("acore_matches_five_tools", "BOREALIS_5ETOOLS_DIR not set");
     };
-    let file = private_dir().join("three_way.json");
-    if !file.is_file() {
+    let file = private_dir().map(|d| d.join("three_way.json"));
+    let Some(file) = file.filter(|f| f.is_file()) else {
         return skip(
             "acore_matches_five_tools",
             "private three_way.json not found",
         );
-    }
+    };
     let tmp = tempfile::tempdir().expect("tmp");
     let Some(data) = acore_data(tmp.path()) else {
         return skip(
@@ -605,4 +616,30 @@ fn acore_matches_five_tools() {
     };
     on_big_stack(move || run_three_way(&data, &five, &file));
     drop(tmp);
+}
+
+/// The private pair list is found from a git worktree of the app as well as from the app itself:
+/// a worktree's `src-tauri` sits deeper (`app/.claude/worktrees/<name>/src-tauri`), and without
+/// the folder the three-way test skips.
+#[test]
+fn the_private_folder_is_found_from_the_app_and_from_a_worktree() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let private = root.path().join("specs/acceptance-private/diff");
+    std::fs::create_dir_all(&private).expect("private folder");
+    let app = root.path().join("app/src-tauri");
+    let worktree = root.path().join("app/.claude/worktrees/fix/src-tauri");
+    for dir in [&app, &worktree] {
+        std::fs::create_dir_all(dir).expect("crate folder");
+        let found = find_private(dir).map(|p| p.canonicalize().expect("canonical"));
+        assert_eq!(
+            found,
+            Some(private.canonicalize().expect("canonical")),
+            "{}",
+            dir.display()
+        );
+    }
+    let elsewhere = tempfile::tempdir().expect("tempdir");
+    let lone = elsewhere.path().join("app/src-tauri");
+    std::fs::create_dir_all(&lone).expect("crate folder");
+    assert_eq!(find_private(&lone), None);
 }
