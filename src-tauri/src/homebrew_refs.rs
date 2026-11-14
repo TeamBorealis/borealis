@@ -238,6 +238,15 @@ fn passes(
     spell_filters_pass(el, filters)
 }
 
+/// The order of picker rows: by name (any case), then book, then id.
+fn picker_order(a: &Element, b: &Element) -> std::cmp::Ordering {
+    a.name
+        .to_lowercase()
+        .cmp(&b.name.to_lowercase())
+        .then_with(|| a.source.cmp(&b.source))
+        .then_with(|| a.id.cmp(&b.id))
+}
+
 fn spell_filters_pass(el: &Element, f: &HomebrewPickerFilters) -> bool {
     let wants_spell = f.spell_school.is_some()
         || f.spell_levels.as_ref().is_some_and(|l| !l.is_empty())
@@ -404,14 +413,7 @@ impl AppState {
                     draft: false,
                 }),
         );
-        found.sort_by(|a, b| {
-            a.element
-                .name
-                .to_lowercase()
-                .cmp(&b.element.name.to_lowercase())
-                .then_with(|| a.element.source.cmp(&b.element.source))
-                .then_with(|| a.element.id.cmp(&b.element.id))
-        });
+        found.sort_by(|a, b| picker_order(a.element, b.element));
         let total = found.len();
         let items = found
             .iter()
@@ -582,5 +584,289 @@ mod tests {
         let mut tagged = target(&[]);
         tagged.tags = Some(vec!["Wizard".into()]);
         assert!(!passes(&alarm, &tagged, "", &none));
+    }
+
+    fn tagged(mut e: Element, tags: &[&str]) -> Element {
+        e.supports = tags.iter().map(|t| (*t).to_string()).collect();
+        e
+    }
+
+    fn with(mut e: Element, setter: &str, value: &str) -> Element {
+        e.setters.push(borealis_content::Setter::new(setter, value));
+        e
+    }
+
+    /// Elements for the mock's filter fixture: spells of several lists, levels, schools and books, a feat and a class
+    /// option.
+    fn fixture_elements() -> Vec<Element> {
+        let mut fire = tagged(
+            spell("Fire Bolt", "0", "Evocation", false),
+            &["Wizard", "Sorcerer"],
+        );
+        fire.ruleset = Some(Ruleset::Dnd2014);
+        let mut ball = tagged(spell("Fireball", "3", "Evocation", false), &["Wizard"]);
+        ball.ruleset = Some(Ruleset::Dnd2024);
+        let mut other_book = tagged(spell("Fireball", "3", "Evocation", false), &["Wizard"]);
+        other_book.id = "ID_U_SPELL_FIREBALL".into();
+        other_book.source = "Other".into();
+        let alarm = tagged(
+            spell("Alarm", "1", "Abjuration", true),
+            &["Wizard", "Ranger"],
+        );
+        let bless = with(
+            tagged(
+                spell("Bless", "1", "enchantment", false),
+                &["Cleric", "Paladin"],
+            ),
+            "isConcentration",
+            "true",
+        );
+        let lower = tagged(spell("Hex", "1", "Enchantment", false), &["warlock"]);
+        let upper = tagged(
+            spell("Hunter's Mark", "1", "Divination", false),
+            &["Ranger"],
+        );
+        let mut feat = tagged(
+            Element::new("ID_T_FEAT_ALERT", "Alert", "Feat", "Test"),
+            &["Origin Feat", "Feat"],
+        );
+        feat.ruleset = Some(Ruleset::Dnd2024);
+        let option = tagged(
+            Element::new("ID_T_OPTION_FIRE_FORM", "Fire Form", "Option", "Test"),
+            &["Elemental Form"],
+        );
+        vec![
+            fire, ball, other_book, alarm, bless, lower, upper, feat, option,
+        ]
+    }
+
+    /// The filters as the UI sends them (fields left out when not set).
+    fn filters_json(f: &HomebrewPickerFilters) -> serde_json::Value {
+        let mut v = serde_json::json!({});
+        if let Some(s) = &f.sources {
+            v["sources"] = serde_json::json!(s);
+        }
+        if let Some(e) = f.edition {
+            v["edition"] = serde_json::json!(e);
+        }
+        if let Some(s) = &f.spell_school {
+            v["spellSchool"] = serde_json::json!(s);
+        }
+        if let Some(l) = &f.spell_levels {
+            v["spellLevels"] = serde_json::json!(l);
+        }
+        if let Some(r) = f.ritual {
+            v["ritual"] = serde_json::json!(r);
+        }
+        if let Some(c) = f.concentration {
+            v["concentration"] = serde_json::json!(c);
+        }
+        v
+    }
+
+    /// Hlw0Y: the picker rows the backend answers for a set of targets, queries and filters, written for the web mock's
+    /// `referenceRows` to answer the same (`ui/src/api/__fixtures__/homebrew-picker-rows.json`, read by
+    /// `homebrew-picker-rows.test.ts`; `BOREALIS_UPDATE_SNAPSHOTS=1` rewrites it).
+    #[test]
+    fn the_mock_fixture_holds_the_backend_s_picker_rows() {
+        use serde_json::json;
+        let elements = fixture_elements();
+        let store = borealis_content::ContentStoreBuilder::new().build();
+        let loaded: Vec<serde_json::Value> = elements
+            .iter()
+            .map(|e| {
+                let mut v = serde_json::to_value(summary(&store, e)).expect("json");
+                v["tags"] = json!(e.supports);
+                v
+            })
+            .collect();
+        let tags = |types: &[&str], tags: &[&str]| HomebrewPickerTarget {
+            types: types.iter().map(|t| (*t).to_string()).collect(),
+            tags: Some(tags.iter().map(|t| (*t).to_string()).collect()),
+            multiple: None,
+        };
+        let none = HomebrewPickerFilters::default();
+        let cases: Vec<(&str, HomebrewPickerTarget, &str, HomebrewPickerFilters)> = vec![
+            ("every spell", target(&["Spell"]), "", none.clone()),
+            ("any type", target(&[]), "", none.clone()),
+            ("a feat picker", target(&["Feat"]), "", none.clone()),
+            ("two types", target(&["Feat", "Option"]), "", none.clone()),
+            ("spells by name", target(&["Spell"]), "fire", none.clone()),
+            (
+                "a name's middle, any case",
+                target(&["Spell"]),
+                "  BALL ",
+                none.clone(),
+            ),
+            (
+                "two words in order",
+                target(&["Spell"]),
+                "fire bolt",
+                none.clone(),
+            ),
+            (
+                "two words out of order",
+                target(&["Spell"]),
+                "bolt fire",
+                none.clone(),
+            ),
+            (
+                "words of the summary",
+                target(&["Spell"]),
+                "evocation",
+                none.clone(),
+            ),
+            (
+                "the Wizard list",
+                tags(&["Spell"], &["Wizard"]),
+                "",
+                none.clone(),
+            ),
+            (
+                "one of two lists",
+                tags(&["Spell"], &["Cleric", "Ranger"]),
+                "",
+                none.clone(),
+            ),
+            (
+                "tags match exactly",
+                tags(&["Spell"], &["wizard"]),
+                "",
+                none.clone(),
+            ),
+            (
+                "a lower-case tag",
+                tags(&["Spell"], &["warlock"]),
+                "",
+                none.clone(),
+            ),
+            (
+                "a tag and a name",
+                tags(&["Spell"], &["Wizard"]),
+                "fire",
+                none.clone(),
+            ),
+            (
+                "origin feats",
+                tags(&["Feat"], &["Origin Feat"]),
+                "",
+                none.clone(),
+            ),
+            (
+                "a class option's group",
+                tags(&["Option"], &["Elemental Form"]),
+                "",
+                none.clone(),
+            ),
+            (
+                "no tags is no tag filter",
+                tags(&["Spell"], &[]),
+                "",
+                none.clone(),
+            ),
+            (
+                "a school, any case",
+                target(&["Spell"]),
+                "",
+                HomebrewPickerFilters {
+                    spell_school: Some("enchantment".into()),
+                    ..none.clone()
+                },
+            ),
+            (
+                "levels",
+                target(&["Spell"]),
+                "",
+                HomebrewPickerFilters {
+                    spell_levels: Some(vec![0, 3]),
+                    ..none.clone()
+                },
+            ),
+            (
+                "rituals",
+                target(&[]),
+                "",
+                HomebrewPickerFilters {
+                    ritual: Some(true),
+                    ..none.clone()
+                },
+            ),
+            (
+                "concentration",
+                target(&["Spell"]),
+                "",
+                HomebrewPickerFilters {
+                    concentration: Some(true),
+                    ..none.clone()
+                },
+            ),
+            (
+                "a Magic filter leaves other types out",
+                target(&[]),
+                "",
+                HomebrewPickerFilters {
+                    spell_levels: Some(vec![1]),
+                    ..none.clone()
+                },
+            ),
+            (
+                "a book",
+                target(&["Spell"]),
+                "",
+                HomebrewPickerFilters {
+                    sources: Some(vec!["Other".into()]),
+                    ..none.clone()
+                },
+            ),
+            (
+                "the 2014 edition",
+                target(&[]),
+                "",
+                HomebrewPickerFilters {
+                    edition: Some(Ruleset::Dnd2014),
+                    ..none.clone()
+                },
+            ),
+            (
+                "the 2024 edition and a list",
+                tags(&["Spell"], &["Wizard"]),
+                "",
+                HomebrewPickerFilters {
+                    edition: Some(Ruleset::Dnd2024),
+                    ..none.clone()
+                },
+            ),
+        ];
+        let rows: Vec<serde_json::Value> = cases
+            .iter()
+            .map(|(case, target, query, filters)| {
+                let q = query.trim().to_lowercase();
+                let mut found: Vec<&Element> = elements
+                    .iter()
+                    .filter(|e| passes(e, target, &q, filters))
+                    .collect();
+                found.sort_by(|a, b| picker_order(a, b));
+                json!({
+                    "case": case,
+                    "target": target,
+                    "query": query,
+                    "filters": filters_json(filters),
+                    "ids": found.iter().map(|e| e.id.as_str()).collect::<Vec<_>>(),
+                })
+            })
+            .collect();
+        let text = serde_json::to_string_pretty(&json!({"loaded": loaded, "cases": rows}))
+            .expect("json")
+            + "\n";
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../ui/src/api/__fixtures__/homebrew-picker-rows.json");
+        if std::env::var_os("BOREALIS_UPDATE_SNAPSHOTS").is_some() {
+            std::fs::write(&path, &text).expect("write");
+        }
+        let on_disk = std::fs::read_to_string(&path).unwrap_or_default();
+        assert!(
+            on_disk == text,
+            "ui/src/api/__fixtures__/homebrew-picker-rows.json is stale: run this test with BOREALIS_UPDATE_SNAPSHOTS=1"
+        );
     }
 }

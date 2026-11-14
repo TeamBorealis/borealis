@@ -1,5 +1,6 @@
 import type {
-  ElementSummary, HomebrewBlock, HomebrewBlockSpec, HomebrewExprNode, HomebrewFieldSpec, HomebrewForm, HomebrewKindDescriptor, HomebrewPickerRow, HomebrewPickerTarget, HomebrewProblem, Page,
+  ElementSummary, HomebrewBlock, HomebrewBlockSpec, HomebrewExprNode, HomebrewFieldSpec, HomebrewForm, HomebrewKindDescriptor, HomebrewPickerFilters, HomebrewPickerRow,
+  HomebrewPickerTarget, HomebrewProblem, Page,
 } from "../types";
 import { blockShapeProblems } from "./homebrew-shapes";
 
@@ -87,18 +88,52 @@ export function spellListProblems(form: HomebrewForm, elementId: string | null, 
   });
 }
 
-/** Rows for a picker: loaded elements and the pack's own, by type, tags and the typed words; one page of them. */
-export function referenceRows(loaded: readonly ElementSummary[], own: readonly HomebrewPickerRow[], target: HomebrewPickerTarget, query: string, page: { offset: number; limit: number }): Page<HomebrewPickerRow> {
+/** A picker candidate: its row, and the tags it carries (`null`: already checked, the mock's own rows). */
+interface Candidate { row: HomebrewPickerRow; tags: readonly string[] | null }
+
+/** The Magic filter bar's tests (`homebrew_refs::spell_filters_pass`): with any of them set, spells only. */
+function spellFiltersPass(r: HomebrewPickerRow, f: HomebrewPickerFilters): boolean {
+  const wantsSpell = !!f.spellSchool || (f.spellLevels?.length ?? 0) > 0 || f.ritual === true || f.concentration === true;
+  if (!wantsSpell) return true;
+  if (typeKey(r.type) !== "spell") return false;
+  if (f.spellSchool && (r.school ?? "").trim().toLowerCase() !== f.spellSchool.toLowerCase()) return false;
+  if (f.spellLevels?.length && (r.level === undefined || !f.spellLevels.includes(r.level))) return false;
+  return (f.ritual !== true || r.spell?.ritual === true) && (f.concentration !== true || r.spell?.concentration === true);
+}
+
+/** Does a candidate pass, as the backend's `homebrew_refs::passes` decides (Hlw0Y): one of the target's types, one of its
+ * tags exactly, the query (trimmed, any case) in the name, one of the books, the edition and the Magic filters. */
+function passes(c: Candidate, target: HomebrewPickerTarget, types: ReadonlySet<string>, query: string, f: HomebrewPickerFilters): boolean {
+  const r = c.row;
+  // the core proficiency rows (WB-16) are offered to proficiency pickers only: their skill names are the sample skills'
+  if (types.size === 0 ? r.id.startsWith("ID_PROFICIENCY_") : !types.has(typeKey(r.type))) return false;
+  const tags = target.tags ?? [];
+  if (c.tags !== null && tags.length > 0 && !tags.some((t) => c.tags!.includes(t))) return false;
+  if (query && !r.name.toLowerCase().includes(query)) return false;
+  if (f.sources?.length && !f.sources.includes(r.sourceName)) return false;
+  if (f.edition && r.edition && r.edition !== f.edition) return false;
+  return spellFiltersPass(r, f);
+}
+
+/** The backend's row order (`homebrew_refs::picker_order`): by name in any case, then book, then id. */
+function pickerOrder(a: HomebrewPickerRow, b: HomebrewPickerRow): number {
+  const cmp = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0);
+  return cmp(a.name.toLowerCase(), b.name.toLowerCase()) || cmp(a.sourceName, b.sourceName) || cmp(a.id, b.id);
+}
+
+/** Rows for a picker (`homebrew_reference_options`): the pack's own rows (filtered by tag already) and the loaded
+ * elements, each id once, that pass the target, the query and the filters; one page of them. */
+export function referenceRows(loaded: readonly ElementSummary[], own: readonly HomebrewPickerRow[], target: HomebrewPickerTarget, query: string,
+  page: { offset: number; limit: number }, filters: HomebrewPickerFilters = {}): Page<HomebrewPickerRow> {
   if (target.types.includes("Spell List")) return spellListRows(loaded, query, page);
   const types = new Set(target.types.map(typeKey));
-  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const tags = (target.tags ?? []).map((t) => t.toLowerCase());
-  const loadedRows = loaded.filter((e) => (tags.length === 0 || (e.tags ?? []).some((t) => tags.includes(t.toLowerCase())))).map(pickerRow);
-  // the core proficiency rows (WB-16) are offered to proficiency pickers only: their skill names are the sample skills'
-  const rows = [...own, ...loadedRows].filter((r) => (types.size === 0 ? !r.id.startsWith("ID_PROFICIENCY_") : types.has(typeKey(r.type)))
-    && words.every((w) => `${r.name} ${r.summary}`.toLowerCase().includes(w)));
-  const sorted = rows.sort((a, b) => a.name.localeCompare(b.name));
-  return { total: sorted.length, items: sorted.slice(page.offset, page.offset + page.limit) };
+  const q = query.trim().toLowerCase();
+  const seen = new Set<string>();
+  const rows = [...own.map((row): Candidate => ({ row, tags: null })), ...loaded.map((e): Candidate => ({ row: pickerRow(e), tags: e.tags ?? [] }))]
+    .filter((c) => passes(c, target, types, q, filters) && !seen.has(c.row.id) && !!seen.add(c.row.id))
+    .map((c) => c.row)
+    .sort(pickerOrder);
+  return { total: rows.length, items: rows.slice(page.offset, page.offset + page.limit) };
 }
 
 const empty = (v: unknown): boolean => v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);

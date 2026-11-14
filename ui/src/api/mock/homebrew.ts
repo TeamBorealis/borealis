@@ -455,10 +455,10 @@ export class MockHomebrew {
     const srd = copying ? MOCK_COPY_SOURCES.map((c) => c.row) : [];
     if (copying === "srd") return srd;
     const draftPack = draftId ? this.drafts.get(draftId)?.packId : undefined;
-    // a tag filter (a class option's group, WB-18) keeps the elements carrying one of the tags
-    const wanted = tags.map((t) => t.toLowerCase());
-    const tagged = (form: HomebrewForm) => wanted.length === 0
-      || [...tagsOf(form), String(form.fields.group ?? "")].some((t) => wanted.includes(t.toLowerCase()));
+    // a tag filter (a class option's group, WB-18) keeps the elements carrying one of the tags, spelled exactly (the
+    // backend's `homebrew_refs::passes`; a class option's group is its first tag)
+    const tagged = (form: HomebrewForm) => tags.length === 0
+      || [...tagsOf(form), String(form.fields.group ?? "")].some((t) => tags.includes(t));
     const saved = [...this.packs.values()].flatMap((own) => [...own.elements.values()].filter(({ form }) => tagged(form)).map(({ summary, form }): HomebrewPickerRow => ({
       id: summary.id, name: summary.name, type: summary.elementType, summary: String(form.fields.summary ?? ""), prerequisites: featPrerequisite(form, this.nameOf),
       sourceName: own.pack.name, edition: summary.edition, draft: false, ...spellRow(form),

@@ -95,8 +95,8 @@ describe('hc-flows homebrew creator end-to-end flows, spec 18.4 (web mock)', { t
     await addRule(ctx, 'Gives ...');
     await ctx.screen.getByRole('button', 'Pick: What it gives').tap();
     await expect(ctx.screen.getByRole('dialog', /^Choose/)).toBeVisible();
+    // the search matches names, as the backend's picker does (Hlw0Y): only the Athletics skill is left
     await ctx.browser.locator('input[aria-label="Search elements"]').fill('athletics');
-    await ctx.browser.locator('select[aria-label="Element type"]').selectOption('skill');
     await ctx.screen.getByRole('button', /^Athletics,/).tap();
     await ctx.screen.getByRole('button', 'Choose').tap();
     await expect(ctx.screen.getByRole('dialog', /^Choose/)).toBeHidden();

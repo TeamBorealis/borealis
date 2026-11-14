@@ -1006,7 +1006,7 @@ export class MockApi implements Api {
     // adds them to the rest
     const copying = filters?.srdOnly === true ? "srd" : filters?.srdOnly === false ? "any" : undefined;
     const loaded = copying === "srd" ? [] : this.content.search({ query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items;
-    return referenceRows(loaded, this.homebrew.pickerRows(draftId, copying, target.tags ?? []), target, query, page);
+    return referenceRows(loaded, this.homebrew.pickerRows(draftId, copying, target.tags ?? []), target, query, page, filters ?? {});
   }
   async homebrewWhereUsed({ elementId }: { elementId: string }) { await this.tick(); return this.homebrew.whereUsed(elementId, this.loadedElements()); }
   async homebrewSpellList({ packId, listTag, expandedOf }: Parameters<Api["homebrewSpellList"]>[0]) {
