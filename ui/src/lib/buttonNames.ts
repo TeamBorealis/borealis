@@ -7,10 +7,19 @@
  */
 const AUTO = "data-auto-label";
 
+/** The button's text without the parts hidden with aria-hidden (B-144's Generate button holds two labels). */
+function visibleText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? "";
+  if (node instanceof Element && node.getAttribute("aria-hidden") === "true") return "";
+  let text = "";
+  node.childNodes.forEach((child) => { text += visibleText(child); });
+  return text;
+}
+
 function nameOf(button: HTMLButtonElement): void {
   const own = button.hasAttribute("aria-label") && !button.hasAttribute(AUTO);
   if (own || button.hasAttribute("aria-labelledby")) return;
-  const text = (button.textContent ?? "").replace(/\s+/g, " ").trim();
+  const text = visibleText(button).replace(/\s+/g, " ").trim();
   if (text === "") {
     if (button.hasAttribute(AUTO)) { button.removeAttribute("aria-label"); button.removeAttribute(AUTO); }
     return;
@@ -33,6 +42,6 @@ export function installButtonNames(doc: Document = document): () => void {
     requestAnimationFrame(run);
   });
   run();
-  observer.observe(doc.body, { childList: true, subtree: true, characterData: true });
+  observer.observe(doc.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["aria-hidden"] });
   return () => observer.disconnect();
 }
