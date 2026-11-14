@@ -46,7 +46,8 @@ const listWords = (v: HomebrewSpellListView): string => (v.expandedOf ? v.listTa
  * SPELL LISTS (spec 12.4, 13.7): choose a list (one a loaded or own class declares, or another by name), then check spells
  * in the Magic grid over every loaded spell. A spell of the pack changes its own tags; any other spell gets the pack's
  * additive append ("add to this list", HC5): the original is never edited. Only what the pack added can be unchecked.
- * Checks wait for Save (Ctrl+S): one write for them all. Ctrl/Shift+click chooses rows for "Add selected" / "Remove selected".
+ * Checks wait for Save (Ctrl+S): one write for them all. Ctrl/Shift+click, or a tap in Select mode (phones, H0eao), chooses
+ * rows for "Add selected" / "Remove selected".
  */
 export function SpellLists({ packId, narrow, described, onDescribe, handle, onSaved }: SpellListsProps) {
   const api = useApi();
@@ -82,6 +83,9 @@ export function SpellLists({ packId, narrow, described, onDescribe, handle, onSa
   }, [api, packId, keepFailed]);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [anchor, setAnchor] = useState<string | null>(null);
+  /** Select mode (H0eao): a tap on a row adds it to the chosen rows or takes it out (phones have no Ctrl/Shift+click). */
+  const [selectMode, setSelectMode] = useState(false);
+  const leaveSelectMode = (on: boolean) => { setSelectMode(on); if (!on) setSelected(new Set()); };
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -191,17 +195,23 @@ export function SpellLists({ packId, narrow, described, onDescribe, handle, onSa
         <button type="button" disabled={!view || selected.size === 0} onClick={() => setSelectedOn(false)}>Remove selected</button>
         <button type="button" disabled={busy || pending.size === 0} title="Save (Ctrl+S)" onClick={() => void save()}>Save</button>
         <button type="button" disabled={busy || pending.size === 0} onClick={() => setPending(new Map())}>Discard</button>
+        <button type="button" disabled={!view} aria-pressed={selectMode} title="Choose several spells with a tap (or Ctrl+click, Shift+click)"
+          onClick={() => leaveSelectMode(!selectMode)}>Select</button>
+        {selected.size > 0 && <span className="hb-lists-chosen">{spells(selected.size)} chosen</span>}
       </div>
       {error && <Alert tone="danger" role="alert">{error}</Alert>}
       {!list ? <p className="hb-pending">Choose a spell list to see which spells are on it.</p>
         : !view ? <p className="hb-pending">Loading...</p>
           : (
             <SpellPickerGrid rows={shown} total={rows.length} text={text} onText={setText} multiple foldFilter={narrow}
-              picked={checked} highlighted={described} onDescribe={(r) => onDescribe(r.id)} onChoose={(r) => toggle(r as HomebrewSpellListRow)}
+              picked={checked} highlighted={selectMode ? null : described} onDescribe={(r) => { if (!selectMode) onDescribe(r.id); }}
+              onChoose={(r) => toggle(r as HomebrewSpellListRow)}
               locked={(id) => (checked(id) ? locked(id) : null)}
               isSelected={(id) => selected.has(id)}
               onRowClick={(r, e) => {
-                const toggleSel = e.ctrlKey || e.metaKey;
+                // in Select mode a tap on the row's check box checks the spell only; anywhere else it chooses the row
+                if (selectMode && e.target instanceof Element && e.target.closest("input")) return true;
+                const toggleSel = selectMode || e.ctrlKey || e.metaKey;
                 if (!toggleSel && !e.shiftKey) { setSelected(new Set([r.id])); setAnchor(r.id); return false; }
                 setSelected(nextSelection(selected, shown.map((x) => x.id), r.id, anchor, { toggle: toggleSel, range: e.shiftKey }));
                 setAnchor(r.id);

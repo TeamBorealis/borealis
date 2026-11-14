@@ -24,7 +24,7 @@ export interface SpellPickerGridProps {
   /** SPELL LISTS (spec 12.4): rows chosen for "Add selected" / "Remove selected" are highlighted. */
   isSelected?: (id: string) => boolean;
   /** A click on a row before it is described; true when it was taken (Ctrl/Shift+click chooses rows). */
-  onRowClick?: (row: HomebrewPickerRow, e: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) => boolean;
+  onRowClick?: (row: HomebrewPickerRow, e: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; target: EventTarget | null }) => boolean;
   /** A check box that can't change (a spell another pack put on the list), with why. */
   locked?: (id: string) => string | null;
   /** Phones (spec 16): the filter bar folds behind a Filter button. */
