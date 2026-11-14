@@ -285,7 +285,8 @@ pub(super) fn variant_ids_of(s: &SelectRule) -> Option<Vec<String>> {
 }
 
 /// A variants select that offers its variants by tag (an Aurora background: `supports "Variant Criminal"`, or an
-/// expression of tags): its expression, when it names no id and the rule is only the select (maybe optional).
+/// expression of tags, maybe with variants added or left out by id as [`kept_tag_supports`] writes them): its
+/// expression, when it names a tag and the rule is only the select (maybe optional).
 pub(super) fn variant_tags_of(s: &SelectRule) -> Option<SupportsExpr> {
     if s.ty != VARIANT_TYPE {
         return None;
@@ -293,7 +294,10 @@ pub(super) fn variant_tags_of(s: &SelectRule) -> Option<SupportsExpr> {
     let text = s.supports.as_deref()?;
     let expr = SupportsExpr::parse(text).ok().flatten()?;
     let tags = expr.tags();
-    if tags.is_empty() || tags.iter().any(|t| t.starts_with("ID_")) || !expr.dynamics().is_empty() {
+    if expr.is_id_range_mode()
+        || tags.iter().all(|t| t.starts_with("ID_"))
+        || !expr.dynamics().is_empty()
+    {
         return None;
     }
     let mut plain = plain_select(VARIANT_TYPE, &s.name, None, Some(text.to_string()));
@@ -301,12 +305,37 @@ pub(super) fn variant_tags_of(s: &SelectRule) -> Option<SupportsExpr> {
     (*s == plain).then_some(expr)
 }
 
-/// The variant carries the tags `expr` asks for.
+/// The variant carries the tags `expr` asks for (an id in it names the variant itself, as the engine reads it).
 pub(super) fn offered_by_tags(expr: &SupportsExpr, variant: &Element) -> bool {
     borealis_engine::eval::eval_bool(expr.root(), &|leaf| match leaf {
-        SupportsLeaf::Tag(t) => variant.supports.iter().any(|s| s == t),
+        SupportsLeaf::Tag(t) => variant.id == *t || variant.supports.iter().any(|s| s == t),
         SupportsLeaf::Dynamic(_) => false,
     })
+}
+
+/// Im8so: the stored tag expression `text` of a variants choice whose list was edited, kept so that other packs'
+/// variants of the tag are still offered: the variants `offered` before and no longer `listed` are left out by id
+/// (`(...)&&!ID`), the `listed` ones it did not offer (another pack's, one made inside the background) are added by
+/// id (`...||ID`; `||` binds loosest, so no parentheses are needed).
+pub(super) fn kept_tag_supports(text: &str, offered: &[String], listed: &[String]) -> String {
+    let removed: Vec<String> = offered
+        .iter()
+        .filter(|id| !listed.contains(id))
+        .map(|id| format!("!{id}"))
+        .collect();
+    let added: Vec<&str> = listed
+        .iter()
+        .filter(|id| !offered.contains(id))
+        .map(String::as_str)
+        .collect();
+    let mut out = text.trim().to_string();
+    if !removed.is_empty() {
+        out = format!("({out})&&{}", removed.join("&&"));
+    }
+    if !added.is_empty() {
+        out = format!("{out}||{}", added.join("||"));
+    }
+    out
 }
 
 #[cfg(test)]

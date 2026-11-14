@@ -682,19 +682,47 @@ fn variants_offered_by_tag_are_read_into_the_variants_field() {
         assert_eq!(form2.fields["variants"].as_array().map(Vec::len), Some(1));
         assert_eq!(form_to_element(&form2, cx).expect("writes"), both);
 
-        // a changed list offers the variants it lists by id; an empty one offers none
-        let edited = form.with_field(
-            "variants",
-            json!([{"element": {"id": "ID_X_BACKGROUND_VARIANT_SPY", "name": "Spy", "type": "Background Variant"}},
-                   {"element": {"id": "ID_X_BACKGROUND_VARIANT_KNIGHT", "name": "Knight", "type": "Background Variant"}}]),
-        );
-        let e = form_to_element(&edited, cx).expect("writes");
+        // Im8so: a changed list keeps the tag (other packs' variants of it are still offered): a variant added is
+        // offered by id too, one taken out is left out by id; read back, the field lists the same variants
+        let spy = json!({"element": {"id": "ID_X_BACKGROUND_VARIANT_SPY", "name": "Spy", "type": "Background Variant"}});
+        let smuggler = json!({"element": {"id": "ID_X_BACKGROUND_VARIANT_SMUGGLER", "name": "Smuggler", "type": "Background Variant"}});
+        let knight = json!({"element": {"id": "ID_X_BACKGROUND_VARIANT_KNIGHT", "name": "Knight", "type": "Background Variant"}});
+        let select = |supports: &str| json!({"kind": "select", "type": "Background Variant", "name": "Variant", "supports": supports, "optional": true});
+        let added = form_to_element(
+            &form.with_field("variants", json!([spy, smuggler, knight])),
+            cx,
+        )
+        .expect("writes");
         assert_eq!(
-            rules(&e)[1],
-            json!({"kind": "select", "type": "Background Variant", "name": "Variant",
-                   "supports": "ID_X_BACKGROUND_VARIANT_SPY|ID_X_BACKGROUND_VARIANT_KNIGHT", "optional": true})
+            rules(&added)[1],
+            select("Variant Criminal||ID_X_BACKGROUND_VARIANT_KNIGHT")
         );
+        let again = element_to_form(&added, cx);
+        assert_eq!(again.fields["variants"], json!([spy, smuggler, knight]));
+        assert_eq!(form_to_element(&again, cx).expect("writes"), added);
+        let taken_out = form_to_element(&again.with_field("variants", json!([spy, knight])), cx)
+            .expect("writes");
+        assert_eq!(
+            rules(&taken_out)[1],
+            select("(Variant Criminal||ID_X_BACKGROUND_VARIANT_KNIGHT)&&!ID_X_BACKGROUND_VARIANT_SMUGGLER")
+        );
+        assert_eq!(
+            element_to_form(&taken_out, cx).fields["variants"],
+            json!([spy, knight])
+        );
+        // an empty list offers none
         let none = form_to_element(&form.with_field("variants", json!([])), cx).expect("writes");
         assert_eq!(none.rules.len(), 1);
+        // a variant made inside it is offered with the tagged ones
+        let mut fence = kind("backgroundVariant").unwrap().new_form("v");
+        fence.fields.insert("name".into(), json!("Fence"));
+        let with_child = ids(&add_child(&form, fence, None).expect("variant"), &[]);
+        let out = form_to_elements(&with_child, cx).expect("writes");
+        assert_eq!(
+            rules(&out[0])[1]["supports"],
+            json!(format!("Variant Criminal||{}", out[1].id)),
+            "{:?}",
+            with_child.fields["variants"]
+        );
     });
 }

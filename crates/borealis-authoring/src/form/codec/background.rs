@@ -16,8 +16,9 @@
 
 use super::background_values::{
     choice_row_of, choice_rule, choice_type, distribution_rule, feat_grant_of, feat_params,
-    feat_rule, list_rule, offered_by_tags, param_key, variant_ids_of, variant_tags_of,
-    variants_rule, written_list_of, ChoiceRow, FeatGrant, WrittenList, DISTRIBUTION, VARIANT_TYPE,
+    feat_rule, kept_tag_supports, list_rule, offered_by_tags, param_key, variant_ids_of,
+    variant_tags_of, variants_rule, written_list_of, ChoiceRow, FeatGrant, WrittenList,
+    DISTRIBUTION, VARIANT_TYPE,
 };
 use super::class::{package_rule, Raw, Take, ABILITY_CHOICES};
 use super::{decode, decode_raw, to_json, Reader};
@@ -376,14 +377,7 @@ pub(crate) fn read(field: BackgroundField, r: &mut Reader<'_>, cx: &FormContext<
                 Some(ids) => ids,
                 None => chosen
                     .and_then(variant_tags_of)
-                    .map(|expr| {
-                        cx.lookup
-                            .loaded_of_type(VARIANT_TYPE)
-                            .into_iter()
-                            .filter(|v| offered_by_tags(&expr, v))
-                            .map(|v| v.id.clone())
-                            .collect()
-                    })
+                    .map(|expr| tag_offered(&expr, cx))
                     .unwrap_or_default(),
             };
             let entries: Vec<ChildEntry> = ids
@@ -414,6 +408,16 @@ fn own_name(out: &Out) -> String {
 
 fn is_2024(out: &Out) -> bool {
     out.element.ruleset == Some(Ruleset::Dnd2024)
+}
+
+/// The loaded variants a tag choice offers, in the lookup's order.
+fn tag_offered(expr: &borealis_content::expr::SupportsExpr, cx: &FormContext<'_>) -> Vec<String> {
+    cx.lookup
+        .loaded_of_type(VARIANT_TYPE)
+        .into_iter()
+        .filter(|v| offered_by_tags(expr, v))
+        .map(|v| v.id.clone())
+        .collect()
 }
 
 /// The name a stored rule had (the choice's persistence key), else `fresh`.
@@ -489,13 +493,27 @@ pub(crate) fn write(
                 .enumerate()
                 .map(|(i, e)| child_refs::entry_id(e, out, &format!("{path}.{i}"), "variant"))
                 .collect::<Result<Vec<_>, _>>()?;
-            if ids.is_empty() {
-                Vec::new()
-            } else {
-                let name = stored_name(&raw, 0, || {
-                    format!("Background Variant ({})", own_name(out))
-                });
-                vec![variants_rule(&name, &ids)]
+            let tagged = raw.rules.first().and_then(|x| match x {
+                Rule::Select(s) => variant_tags_of(s).map(|expr| (s, expr)),
+                _ => None,
+            });
+            match tagged {
+                _ if ids.is_empty() => Vec::new(),
+                // Im8so: a tag choice stays one, with the edits by id
+                Some((stored, expr)) => {
+                    let text = stored.supports.as_deref().unwrap_or_default();
+                    let supports = kept_tag_supports(text, &tag_offered(&expr, cx), &ids);
+                    vec![Rule::Select(borealis_content::SelectRule {
+                        supports: Some(supports),
+                        ..stored.clone()
+                    })]
+                }
+                None => {
+                    let name = stored_name(&raw, 0, || {
+                        format!("Background Variant ({})", own_name(out))
+                    });
+                    vec![variants_rule(&name, &ids)]
+                }
             }
         }
     };
