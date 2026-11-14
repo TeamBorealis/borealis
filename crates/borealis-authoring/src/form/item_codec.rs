@@ -72,6 +72,9 @@ pub enum ItemField {
     ArmorType,
     /// Rule `stat ac:armored:armor` (a shield's `ac:shield`) (+ `data.base_ac`).
     BaseAc,
+    /// Setter `armorClass`, the Armor Class as the equipment list shows it ("12 + Dex (max 2)"); left empty, written
+    /// from the base AC and the armor type, and kept in step with them until other text is typed (Iqzlk).
+    ArmorClassText,
     /// Rule `grant ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE`, setter `stealth` (+ `data.stealth_disadvantage`).
     Stealth,
     /// Setter `enhancement`, and a magic armor's or shield's AC rule of the same value.
@@ -199,6 +202,7 @@ impl ItemField {
             Self::Proficiency => vec!["proficiency"],
             Self::Mastery => vec!["mastery"],
             Self::ArmorType => vec!["armor"],
+            Self::ArmorClassText => vec!["armorClass"],
             Self::Stealth => vec!["stealth"],
             Self::Enhancement => vec!["enhancement"],
             Self::AppliesTo(n) => vec![n],
@@ -246,6 +250,9 @@ struct Raw {
     rules: Vec<Rule>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     extract: Option<Extract>,
+    /// The text was the one the form writes ([`shown_armor_class`]): it follows the fields it was written from.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    generated: bool,
 }
 
 impl Raw {
@@ -506,6 +513,20 @@ pub(crate) fn read(f: ItemField, r: &mut Reader<'_>, cx: &FormContext<'_>) -> Fi
             let d = t.data("base_ac");
             json!(n.or_else(|| d.and_then(Value::as_i64)).unwrap_or(0))
         }
+        ItemField::ArmorClassText => {
+            let e = t.e();
+            let text = setter_text(t.setter("armorClass"));
+            let ac = e
+                .rules
+                .iter()
+                .find_map(armor_class_of)
+                .or_else(|| e.data.get("base_ac").and_then(Value::as_i64))
+                .unwrap_or(0);
+            let armor = first_setter(e, "armor").map(|s| s.value.as_str());
+            t.raw.generated =
+                text.is_empty() || shown_armor_class(armor, ac).is_some_and(|shown| shown == text);
+            json!(text)
+        }
         ItemField::Stealth => {
             let rule = t.rule(is_stealth_grant);
             let s = t.setter("stealth");
@@ -608,8 +629,41 @@ pub(crate) fn write_raw(
             return write(f, &m.value, Some(m), path, out, cx);
         }
     }
+    if f == ItemField::ArmorClassText && raw.generated {
+        out.setters(written_armor_class(out, raw.setter()), &m.slots.setters);
+        return Ok(());
+    }
     put_back(&raw, &m.slots, out, path, rule_rank(f));
     Ok(())
+}
+
+/// The base AC a rule gives, when it is the rule the Armor Class field writes.
+fn armor_class_of(rule: &Rule) -> Option<i64> {
+    stat_shape(rule, &[AC_ARMOR], None).or_else(|| stat_shape(rule, &[AC_SHIELD], Some("shield")))
+}
+
+/// The Armor Class as the equipment list shows it, as the SRD writes it: "12 + Dex" for light armor, "15 + Dex (max
+/// 2)" for medium, "17" for heavy (or no type), "+2" for a shield; none without a base AC.
+fn shown_armor_class(armor: Option<&str>, ac: i64) -> Option<String> {
+    if ac <= 0 {
+        return None;
+    }
+    let kind = armor.map(str::trim).unwrap_or_default().to_lowercase();
+    Some(match kind.as_str() {
+        "light" => format!("{ac} + Dex"),
+        "medium" => format!("{ac} + Dex (max 2)"),
+        "shield" => format!("+{ac}"),
+        _ => ac.to_string(),
+    })
+}
+
+/// The `armorClass` setter written from the armor type and base AC already in `out` (they come first in the form).
+fn written_armor_class(out: &Out, old: Option<&Setter>) -> Option<Setter> {
+    let ac = out
+        .written_field_rules()
+        .find_map(armor_class_of)
+        .unwrap_or(0);
+    shown_armor_class(out.setter_value("armor"), ac).map(|t| keep("armorClass", t, old))
 }
 
 fn put_back(raw: &Raw, slots: &Slots, out: &mut Out, path: &str, rank: u8) {
@@ -868,6 +922,15 @@ pub(crate) fn write(
         }
         ItemField::Mastery => write_mastery(value, path, &raw, &slots, out)?,
         ItemField::ArmorType => write_armor_type(&text()?, path, &raw, &slots, out)?,
+        ItemField::ArmorClassText => {
+            let t = text()?;
+            let s = if t.is_empty() {
+                written_armor_class(out, raw.setter())
+            } else {
+                Some(keep("armorClass", t, raw.setter()))
+            };
+            one_setter(out, s);
+        }
         ItemField::BaseAc => {
             let n: i64 = decode(value, path)?;
             if !(0..=30).contains(&n) {

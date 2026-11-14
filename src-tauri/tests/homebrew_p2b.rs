@@ -550,6 +550,13 @@ fn item_drafts_tried_out_are_equipped_with_their_attack_line_and_armor_class() {
         "{:?}",
         view.changed
     );
+    // Iqzlk: the inventory's AC column, written from Armor Class with "Armor Class as shown" left empty
+    let armor = &carried(&snap, "Ember Plate")["armor"];
+    assert_eq!(
+        (&armor["acText"], &armor["acBase"]),
+        (&json!("17"), &json!(17)),
+        "{armor}"
+    );
     app.state.homebrew_trial_end(&view.trial_id).unwrap();
 
     let blade = item_draft(

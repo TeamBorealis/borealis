@@ -12,7 +12,7 @@ use borealis_authoring::form::{
     check_fields, element_to_form, form_path_for_location, form_to_element, form_to_elements, kind,
     kind_for_type, merge_ui, to_ui, CatalogBlockCodec, FormContext, FormState, RefInfo,
 };
-use borealis_content::{ContentFile, Element, PackFileKind, PackManifest};
+use borealis_content::{ContentFile, Element, PackFileKind, PackManifest, Setter};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
@@ -549,6 +549,76 @@ fn a_new_armor_writes_its_rules_in_the_srd_order() {
         );
         assert_eq!(e["supports"], json!(["ID_INTERNAL_ARMOR_GROUP_MEDIUM"]));
         assert!(e.get("data").is_none());
+    });
+}
+
+/// Iqzlk: the equipment list shows an armor's AC from its `armorClass` setter, so an armor whose "Armor Class as shown"
+/// is left empty is given the text from its Armor Class and type (as the SRD writes it); typed text stays, and the
+/// written text follows later edits of the Armor Class until it is typed over.
+#[test]
+fn an_armor_s_shown_armor_class_is_written_from_its_armor_class() {
+    let lookup = core_lookup();
+    with_cx(&lookup, |cx| {
+        let shown = |e: &Element| e.setter_value("armorClass").map(str::to_string);
+        for (ty, ac, text) in [
+            ("Light", 12, Some("12 + Dex")),
+            ("Medium", 15, Some("15 + Dex (max 2)")),
+            ("Heavy", 17, Some("17")),
+            ("Shield", 2, Some("+2")),
+            ("", 13, Some("13")),
+            ("Heavy", 0, None),
+        ] {
+            let f = new_form(
+                "armor",
+                "ID_HB_ARMOR_BONE",
+                json!({"name": "Bone", "armorType": ty, "baseAc": ac, "armorClassText": ""}),
+            );
+            let e = form_to_element(&f, cx).expect("writes");
+            assert_eq!(shown(&e).as_deref(), text, "{ty} {ac}");
+        }
+        // written: it follows the Armor Class and the type
+        let f = new_form(
+            "armor",
+            "ID_HB_ARMOR_BONE",
+            json!({"name": "Bone", "armorType": "Medium", "baseAc": 15, "armorClassText": ""}),
+        );
+        let saved = element_to_form(&form_to_element(&f, cx).unwrap(), cx);
+        assert_eq!(saved.fields["armorClassText"], json!("15 + Dex (max 2)"));
+        let e = form_to_element(&edited(&saved, "baseAc", json!(14)), cx).unwrap();
+        assert_eq!(shown(&e).as_deref(), Some("14 + Dex (max 2)"));
+        let e = form_to_element(&edited(&saved, "armorType", json!("Light")), cx).unwrap();
+        assert_eq!(shown(&e).as_deref(), Some("15 + Dex"));
+        // typed: it stays
+        let typed = edited(
+            &f,
+            "armorClassText",
+            json!("15 + Dex (max 2), 16 in sunlight"),
+        );
+        let saved = element_to_form(&form_to_element(&typed, cx).unwrap(), cx);
+        let e = form_to_element(&edited(&saved, "baseAc", json!(14)), cx).unwrap();
+        assert_eq!(
+            shown(&e).as_deref(),
+            Some("15 + Dex (max 2), 16 in sunlight")
+        );
+        // cleared again: written again
+        let e = form_to_element(&edited(&saved, "armorClassText", json!("")), cx).unwrap();
+        assert_eq!(shown(&e).as_deref(), Some("15 + Dex (max 2)"));
+        // stored text the form would write follows too; other wording (the 2014 SRD's) is kept as typed
+        let plate = element_to_form(&plate_2024(), cx);
+        let e = form_to_element(&edited(&plate, "baseAc", json!(19)), cx).unwrap();
+        assert_eq!(
+            shown(&e).as_deref(),
+            Some("19"),
+            "18 is what the form writes"
+        );
+        let mut padded = plate_2024();
+        padded.setters.retain(|s| s.name != "armorClass");
+        padded
+            .setters
+            .push(Setter::new("armorClass", "11 + Dex modifier"));
+        let padded = element_to_form(&padded, cx);
+        let e = form_to_element(&edited(&padded, "baseAc", json!(12)), cx).unwrap();
+        assert_eq!(shown(&e).as_deref(), Some("11 + Dex modifier"));
     });
 }
 

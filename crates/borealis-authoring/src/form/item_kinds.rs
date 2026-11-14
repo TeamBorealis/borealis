@@ -437,10 +437,12 @@ fn armor() -> KindDef {
             "Armor Class as shown",
             GENERAL,
             Control::Text,
-            Codec::SetterText("armorClass"),
+            item(ItemField::ArmorClassText),
         )
+        // a new armor holds the field empty, so its text is written from the Armor Class untouched
+        .default("\"\"")
         .section(ARMOR)
-        .help("How the equipment list shows it, like 12 + Dex (max 2)."),
+        .help("How the equipment list shows it, like 12 + Dex (max 2). Left empty, it is written from the Armor Class and the armor type."),
         field(
             "strength",
             "Strength needed",

@@ -14433,8 +14433,9 @@ export const MOCK_KIND_DESCRIPTORS: HomebrewKindDescriptor[] = [
         "bindings": [
           "setter:armorClass"
         ],
-        "help": "How the equipment list shows it, like 12 + Dex (max 2).",
-        "section": "Armor"
+        "help": "How the equipment list shows it, like 12 + Dex (max 2). Left empty, it is written from the Armor Class and the armor type.",
+        "section": "Armor",
+        "default": ""
       },
       {
         "key": "strength",

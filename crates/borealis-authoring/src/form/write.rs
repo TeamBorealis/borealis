@@ -86,6 +86,11 @@ impl Out {
         }
     }
 
+    /// The rules fields have written so far (an armor's base AC, read by its shown Armor Class).
+    pub(crate) fn written_field_rules(&self) -> impl Iterator<Item = &Rule> {
+        self.field_rules.iter().map(|r| &r.rule)
+    }
+
     /// The first setter written so far called `name` (any case), for a field that edits part of another field's
     /// setter (a cost's currency).
     pub(crate) fn setter_mut(&mut self, name: &str) -> Option<&mut Setter> {
