@@ -499,6 +499,8 @@ pub struct AppState {
     pub(crate) hb_trials: crate::homebrew_trial::CreatorTrials,
     /// The homebrew creator's undoable pack changes (deletes, multi-select edits; spec 10.2, 12.5).
     pub(crate) hb_undo: crate::homebrew_undo::CreatorUndo,
+    /// The engine checks of drafts take turns (`homebrew_check_draft`).
+    pub(crate) hb_checks: crate::homebrew_check_gate::CheckGate,
 }
 
 impl AppState {
@@ -584,6 +586,7 @@ impl AppState {
             hb_drafts: crate::homebrew_drafts::CreatorDrafts::default(),
             hb_trials: crate::homebrew_trial::CreatorTrials::default(),
             hb_undo: crate::homebrew_undo::CreatorUndo::default(),
+            hb_checks: crate::homebrew_check_gate::CheckGate::default(),
         }
     }
 

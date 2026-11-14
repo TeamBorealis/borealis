@@ -111,6 +111,7 @@ mod folder_access_mac;
 pub mod gear_facts;
 pub mod gear_info;
 pub mod homebrew_api;
+pub mod homebrew_check_gate;
 pub mod homebrew_checks;
 pub mod homebrew_creator;
 pub mod homebrew_draft_api;

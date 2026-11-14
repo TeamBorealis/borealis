@@ -6,7 +6,8 @@
 //!
 //! The engine checks run on a blocking thread (`commands_content::blocking`) with nothing locked: the draft, the pack
 //! and the content are read first, so autosaves go on while a check runs. The UI drops an answer for a form that has
-//! changed since (`draftSession.ts`).
+//! changed since (`draftSession.ts`). Checks take turns, and one replaced by a newer check of its draft before its turn
+//! is not run ([`crate::homebrew_check_gate`]).
 
 use crate::error::ApiResult;
 use crate::homebrew_draft_api::{draft_elements, saved_ids, wire_problem};
@@ -80,8 +81,11 @@ impl AppState {
     /// levelled 1 to 20, choices that offer nothing and balance hints. Never errors: they don't block Save.
     ///
     /// # Errors
-    /// `not_found` for an unknown draft or pack; `internal` when a lock is poisoned.
+    /// `not_found` for an unknown draft or pack; `requirement_failed` when a newer check of the draft replaced this
+    /// one before its turn ([`crate::homebrew_check_gate::superseded`]); `internal` when a lock is poisoned.
     pub fn homebrew_check_draft(&self, draft_id: &str) -> ApiResult<Vec<HomebrewProblem>> {
+        let ticket = self.hb_checks.request(draft_id)?;
+        let _turn = self.hb_checks.turn(&ticket)?;
         let draft = self.hb_drafts.get(&self.paths.data, draft_id)?;
         let pack = self.hb_pack(&draft.pack_id)?;
         let hub = self.hub()?;
