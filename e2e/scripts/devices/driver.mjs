@@ -33,15 +33,15 @@ const STILL_POLL_MS = 200;
 const STILL_READS_MAX = 25;
 /** How long a touch has to reach its target, and how often it is made. */
 const CLICK_WAIT_MS = 3_000;
-const TAP_TRIES = 4;
+const TAP_TRIES = 6;
 /** The phone status line folds this long after a plain message (ui/src/components/shell/Chrome.tsx STATUS_FOLD_MS). */
 const STATUS_FOLD_MS = 4_000;
 const STATUS_WAIT_MS = 3 * STATUS_FOLD_MS;
 /** The soft keyboard takes this long to go away after its field gives up the focus. */
 const KEYBOARD_AWAY_MS = 800;
 /** iOS: tries of one XCTest press, and the pause between them. */
-const PRESS_TRIES = 5;
-const PRESS_RETRY_MS = 8_000;
+/** How long a timed-out iOS press may still take to land. */
+const LATE_PRESS_WAIT_MS = 10_000;
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const env = { ...process.env, DEVELOPER_DIR };
@@ -189,6 +189,7 @@ async function android(evidence) {
       }
       const dpr = await cdp.eval('devicePixelRatio');
       adb('shell', 'input', 'tap', String(Math.round(x * dpr)), String(Math.round(y * dpr + viewTop)));
+      return true;
     },
     /** Real keyboard input into the focused field (adb input text: spaces as %s). */
     async type(text) { adb('shell', 'input', 'text', text.replace(/ /g, '%s')); },
@@ -224,6 +225,7 @@ function simulatorUdid() {
 async function ios(evidence) {
   const udid = simulatorUdid();
   let bridge = null;
+  let pressTimeouts = 0;
   const ad = (...a) => run(AGENT_DEVICE, [...a, '--session', AD_SESSION, '--platform', 'ios', '--udid', udid], { cwd: join(HERE, '../..') });
   const post = async (path, body) => (await fetch(`http://127.0.0.1:${RWI_PORT}${path}`, { method: 'POST', body: JSON.stringify(body) })).json();
   return {
@@ -250,16 +252,21 @@ async function ios(evidence) {
     },
     /** After the app was killed: the XCTest session still follows the old process, so it is closed (connect opens anew). */
     endSession() { try { ad('close'); } catch { /* no session */ } },
+    /**
+     * One XCTest press. Under load it can time out on the runner's watchdog and still land later, so it is never simply
+     * sent again here: it answers false and the tap looks at the page (and waits longer) before touching again. A runner
+     * that timed out twice in a row is started afresh (the app keeps running).
+     */
     async touch(x, y) {
-      // XCTest's press can time out on its main-thread watchdog while the machine is loaded: the tap did not happen, so
-      // it is tried again (at most PRESS_TRIES times) before the step fails
-      for (let attempt = 1; ; attempt += 1) {
-        try { ad('press', String(Math.round(x)), String(Math.round(y))); return; } catch (e) {
-          if (attempt >= PRESS_TRIES || !/timed out|watchdog|still finishing|deadline exceeded/.test(String(e?.stderr ?? e))) throw e;
-          await sleep(PRESS_RETRY_MS);
-          // a runner that missed its deadline twice is started afresh (the app keeps running)
-          if (attempt >= 2) { try { ad('close'); } catch { /* already gone */ } ad('open', BUNDLE); }
-        }
+      try {
+        ad('press', String(Math.round(x)), String(Math.round(y)));
+        pressTimeouts = 0;
+        return true;
+      } catch (e) {
+        if (!/timed out|watchdog|still finishing|deadline exceeded/.test(String(e?.stderr ?? e))) throw e;
+        pressTimeouts += 1;
+        if (pressTimeouts >= 2) { try { ad('close'); } catch { /* already gone */ } ad('open', BUNDLE); pressTimeouts = 0; }
+        return false;
       }
     },
     async type(text) { ad('type', text); },
@@ -313,7 +320,7 @@ export async function device(platform, evidence) {
     ...d,
     ev,
     /** Real taps made, and every touch that did not reach its target (with what the page saw). */
-    stats: { taps: 0, unaimed: 0, statusWaits: 0, misses: [] },
+    stats: { taps: 0, unaimed: 0, statusWaits: 0, pressTimeouts: 0, misses: [] },
     async waitFor(expr, what, ms = WAIT_MS) {
       const end = Date.now() + ms;
       for (;;) {
@@ -337,9 +344,11 @@ export async function device(platform, evidence) {
           window.__dv.q(${arg(sel)}, ${arg(text)})?.addEventListener('click', () => { window.__dv.clicked = true; }, { capture: true, once: true });
           return window.__dv.now(); })()`);
         const touchedAt = Date.now();
-        await d.touch(x, y);
+        const sent = await d.touch(x, y);
         const touchMs = Date.now() - touchedAt;
-        const end = Date.now() + CLICK_WAIT_MS;
+        // a press that timed out may still land: give it longer before the target is aimed and touched again
+        if (!sent) t.stats.pressTimeouts += 1;
+        const end = Date.now() + (sent ? CLICK_WAIT_MS : LATE_PRESS_WAIT_MS);
         let clicked = false;
         while (!clicked && Date.now() < end) { await sleep(POLL_MS); clicked = await ev('window.__dv.clicked === true').catch(() => true); }
         // the click can also take the target away (a sheet closes): a missing target counts as clicked

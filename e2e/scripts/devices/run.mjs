@@ -51,7 +51,7 @@ try {
   }
 } finally {
   const over = result.saves.filter((s) => s.ms >= PHONE_SAVE_BUDGET_MS);
-  result.taps = { taps: d.stats.taps, missed: d.stats.misses.length, unaimed: d.stats.unaimed, statusWaits: d.stats.statusWaits, misses: d.stats.misses };
+  result.taps = { taps: d.stats.taps, missed: d.stats.misses.length, unaimed: d.stats.unaimed, statusWaits: d.stats.statusWaits, pressTimeouts: d.stats.pressTimeouts, misses: d.stats.misses };
   console.log('taps', d.stats.taps, 'missed touches', d.stats.misses.length);
   result.budget = { limitMs: PHONE_SAVE_BUDGET_MS, maxMs: Math.max(0, ...result.saves.map((s) => s.ms)), over };
   if (over.length > 0) failed = true;
