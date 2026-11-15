@@ -4,7 +4,7 @@ import type { HomebrewForm, HomebrewTableColumn } from "../../../api/contract";
 import { Button, Dialog, Icon, NumericUpDown, TextBox } from "../../../components";
 import { DescCheck } from "../fields/DescCheck";
 import { usePhone } from "../../../lib/phone";
-import { setStatus } from "../../../state/status";
+import { noteStatus } from "../statusNote";
 import { NumbersControl } from "../blocks/valueControls";
 import { ChildDialog, type ChildEditing, childKind, removeChecked } from "./ChildDialog";
 import "./class.css";
@@ -57,7 +57,7 @@ export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing
   const addAt = async (level: number) => {
     if (!feature) return;
     const key = await editing.newChild(feature.id, (f, k) => withChildLevel(f, LEVELS_FIELD, k, level));
-    if (key) { setOpen(key); setStatus(`Feature added at level ${level}.`); }
+    if (key) { setOpen(key); noteStatus(`Feature added at level ${level}.`); }
   };
   const setColumns = (next: HomebrewTableColumn[]) => editing.edit((f) => withField(f, "table", next));
   const setCell = (index: number, level: number, text: string) => {
@@ -76,7 +76,7 @@ export function LevelsGrid({ editing, featureType = "Class Feature" }: { editing
     void removeChecked(editing, key, `“${name}”`, () => {
       editing.edit((f) => withoutChild(f, key, CHILD_FIELDS));
       setOpen(null);
-      setStatus("Feature removed. Undo brings it back.");
+      noteStatus("Feature removed. Undo brings it back.");
     });
   };
 

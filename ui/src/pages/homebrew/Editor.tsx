@@ -15,7 +15,7 @@ import { ProblemsPanel } from "./ProblemsPanel";
 import { TryIt } from "./TryIt";
 import { PROPERTIES_FIELD, WEAPON_KIND, withWeaponProperties } from "./weaponHands";
 import { CLASS_KIND, GROUP_FIELDS, withClassProficiencies } from "./proficiencyGroups";
-import { setStatus } from "../../state/status";
+import { noteStatus } from "./statusNote";
 import { NestedPane } from "../builder/DescriptionPane";
 import type { DraftController } from "./useDraft";
 import type { AutosaveState } from "./draftSession";
@@ -150,7 +150,7 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
       const label = (key: string) => kind.fields.find((x) => x.key === key)?.label ?? key;
       const { moved } = withClassProficiencies(form.fields, f.key, v);
       draft.edit((cur) => ({ ...cur, fields: withClassProficiencies(cur.fields, f.key, v).fields }));
-      setStatus(moved.map((m) => `${m.name} is listed under ${label(m.to)}: a class lists its proficiencies by kind.`).join(" "));
+      noteStatus(moved.map((m) => `${m.name} is listed under ${label(m.to)}: a class lists its proficiencies by kind.`).join(" "));
     } else draft.setField(f.key, v, typing);
   };
   const expertSwitch = <span className="hb-expert"><ToggleSwitch label="Expert fields" checked={expert} onChange={setExpert} onLabel="Expert" offLabel="Expert" /></span>;

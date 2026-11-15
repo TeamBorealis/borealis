@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { HomebrewDataNode, HomebrewGeneratedView } from "../../api/contract";
 import { Icon, SafeHtml } from "../../components";
 import { ToggleSwitch } from "../../components/controls";
-import { setStatus } from "../../state/status";
+import { noteStatus } from "./statusNote";
 
 /** One line of the tree: `key: value`, an HTML description rendered (or as its text), an expression beside its sentence. */
 function Line({ node, depth, showHtml }: { node: HomebrewDataNode; depth: number; showHtml: boolean }) {
@@ -36,9 +36,9 @@ export function DataView({ generated }: { generated: HomebrewGeneratedView | nul
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(generated?.json ?? "");
-      setStatus("Copied the element as JSON.");
+      noteStatus("Copied the element as JSON.");
     } catch {
-      setStatus("The clipboard can't be reached here.");
+      noteStatus("The clipboard can't be reached here.");
     }
   };
   return (

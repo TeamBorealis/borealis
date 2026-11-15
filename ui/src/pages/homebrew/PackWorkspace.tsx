@@ -24,6 +24,7 @@ import { countProblems, creatorStatus, fieldDomId, fieldKeyOf, tabOf } from "./p
 import { useDraft } from "./useDraft";
 import { findForm } from "./class/children";
 import { useMessageBox } from "./useMessageBox";
+import { noteStatus, onStatusNote, type StatusNote } from "./statusNote";
 import "../builder/builder.css";
 import "./homebrew.css";
 import "./expert.css";
@@ -31,9 +32,8 @@ import "./expert.css";
 /** `content-reloaded` reasons of a pack changed from outside this page: a device receive, an imported pack file. */
 const PACK_CHANGED = new Set(["device-sync", "homebrew-pack-imported"]);
 
-/** The save confirmation on the status line (HC18) and the form it belongs to; undefined until it first shows. */
-interface SavedNote {
-  readonly text: string;
+/** A creator message on the status line (HC18) and the form it belongs to; undefined until it first shows. */
+interface ShownNote extends StatusNote {
   readonly form?: HomebrewForm | null;
 }
 
@@ -151,20 +151,31 @@ export function PackWorkspace() {
 
   // Status line (spec 8.3): "2 problems" while an element is open; "Checking..." while the engine checks run. After a save
   // (HC18) it keeps "Saved 'X' to Pack" and adds the count, until the form on screen changes (an edit, another element).
-  const [saved, setSaved] = useState<SavedNote | null>(null);
+  // Every creator message is kept the same way ("Made a copy...", "Rule added.": `noteStatus`).
+  const [note, setNote] = useState<ShownNote | null>(null);
+  useEffect(() => onStatusNote(setNote), []);
   useEffect(() => {
-    if (!saved) return;
-    // The note belongs to the form on screen when it first shows: the element reopened after the save.
-    if (saved.form === undefined) setSaved({ text: saved.text, form: draft.form });
-    else if (saved.form !== draft.form) setSaved(null);
-  }, [saved, draft.form]);
+    if (!note) return;
+    if (note.form !== undefined) {
+      if (note.form !== draft.form) setNote(null);
+      return;
+    }
+    // The note belongs to the form on screen when it first shows (the element reopened after a save, the rule just added);
+    // with no element open the message is the whole line.
+    if (draft.form) {
+      setNote({ ...note, form: draft.form });
+      return;
+    }
+    setStatus(note.text);
+    setNote(null);
+  }, [note, draft.form]);
   const counted = countProblems(draft.problems);
   const hasForm = draft.form !== null;
   useEffect(() => {
     if (!hasForm) return;
-    const line = creatorStatus(saved?.text ?? null, draft.checking, counted);
+    const line = creatorStatus(note?.text ?? null, draft.checking, counted, note?.count ?? true);
     setStatus(line.message, line.detail);
-  }, [hasForm, saved?.text, draft.checking, counted.errors, counted.warnings]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasForm, note?.text, note?.count, draft.checking, counted.errors, counted.warnings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const show = async (view: HomebrewDraftView) => {
     setTryItOpen(false);
@@ -271,17 +282,19 @@ export function PackWorkspace() {
   const extra: ExtraCategory[] = [{ label: "Spell Lists", current: pane === "lists", onPick: () => { setPane("lists"); setMobileView("list"); } }];
 
   /** After a multi-select edit or its undo: read the pack again; the open element closes when it left the pack, else it is
-   * opened again (a draft of it asks which version to keep, spec 10.1). */
+   * opened again (a draft of it asks which version to keep, spec 10.1). The message shows once the element on screen is
+   * settled, so it stays with it (HC18); it is about the pack, so it takes no problems count. */
   const bulkDone = (done: BulkDone) => {
     elements.reload();
     packs.reload();
     setWritten((n) => n + 1);
     setSelected(new Set());
-    if (!openId || !done.ids.includes(openId)) return;
-    if (done.action === "delete" || done.action === "move") { void draft.open(null); return; }
+    const tell = () => noteStatus(done.note, { count: false });
+    if (!openId || !done.ids.includes(openId)) { tell(); return; }
+    if (done.action === "delete" || done.action === "move") { void draft.open(null).then(tell); return; }
     // the open element changed under its form: open it again from the pack
     const id = openId;
-    void api.homebrewOpenDraft({ packId, elementId: id }).then(settleBase).then(show).catch(() => draft.open(null));
+    void api.homebrewOpenDraft({ packId, elementId: id }).then(settleBase).then(show).catch(() => draft.open(null)).then(tell);
   };
 
   /** A new element (spec 10.1), or a copy (spec 11): a copy is named "<Name> (copy)", selected for renaming. */
@@ -332,7 +345,7 @@ export function PackWorkspace() {
       packs.reload();
       setWritten((n) => n + 1);
       haptic("save");
-      setSaved({ text: `Saved '${name}' to ${result.pack.name}` });
+      noteStatus(`Saved '${name}' to ${result.pack.name}`);
     } catch (e) {
       setStatus(errorMessage(e));
     }
@@ -419,14 +432,15 @@ export function PackWorkspace() {
     else if (r.packId === packId) void openById(r.id);
     else nav(`/homebrew/${encodeURIComponent(r.packId ?? "")}?element=${encodeURIComponent(r.id)}`);
   };
-  // HC5: Edit on a loaded element makes a deep copy in this pack and opens it, as Copy to homebrew does
+  // HC5: Edit on a loaded element makes a deep copy in this pack and opens it, its name selected, as Copy to homebrew does.
+  // The message follows the copy on screen, so it stays with it (HC18).
   const editCopy = async (r: { id: string; name: string }) => {
     try {
       if (draft.form && !(await draft.flush())) return;
       if (!(await leaveLists())) return;
-      const view = await api.homebrewNewDraft({ packId, kind: "other", copyFrom: r.id, deepCopy: true });
-      setStatus(`Made a copy of '${r.name}' to edit. The original stays as it is.`);
-      nav(`/homebrew/${encodeURIComponent(packId)}?draft=${encodeURIComponent(view.draftId)}`);
+      await show(await api.homebrewNewDraft({ packId, kind: "other", copyFrom: r.id, deepCopy: true }));
+      setTimeout(() => focusField("name", true), 0);
+      noteStatus(`Made a copy of '${r.name}' to edit. The original stays as it is.`);
     } catch (e) {
       toast.push(errorMessage(e), "error");
     }

@@ -8,7 +8,7 @@ import { FieldList } from "./BlockFieldControl";
 import { NumbersControl } from "./valueControls";
 import { type MadeOption, OPTION_TYPE, OptionGroupPanel } from "./OptionGroupPanel";
 import { useApi } from "../../../state/ApiContext";
-import { setStatus } from "../../../state/status";
+import { noteStatus } from "../statusNote";
 import { errorMessage } from "../../../state/useAsync";
 import { fallbackSentence } from "./sentence";
 import { type Fields, cleanFields, isEmptyValue, missingRequired, withAutoType } from "./values";
@@ -94,9 +94,9 @@ export function BlockDialog({ spec, block, isNew, problems, onOk, onCancel, repe
       try {
         await api.homebrewDeleteElements({ packId: env.packId, elementIds: made.map((o) => o.id), confirm: true });
         env.onPackChanged?.();
-        setStatus(`Deleted ${namesText(names)} from the pack.`);
+        noteStatus(`Deleted ${namesText(names)} from the pack.`);
       } catch (e) {
-        setStatus(errorMessage(e));
+        noteStatus(errorMessage(e));
       }
     }
     onCancel();

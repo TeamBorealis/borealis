@@ -1,6 +1,6 @@
 import type { HomebrewForm, Ruleset } from "../../../api/contract";
 import { Icon } from "../../../components";
-import { setStatus } from "../../../state/status";
+import { noteStatus } from "../statusNote";
 import { type ChildEditing, childKind } from "../class/ChildDialog";
 import { childProblems, withChild, withChildLevel } from "../class/children";
 import { FieldView } from "../FieldView";
@@ -58,7 +58,7 @@ export function SpellcastingTab({ editing, expert }: { editing: ChildEditing; ex
         const placed = withChildLevel(f, LEVELS_FIELD, k, place.level);
         return c ? withChild(placed, k, { ...c, fields: { ...c.fields, name: "Spellcasting", ...place.section } }) : placed;
       });
-      if (key) setStatus(`Spellcasting added at level ${place.level}.`);
+      if (key) noteStatus(`Spellcasting added at level ${place.level}.`);
     };
     return (
       <div className="hb-section hb-caster-empty">
