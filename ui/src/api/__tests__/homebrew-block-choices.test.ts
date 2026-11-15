@@ -26,6 +26,31 @@ const problemsOf = (b: HomebrewBlock, skills: readonly string[] = []) =>
 
 const choice = (path: string, message: string) => ["block.choice", `blocks.0.fields.${path}`, message];
 
+// Item I2iGc: the Rust test `crates/borealis-authoring/tests/mock_block_choices.rs` writes block cases and the
+// `block.choice` / `block.shape` problems the backend's live check finds for each, with the homebrew skills loaded
+// for it (their keys); the mock's check reads the same forms here.
+interface ChoiceFixture {
+  cases: { case: string; skills: string[]; form: HomebrewForm; problems: { code: string; path: string; message: string }[] }[];
+}
+
+const fixture = JSON.parse(
+  fs.readFileSync(path.resolve(process.cwd(), "src/api/__fixtures__/homebrew-block-choices.json"), "utf8"),
+) as ChoiceFixture;
+
+describe("the mock's closed-choice check, case by case as the backend finds it (I2iGc)", () => {
+  it.each(fixture.cases.map((c) => [c.case, c] as const))("%s", (_, c) => {
+    const found = formProblems(c.form, MOCK_BLOCK_CATALOG, null, undefined, c.skills)
+      .filter((p) => p.code === "block.choice" || p.code === "block.shape")
+      .map((p) => ({ code: p.code, path: p.path, message: p.message }));
+    expect(found).toEqual(c.problems);
+  });
+
+  it("the fixture holds cases with and without problems", () => {
+    expect(fixture.cases.some((c) => c.problems.length === 0)).toBe(true);
+    expect(fixture.cases.filter((c) => c.problems.some((p) => p.code === "block.choice")).length).toBeGreaterThanOrEqual(10);
+  });
+});
+
 describe("the mock refuses block values outside their closed choices (I0Yxk)", () => {
   it("a closed combo or chips value that is not one of the choices", () => {
     expect(problemsOf(block("grant_spell", { spell: { id: "ID_X", name: "X", type: "Spell" }, mode: "sometimes" })))
