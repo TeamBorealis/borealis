@@ -2,6 +2,7 @@ import type {
   ElementSummary, HomebrewBlock, HomebrewBlockSpec, HomebrewExprNode, HomebrewFieldSpec, HomebrewForm, HomebrewKindDescriptor, HomebrewPickerFilters, HomebrewPickerRow,
   HomebrewPickerTarget, HomebrewProblem, Page,
 } from "../types";
+import { blockChoiceProblems } from "./homebrew-choices";
 import { blockShapeProblems } from "./homebrew-shapes";
 import { skillKey } from "./homebrew-skills";
 
@@ -191,14 +192,16 @@ function valueProblems(spec: HomebrewBlockSpec, b: HomebrewBlock, i: number, ele
   return out;
 }
 
-/** A block's required fields, ranges, dice and its condition (the backend's `blocks.N.fields.<key>` sentences). */
-function blockProblems(b: HomebrewBlock, i: number, catalog: readonly HomebrewBlockSpec[], elementId: string | null): HomebrewProblem[] {
+/** A block's required fields, ranges, dice, closed choices and its condition (the backend's `blocks.N.fields.<key>`
+ * sentences). `skills`: the loaded homebrew skills' keys, which a skill field also takes. */
+function blockProblems(b: HomebrewBlock, i: number, catalog: readonly HomebrewBlockSpec[], elementId: string | null, skills: readonly string[]): HomebrewProblem[] {
   const spec = catalog.find((s) => s.kind === b.kind);
   if (!spec) return [];
   const missing = spec.fields.filter((f) => f.required && f.control !== "auto" && empty(b.fields[f.key])).map((f): HomebrewProblem => ({
     severity: "error", message: `${blockLabel(spec)}: fill in ${f.label.toLowerCase()}.`, path: `blocks.${i}.fields.${f.key}`, elementId, code: "block.required",
   }));
-  return [...blockShapeProblems(b, i, catalog, elementId), ...missing, ...valueProblems(spec, b, i, elementId), ...exprProblems(b.fields.requirements, `blocks.${i}.fields.requirements`, elementId)];
+  return [...blockShapeProblems(b, i, catalog, elementId), ...missing, ...valueProblems(spec, b, i, elementId),
+    ...blockChoiceProblems(b, i, catalog, elementId, skills), ...exprProblems(b.fields.requirements, `blocks.${i}.fields.requirements`, elementId)];
 }
 
 /** "a deity", "an alignment", "domains" (`check::messages::with_article`). */
@@ -248,14 +251,16 @@ function classSkillProblems(form: HomebrewForm, elementId: string | null): Homeb
 }
 
 /** The mock's live problems of a form: required fields, the prerequisite's rows, every block. The engine checks
- * (`homebrew_check_draft`: test character, level sweep, balance) are the backend's only; the mock has none. */
-export function formProblems(form: HomebrewForm, catalog: readonly HomebrewBlockSpec[], elementId: string | null, kind?: HomebrewKindDescriptor): HomebrewProblem[] {
+ * (`homebrew_check_draft`: test character, level sweep, balance) are the backend's only; the mock has none. `skills`:
+ * the statistic keys of the loaded homebrew skills (`homebrew-skills.ts`), which the skill blocks take by name. */
+export function formProblems(form: HomebrewForm, catalog: readonly HomebrewBlockSpec[], elementId: string | null, kind?: HomebrewKindDescriptor,
+  skills: readonly string[] = []): HomebrewProblem[] {
   return [
     ...requiredProblems(form, kind, elementId),
     ...skillNameProblems(form, elementId),
     ...classSkillProblems(form, elementId),
     ...exprProblems(form.fields.requirements, "fields.requirements", elementId),
-    ...form.blocks.flatMap((b, i) => blockProblems(b, i, catalog, elementId)),
+    ...form.blocks.flatMap((b, i) => blockProblems(b, i, catalog, elementId, skills)),
   ];
 }
 

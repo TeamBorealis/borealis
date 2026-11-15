@@ -4,6 +4,8 @@ import type { HomebrewBlock, HomebrewBlockField, HomebrewBlockSpec, HomebrewProb
 // join): every block field value must have the shape of its control (`HomebrewBlockValueByControl`), or the backend
 // refuses it at `blocks.N.fields.<path>`. The mock checks the same shapes so that a control writing the wrong one fails
 // on the web too. The Rust sample form (`api/__fixtures__/homebrew-form.json`) is the reference: it passes unchanged.
+// The codec writes combo and chips values as they are, and a variant of an unknown kind with its parts as they are: the
+// form check judges those (`block.choice`, `homebrew-choices.ts`), not the codec.
 
 /** The backend's sentence for a value it can't read (`form::codec::decode`). */
 export const SHAPE_MESSAGE = "This value can't be read. Undo the last change or enter it again.";
@@ -27,11 +29,10 @@ const isExpr = (v: unknown): boolean => isObj(v) && isObj(v.value) && (v.value.s
 
 /** Shapes of the controls whose value has no parts (`HomebrewBlockValueByControl`). */
 const SIMPLE: Partial<Record<HomebrewBlockField["control"], (v: unknown, f: HomebrewBlockField) => boolean>> = {
-  text: isStr, multiline: isStr, dice: isStr, combo: isStr, statistic: isStr, statValue: isStr, classCounter: isStr,
+  text: isStr, multiline: isStr, dice: isStr, statistic: isStr, statValue: isStr, classCounter: isStr,
   number: (v, f) => isNum(v) || (isStr(v) && !!(f.choices?.length || f.allowCustom)),
   numbers: (v) => listOf(v, isNum),
   check: (v) => typeof v === "boolean",
-  chips: (v) => listOf(v, isStr),
   reference: isRef,
   references: (v) => listOf(v, isRef),
   name: (v, f) => (f.multiple ? listOf(v, isStr) : isStr(v)),
@@ -61,19 +62,24 @@ function valueProblems(f: HomebrewBlockField, v: unknown, path: string, catalog:
   const simple = SIMPLE[f.control];
   if (simple) return simple(v, f) ? [] : [path];
   switch (f.control) {
-    case "auto": return [];
+    case "auto": case "combo": case "chips": return [];
     case "group": return isObj(v) ? partsProblems(f.fields ?? [], v, path, catalog) : [path];
     case "rows":
       return Array.isArray(v) ? v.flatMap((row, i) => (isObj(row) ? rowProblems(f.fields ?? [], row, at(path, i), catalog) : [at(path, i)])) : [path];
     case "variant": {
       const variant = isObj(v) ? f.variants?.find((x) => x.value === v.type) : undefined;
-      if (!isObj(v) || !variant) return [path];
+      if (!isObj(v) || !variant) return [];
       const { type: _type, ...parts } = v;
       return partsProblems(variant.fields, parts, path, catalog);
     }
     case "map": {
-      const valueField = f.fields?.[1];
-      return isObj(v) && valueField ? Object.entries(v).flatMap(([k, x]) => valueProblems(valueField, x, at(path, k), catalog)) : [path];
+      const [keyField, valueField] = f.fields ?? [];
+      if (!isObj(v) || !valueField) return [path];
+      // a key its closed combo doesn't offer (a rest no pool is regained on): the backend can't read the map
+      // (`check::fields`: a misfit with no closer finding is `block.shape`)
+      const closed = keyField?.control === "combo" && !keyField.allowCustom;
+      if (closed && Object.keys(v).some((k) => !(keyField.choices ?? []).some((c) => c.value === k))) return [path];
+      return Object.entries(v).flatMap(([k, x]) => valueProblems(valueField, x, at(path, k), catalog));
     }
     case "blocks":
       return Array.isArray(v) ? v.flatMap((b, i) => nestedProblems(b, f, at(path, i), catalog)) : [path];

@@ -16,7 +16,7 @@ import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
 import { CORE_PICKER_ROWS } from "./homebrew-core-rows";
 import { MOCK_COPY_SOURCES, type MockCopySource } from "./homebrew-copies";
 import { MOCK_KIND_DESCRIPTORS } from "./homebrew-kinds";
-import { contentSkillNames, SKILL_NAME_PICKER } from "./homebrew-skills";
+import { contentSkillNames, SKILL_NAME_PICKER, skillKey } from "./homebrew-skills";
 import type { TrialDraft } from "./homebrew-trial";
 import { copyCode, copyOf, type MockPackData, packFile, packFileName, readPackFile } from "./homebrew-transfer";
 import { toBase64 } from "./pack-file";
@@ -653,20 +653,28 @@ export class MockHomebrew {
       });
   }
 
+  /** The statistic keys of the skills saved Skill elements add (the backend's `form::skill_keys` over the loaded store;
+   * a draft not saved is no skill yet). */
+  private loadedSkillKeys(): string[] {
+    const forms = [...this.packs.values()].flatMap((own) => [...own.elements.values()].map((e) => e.form));
+    return contentSkillNames(forms).flatMap((name) => skillKey(name) ?? []);
+  }
+
   private freeId(own: OwnPack, base: string): string {
     if (!own.elements.has(base)) return base;
     for (let n = 2; ; n += 1) if (!own.elements.has(`${base}_${n}`)) return `${base}_${n}`;
   }
 
   private store(packId: string, elementId: string | null, form: HomebrewForm, draftId = `draft-${this.nextDraft++}`): HomebrewDraftView {
+    const skills = this.loadedSkillKeys();
     const problems = [
-      ...formProblems(form, MOCK_BLOCK_CATALOG, elementId, KINDS.find((k) => k.id === form.kind)),
+      ...formProblems(form, MOCK_BLOCK_CATALOG, elementId, KINDS.find((k) => k.id === form.kind), skills),
       ...spellListProblems(form, elementId, form.kind === "spell" ? this.spellLists() : []),
       ...subclassProblems(form, elementId),
       ...backgroundProblems(form, elementId),
       ...creatureProblems(form, elementId),
       // a child's problems, at its path (`children.0.fields.name`)
-      ...form.children.flatMap((c, i) => formProblems(c, MOCK_BLOCK_CATALOG, null, KINDS.find((k) => k.id === c.kind))
+      ...form.children.flatMap((c, i) => formProblems(c, MOCK_BLOCK_CATALOG, null, KINDS.find((k) => k.id === c.kind), skills)
         .map((p) => ({ ...p, path: `children.${i}.${p.path ?? ""}`.replace(/\.$/, "") }))),
     ];
     const view: HomebrewDraftView = {
