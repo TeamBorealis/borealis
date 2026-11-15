@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { HomebrewCreatureEntry, HomebrewLairOption, HomebrewLairSection, HomebrewLegendary, HomebrewProblem } from "../../../api/contract";
 import { Icon, NumericUpDown, TextBox } from "../../../components";
-import { setStatus } from "../../../state/status";
+import { noteStatus } from "../statusNote";
 import { MgIcon } from "../../manage/mgIcons";
 import "../../manage/manage.css";
 import { EntryDialog } from "./EntryDialog";
@@ -41,12 +41,12 @@ export function EntryList({ id, label, noun, value, onChange, problems, path, co
     [next[i], next[j]] = [next[j]!, next[i]!];
     onChange(next);
     setSel(j);
-    setStatus(`${noun} moved ${by < 0 ? "up" : "down"}.`);
+    noteStatus(`${noun} moved ${by < 0 ? "up" : "down"}.`);
   };
   const remove = (i: number) => {
     onChange(entries.filter((_, j) => j !== i));
     setSel(null);
-    setStatus(`${noun} removed. Undo brings it back.`);
+    noteStatus(`${noun} removed. Undo brings it back.`);
   };
   const done = (e: HomebrewCreatureEntry) => {
     if (!editing) return;
@@ -54,7 +54,7 @@ export function EntryList({ id, label, noun, value, onChange, problems, path, co
     setSel(editing.isNew ? next.length - 1 : editing.index);
     setEditing(null);
     onChange(next);
-    setStatus(editing.isNew ? `${noun} added.` : `${noun} changed.`);
+    noteStatus(editing.isNew ? `${noun} added.` : `${noun} changed.`);
   };
   return (
     <div className="hb-blocks hb-cr-entries" id={id}>

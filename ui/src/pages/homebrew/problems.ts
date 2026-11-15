@@ -43,11 +43,12 @@ export function problemsLine(c: HomebrewProblemCounts): string {
 /**
  * The creator's status line while an element is open (spec 8.3, HC18): the problems line, or "Checking..." while the engine
  * checks run. Just after a save it is the confirmation, then the count when there are problems ("Saved 'X' to Pack" +
- * " · 2 problems"): a check that answers later adds its count and never replaces the confirmation.
+ * " · 2 problems"): a check that answers later adds its count and never replaces the confirmation. Every other creator
+ * message is kept the same way (`statusNote.ts`); one about the pack rather than the open form (`count` false) takes no count.
  */
-export function creatorStatus(saved: string | null, checking: boolean, c: HomebrewProblemCounts): StatusLine {
+export function creatorStatus(saved: string | null, checking: boolean, c: HomebrewProblemCounts, count = true): StatusLine {
   if (saved === null) return { message: checking ? "Checking..." : problemsLine(c), detail: "" };
-  return { message: saved, detail: c.errors + c.warnings === 0 ? "" : ` · ${problemsLine(c)}` };
+  return { message: saved, detail: !count || c.errors + c.warnings === 0 ? "" : ` · ${problemsLine(c)}` };
 }
 
 /** The worst severity among a field's problems, for its label colour (8.3). */

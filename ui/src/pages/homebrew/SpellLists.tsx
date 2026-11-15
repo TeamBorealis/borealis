@@ -3,7 +3,7 @@ import type { HomebrewSpellListRow, HomebrewSpellListView } from "../../api/cont
 import { Alert, ComboBox, TextBox } from "../../components";
 import { haptic } from "../../lib/haptics";
 import { useApi } from "../../state/ApiContext";
-import { setStatus } from "../../state/status";
+import { noteStatus } from "./statusNote";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { Band } from "../spells/TwoPane";
 import { refusalText } from "./BulkActions";
@@ -133,7 +133,7 @@ export function SpellLists({ packId, narrow, described, onDescribe, handle, onSa
       setView(next);
       setPending(new Map());
       haptic("save");
-      setStatus(`Saved ${listWords(next)}: ${spells(next.count)}.`);
+      noteStatus(`Saved ${listWords(next)}: ${spells(next.count)}.`, { count: false });
       onSaved?.();
     } catch (e) {
       setError(refusalText(e));

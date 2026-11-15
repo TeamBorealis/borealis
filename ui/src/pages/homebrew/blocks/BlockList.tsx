@@ -2,7 +2,7 @@ import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import type { HomebrewBlock, HomebrewBlockSpec, HomebrewBuilderProblem, HomebrewForm, HomebrewProblem } from "../../../api/contract";
 import { Icon } from "../../../components";
 import { haptic } from "../../../lib/haptics";
-import { setStatus } from "../../../state/status";
+import { noteStatus } from "../statusNote";
 import { MgIcon } from "../../manage/mgIcons";
 import "../../manage/manage.css";
 import "../../manage/manage-fx15.css";
@@ -84,13 +84,13 @@ export function BlockList({ label, blocks, onChange, kinds, problems, answer, ne
     onChange(next);
     setSel(j);
     focusRow(j);
-    setStatus(`Rule moved ${by < 0 ? "up" : "down"}.`);
+    noteStatus(`Rule moved ${by < 0 ? "up" : "down"}.`);
   };
   const remove = (i: number) => {
     onChange(blocks.filter((_, j) => j !== i));
     haptic("delete");
     setSel(null);
-    setStatus("Rule removed. Undo brings it back.");
+    noteStatus("Rule removed. Undo brings it back.");
   };
   const edit = (i: number) => {
     const block = blocks[i];
@@ -119,7 +119,7 @@ export function BlockList({ label, blocks, onChange, kinds, problems, answer, ne
     onChange(next);
     setSel(at);
     focusRow(at);
-    setStatus(editing.isNew ? "Rule added." : "Rule changed.");
+    noteStatus(editing.isNew ? "Rule added." : "Rule changed.");
   };
 
   return (

@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import type { HomebrewExprValue, HomebrewTagFilter } from "../../../api/contract";
 import { Button, TextBox } from "../../../components";
 import { useApi } from "../../../state/ApiContext";
-import { setStatus } from "../../../state/status";
+import { noteStatus } from "../statusNote";
 import { useAsync } from "../../../state/useAsync";
 import { refusalText } from "../BulkActions";
 import { useCreatorEnv } from "../env";
@@ -96,7 +96,7 @@ export function OptionGroupPanel({ fields, onFields, onMade }: { fields: Fields;
       setName("");
       setMade((m) => m + 1);
       env.onPackChanged?.();
-      setStatus(`Saved the option ${n} to the pack. Open it under Class options to give it rules.`);
+      noteStatus(`Saved the option ${n} to the pack. Open it under Class options to give it rules.`);
     } catch (e) {
       setError(refusalText(e));
       if (draftId) await api.homebrewDiscardDraft({ draftId }).catch(() => undefined);

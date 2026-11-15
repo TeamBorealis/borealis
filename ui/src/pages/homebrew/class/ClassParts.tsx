@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { HomebrewPickerTarget, HomebrewRef, HomebrewSkillChoice } from "../../../api/contract";
 import { Icon, NumericUpDown, TextBox } from "../../../components";
-import { setStatus } from "../../../state/status";
+import { noteStatus } from "../statusNote";
 import { optionsOf, PackageOptionsField } from "../fields/ItemParts";
 import { RefField, rememberRefs } from "../pickers/RefField";
 import { ReferencePicker } from "../pickers/ReferencePicker";
@@ -59,7 +59,7 @@ export function PackageField({ editing, field, label }: { editing: ChildEditing;
     void editing.newChild(kind.id, (f, key) => {
       const c = f.children.find((x) => x.key === key);
       return c ? withChild(f, key, { ...c, fields: { ...c.fields, name: `Starting Equipment (${className})` } }) : f;
-    }).then((k) => { if (k) setStatus("Starting equipment added."); });
+    }).then((k) => { if (k) noteStatus("Starting equipment added."); });
   };
   if (!child) {
     return (

@@ -3,8 +3,8 @@ import type { ContentPack, HomebrewBulkPatch, HomebrewElementSummary } from "../
 import { Alert, Button, ComboBox, Dialog, TextBox, useToast } from "../../components";
 import { haptic } from "../../lib/haptics";
 import { useApi } from "../../state/ApiContext";
-import { setStatus } from "../../state/status";
 import { errorMessage } from "../../state/useAsync";
+import { noteStatus } from "./statusNote";
 import { useMessageBox } from "./useMessageBox";
 
 /** What a multi-select action did, for the workspace to follow (reload, close or reopen the open element). */
@@ -12,6 +12,9 @@ export interface BulkDone {
   action: "edit" | "move" | "duplicate" | "delete" | "undo";
   /** The chosen elements (gone from the pack after a move or a delete). */
   ids: string[];
+  /** The status line's words for it ("Moved 2 elements to Ash Wastes."): the workspace shows them once the open element is
+   * settled (HC18). */
+  note: string;
 }
 
 type Asking = "edition" | "addTag" | "removeTag" | "move" | null;
@@ -62,13 +65,12 @@ export function BulkActions({ packId, chosen, packs, beforeChange, onDone, onCle
   const what = chosen.length === 1 ? `“${chosen[0]!.name}”` : count(chosen.length, "element");
 
   const offerUndo = (text: string, undoId: string | null) => {
-    setStatus(text);
     if (!undoId) { toast.push(text); return; }
     toast.push(text, "info", {
       label: "Undo",
       run: () => {
         void api.homebrewUndo({ undoId })
-          .then(() => { setStatus("Undone."); onDone({ action: "undo", ids }); })
+          .then(() => onDone({ action: "undo", ids, note: "Undone." }))
           .catch((e) => toast.push(errorMessage(e), "error"));
       },
     });
@@ -82,9 +84,10 @@ export function BulkActions({ packId, chosen, packs, beforeChange, onDone, onCle
       const r = await api.homebrewBulkEdit({ packId, elementIds: ids, patch });
       setAsking(null);
       setValue("");
-      if (r.elementIds.length === 0) { setStatus("Nothing needed a change."); return; }
-      offerUndo(done(r.elementIds.length), r.undoId);
-      onDone({ action, ids });
+      if (r.elementIds.length === 0) { noteStatus("Nothing needed a change.", { count: false }); return; }
+      const text = done(r.elementIds.length);
+      offerUndo(text, r.undoId);
+      onDone({ action, ids, note: text });
     } catch (e) {
       if (asking) setError(refusalText(e));
       else toast.push(refusalText(e), "error");
@@ -110,7 +113,7 @@ export function BulkActions({ packId, chosen, packs, beforeChange, onDone, onCle
       }
       haptic("delete");
       offerUndo(`Deleted ${what}.`, r.undoId);
-      onDone({ action: "delete", ids });
+      onDone({ action: "delete", ids, note: `Deleted ${what}.` });
     } catch (e) {
       toast.push(refusalText(e), "error");
     }
