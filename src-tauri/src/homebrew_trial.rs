@@ -18,6 +18,7 @@ use crate::homebrew_packs::CreatorPack;
 use crate::homebrew_trial_build::{self as build, Note, Placement, Setup, TrialDraft, MAX_LEVEL};
 use crate::homebrew_trial_view as view;
 use crate::ids::decode_slot;
+use crate::load_timing::LoadTimer;
 use crate::session::{Ctx, Draft};
 use crate::settings::AppSettings;
 use crate::state::{AppState, ContentHub};
@@ -45,12 +46,63 @@ const CLOSED_MESSAGE: &str = "The test character was closed. Open Try it again."
 /// The content a trial runs on: the draft in its pack (a private hub), the same content without it, and the draft.
 struct TrialContent {
     hub: ContentHub,
-    without: ContentHub,
+    without: Without,
     draft: TrialDraft,
     /// The draft's `updatedAt` when this was made: a newer draft is loaded again.
     updated_at: String,
     /// The pack's edition (`any` for both).
     pack_edition: Ruleset,
+}
+
+/// The content without the draft. Only the view's `changed` reads it, so it is built on a thread of its own while the
+/// test character is built on the trial content (an engine over a large library takes seconds on a phone).
+enum Without {
+    Building(std::thread::JoinHandle<Option<ContentHub>>),
+    Ready(Box<ContentHub>),
+    Failed,
+}
+
+const WITHOUT_FAILED: &str =
+    "The content without the draft could not be prepared. Open Try it again.";
+
+impl Without {
+    /// Start building it on a thread of its own (here, when no thread can be started).
+    fn start(build: impl FnOnce() -> ContentHub + Send + 'static) -> Self {
+        let slot = Arc::new(Mutex::new(Some(build)));
+        let theirs = Arc::clone(&slot);
+        let spawned = std::thread::Builder::new()
+            .name("try-it-without".into())
+            .spawn(move || theirs.lock().ok().and_then(|mut b| b.take()).map(|b| b()));
+        match spawned {
+            Ok(handle) => Self::Building(handle),
+            Err(e) => {
+                tracing::warn!("Try it builds the content without the draft in line: {e}");
+                let build = slot.lock().ok().and_then(|mut b| b.take());
+                build.map_or(Self::Failed, |b| Self::Ready(Box::new(b())))
+            }
+        }
+    }
+
+    /// The content, once its thread is done.
+    ///
+    /// # Errors
+    /// `internal` when its build failed.
+    fn ready(&mut self) -> ApiResult<&ContentHub> {
+        if matches!(self, Self::Building(_)) {
+            if let Self::Building(handle) = std::mem::replace(self, Self::Failed) {
+                match handle.join() {
+                    Ok(Some(hub)) => *self = Self::Ready(Box::new(hub)),
+                    Ok(None) | Err(_) => {
+                        tracing::warn!("Try it: the content without the draft failed");
+                    }
+                }
+            }
+        }
+        match self {
+            Self::Ready(hub) => Ok(hub),
+            Self::Building(_) | Self::Failed => Err(ApiError::internal(WITHOUT_FAILED)),
+        }
+    }
 }
 
 /// One test character.
@@ -302,7 +354,9 @@ impl TrialSession {
 
     /// Build the character from the setup (a new trial, another edition, or a newer draft).
     fn rebuild(&mut self, settings: &AppSettings, app: &AppState) {
+        let mut timer = LoadTimer::named("try it");
         let built = build::build(&self.ctx(settings, app), &self.content.draft, &self.setup);
+        timer.step("character", "");
         self.top = built.character;
         self.notes = built.notes;
         self.refresh();
@@ -310,9 +364,11 @@ impl TrialSession {
 
     /// The level chain, the sweep (once per edition) and the ladder, after the top state changed.
     fn refresh(&mut self) {
+        let mut timer = LoadTimer::named("try it");
         let hub = &self.content.hub;
         self.states = build::levels(hub, &self.top.build);
         crate::homebrew_trial_place::trim_added_spell(hub, &mut self.states, &self.content.draft);
+        timer.step("levels", &self.states.len().to_string());
         let edition = self.setup.edition;
         if self.sweep.as_ref().is_none_or(|(r, _)| *r != edition) {
             let class_id = self
@@ -332,21 +388,29 @@ impl TrialSession {
                     .collect()
             };
             self.sweep = Some((edition, issues));
+            timer.step("sweep", "");
         }
         let sweep = self.sweep.as_ref().map_or(&[][..], |(_, s)| s.as_slice());
         let (ladder, placed_at) =
             view::ladder(hub, &self.states, &self.content.draft, &self.notes, sweep);
+        timer.step("ladder", "");
         self.ladder = ladder;
         self.placed_at = placed_at;
     }
 
-    fn view(&self, settings: &AppSettings) -> HomebrewTrialView {
+    /// # Errors
+    /// `internal` when the content without the draft could not be built.
+    fn view(&mut self, settings: &AppSettings) -> ApiResult<HomebrewTrialView> {
+        self.content.without.ready()?;
+        let Without::Ready(without) = &self.content.without else {
+            return Err(ApiError::internal(WITHOUT_FAILED));
+        };
         let state = self.current();
         let draft = &self.content.draft;
         let snapshot = view::snapshot(&self.content.hub, settings, &self.id, state, draft);
-        let without = view::snapshot(&self.content.without, settings, &self.id, state, draft);
+        let without = view::snapshot(without.as_ref(), settings, &self.id, state, draft);
         let changed = view::changed(&snapshot, &without);
-        HomebrewTrialView {
+        Ok(HomebrewTrialView {
             trial_id: self.id.clone(),
             snapshot: Box::new(snapshot),
             problems: self
@@ -356,7 +420,7 @@ impl TrialSession {
                 .collect(),
             ladder: self.ladder.clone(),
             changed,
-        }
+        })
     }
 
     /// A choice on the trial character (spec 9 "Choices"), made on the level-20 state so higher levels keep theirs:
@@ -455,12 +519,19 @@ impl AppState {
         );
         let draft = TrialDraft::new(&elements, &trial_hub.store)
             .ok_or_else(|| ApiError::invalid("This form makes no element to try."))?;
-        let without = if file.base_ids.is_empty() {
-            hub.with_settings(&settings)
-        } else {
-            let base: HashSet<&str> = file.base_ids.iter().map(String::as_str).collect();
-            let (content, _) = without_elements(&pack.disk.content, &base);
-            hub_with(&hub, &pack, content, &settings)
+        let without = {
+            let (hub, settings, base_ids) =
+                (Arc::clone(&hub), settings.clone(), file.base_ids.clone());
+            let pack = pack.clone();
+            Without::start(move || {
+                if base_ids.is_empty() {
+                    hub.with_settings(&settings)
+                } else {
+                    let base: HashSet<&str> = base_ids.iter().map(String::as_str).collect();
+                    let (content, _) = without_elements(&pack.disk.content, &base);
+                    hub_with(&hub, &pack, content, &settings)
+                }
+            })
         };
         let content = TrialContent {
             hub: trial_hub,
@@ -484,7 +555,9 @@ impl AppState {
         setup: &HomebrewTrialSetup,
     ) -> ApiResult<HomebrewTrialView> {
         let scores = scores_of(setup.ability_scores.as_ref())?;
+        let mut timer = LoadTimer::named("try it start");
         let (content, draft_id) = self.hb_trial_content(draft_id)?;
+        timer.step("content", "");
         let settings = self.settings()?;
         let resolved = Setup {
             edition: edition_for(setup.edition, &content),
@@ -513,8 +586,11 @@ impl AppState {
             Some(level) => clamp_level(level),
             None => session.placed_at.unwrap_or(1),
         };
-        let view = session.view(&settings);
+        timer.step("character", "");
+        let view = session.view(&settings)?;
+        timer.step("view", "");
         self.hb_trials.insert(session)?;
+        timer.total("");
         Ok(view)
     }
 
@@ -596,7 +672,7 @@ impl AppState {
         if let Some(level) = change.level.or(setup.level) {
             t.level = clamp_level(level);
         }
-        Ok(t.view(&settings))
+        t.view(&settings)
     }
 
     /// The options of one of the trial character's choices (spec 9 "Choices"): the rows `get_slot_options` answers.
