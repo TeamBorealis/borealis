@@ -200,7 +200,7 @@ Every command returns the full `CharacterSnapshot`; the new blocks live in `snap
 | `spend_resource` / `restore_resource` | `characterId, resourceId, uses?` (default 1) | `CharacterSnapshot` (`requirement_failed` when too few uses, `not_found` for an unknown id) |
 | `short_rest` / `long_rest` | `characterId` | `CharacterSnapshot` (rests end toggles; Long Rest refills and lowers exhaustion by 1 in 2024). Spell tracker: a Short Rest gives back the Pact Magic slots and short-rest trackers; a Long Rest every slot and every short- or long-rest tracker, and ends concentration |
 | `set_toggle` | `characterId, toggleId, on` | `CharacterSnapshot` (Rage etc.; `play.toggles[].active`, `play.defenses`) |
-| `set_condition` | `characterId, conditionId, on` | `CharacterSnapshot` (HC1, 1.5.1: `play.conditions[]` lists the conditions the character can switch on, by name: `id`, `name`, `on`, `description` HTML, `effects` one line per rule, `source`; never Exhaustion, which has its levels, nor the engine's helper conditions. While on, the condition's rules apply like any element the character has, and requirements naming it hold. Kept with the character in `play.conditions` (written only when one is on), unchanged by rests. Switching on an id that is not listed is `not_found`; any id can be switched off) |
+| `set_condition` | `characterId, conditionId, on` | `CharacterSnapshot` (HC1, 1.5.0: `play.conditions[]` lists the conditions the character can switch on, by name: `id`, `name`, `on`, `description` HTML, `effects` one line per rule, `source`; never Exhaustion, which has its levels, nor the engine's helper conditions. While on, the condition's rules apply like any element the character has, and requirements naming it hold. Kept with the character in `play.conditions` (written only when one is on), unchanged by rests. Switching on an id that is not listed is `not_found`; any id can be switched off) |
 | `set_exhaustion` | `characterId, level` | `CharacterSnapshot` |
 | `set_heroic_inspiration` | `characterId, has` | `CharacterSnapshot` |
 | `choose_weapon_masteries` | `characterId, weaponIds: string[]` | replaces all picks in slot order (slots = `Weapon` selects named "...Mastery"); `invalid_argument` for duplicates, `requirement_failed` for too many / not allowed |
@@ -714,14 +714,14 @@ implements packs, elements and drafts in memory (kinds are sample forms).
   Familiar and Property types, then the loaded types with no form of their own); `["Setter Name", "<type>"]` lists
   the setter names the type requires and the ones its loaded elements use. A new or retyped generic element whose
   type has its own form, or is `Source`/`Multiclass`, has an error at `fields.type` (code `form.type`).
-- **Homebrew skills are character skills (1.5.1, HC1).** A `Skill` element with an `ability` setter adds a skill: the
+- **Homebrew skills are character skills (1.5.0, HC1).** A `Skill` element with an `ability` setter adds a skill: the
   character's `stats.skills` lists it after the eighteen (`key` = its name in lower case, `name` = the element's name,
   `ability`, `bonus`, `proficiency`), the PDF and HTML sheets print it, and having the element (granted, or picked by
   a `Proficiency` choice tagged Skill, which now also offers `Skill` elements) is proficiency in it. The background
   `skills` field and the class `skills` choice have `picker.types` `["Proficiency", "Skill"]`; a background writes a
   picked Skill as `grant type="Skill"`. A Skill named like an ability or another statistic (Strength, AC, Level), or
   with a colon, has an error at `fields.name` (code `form.skill_name`). No new command or type.
-- **Suggestions from loaded content (1.5.1).** Two more pseudo picker types of `homebrew_reference_options`, one row
+- **Suggestions from loaded content (1.5.0).** Two more pseudo picker types of `homebrew_reference_options`, one row
   per word: `["Item Category"]` lists the `category` setter values of loaded and drafted elements of the item forms'
   types (first spelling, sorted); the item forms' `category` combo (custom text) has `picker.types` `["Item Category"]`
   and offers them after its fixed choices. `["Tag", "<type>", ...]` lists the tags (`supports`, no `ID_` ids) loaded
