@@ -69,17 +69,27 @@ fn validator(kind: DocumentKind) -> Result<&'static jsonschema::Validator, Conte
     };
     let built = slot.get_or_init(|| {
         let schema = schema_value().map_err(|e| e.to_string())?;
-        let root = match def {
-            None => schema.clone(),
-            Some(name) => json!({
-                "$schema": schema["$schema"],
-                "$ref": format!("#/$defs/{name}"),
-                "$defs": schema["$defs"],
-            }),
-        };
-        jsonschema::validator_for(&root).map_err(|e| e.to_string())
+        compile(schema, def)
     });
     built.as_ref().map_err(|e| ContentError::Schema(e.clone()))
+}
+
+/// A validator of `schema` (or of its `$defs` entry `def`) whose root only refers to it: the schema is a resource of
+/// the validator, under its own `$id`. jsonschema checks every root it compiles against the draft's meta-schema with a
+/// meta-schema validator it keeps for the life of the process, and checking the content schema grew that one by
+/// about 134 MB (item `IzDXU`); a root that is only a `$ref` grows it by a few. What is checked and the errors are the
+/// schema's own either way; the embedded schemas are checked against the meta-schema by a test.
+fn compile(schema: &Value, def: Option<&str>) -> Result<jsonschema::Validator, String> {
+    let id = schema["$id"]
+        .as_str()
+        .ok_or_else(|| "the embedded schema has no $id".to_string())?;
+    let target = def.map_or_else(|| id.to_string(), |name| format!("{id}#/$defs/{name}"));
+    let resource =
+        jsonschema::Resource::from_contents(schema.clone()).map_err(|e| e.to_string())?;
+    jsonschema::options()
+        .with_resource(id, resource)
+        .build(&json!({"$schema": schema["$schema"], "$ref": target}))
+        .map_err(|e| e.to_string())
 }
 
 /// Validate a JSON document against the schema.
@@ -119,7 +129,7 @@ pub fn validate_docs(doc: &Value) -> Result<Vec<SchemaViolation>, ContentError> 
     static DOCS: OnceLock<Result<jsonschema::Validator, String>> = OnceLock::new();
     let built = DOCS.get_or_init(|| {
         let schema: Value = serde_json::from_str(DOCS_SCHEMA_JSON).map_err(|e| e.to_string())?;
-        jsonschema::validator_for(&schema).map_err(|e| e.to_string())
+        compile(&schema, None)
     });
     let v = built
         .as_ref()
@@ -135,6 +145,113 @@ pub fn validate_docs(doc: &Value) -> Result<Vec<SchemaViolation>, ContentError> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The validators compile the embedded schemas as resources, so jsonschema no longer checks them against the
+    /// meta-schema when it builds them: this test does.
+    #[test]
+    fn the_embedded_schemas_are_valid_against_the_meta_schema() {
+        for text in [CONTENT_SCHEMA_JSON, DOCS_SCHEMA_JSON] {
+            let schema: Value = serde_json::from_str(text).unwrap();
+            assert_eq!(
+                schema["$schema"],
+                "https://json-schema.org/draft/2020-12/schema"
+            );
+            assert!(schema["$id"].is_string());
+            if let Err(e) = jsonschema::meta::validate(&schema) {
+                panic!("{}: {e}", schema["$id"]);
+            }
+        }
+    }
+
+    /// The validator as it was built before `IzDXU`: the schema itself as the root (an `$defs` entry: a root holding a
+    /// copy of the `$defs`).
+    fn compiled_as_the_root(schema: &Value, def: Option<&str>) -> jsonschema::Validator {
+        let root = match def {
+            None => schema.clone(),
+            Some(name) => json!({
+                "$schema": schema["$schema"],
+                "$ref": format!("#/$defs/{name}"),
+                "$defs": schema["$defs"],
+            }),
+        };
+        jsonschema::validator_for(&root).unwrap()
+    }
+
+    fn errors(v: &jsonschema::Validator, doc: &Value) -> Vec<(String, String)> {
+        v.iter_errors(doc)
+            .map(|e| (e.instance_path.to_string(), e.to_string()))
+            .collect()
+    }
+
+    /// Same validation, same errors in the same order, for documents with problems at every level.
+    #[test]
+    fn a_schema_compiled_as_a_resource_reports_what_it_reported_as_the_root() {
+        let content: Value = serde_json::from_str(CONTENT_SCHEMA_JSON).unwrap();
+        let docs: Value = serde_json::from_str(DOCS_SCHEMA_JSON).unwrap();
+        let el = json!({"id":"ID_A","name":"A","type":"Spell","source":"S","rules":[
+            {"kind":"grant","type":"Spell","id":"ID_B"},
+            {"kind":"select","type":"Spell","name":"Pick","supports":"Wizard","number":2},
+            {"kind":"stat","name":"ac","value":"1"}],
+            "setters":{"level":1},"spellcasting":{"name":"Wizard","list":[{"supports":"Wizard"}]}});
+        let mut cases = vec![
+            json!({"format":"borealis-content/1","elements":[el.clone()]}),
+            json!({"format":"borealis-content/1","elements":[]}),
+            json!({"format":"x","elements":7}),
+            json!({"elements":[{"id":"","name":3,"type":"T","source":"Core","bogus":true}]}),
+            json!([]),
+            json!(null),
+        ];
+        for (k, bad) in [
+            ("rules", json!([{"kind":"grant","idd":"x"}])),
+            ("rules", json!([{"kind":"select","type":7,"number":"two"}])),
+            ("rules", json!("grant")),
+            ("setters", json!([1])),
+            ("spellcasting", json!({"name":3,"list":"Wizard"})),
+            ("id", json!(null)),
+            ("unknown_field", json!({})),
+        ] {
+            let mut e = el.clone();
+            e[k] = bad;
+            cases.push(json!({"format":"borealis-content/1","elements":[e]}));
+        }
+        let index = vec![
+            json!({"format":"borealis-index/1","info":{"name":"x"},"files":[]}),
+            json!({"format":"aurora-index/1","info":{},"files":[{"name":7}]}),
+            json!({"format":"borealis-index/1","files":"a"}),
+        ];
+        let pack = vec![
+            json!({"format":"borealis-pack/1","id":"p","name":"P","version":"1","rulesets":["dnd2014"],"files":[]}),
+            json!({"format":"x"}),
+            json!({"format":"borealis-pack/1","id":1,"rulesets":"dnd2014","files":[{}]}),
+        ];
+        let sha = "0".repeat(64);
+        let rules_text = vec![
+            json!({"format":"borealis-docs/1","ruleset":"dnd2024",
+                "info":{"id":"p","name":"P","version":"1.0.0","license":"CC-BY-4.0","attribution":"a","description":"d",
+                        "source":{"document":"SRD","pdf":"x.pdf","pdf_sha256":sha}},
+                "sections":[{"id":"combat/cover","path":[],"page":0,"html":"<p>x</p>"}]}),
+            json!({"format":"borealis-docs/2","sections":[{}]}),
+        ];
+        let mut checked = 0;
+        for (schema, def, docs) in [
+            (&content, None, &cases),
+            (&content, Some("IndexFile"), &index),
+            (&content, Some("PackManifest"), &pack),
+            (&content, Some("IndexFile"), &cases),
+            (&docs, None, &rules_text),
+        ] {
+            let (old, new) = (
+                compiled_as_the_root(schema, def),
+                compile(schema, def).unwrap(),
+            );
+            for doc in docs {
+                let expected = errors(&old, doc);
+                checked += expected.len();
+                assert_eq!(errors(&new, doc), expected, "{def:?}: {doc}");
+            }
+        }
+        assert!(checked > 30, "{checked} errors compared");
+    }
 
     #[test]
     fn minimal_documents_validate() {
