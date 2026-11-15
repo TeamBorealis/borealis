@@ -3,6 +3,11 @@
 //! user added by hand. Each carries the user's notes, traits and bonuses; the bonuses are added
 //! to the creature's armor class, hit points and walking speed, and the user's traits follow the
 //! creature's own.
+//!
+//! A companion whose statistics come from its owner ("Hit Points equal to 5 + your level", "PB")
+//! states that with rules on its element (`companion:hp:max` += `level`, `companion:ac`,
+//! `companion:<skill>:proficiency` = `proficiency`), which the engine evaluates for the owner. The
+//! granted companion takes those values over its stat block's printed ones ([`EngineStats`]).
 
 use crate::companion::{creature_block, creature_stats};
 use crate::companion_block;
@@ -18,6 +23,57 @@ use borealis_engine::snapshot::CharacterSnapshot as Engine;
 /// Id of the companion that content grants, next to the `companion-<n>` ids of added ones.
 pub const GRANTED_ID: &str = "granted";
 
+/// The engine's values of the granted companion's statistics, when a rule sets them: the owner
+/// scales them (its level, its ability modifiers, its proficiency bonus, later features).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+struct EngineStats {
+    armor_class: Option<i32>,
+    hp: Option<i32>,
+    speed: Option<i32>,
+    /// `companion:<ability>:save:proficiency` plus `:misc`, STR to CHA.
+    saves: [Option<i32>; 6],
+    /// `companion:<skill>:proficiency` plus `:misc`, by lower-case skill name.
+    skills: Vec<(String, i32)>,
+}
+
+const ABILITY_STATS: [&str; 6] = [
+    "strength",
+    "dexterity",
+    "constitution",
+    "intelligence",
+    "wisdom",
+    "charisma",
+];
+
+impl EngineStats {
+    fn read(snap: &Engine) -> Self {
+        let get = |name: &str| snap.stats.get(name).map(|s| s.value);
+        let with_misc = |base: &str| {
+            get(&format!("{base}:proficiency"))
+                .map(|p| p + get(&format!("{base}:misc")).unwrap_or(0))
+        };
+        let skills = snap
+            .stats
+            .keys()
+            .filter_map(|k| {
+                let skill = k.strip_prefix("companion:")?.strip_suffix(":proficiency")?;
+                (!skill.contains(':') && !ABILITY_STATS.contains(&skill))
+                    .then(|| {
+                        with_misc(&format!("companion:{skill}")).map(|v| (skill.to_string(), v))
+                    })
+                    .flatten()
+            })
+            .collect();
+        Self {
+            armor_class: get("companion:ac"),
+            hp: get("companion:hp:max"),
+            speed: get("companion:speed"),
+            saves: ABILITY_STATS.map(|a| with_misc(&format!("companion:{a}:save"))),
+            skills,
+        }
+    }
+}
+
 /// One companion before it is shown: where it comes from and the user's data on it.
 struct Parts<'a> {
     id: String,
@@ -27,6 +83,8 @@ struct Parts<'a> {
     name: String,
     portrait: Option<String>,
     edits: &'a CompanionEdits,
+    /// The engine's values, for the granted companion only (its rules are the character's).
+    engine: Option<EngineStats>,
 }
 
 /// A number with a bonus; a formula note (IM12a) gets the bonus written after it instead.
@@ -49,14 +107,62 @@ fn features(edits: &CompanionEdits) -> Vec<CompanionFeature> {
         .collect()
 }
 
+/// The engine's values over the stat block's: a number in place of a formula note ("1 + your
+/// Intelligence modifier + ..." printed as 1), the ability modifier plus the proficiency for a
+/// save or skill the rules make proficient.
+fn overlay(
+    e: &EngineStats,
+    stats: &mut crate::companion::CreatureStats,
+    saves: &mut [crate::content_dto::CompanionSkill],
+    skills: &mut [crate::content_dto::CompanionSkill],
+) {
+    if let Some(ac) = e.armor_class {
+        stats.armor_class = ac;
+        stats.armor_class_note = None;
+    }
+    if let Some(hp) = e.hp {
+        stats.hp = hp.max(1);
+        stats.hp_note = None;
+    }
+    if let Some(speed) = e.speed {
+        stats.speed = speed;
+    }
+    for (i, save) in saves.iter_mut().enumerate() {
+        if let (Some(p), Some(score)) = (e.saves.get(i).copied().flatten(), stats.abilities.get(i))
+        {
+            save.bonus = companion_block::modifier(*score) + p;
+        }
+    }
+    for skill in skills.iter_mut() {
+        let Some((_, p)) = e
+            .skills
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case(&skill.name))
+        else {
+            continue;
+        };
+        let Some(i) = saves
+            .iter()
+            .position(|s| s.ability.eq_ignore_ascii_case(&skill.ability))
+        else {
+            continue;
+        };
+        skill.bonus = companion_block::modifier(stats.abilities[i]) + p;
+    }
+}
+
 fn state_of(input: &MapInput<'_>, p: Parts<'_>) -> CompanionState {
     let stats = p.element.map(creature_stats).unwrap_or_default();
     let block = p
         .element
         .map(|e| creature_block(e, input))
         .unwrap_or_default();
-    let skills = companion_block::skills(&block, &stats.abilities);
-    let saves = companion_stat_lines::saves(&block.lines, &stats.abilities);
+    let mut stats = stats;
+    let mut skills = companion_block::skills(&block, &stats.abilities);
+    let mut saves = companion_stat_lines::saves(&block.lines, &stats.abilities);
+    if let Some(e) = &p.engine {
+        overlay(e, &mut stats, &mut saves, &mut skills);
+    }
     let custom_traits = features(p.edits);
     let edits = p.edits;
     let (armor_class, armor_class_note) = with_bonus(
@@ -146,6 +252,7 @@ fn granted(input: &MapInput<'_>, snap: &Engine) -> Option<CompanionState> {
             name,
             portrait,
             edits,
+            engine: Some(EngineStats::read(snap)),
         },
     ))
 }
@@ -171,6 +278,7 @@ fn added(input: &MapInput<'_>, a: &AddedCompanion) -> CompanionState {
             name: a.name.clone(),
             portrait: a.portrait.clone(),
             edits: &a.edits,
+            engine: None,
         },
     )
 }
