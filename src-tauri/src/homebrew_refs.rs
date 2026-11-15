@@ -12,6 +12,8 @@ use crate::homebrew_dto::{
 };
 use crate::homebrew_packs::CreatorPack;
 use crate::state::{AppState, ContentHub};
+use borealis_authoring::blocks::SKILL_NAME_PICKER;
+use borealis_authoring::form::skill_names;
 use borealis_authoring::form::{
     assign_ids, feat_parameter_words, form_to_elements, item_categories, loaded_tags, open_types,
     setter_names, CatalogBlockCodec, FormContext, ProvisionalClass, WithElements,
@@ -363,6 +365,12 @@ impl AppState {
             return Ok(word_rows(words, FEAT_PARAMETER_PICKER, &query, page));
         }
         // the item forms' categories and the Tags field's suggestions (spec 4.9, 3.2): words loaded content uses
+        // the skill blocks' names (HC16): the skills loaded content adds, the eighteen left out; the installed ones
+        // only (a skill draft not saved yet is no skill of a character)
+        if target.types.iter().any(|t| t == SKILL_NAME_PICKER) {
+            let names = skill_names(hub.store.as_ref());
+            return Ok(word_rows(names, SKILL_NAME_PICKER, &query, page));
+        }
         if target.types.iter().any(|t| t == ITEM_CATEGORY_PICKER) {
             let names = item_categories(&words);
             return Ok(word_rows(names, ITEM_CATEGORY_PICKER, &query, page));

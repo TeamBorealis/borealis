@@ -51,6 +51,7 @@ import { ELEMENT_TYPE_PICKER, EXPANDED_LIST_PICKER, ITEM_CATEGORY_PICKER, MockHo
 import { MockTrials } from "./homebrew-trial";
 import { MOCK_BLOCK_CATALOG, MOCK_STAT_CATALOG } from "./homebrew-catalog";
 import { referenceRows, spellListNames, wordRows } from "./homebrew-check";
+import { SKILL_NAME_PICKER } from "./homebrew-skills";
 
 export interface MockApiOptions {
   /** Artificial latency per call in ms (default 0). */
@@ -1001,7 +1002,7 @@ export class MockApi implements Api {
       return { total: rows.length, items: rows.slice(page.offset, page.offset + page.limit) };
     }
     if (target.types.includes(ELEMENT_TYPE_PICKER) || target.types.includes(SETTER_NAME_PICKER) || target.types.includes(ITEM_CATEGORY_PICKER)
-      || target.types[0] === TAG_PICKER || target.types[0] === FEAT_PARAMETER_PICKER) return wordRows(this.homebrew.words(target.types), target.types[0]!, query, page);
+      || target.types[0] === TAG_PICKER || target.types[0] === FEAT_PARAMETER_PICKER || target.types.includes(SKILL_NAME_PICKER)) return wordRows(this.homebrew.words(target.types), target.types[0]!, query, page);
     // "Start from a template" (spec 11, `srdOnly: true`): the SRD copy sources only; "New from copy..." (`srdOnly: false`)
     // adds them to the rest
     const copying = filters?.srdOnly === true ? "srd" : filters?.srdOnly === false ? "any" : undefined;

@@ -170,11 +170,19 @@ fn value_words(f: &BlockField, v: &Value, cx: &dyn SentenceContext) -> Option<St
             let n: Vec<String> = v.as_array()?.iter().map(ToString::to_string).collect();
             and_list(&n)
         }
-        Control::Combo { choices, .. } => {
+        Control::Combo { choices, .. }
+        | Control::Skills {
+            choices,
+            multiple: false,
+        } => {
             let t = text?;
             label_of(choices, t).map_or_else(|| token(t), str::to_string)
         }
-        Control::Chips { choices, .. } => {
+        Control::Chips { choices, .. }
+        | Control::Skills {
+            choices,
+            multiple: true,
+        } => {
             let l: Vec<String> = list()
                 .iter()
                 .map(|t| label_of(choices, t).map_or_else(|| token(t), str::to_string))

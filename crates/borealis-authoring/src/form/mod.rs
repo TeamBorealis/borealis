@@ -35,6 +35,7 @@ mod paths;
 pub mod preserved;
 mod read;
 mod repeat;
+mod skills;
 mod subclass;
 mod ui;
 pub mod value;
@@ -74,6 +75,7 @@ pub use paths::{check_fields, form_path_for_issue, form_path_for_location};
 pub use preserved::{KeptPart, PreservedPart};
 pub use read::{element_group_to_form, element_to_form, element_tree_to_form};
 pub use repeat::AGAIN_AT;
+pub use skills::{skill_keys, skill_names};
 pub use subclass::{
     follow_class, refresh_subclass, ClassRename, ProvisionalClass, SUBCLASS_FEATURE_KIND,
     SUBCLASS_KIND,

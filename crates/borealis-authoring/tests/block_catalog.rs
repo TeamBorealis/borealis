@@ -693,8 +693,16 @@ fn sample(f: &BlockField, kind: &str, path: &str) -> Value {
         }
         Control::Numbers { min, .. } => json!([min.max(1)]),
         Control::Check => json!(true),
-        Control::Combo { choices, .. } => json!(choice(choices)),
-        Control::Chips { choices, .. } => json!([choice(choices)]),
+        Control::Combo { choices, .. }
+        | Control::Skills {
+            choices,
+            multiple: false,
+        } => json!(choice(choices)),
+        Control::Chips { choices, .. }
+        | Control::Skills {
+            choices,
+            multiple: true,
+        } => json!([choice(choices)]),
         Control::Reference { .. } => json!("ID_SAMPLE_ELEMENT"),
         Control::References { .. } | Control::Name { multiple: true, .. } => {
             json!(["ID_SAMPLE_ELEMENT"])

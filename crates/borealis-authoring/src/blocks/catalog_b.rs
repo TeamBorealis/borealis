@@ -585,9 +585,9 @@ pub(super) const CUSTOM: &[BlockSpec] = &[
             f(
                 "skill",
                 "Skill",
-                C::Combo {
+                C::Skills {
                     choices: SKILLS_LOWER,
-                    custom: false,
+                    multiple: false,
                 },
             ),
             f("spell_class", "Spells of", CLASS),
@@ -601,9 +601,9 @@ pub(super) const CUSTOM: &[BlockSpec] = &[
             f(
                 "skills",
                 "Skills",
-                C::Chips {
+                C::Skills {
                     choices: SKILLS,
-                    custom: false,
+                    multiple: true,
                 },
             )
             .req(),

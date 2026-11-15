@@ -1,6 +1,6 @@
 import { type ReactNode, useId } from "react";
 import type {
-  HomebrewBlockField, HomebrewBuilderProblem, HomebrewCondition, HomebrewEquipped, HomebrewFormulaNode, HomebrewProblem, HomebrewTagFilter,
+  HomebrewBlockField, HomebrewBuilderProblem, HomebrewChoice, HomebrewCondition, HomebrewEquipped, HomebrewFormulaNode, HomebrewProblem, HomebrewTagFilter,
 } from "../../../api/contract";
 import { CheckBox, ComboBox, EditableComboBox, Icon, NumericUpDown, TextBox } from "../../../components";
 import { ConditionBuilder } from "../builders/ConditionBuilder";
@@ -10,6 +10,7 @@ import { FormulaBuilder } from "../builders/FormulaBuilder";
 import { TagFilterBuilder } from "../builders/TagFilterBuilder";
 import { asExprValue } from "../builders/words";
 import { namesInScope, useCreatorEnv } from "../env";
+import { useWords } from "../fields/useWords";
 import { ChipsField } from "../pickers/ChipsField";
 import { RefField } from "../pickers/RefField";
 import { StatisticField } from "../pickers/StatisticPicker";
@@ -24,6 +25,15 @@ export const NOTE_HELP = "Shown as a note; Borealis does not apply it.";
 
 /** Dice text the engine reads: `1d10`, `2d6+1`, `d8`. */
 const DICE = /^\s*\d*d\d+(\s*[+-]\s*\d+)?\s*$/i;
+
+const NO_TYPES: readonly string[] = [];
+
+/** A field's choices, then the words its picker type gives that none of them is (by value or label, any case). */
+export function withWords(choices: readonly HomebrewChoice[] = [], words: readonly string[]): HomebrewChoice[] {
+  const known = new Set(choices.flatMap((c) => [c.value.toLowerCase(), c.label.toLowerCase()]));
+  const more = [...new Set(words)].filter((w) => !known.has(w.toLowerCase())).map((w) => ({ value: w, label: w }));
+  return [...choices, ...more];
+}
 
 const join = (path: string, more: string): string => (path ? `${path}.${more}` : more);
 const strip = (problems: readonly HomebrewBuilderProblem[], path: string): HomebrewBuilderProblem[] =>
@@ -107,6 +117,9 @@ function FieldControl({ field, value, onChange, path, problems, siblings, inputI
   const label = field.label;
   const setOrClear = (v: unknown) => onChange(isEmptyValue(v) ? undefined : v);
   const builderProblems = strip(problems, path);
+  // a combo's or chips' picker type gives more values after its choices (a skill block's installed skills, HC16)
+  const words = useWords((field.control === "combo" || field.control === "chips") && field.picker ? field.picker.types : NO_TYPES);
+  const choices = withWords(field.choices, words);
   switch (field.control) {
     case "text":
       return <TextBox id={inputId} value={asString(value)} aria-describedby={describedBy} invalid={invalid} onChange={(e) => setOrClear(e.target.value)} />;
@@ -136,14 +149,13 @@ function FieldControl({ field, value, onChange, path, problems, siblings, inputI
       );
     case "combo":
       if (field.allowCustom) {
-        const choices = field.choices ?? [];
         const shown = choices.find((c) => c.value === value)?.label ?? asString(value);
         return <EditableComboBox id={inputId} label={label} value={shown} options={choices.map((c) => c.label)} onChange={(t) => setOrClear(choices.find((c) => c.label === t)?.value ?? t)} />;
       }
       return <ComboBox id={inputId} aria-describedby={describedBy} value={asString(value)} onChange={setOrClear}
-        options={[...(field.required ? [] : [{ value: "", label: "Not set" }]), ...(field.choices ?? [])]} />;
+        options={[...(field.required ? [] : [{ value: "", label: "Not set" }]), ...choices]} />;
     case "chips":
-      return <ChipsField id={inputId} label={label} value={asStrings(value)} onChange={setOrClear} choices={field.choices} allowCustom={field.allowCustom} describedBy={describedBy} invalid={invalid} />;
+      return <ChipsField id={inputId} label={label} value={asStrings(value)} onChange={setOrClear} choices={choices} allowCustom={field.allowCustom} describedBy={describedBy} invalid={invalid} />;
     case "numbers":
       return <NumbersControl label={label} value={Array.isArray(value) ? value as number[] : undefined} onChange={setOrClear} min={field.min} max={field.max} />;
     case "name": {

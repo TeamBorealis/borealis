@@ -29,6 +29,8 @@ export interface HomebrewTab {
  * - `auto`: written by the creator, never shown (a grant's element type, a written list's row numbers).
  * - `number` with `choices`: a number or one of those words (`any`, `all`); with `allowCustom`, any text too.
  * - `numbers`: a list of whole numbers (spell levels). `chips` with `choices`: a list from those values.
+ * - `combo` and `chips` with a `picker`: its words come after the `choices` (the skill blocks' `["Skill Name"]`: the
+ *   names of the installed homebrew skills, HC16).
  * - `name`: a name in `scope` (a pool, a toggle, a named choice, a class...); `multiple` for a list.
  * - `statValue`: text `"2"`, a statistic, or `"-<statistic>"`. `numberOrStatistic`: a number or `{type: "stat", stat}`.
  * - `formulas`: a list of formula terms in `dialect`. `dice`: dice text (`1d10`).
@@ -103,7 +105,7 @@ export interface HomebrewFieldSpec {
   /** Number range. */
   min?: number;
   max?: number;
-  /** Reference fields. */
+  /** Reference fields; on a combo or chips, the pseudo picker type whose words follow its choices. */
   picker?: HomebrewPickerTarget;
   /** Expert: the model locations the field writes (`setter:level`, `data.level`), shown in the generated-data view. */
   bindings: string[];

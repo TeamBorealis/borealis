@@ -137,12 +137,12 @@ fn sub_path(path: &str, part: impl std::fmt::Display) -> String {
 }
 
 /// Every nested effect reads as a block with nothing kept (else the whole list stays as is).
-fn effects_fit(v: &Value) -> bool {
+fn effects_fit(v: &Value, skills: &[String]) -> bool {
     v.as_array().is_some_and(|items| {
         items.iter().all(|x| {
             serde_json::from_value::<Rule>(x.clone())
                 .ok()
-                .and_then(|r| blocks::fits(&r))
+                .and_then(|r| blocks::fits_with(&r, skills))
                 .is_some_and(|m| m.is_empty())
         })
     })
@@ -482,9 +482,13 @@ impl BlockCodec for CatalogBlockCodec {
             return Self::kept_whole(rule, key, cx);
         };
         stored.remove("kind");
-        let mut misfit: BTreeSet<String> = blocks::misfits(spec, &stored).into_iter().collect();
+        // a skill block names a skill loaded content adds by its name (HC16)
+        let skills = super::skill_keys(cx.lookup);
+        let mut misfit: BTreeSet<String> = blocks::misfits_with(spec, &stored, &skills)
+            .into_iter()
+            .collect();
         for (k, v) in &stored {
-            if matches!(control_of(spec, k), Some(Control::Blocks(_))) && !effects_fit(v) {
+            if matches!(control_of(spec, k), Some(Control::Blocks(_))) && !effects_fit(v, &skills) {
                 misfit.insert(k.clone());
             }
         }

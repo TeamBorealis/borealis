@@ -20,7 +20,11 @@ mod sentence;
 mod words;
 
 pub use choices::Choice;
-pub use fit::{fits, misfits, value_fits};
+pub use fit::{fits, fits_with, misfits, misfits_with, value_fits, value_fits_with};
+
+/// The picker type (`homebrew_reference_options`) whose rows are the names of the skills loaded content adds (HC16):
+/// what a [`Control::Skills`] field offers after the eighteen. Not an element type.
+pub const SKILL_NAME_PICKER: &str = "Skill Name";
 pub use sentence::{sentence, NoNames, SentenceContext};
 
 use crate::expr_build::formula::FormulaDialect;
@@ -174,6 +178,15 @@ pub enum Control {
         /// Any text is accepted too.
         custom: bool,
     },
+    /// Skills: values from `choices` (the eighteen, spelled as the field's reader reads them) or the name of a skill
+    /// loaded content adds (a `Skill` element, HC16), which the dialog offers after them ([`SKILL_NAME_PICKER`]).
+    /// `multiple` = a list (chips), else one (a combo).
+    Skills {
+        /// The eighteen.
+        choices: &'static [Choice],
+        /// A list of skills.
+        multiple: bool,
+    },
     /// One element id, picked (spec 5.1); `self` = the element itself where the help says so.
     Reference {
         /// Element types offered; empty = any type.
@@ -245,7 +258,10 @@ impl Control {
             Self::Numbers { .. } => "numbers",
             Self::Check => "check",
             Self::Combo { .. } => "combo",
-            Self::Chips { .. } => "chips",
+            Self::Chips { .. } | Self::Skills { multiple: true, .. } => "chips",
+            Self::Skills {
+                multiple: false, ..
+            } => "combo",
             Self::Reference { .. } => "reference",
             Self::References { .. } => "references",
             Self::Name { .. } => "name",

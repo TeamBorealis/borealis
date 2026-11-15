@@ -4296,6 +4296,11 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
             "label": "Survival"
           }
         ],
+        "picker": {
+          "types": [
+            "Skill Name"
+          ]
+        },
         "bindings": [
           "skill"
         ]
@@ -4984,6 +4989,11 @@ export const MOCK_BLOCK_CATALOG: HomebrewBlockSpec[] = [
             "label": "Survival"
           }
         ],
+        "picker": {
+          "types": [
+            "Skill Name"
+          ]
+        },
         "bindings": [
           "skills"
         ]

@@ -16,6 +16,7 @@ import { MOCK_BLOCK_CATALOG } from "./homebrew-catalog";
 import { CORE_PICKER_ROWS } from "./homebrew-core-rows";
 import { MOCK_COPY_SOURCES, type MockCopySource } from "./homebrew-copies";
 import { MOCK_KIND_DESCRIPTORS } from "./homebrew-kinds";
+import { contentSkillNames, SKILL_NAME_PICKER } from "./homebrew-skills";
 import type { TrialDraft } from "./homebrew-trial";
 import { copyCode, copyOf, type MockPackData, packFile, packFileName, readPackFile } from "./homebrew-transfer";
 import { toBase64 } from "./pack-file";
@@ -484,6 +485,8 @@ export class MockHomebrew {
   words(types: readonly string[]): string[] {
     if (types[0] === FEAT_PARAMETER_PICKER) return featParameterWords(types);
     const saved = [...this.packs.values()].flatMap((own) => [...own.elements.values()]);
+    // the skill blocks' names (HC16): the skills saved Skill elements add
+    if (types.includes(SKILL_NAME_PICKER)) return contentSkillNames(saved.map((e) => e.form));
     if (types.includes(ELEMENT_TYPE_PICKER)) {
       const own = KINDS.find((k) => k.id === "other")?.fields.find((f) => f.key === "type")?.choices?.map((c) => c.value) ?? [];
       const used = saved.filter((e) => e.form.kind === "other").map((e) => e.summary.elementType);

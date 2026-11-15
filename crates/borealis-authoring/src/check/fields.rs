@@ -149,7 +149,26 @@ fn block_findings(block: &Block, path: &str, cx: &FormContext<'_>, out: &mut Vec
         .flatten()
         .filter_map(|v| serde_json::from_value(v.clone()).ok())
         .collect();
-    rule_findings(spec, &map, &kept_keys(block), &nested, path, out);
+    // a skill block names a skill loaded content adds by its name (HC16)
+    let skills = crate::form::skill_keys(cx.lookup);
+    let rule = RuleAt {
+        spec,
+        kept: &kept_keys(block),
+        nested: &nested,
+        skills: &skills,
+        path,
+    };
+    rule_findings(&rule, &map, out);
+}
+
+/// One rule checked against its catalog block: the parts kept from the original, the form's effect blocks (for their
+/// kept parts, in order), the skills loaded content adds and the rule's form path.
+struct RuleAt<'a> {
+    spec: &'a BlockSpec,
+    kept: &'a BTreeSet<String>,
+    nested: &'a [Block],
+    skills: &'a [String],
+    path: &'a str,
 }
 
 /// The required fields of a block that has no value in the form (a reference not picked yet, an empty text).
@@ -172,16 +191,15 @@ fn form_required(spec: &BlockSpec, block: &Block, path: &str, out: &mut Vec<At>)
     }
 }
 
-/// The fields of one rule (`map`, without `kind`) of block `spec`. `nested` are the form's effect blocks (for their
-/// kept parts), in order.
-fn rule_findings(
-    spec: &BlockSpec,
-    map: &Map<String, Value>,
-    kept: &BTreeSet<String>,
-    nested: &[Block],
-    path: &str,
-    out: &mut Vec<At>,
-) {
+/// The fields of one rule (`map`, without `kind`) of block `rule.spec`.
+fn rule_findings(rule: &RuleAt<'_>, map: &Map<String, Value>, out: &mut Vec<At>) {
+    let RuleAt {
+        spec,
+        kept,
+        nested,
+        skills,
+        path,
+    } = *rule;
     let label = block_label(spec);
     let at = |key: &str| format!("{path}.fields.{key}");
     let live: Map<String, Value> = map
@@ -212,7 +230,9 @@ fn rule_findings(
             ));
         }
     }
-    let misfit: BTreeSet<String> = blocks::misfits(spec, &live).into_iter().collect();
+    let misfit: BTreeSet<String> = blocks::misfits_with(spec, &live, skills)
+        .into_iter()
+        .collect();
     let mut effect = 0;
     for (k, v) in &live {
         let p = at(k);
@@ -228,7 +248,7 @@ fn rule_findings(
         if let Control::Blocks(_) = f.control {
             for (i, rule) in v.as_array().into_iter().flatten().enumerate() {
                 let own = nested.get(effect + i);
-                effect_findings(rule, own, &format!("{p}.{i}"), out);
+                effect_findings(rule, own, skills, &format!("{p}.{i}"), out);
             }
             effect += v.as_array().map_or(0, Vec::len);
             continue;
@@ -255,7 +275,13 @@ fn rule_findings(
 }
 
 /// A nested effect rule (a toggle's effect) at `path` (`blocks.N.fields.effects.M`).
-fn effect_findings(rule: &Value, own: Option<&Block>, path: &str, out: &mut Vec<At>) {
+fn effect_findings(
+    rule: &Value,
+    own: Option<&Block>,
+    skills: &[String],
+    path: &str,
+    out: &mut Vec<At>,
+) {
     let Ok(parsed) = serde_json::from_value::<Rule>(rule.clone()) else {
         out.push((path.to_string(), Finding::BlockShape));
         return;
@@ -267,7 +293,14 @@ fn effect_findings(rule: &Value, own: Option<&Block>, path: &str, out: &mut Vec<
         return;
     };
     let kept = own.map(kept_keys).unwrap_or_default();
-    rule_findings(spec, &map, &kept, &[], path, out);
+    let at = RuleAt {
+        spec,
+        kept: &kept,
+        nested: &[],
+        skills,
+        path,
+    };
+    rule_findings(&at, &map, out);
 }
 
 fn range(block: &str, field: &str, (min, max): (i32, i32)) -> Finding {
@@ -338,13 +371,18 @@ fn value_findings(
             ),
             _ => {}
         },
-        Control::Combo { .. } | Control::Chips { .. } if !blocks::value_fits(control, v) => push(
-            out,
-            Finding::BlockChoice {
-                block: block.to_string(),
-                field: field.to_string(),
-            },
-        ),
+        // a block's skill field gets here only with a value no choice and no loaded skill has (`misfits_with`)
+        Control::Combo { .. } | Control::Chips { .. } | Control::Skills { .. }
+            if !blocks::value_fits(control, v) =>
+        {
+            push(
+                out,
+                Finding::BlockChoice {
+                    block: block.to_string(),
+                    field: field.to_string(),
+                },
+            );
+        }
         Control::Group(parts) => match v.as_object() {
             Some(m) => part_findings(parts, m, path, block, out),
             None => push(out, Finding::BlockShape),

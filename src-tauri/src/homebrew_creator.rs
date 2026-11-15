@@ -108,6 +108,11 @@ fn block_field(f: &BlockField, path: &str) -> HomebrewBlockField {
             base.choices = choices(c);
             base.allow_custom = custom.then_some(true);
         }
+        // the eighteen, then the names of the skills loaded content adds (HC16)
+        Control::Skills { choices: c, .. } => {
+            base.choices = choices(c);
+            base.picker = Some(picker(&[blocks::SKILL_NAME_PICKER], false));
+        }
         Control::Reference { types } => base.picker = Some(picker(types, false)),
         Control::References { types } => base.picker = Some(picker(types, true)),
         Control::Name { scope, multiple } => {

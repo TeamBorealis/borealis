@@ -254,3 +254,66 @@ fn block_specs_serialize_for_the_wire() {
         .iter()
         .all(|g| catalog().iter().any(|b| b.group == *g)));
 }
+
+#[test]
+fn skill_fields_take_the_eighteen_and_the_loaded_homebrew_skills() {
+    // HC16 (2): "Bonus to skills" and "Advantage on a roll" also offer the skills loaded content adds; a stored name of
+    // one fits the dialog only while such a skill is loaded (otherwise it stays kept as is, as before)
+    let loaded = vec!["alchemy".to_string()];
+    let bonus = block("skill_bonus").expect("skill_bonus");
+    let both = json!({"skills": ["Arcana", "Alchemy"], "value": "2"});
+    let both = both.as_object().unwrap();
+    assert_eq!(misfits(bonus, both), vec!["skills".to_string()]);
+    assert!(misfits_with(bonus, both, &loaded).is_empty());
+    let other = json!({"skills": ["Brewing"], "value": "2"});
+    assert_eq!(
+        misfits_with(bonus, other.as_object().unwrap(), &loaded),
+        vec!["skills".to_string()]
+    );
+    let roll = block("roll_advantage").expect("roll_advantage");
+    for skill in ["Alchemy", "alchemy", "stealth"] {
+        let r = json!({"roll": "ability_check", "skill": skill});
+        assert!(
+            misfits_with(roll, r.as_object().unwrap(), &loaded).is_empty(),
+            "{skill}"
+        );
+    }
+    let r = json!({"roll": "ability_check", "skill": "Alchemy"});
+    assert_eq!(
+        misfits(roll, r.as_object().unwrap()),
+        vec!["skill".to_string()]
+    );
+    // a toggle's advantage effect too
+    let rage = custom(
+        "toggle",
+        json!({"id": "x", "name": "X", "effects": [{"kind": "roll_advantage", "roll": "ability_check", "skill": "Alchemy"}]}),
+    );
+    assert_eq!(fits(&rage), Some(vec!["effects".to_string()]));
+    assert_eq!(fits_with(&rage, &loaded), Some(vec![]));
+}
+
+#[test]
+fn skill_fields_read_a_homebrew_skill_by_its_name() {
+    let cx = names();
+    let bonus = custom(
+        "skill_bonus",
+        json!({"skills": ["Arcana", "Alchemy"], "value": "2"}),
+    );
+    assert_eq!(sentence(&bonus, &cx), "Bonus to Arcana and Alchemy: 2");
+    let roll = custom(
+        "roll_advantage",
+        json!({"roll": "ability_check", "skill": "Alchemy"}),
+    );
+    assert_eq!(sentence(&roll, &cx), "Advantage on Alchemy checks");
+    for (kind, key, multiple) in [
+        ("skill_bonus", "skills", true),
+        ("roll_advantage", "skill", false),
+    ] {
+        let f = block(kind).and_then(|b| b.field(key)).expect(key);
+        assert!(
+            matches!(f.control, Control::Skills { multiple: m, .. } if m == multiple),
+            "{kind}.{key}"
+        );
+        assert_eq!(f.control.wire(), if multiple { "chips" } else { "combo" });
+    }
+}
