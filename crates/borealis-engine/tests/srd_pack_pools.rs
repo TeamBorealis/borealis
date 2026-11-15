@@ -324,20 +324,38 @@ fn a_cleric_has_two_channel_divinity_uses_at_6_and_three_at_18() {
     let s = hero(
         &e,
         Ruleset::Dnd2014,
-        &[("Race", "Human"), ("Class", "Cleric"), ("Divine Domain", "Life Domain")],
+        &[
+            ("Race", "Human"),
+            ("Class", "Cleric"),
+            ("Divine Domain", "Life Domain"),
+        ],
         2,
     );
-    assert_eq!(pool(&e.derive(&s), "Channel Divinity"), Some((1, short_rest())));
+    assert_eq!(
+        pool(&e.derive(&s), "Channel Divinity"),
+        Some((1, short_rest()))
+    );
     let s = level_to(&e, s, 2, 6);
-    assert_eq!(pool(&e.derive(&s), "Channel Divinity"), Some((2, short_rest())));
+    assert_eq!(
+        pool(&e.derive(&s), "Channel Divinity"),
+        Some((2, short_rest()))
+    );
     let s = level_to(&e, s, 6, 18);
-    assert_eq!(pool(&e.derive(&s), "Channel Divinity"), Some((3, short_rest())));
+    assert_eq!(
+        pool(&e.derive(&s), "Channel Divinity"),
+        Some((3, short_rest()))
+    );
 }
 
 #[test]
 fn a_bards_inspiration_and_song_of_rest_dice_grow() {
     let Some(e) = engine("srd-5.1") else { return };
-    let s = hero(&e, Ruleset::Dnd2014, &[("Race", "Human"), ("Class", "Bard")], 1);
+    let s = hero(
+        &e,
+        Ruleset::Dnd2014,
+        &[("Race", "Human"), ("Class", "Bard")],
+        1,
+    );
     assert_eq!(e.derive(&s).stat("bardic inspiration:die"), 6);
     let s = level_to(&e, s, 1, 5);
     assert_eq!(e.derive(&s).stat("bardic inspiration:die"), 8);
