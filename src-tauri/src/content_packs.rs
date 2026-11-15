@@ -184,6 +184,14 @@ impl AppState {
             .into_iter()
             .map(|p| (p.manifest.id, p.manifest.name))
             .collect();
+        // A book's `Source` element names the book but usually belongs to the `Core` (Aurora) or `Internal`
+        // (5etools import) source, so it is found by name, not among the book's own elements.
+        let mut descriptors: BTreeMap<String, &borealis_content::Element> = BTreeMap::new();
+        for e in hub.store.by_type("Source") {
+            descriptors
+                .entry(borealis_content::source_key(&e.element.name))
+                .or_insert(&e.element);
+        }
         let mut out = Vec::new();
         for source in hub.store.source_names() {
             if borealis_content::is_unrestrictable_source(source) {
@@ -195,12 +203,19 @@ impl AppState {
                 .and_then(|e| e.file.split('/').next())
                 .unwrap_or_default()
                 .to_string();
-            let description = elements
-                .iter()
-                .find(|e| e.element.ty == "Source")
-                .map(|e| plain_text(&e.element.description))
+            let descriptor = descriptors
+                .get(&borealis_content::source_key(source))
+                .copied()
+                .or_else(|| {
+                    elements
+                        .iter()
+                        .find(|e| e.element.ty == "Source")
+                        .map(|e| &e.element)
+                });
+            let description = descriptor
+                .map(|e| plain_text(&e.description))
                 .unwrap_or_default();
-            let flags = source_flags(elements.iter().map(|e| &e.element));
+            let flags = source_flags(descriptor);
             let (edition, imported) =
                 crate::book_editions::loaded_edition(elements.iter().copied());
             out.push(ContentSource {
@@ -330,9 +345,9 @@ struct SourceFlags {
     info: String,
 }
 
-/// Reads `playtest`/`beta`, `incomplete`/`wip` and `information` from the first `Source` element.
-fn source_flags<'a>(elements: impl Iterator<Item = &'a borealis_content::Element>) -> SourceFlags {
-    let Some(src) = elements.into_iter().find(|e| e.ty == "Source") else {
+/// Reads `playtest`/`beta`, `incomplete`/`wip` and `information` from a book's `Source` element (none: no flags).
+fn source_flags(src: Option<&borealis_content::Element>) -> SourceFlags {
+    let Some(src) = src else {
         return SourceFlags::default();
     };
     let flag = |names: &[&str]| {
@@ -375,9 +390,8 @@ mod source_flag_tests {
             ("beta", "true"),
             ("information", " Draft. "),
         ]);
-        let f = source_flags(std::iter::once(&e));
         assert_eq!(
-            f,
+            source_flags(Some(&e)),
             SourceFlags {
                 playtest: true,
                 incomplete: true,
@@ -389,7 +403,7 @@ mod source_flag_tests {
     #[test]
     fn a_plain_source_has_no_flags() {
         let e = source(&[("incomplete", "false")]);
-        assert_eq!(source_flags(std::iter::once(&e)), SourceFlags::default());
-        assert_eq!(source_flags(std::iter::empty()), SourceFlags::default());
+        assert_eq!(source_flags(Some(&e)), SourceFlags::default());
+        assert_eq!(source_flags(None), SourceFlags::default());
     }
 }
