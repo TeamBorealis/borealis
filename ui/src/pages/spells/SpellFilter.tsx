@@ -1,8 +1,9 @@
 import { useMemo } from "react";
-import type { ClassSpellcasting, Ruleset } from "../../api/contract";
+import type { ClassSpellcasting, Ruleset, SpellEntry } from "../../api/contract";
 import { pickShown, type PreferredCopies, type ShownRow, type VersionLike } from "../../lib/versions";
 import { ComboBox } from "../../components";
 import { Glyph } from "../equipment/Glyph";
+import { classRowCount } from "./classSpellRows";
 
 export interface SpellFilterState {
   pinned: boolean;
@@ -79,10 +80,11 @@ export interface FilterScope {
   total: number;
 }
 
-/** The scope of the class grids: every class's spells, narrowed by the filter. */
+/** The scope of the class grids: every class's spells, narrowed by the filter; it counts rows (one per name, #51). */
 export const classesScope = (classes: readonly ClassSpellcasting[], f: SpellFilterState): FilterScope => {
   const pool = classes.flatMap((c) => c.spells);
-  return { pool, shown: pool.filter((s) => matchesSpell(s, f)).length, total: pool.length };
+  const count = (pick: (c: ClassSpellcasting) => readonly SpellEntry[]) => classes.reduce((n, c) => n + classRowCount(pick(c)), 0);
+  return { pool, shown: count((c) => c.spells.filter((s) => matchesSpell(s, f))), total: count((c) => c.spells) };
 };
 
 /** SPELLCASTING tab filter bar: pin, name box, school, level 0-9, ritual, concentration, source, filtered/total badge. */

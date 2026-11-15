@@ -13178,6 +13178,12 @@
       "k": "prim"
      }
     },
+    "bundled": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "canReplace": {
      "opt": false,
      "t": {
@@ -13255,6 +13261,15 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "rulesets": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
      }
     },
     "school": {
