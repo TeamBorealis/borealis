@@ -22,7 +22,7 @@ body.compact{font-size:6.6pt;line-height:1.25}
 .letter{width:612pt;min-height:792pt}.a4{width:595pt;min-height:842pt}
 .page:not(.flow) .sec.grow>.lined{min-height:0}
 .frame,.corner,.sky{position:absolute;pointer-events:none;color:var(--ink);overflow:hidden}
-.frame{inset:0;width:100%;height:100%}
+.frame{left:0;width:100%;height:40pt}.f-top{top:0}.f-bot{bottom:0}.f-mid{top:40pt;height:calc(100% - 80pt)}
 .corner{width:62pt;height:62pt}
 .c-tl{left:13pt;top:13pt}.c-tr{right:13pt;top:13pt;transform:scaleX(-1)}
 .c-bl{left:13pt;bottom:13pt;transform:scaleY(-1)}.c-br{right:13pt;bottom:13pt;transform:scale(-1,-1)}

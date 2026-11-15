@@ -390,6 +390,59 @@ fn pages_and_sections_grow_with_their_text() {
     }
 }
 
+/// A page that grows with its text stretched the whole frame: its top and bottom rules ran across
+/// the page as thick bars over the first sections. Only the middle slice (the side rules) stretches.
+#[test]
+fn a_grown_page_stretches_only_the_frame_sides() {
+    let css = super::css::CSS;
+    assert!(css.contains(".frame{left:0;width:100%;height:40pt}"));
+    assert!(css.contains(".f-mid{top:40pt;height:calc(100% - 80pt)}"));
+    assert!(!css.contains(".frame{inset:0"));
+    for (paper, w, h) in [(Paper::Letter, 612, 792), (Paper::A4, 595, 842)] {
+        let o = HtmlOptions {
+            paper,
+            ..HtmlOptions::default()
+        };
+        let html = render_sheet(&long_story(data(&cleric_2014())), &o);
+        let pages = html.matches("<section class=\"page").count();
+        let use_ = format!("<use href=\"#a-frame\" width=\"{w}\" height=\"{h}\"/>");
+        for (cls, y, sh) in [
+            ("f-top", 0, 40),
+            ("f-mid", 40, h - 80),
+            ("f-bot", h - 40, 40),
+        ] {
+            let slice = format!(
+                "<svg class=\"frame {cls}\" viewBox=\"0 {y} {w} {sh}\" preserveAspectRatio=\"none\" aria-hidden=\"true\">{use_}</svg>"
+            );
+            assert_eq!(html.matches(&slice).count(), pages, "{slice}");
+        }
+        // The top and bottom rules lie inside the unstretched slices, the side rules between them.
+        let art = crate::art::piece(
+            crate::art::ArtSet::Colour,
+            if paper == Paper::A4 {
+                crate::art::ArtId::FrameA4
+            } else {
+                crate::art::ArtId::FrameLetter
+            },
+        );
+        let svg = crate::art::to_svg(art);
+        for d in svg.split(" d=\"").skip(1) {
+            let d = &d[..d.find('"').unwrap()];
+            let n: Vec<f32> = d
+                .split(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-'))
+                .filter_map(|t| t.parse().ok())
+                .collect();
+            let ys: Vec<f32> = n.iter().skip(1).step_by(2).copied().collect();
+            let (lo, hi) = ys
+                .iter()
+                .fold((f32::MAX, f32::MIN), |(a, b), &y| (a.min(y), b.max(y)));
+            let edge = super::FRAME_EDGE;
+            let fits = hi < edge || lo > h as f32 - edge || (lo > edge && hi < h as f32 - edge);
+            assert!(fits, "a frame stroke crosses a slice edge: y {lo}..{hi}");
+        }
+    }
+}
+
 #[test]
 fn hit_dice_total_is_printed_once_per_die_size() {
     let d = data(&wizard_2024());

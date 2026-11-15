@@ -134,12 +134,36 @@ fn symbol(id: &str, set: ArtSet, piece: ArtId, par: &str) -> String {
     )
 }
 
-fn defs(o: &HtmlOptions) -> String {
-    let set = if o.ink { ArtSet::Ink } else { ArtSet::Colour };
-    let frame = match o.paper {
+fn frame_id(o: &HtmlOptions) -> ArtId {
+    match o.paper {
         Paper::Letter => ArtId::FrameLetter,
         Paper::A4 => ArtId::FrameA4,
-    };
+    }
+}
+
+/// Height (pt) of the frame's top and bottom slices. The frame's top and bottom rules lie inside
+/// them and its side rules between them, so no rule crosses a slice edge.
+pub(super) const FRAME_EDGE: f32 = 40.0;
+
+/// The page frame in three slices. A page taller than its paper (one that grows with its text)
+/// stretches only the middle slice, the side rules; the top and bottom rules keep the paper's
+/// scale at the page edges. Stretched whole, they ran across the page as thick bars mid-page.
+fn frame(o: &HtmlOptions) -> String {
+    let p = art::piece(ArtSet::Colour, frame_id(o));
+    let (w, h, e) = (p.width, p.height, FRAME_EDGE);
+    [("f-top", 0.0, e), ("f-mid", e, h - 2.0 * e), ("f-bot", h - e, e)]
+        .iter()
+        .map(|(cls, y, sh)| {
+            format!(
+                "<svg class=\"frame {cls}\" viewBox=\"0 {y} {w} {sh}\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><use href=\"#a-frame\" width=\"{w}\" height=\"{h}\"/></svg>"
+            )
+        })
+        .collect()
+}
+
+fn defs(o: &HtmlOptions) -> String {
+    let set = if o.ink { ArtSet::Ink } else { ArtSet::Colour };
+    let frame = frame_id(o);
     let mut out = String::from(
         "<svg width=\"0\" height=\"0\" style=\"position:absolute\" aria-hidden=\"true\"><defs>",
     );
@@ -329,7 +353,7 @@ fn page_html(d: &SheetData, o: &HtmlOptions, spec: &PageSpec, n: usize, total: u
          <div class=\"foot\"><span>Borealis character sheet \u{b7} {edition} rules{a4}{note}</span><span>{n} / {total}</span></div></section>",
         spec.kind,
         spec.label,
-        art_use("frame", "frame"),
+        frame(o),
         header(d, spec),
         spec.body
     )
