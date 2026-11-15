@@ -67,9 +67,28 @@ export function sortVersions<V extends VersionLike>(versions: readonly V[], char
   return [...versions].sort(compareVersions(charEd));
 }
 
-/** Sec. 1.2: the chosen version, else the last menu pick, else the default. */
-export function pickShown<V extends VersionLike>(versions: readonly V[], charEd: Ruleset, chosenId: string | null, menuPickId: string | null): V {
-  return versions.find((v) => v.id === chosenId) ?? versions.find((v) => v.id === menuPickId) ?? sortVersions(versions, charEd)[0]!;
+/**
+ * GitHub #51: the remembered "always use this copy" choices (`AppSettings.preferredCopies`), element id by
+ * {@link copyKey}. A choice only sets the default copy; a stored pick of another copy stays as it is.
+ */
+export type PreferredCopies = Readonly<Record<string, string>>;
+
+/** The key of an "always use this copy" choice: the row's group (type family + normalized name) for one edition. */
+export function copyKey(v: Pick<VersionLike, "name" | "type">, edition: Ruleset): string {
+  return `${typeFamily(v.type)}:${edition}:${normalizeName(v.name)}`;
+}
+
+/** The copy the user always uses for these versions (same group) in the character's edition, when it is among them. */
+export function preferredOf<V extends VersionLike>(versions: readonly V[], charEd: Ruleset, preferred: PreferredCopies): V | undefined {
+  const first = versions[0];
+  const id = first ? preferred[copyKey(first, charEd)] : undefined;
+  return id === undefined ? undefined : versions.find((v) => v.id === id);
+}
+
+/** Sec. 1.2: the chosen version, else the last menu pick, else the copy the user always uses (#51), else the default. */
+export function pickShown<V extends VersionLike>(versions: readonly V[], charEd: Ruleset, chosenId: string | null, menuPickId: string | null, preferred: PreferredCopies = {}): V {
+  return versions.find((v) => v.id === chosenId) ?? versions.find((v) => v.id === menuPickId) ?? preferredOf(versions, charEd, preferred)
+    ?? sortVersions(versions, charEd)[0]!;
 }
 
 export interface MenuSection<V> { edition: EditionKey; heading: string; versions: V[] }
@@ -181,16 +200,17 @@ export interface ShownRow<V extends VersionLike = VersionLike> extends VersionRo
 
 /**
  * Applies the filters to the rows (sec. 1.5: a row stays if one version passes; the chosen row always stays, with its
- * chosen version) and picks each row's shown version among what is left (sec. 1.2).
+ * chosen version) and picks each row's shown version among what is left (sec. 1.2; `preferred`: the copies the user always
+ * uses, #51).
  */
-export function visibleRows<V extends VersionLike>(rows: readonly VersionRow<V>[], f: PickerFilter, charEd: Ruleset, chosenId: string | null, menuPicks: Readonly<Record<string, string>>): ShownRow<V>[] {
+export function visibleRows<V extends VersionLike>(rows: readonly VersionRow<V>[], f: PickerFilter, charEd: Ruleset, chosenId: string | null, menuPicks: Readonly<Record<string, string>>, preferred: PreferredCopies = {}): ShownRow<V>[] {
   const out: ShownRow<V>[] = [];
   for (const r of rows) {
     const chosen = r.all.find((v) => v.id === chosenId) ?? null;
     const passing = nameMatches(r.name, f.text) ? r.all.filter((v) => versionPasses(v, f)) : [];
     const versions = chosen && !passing.includes(chosen) ? [...passing, chosen] : passing;
     if (versions.length === 0) continue;
-    out.push({ ...r, versions, chosen, shown: pickShown(versions, charEd, chosenId, menuPicks[r.key] ?? null) });
+    out.push({ ...r, versions, chosen, shown: pickShown(versions, charEd, chosenId, menuPicks[r.key] ?? null, preferred) });
   }
   return out;
 }

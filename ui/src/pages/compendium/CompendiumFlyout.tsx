@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import type { ElementSummary, Ruleset, SearchIndexStatus } from "../../api/contract";
+import type { ElementDetail, ElementSummary, Ruleset, SearchIndexStatus } from "../../api/contract";
 import { Alert, Button, ComboBox, EditionSuffix, Expander, SafeHtml, SearchInput } from "../../components";
 import { Flyout } from "../../components/controls/Flyout";
 import { TabControl } from "../../components/controls/TabControl";
@@ -9,6 +9,8 @@ import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { usePlatform } from "../../state/platform";
 import { useSettings } from "../../state/SettingsContext";
+import { usePreferredCopies } from "../../state/preferredCopies";
+import { copyKey, groupKey } from "../../lib/versions";
 import { useAsync, useDebounced } from "../../state/useAsync";
 import { RULES_GROUP, SCOPES, badgeOf, footerText, groupRows, highlightParts, initialEdition, rowOfElement, rowOfHit, showSemanticHint, type ResultRow } from "./searchModel";
 import { useSemanticStatus } from "../../state/semantic";
@@ -19,6 +21,40 @@ const PAGE = 40;
 /** Results update as you type (spec section 11). */
 const DEBOUNCE_MS = 120;
 type Scope = (typeof SCOPES)[number]["id"];
+
+/** The editions an "always use this copy" choice made on the compendium entry applies to: its own, both when it has none. */
+export const copyEditions = (rulesets: readonly Ruleset[]): Ruleset[] => (rulesets.length > 0 ? [...rulesets] : ["dnd2024", "dnd2014"]);
+
+/** Most copies of one name the entry looks for (more than any library prints). */
+const COPY_LIMIT = 50;
+
+/**
+ * GitHub #51: on an entry whose name other installed copies share (same type and edition), "Always use this copy" makes
+ * it the copy the pickers and version rows show by default. Only the default changes; nothing chosen is switched.
+ */
+function CopyChoice({ e }: { e: ElementDetail }) {
+  const api = useApi();
+  const { preferred, setAlways } = usePreferredCopies();
+  const editions = copyEditions(e.rulesets);
+  const copies = useAsync(async () => {
+    const page = await api.searchCompendium({ query: { query: e.name, limit: COPY_LIMIT, offset: 0 } });
+    const key = groupKey(e);
+    return page.items.filter((o) => o.id !== e.id && groupKey(o) === key && copyEditions(o.rulesets).some((r) => editions.includes(r)));
+  }, [api, e.id, e.name, e.type, editions.join()]);
+  const others = copies.data ?? [];
+  if (others.length === 0) return null;
+  const always = editions.every((ed) => preferred[copyKey(e, ed)] === e.id);
+  return (
+    <>
+      <h4>Copies</h4>
+      <p className="v4-desc-src">Also in: {[...new Set(others.map((o) => o.sourceName))].join(", ")}</p>
+      <label className="v4-copy-always">
+        <input type="checkbox" checked={always} onChange={(ev) => void setAlways(e, editions, ev.currentTarget.checked)} />
+        <span>Always use this copy</span>
+      </label>
+    </>
+  );
+}
 
 function Detail({ id, onSource, onNavigate }: { id: string; onSource: (s: string) => void; onNavigate: () => void }) {
   const api = useApi();
@@ -41,6 +77,7 @@ function Detail({ id, onSource, onNavigate }: { id: string; onSource: (s: string
       {!statBlock && facts}
       <h4>Source</h4>
       <a href={`#source-${e.source}`} onClick={(ev) => { ev.preventDefault(); onSource(e.source); }}>{e.sourceName}</a>
+      <CopyChoice e={e} />
       {copier.enabled && (
         <>
           <h4>Homebrew</h4>

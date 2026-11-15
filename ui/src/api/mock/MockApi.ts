@@ -103,6 +103,16 @@ const PROFILES: Record<"dnd2014" | "dnd2024", RulesetProfile> = {
     abilityMethods: ["point_buy", "standard_array", "roll_4d6", "manual"], abilityCap: 20, pointBuyBudget: 27, weaponMastery: true, originFeats: true, backgroundAsi: true },
 };
 
+/** `preferredCopies` patch (#51): the entries merge into the stored map; a `null` value removes its entry. */
+function mergeCopies(stored: Record<string, string>, patch: Readonly<Record<string, string | null>> | undefined): Record<string, string> {
+  const next = { ...stored };
+  for (const [key, id] of Object.entries(patch ?? {})) {
+    if (id === null) delete next[key];
+    else next[key] = id;
+  }
+  return next;
+}
+
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const b64 = (s: string) => btoa(unescape(encodeURIComponent(s)));
 
@@ -742,7 +752,7 @@ export class MockApi implements Api {
         throw apiError("invalid_argument", "Choose folders with the folder button; they cannot be set directly.");
       }
     }
-    this.settings = { ...this.settings, ...patch, sheet: { ...this.settings.sheet, ...(patch.sheet ?? {}), cardsNewPage: { ...this.settings.sheet.cardsNewPage, ...(patch.sheet?.cardsNewPage ?? {}) } }, ai: { ...this.settings.ai, ...(patch.ai ?? {}) }, mobile: this.mobile, storeBuild: this.storeBuild, aiAvailable: this.aiCli, creatorEnabled: this.creatorOn };
+    this.settings = { ...this.settings, ...patch, sheet: { ...this.settings.sheet, ...(patch.sheet ?? {}), cardsNewPage: { ...this.settings.sheet.cardsNewPage, ...(patch.sheet?.cardsNewPage ?? {}) } }, ai: { ...this.settings.ai, ...(patch.ai ?? {}) }, preferredCopies: mergeCopies(this.settings.preferredCopies, patch.preferredCopies), mobile: this.mobile, storeBuild: this.storeBuild, aiAvailable: this.aiCli, creatorEnabled: this.creatorOn };
     if (!this.aiCli) this.settings = { ...this.settings, ai: { ...this.settings.ai, enabled: false } };
     return this.settings;
   }

@@ -382,6 +382,9 @@ table.data th { color: var(--dark-4b); font-weight: 600; font-size: var(--fs-2xs
 .vm-src { flex: 1; min-width: 0; }
 .vm-sub, .vm-reason { color: var(--pv-sub); font-size: 11px; }
 .vm-reason { font-style: italic; }
+/* GitHub #51: "Always use this copy" under the versions, for the shown one. */
+.vm-always { display: flex; align-items: center; gap: 6px; margin-top: 4px; padding: 6px 10px 2px; border-top: 1px solid var(--pv-pop-line); color: var(--pv-sub); cursor: pointer; }
+.vm-always input { margin: 0; }
 /* U11: the bar sticks to the top of the scrolling tab page while its (full-height) list scrolls past. */
 /* An element of the list scrolled into view at the top edge (Tab / Shift+Tab focus) stops below the stuck bar (33px; review L7). */
 .pick-fbar ~ .pick-list * { scroll-margin-top: 40px; }
