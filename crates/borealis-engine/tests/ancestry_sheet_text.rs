@@ -147,3 +147,21 @@ fn breath_weapon_sheet_text_names_the_ancestry_damage_type() {
     );
     assert!(!text.contains("{{"), "no placeholder left: {text}");
 }
+
+#[test]
+fn ancestry_option_description_injects_the_referenced_trait() {
+    let Some(e) = engine() else { return };
+    let snap = gold_wyrmkin(&e);
+    let gold = feature(&snap, "Gold");
+    assert!(
+        gold.description.contains("<h5>TEST ANCESTRY</h5>"),
+        "the injected element's upper-cased name heads its text: {}",
+        gold.description
+    );
+    assert!(
+        gold.description
+            .contains("You descend from a test dragon. Gold dragons breathe fire."),
+        "the injected element's description follows: {}",
+        gold.description
+    );
+}

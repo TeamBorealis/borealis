@@ -49,7 +49,7 @@ impl Evaluation<'_> {
                 source: el.source.clone(),
                 level,
                 granted_by: node.parent.map(|p| self.graph.nodes[p].e.el.name.clone()),
-                description: sanitize_html(&el.description),
+                description: sanitize_html(&self.injected_description(&el.description)),
                 sheet_summary: summary,
                 displayed,
                 prerequisites_unmet: self.graph.node_needs_prereq_override(id)
@@ -137,6 +137,18 @@ impl Evaluation<'_> {
             .collect();
         let joined = text.join(" ");
         (!joined.trim().is_empty()).then_some(joined)
+    }
+
+    /// A description with its `<div element="ID"/>` references replaced by the referenced
+    /// elements' text, as Aurora's description panel shows it (GitHub #53).
+    fn injected_description(&self, html: &str) -> String {
+        let source = |id: &str| {
+            self.graph
+                .uni
+                .get(id)
+                .map(|u| (u.el.name.clone(), u.el.description.clone()))
+        };
+        crate::inject::inject_references(html, &source)
     }
 
     fn resolve_template(&self, parts: &[TemplatePart]) -> String {

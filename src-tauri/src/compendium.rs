@@ -8,7 +8,7 @@ use crate::error::{ApiError, ApiResult};
 use crate::gear_info::{category, cost_cp, weapon_properties};
 use crate::ids::{title_case, ui_type};
 use crate::sanitize::sanitize_html;
-use crate::state::AppState;
+use crate::state::{AppState, ContentHub};
 use borealis_content::{ContentStore, Element, Ruleset};
 use std::collections::{BTreeMap, HashSet};
 
@@ -184,7 +184,7 @@ impl AppState {
         let el = hub
             .element(element_id)
             .ok_or_else(|| ApiError::not_found("That element does not exist."))?;
-        let mut html = description_html(el);
+        let mut html = description_html(&hub, el);
         html.push_str(&mastery_html(&hub.store, el));
         Ok(ElementDetail {
             summary: summary(&hub.store, el),
@@ -230,9 +230,18 @@ impl AppState {
     }
 }
 
-/// The element's sanitised description; a monster's stat block sections follow it.
-fn description_html(el: &Element) -> String {
-    let mut html = sanitize_html(&el.description);
+/// The element's sanitised description, its `<div element="ID"/>` references replaced by the
+/// referenced elements' text as Aurora's description panel shows them (GitHub #53); a monster's
+/// stat block sections follow it.
+fn description_html(hub: &ContentHub, el: &Element) -> String {
+    let source = |id: &str| {
+        hub.element(id)
+            .map(|r| (r.name.clone(), r.description.clone()))
+    };
+    let mut html = sanitize_html(&borealis_engine::inject::inject_references(
+        &el.description,
+        &source,
+    ));
     if let Some(block) = monster_html(el) {
         html.push_str(&sanitize_html(&block));
     }

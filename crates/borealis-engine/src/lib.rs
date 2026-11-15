@@ -22,6 +22,7 @@ pub mod granted_casting;
 pub mod graph;
 pub mod hit_points;
 pub mod ids;
+pub mod inject;
 pub mod invariants;
 pub mod inventory;
 pub mod item_base;
