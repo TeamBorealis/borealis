@@ -359,3 +359,70 @@ fn try_it_on_a_large_library() {
         state.homebrew_trial_end(&trial.trial_id).unwrap();
     }
 }
+
+/// The engine checks of a deep-copied 2024 Wizard on a large library (item `IzDlk`): start, New pack, the class draft,
+/// then `homebrew_check_draft` (the 1-20 sweep, choices that offer nothing, balance), `BOREALIS_PROFILE_ROUNDS` times.
+/// `BOREALIS_PROFILE_LIBRARY` as above.
+#[test]
+#[ignore = "profile: BOREALIS_PROFILE_LIBRARY=<data folder> cargo test -p borealis --test library_profile class_check -- --ignored --nocapture"]
+fn class_check_on_a_large_library() {
+    let Some(library) = std::env::var_os("BOREALIS_PROFILE_LIBRARY").map(PathBuf::from) else {
+        eprintln!("BOREALIS_PROFILE_LIBRARY is not set: nothing to profile");
+        return;
+    };
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .with_writer(std::io::stderr)
+        .without_time()
+        .with_target(false)
+        .try_init();
+    let data = tempfile::tempdir().unwrap();
+    copy_dir(&library.join("library"), &data.path().join("library"));
+    std::fs::copy(
+        library.join("content-prefs.json"),
+        data.path().join("content-prefs.json"),
+    )
+    .unwrap();
+    let paths = AppPaths {
+        content_root: content_root(),
+        data: data.path().to_path_buf(),
+    };
+    let state = step("start (no cache)", || AppState::new(paths.clone()).unwrap());
+    eprintln!("{} elements", state.hub().unwrap().store.len());
+    let pack = state
+        .homebrew_create_pack(
+            &HomebrewPackRequest {
+                name: "Ember Isles".into(),
+                code: "EI".into(),
+                edition: Ruleset::Dnd2024,
+                author: None,
+                description: None,
+                license: None,
+            },
+            &NoEvents,
+        )
+        .unwrap()
+        .id;
+    let class = state
+        .homebrew_new_draft(
+            &pack,
+            "class",
+            Some("ID_2024_CLASS_WIZARD"),
+            None,
+            Some(true),
+        )
+        .unwrap();
+    state
+        .homebrew_update_draft(&class.draft_id, &renamed(&class.form, "Ember Wizard"))
+        .unwrap();
+    let rounds: usize = std::env::var("BOREALIS_PROFILE_ROUNDS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1);
+    for i in 1..=rounds {
+        let problems = step(&format!("class check {i}"), || {
+            state.homebrew_check_draft(&class.draft_id).unwrap()
+        });
+        eprintln!("  {} problems", problems.len());
+    }
+}
