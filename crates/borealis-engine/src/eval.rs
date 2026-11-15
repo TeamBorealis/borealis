@@ -453,9 +453,30 @@ pub fn supports_match(
 
 /// Two support tags are the same, a typographic apostrophe (’) counting as a straight one (IM15:
 /// homebrew writes `Spider's Cunning` in a select and `Spider’s Cunning` on its targets).
+/// `a` must have an apostrophe of either kind for the folded comparison; the folded characters are compared in one
+/// pass that stops at the first difference (a candidate's tags are compared with every tag of a select, and most
+/// differ at once).
 fn same_tag(a: &str, b: &str) -> bool {
+    if a == b {
+        return true;
+    }
+    // two first characters that differ and are no apostrophe (whose first byte is `'` or that of `’`) differ folded
+    let apostrophe_start = |x: u8| x == b'\'' || x == "’".as_bytes()[0];
+    if let (Some(&x), Some(&y)) = (a.as_bytes().first(), b.as_bytes().first()) {
+        if x != y && !apostrophe_start(x) && !apostrophe_start(y) {
+            return false;
+        }
+    }
     let fold = |c: char| if c == '’' { '\'' } else { c };
-    a == b || (a.contains(['\'', '’']) && a.chars().map(fold).eq(b.chars().map(fold)))
+    let (mut a, mut b) = (a.chars().map(fold), b.chars().map(fold));
+    let mut apostrophe = false;
+    loop {
+        match (a.next(), b.next()) {
+            (None, None) => return apostrophe,
+            (Some(x), Some(y)) if x == y => apostrophe |= x == '\'',
+            _ => return false,
+        }
+    }
 }
 
 /// Supports evaluation for a condition (absent = everything).
@@ -476,6 +497,51 @@ pub fn supports_cond_match(
 mod tests {
     use super::*;
     use borealis_content::Element;
+
+    /// The folded comparison as it was written first: `a` has an apostrophe and both read the same with `’` as `'`.
+    fn same_tag_reference(a: &str, b: &str) -> bool {
+        let fold = |c: char| if c == '’' { '\'' } else { c };
+        a == b || (a.contains(['\'', '’']) && a.chars().map(fold).eq(b.chars().map(fold)))
+    }
+
+    #[test]
+    fn same_tag_folds_apostrophes_only_for_a_tag_that_has_one() {
+        let tags = [
+            "",
+            "Wizard",
+            "wizard",
+            "Wizard ",
+            "Spider's Cunning",
+            "Spider’s Cunning",
+            "Spider`s Cunning",
+            "'",
+            "’",
+            "''",
+            "’’",
+            "'Wizard",
+            "’Wizard",
+            "Wizard'",
+            "Wizard’",
+            "Ünder",
+            "Über",
+            "’s",
+            "'s",
+            "Spider’s Cunning’",
+            "Spider's Cunning'",
+            "Spiders Cunning",
+            "1",
+            "2",
+            "10",
+        ];
+        for a in tags {
+            for b in tags {
+                assert_eq!(same_tag(a, b), same_tag_reference(a, b), "{a:?} / {b:?}");
+            }
+        }
+        assert!(same_tag("Spider's Cunning", "Spider’s Cunning"));
+        assert!(same_tag("Spider’s Cunning", "Spider's Cunning"));
+        assert!(!same_tag("Spiders Cunning", "Spider's Cunning"));
+    }
 
     fn ids_of(list: &[&str]) -> IdCounts {
         let mut c = IdCounts::default();

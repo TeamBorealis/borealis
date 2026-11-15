@@ -13,6 +13,7 @@ use crate::spell_rules::{class_rules, progression};
 use crate::state::CharacterState;
 use crate::stats::StatSet;
 use crate::universe::{UElem, URule, UStat, Universe};
+use borealis_content::expr::SupportsExpr;
 
 /// Caster levels contributed by a class level for a slot-source kind (the suffix of
 /// `ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_<KIND>`).
@@ -373,6 +374,7 @@ pub fn spellcasting_snapshots(
             .collect();
         let candidate_entries =
             |known_ids: &[SpellEntry], lists: &[&borealis_content::SpellcastingList]| {
+                let terms = list_terms(lists);
                 let mut out = Vec::new();
                 for cand in uni.by_type("Spell").filter(|c| {
                     graph.offers_edition(c)
@@ -384,7 +386,7 @@ pub fn spellcasting_snapshots(
                     if lvl == 0 || lvl > top || known_ids.iter().any(|s| s.id == cand.el.id) {
                         continue;
                     }
-                    if on_lists(lists, cand) {
+                    if on_terms(&terms, cand) {
                         out.push(SpellEntry {
                             id: cand.el.id.clone(),
                             name: cand.el.name.clone(),
@@ -509,13 +511,39 @@ pub fn spellcasting_snapshots(
     out
 }
 
-/// Is `cand` on one of `lists` (a single spell id, or a supports expression over spells)?
-pub(crate) fn on_lists(lists: &[&borealis_content::SpellcastingList], cand: &UElem) -> bool {
-    lists.iter().any(|l| {
-        if l.is_spell_id() {
-            return l.supports.trim() == cand.el.id;
-        }
-        matches!(l.expr(), Ok(Some(e)) if supports_match(&e, cand, &NoDynamics))
+/// One spell list entry, read once for every candidate: a single spell id, a supports expression over spells, or an
+/// entry that matches nothing (unparsable or empty).
+pub(crate) enum ListTerm<'a> {
+    Id(&'a str),
+    Expr(SupportsExpr),
+    Nothing,
+}
+
+/// The entries of `lists` as [`ListTerm`]s, in order.
+pub(crate) fn list_terms<'a>(
+    lists: &[&'a borealis_content::SpellcastingList],
+) -> Vec<ListTerm<'a>> {
+    lists
+        .iter()
+        .map(|l| {
+            if l.is_spell_id() {
+                return ListTerm::Id(l.supports.trim());
+            }
+            match l.expr() {
+                Ok(Some(e)) => ListTerm::Expr(e),
+                _ => ListTerm::Nothing,
+            }
+        })
+        .collect()
+}
+
+/// Is `cand` on one of the lists (read once with [`list_terms`]: a single spell id, or a supports expression over
+/// spells)?
+pub(crate) fn on_terms(terms: &[ListTerm<'_>], cand: &UElem) -> bool {
+    terms.iter().any(|t| match t {
+        ListTerm::Id(id) => *id == cand.el.id,
+        ListTerm::Expr(e) => supports_match(e, cand, &NoDynamics),
+        ListTerm::Nothing => false,
     })
 }
 

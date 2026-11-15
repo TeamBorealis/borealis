@@ -133,6 +133,23 @@ impl<'u> Graph<'u> {
     /// requirements and structured prerequisites hold; a spell is also on the class's lists and
     /// of a level the class casts. An unreadable requirement never holds (C1).
     pub(crate) fn added_pick_qualifies(&self, target: &UElem, cast: Option<&str>) -> bool {
+        let lists = (target.el.ty == "Spell")
+            .then(|| cast.and_then(|c| crate::spells::class_spell_lists(self, c)))
+            .flatten();
+        let refs: Vec<&borealis_content::SpellcastingList> =
+            lists.iter().flat_map(|(l, _)| l.iter()).collect();
+        let terms = crate::spells::list_terms(&refs);
+        self.added_pick_qualifies_on(target, lists.as_ref().map(|(_, top)| (&terms[..], *top)))
+    }
+
+    /// [`Self::added_pick_qualifies`] with the spell block's lists read once ([`crate::spells::list_terms`]) and the
+    /// highest spell level it casts; `None` when the character has no such block. An option list asks for every
+    /// candidate.
+    fn added_pick_qualifies_on(
+        &self,
+        target: &UElem,
+        lists: Option<(&[crate::spells::ListTerm<'_>], u32)>,
+    ) -> bool {
         if matches!(target.req, Cond::Invalid) || !self.prereq_holds(target) {
             return false;
         }
@@ -142,13 +159,11 @@ impl<'u> Graph<'u> {
         if target.el.ty != "Spell" {
             return true;
         }
-        let Some((lists, top)) = cast.and_then(|c| crate::spells::class_spell_lists(self, c))
-        else {
+        let Some((terms, top)) = lists else {
             return false;
         };
         let level = crate::spells::spell_level(target);
-        let refs: Vec<&borealis_content::SpellcastingList> = lists.iter().collect();
-        (level == 0 || level <= top) && crate::spells::on_lists(&refs, target)
+        (level == 0 || level <= top) && crate::spells::on_terms(terms, target)
     }
 
     /// Does the character already have `target` (for spell block `cast`), so that adding it
@@ -206,6 +221,12 @@ pub(crate) fn options(
         return Vec::new();
     };
     let ignore = state.house_rules.ignore_feat_prerequisites;
+    // the spell block's lists, read once for every candidate
+    let lists = cast.and_then(|c| crate::spells::class_spell_lists(graph, c));
+    let refs: Vec<&borealis_content::SpellcastingList> =
+        lists.iter().flat_map(|(l, _)| l.iter()).collect();
+    let terms = crate::spells::list_terms(&refs);
+    let lists = lists.as_ref().map(|(_, top)| (&terms[..], *top));
     let mut out: Vec<AddOption> = uni
         .proxies()
         .in_category(&category)
@@ -218,7 +239,7 @@ pub(crate) fn options(
         })
         .filter(|t| !matches!(t.req, Cond::Invalid) && !graph.has_added_target(t, cast))
         .filter_map(|t| {
-            let qualifies = graph.added_pick_qualifies(t, cast);
+            let qualifies = graph.added_pick_qualifies_on(t, lists);
             (qualifies || ignore).then(|| option(t, kind, qualifies))
         })
         .collect();

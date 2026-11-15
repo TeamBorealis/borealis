@@ -12,7 +12,7 @@ use crate::state::{CharacterState, Choice, ClassSlot, SlotKey};
 use crate::universe::{Cond, EditionStatus, UElem, URule, UStat, Universe};
 use borealis_content::expr::{BoolExpr, Dynamic, SupportsExpr, SupportsLeaf};
 use borealis_content::{Rule, SourceRestriction};
-use std::cell::{OnceCell, RefCell};
+use std::cell::{Cell, OnceCell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
@@ -203,6 +203,13 @@ pub struct Graph<'u> {
     /// Set when any requirement read a statistic group.
     pub stat_used: std::cell::Cell<bool>,
     pub(crate) slot_cache: RefCell<SlotCache>,
+    /// The class spell lists per spellcasting name at the current `version`, shared by every spell select of one
+    /// option listing ([`SpellDynamics`]): a large library offers thousands of spells to each of a caster's dozens
+    /// of spell slots, and each list's expressions were matched again for every slot.
+    pub(crate) spell_lists: RefCell<SpellListCache>,
+    /// Which candidates each select rule lets through at the current `version`, by (version, owner, rule index)
+    /// ([`Graph::slot_options`]: a rule's slots offer the same candidates).
+    pub(crate) option_cache: RefCell<OptionCache>,
     /// Diagnostics collected while expanding.
     pub diags: DiagSink,
     pub(crate) ruleset_hooks: &'static dyn crate::profile::RulesetProfile,
@@ -232,6 +239,8 @@ const MAX_PASSES: usize = 60;
 const MAX_NEST_DEPTH: usize = 64;
 
 type SlotCache = HashMap<(u64, u32), Rc<HashSet<String>>>;
+type SpellListCache = HashMap<(u64, String), Rc<ClassSpellLists>>;
+type OptionCache = HashMap<(u64, NodeId, usize), Rc<Vec<bool>>>;
 
 /// The notice for a stored choice whose element is not installed.
 fn missing_choice(id: &str) -> Diagnostic {
@@ -285,6 +294,8 @@ impl<'u> Graph<'u> {
             version: 0,
             stat_used: std::cell::Cell::new(false),
             slot_cache: RefCell::new(HashMap::new()),
+            spell_lists: RefCell::new(HashMap::new()),
+            option_cache: RefCell::new(HashMap::new()),
             diags: DiagSink::default(),
             ruleset_hooks: crate::profile::profile_for(state.ruleset),
             allow_cross_edition: state.allow_cross_edition.unwrap_or_else(|| {
@@ -1673,15 +1684,43 @@ pub struct SpellDynamics<'g, 'u> {
     retrained: bool,
     owner: Option<NodeId>,
     slot_level: OnceCell<u32>,
-    lists: OnceCell<ClassSpellLists<'u>>,
+    lists: OnceCell<Rc<ClassSpellLists>>,
 }
 
 /// The spell lists of the live spellcasting blocks that serve one spellcasting name.
-struct ClassSpellLists<'u> {
+pub(crate) struct ClassSpellLists {
     /// Single spell ids (`is_spell_id` entries), trimmed.
-    ids: HashSet<&'u str>,
+    ids: HashSet<String>,
     /// Parsed expression entries (unparsable or empty entries never match).
     exprs: Vec<SupportsExpr>,
+    /// Whether one of `exprs` matches an element of the universe, by its place there, once asked (a pure function of
+    /// the two: the expressions are matched without dynamic tokens).
+    hits: Vec<Cell<Option<bool>>>,
+}
+
+#[cfg(test)]
+thread_local! {
+    /// How often a candidate was matched against class spell list expressions (the cost [`ClassSpellLists`] bounds).
+    pub(crate) static LIST_MATCHES: Cell<usize> = const { Cell::new(0) };
+}
+
+impl ClassSpellLists {
+    fn expr_matches(&self, uni: &Universe, element: &UElem) -> bool {
+        let hit = uni.index_of(element).and_then(|i| self.hits.get(i));
+        if let Some(known) = hit.and_then(Cell::get) {
+            return known;
+        }
+        #[cfg(test)]
+        LIST_MATCHES.with(|c| c.set(c.get() + 1));
+        let matches = self
+            .exprs
+            .iter()
+            .any(|e| crate::eval::supports_match(e, element, &crate::eval::NoDynamics));
+        if let Some(hit) = hit {
+            hit.set(Some(matches));
+        }
+        matches
+    }
 }
 
 impl<'g, 'u> SpellDynamics<'g, 'u> {
@@ -1737,28 +1776,42 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
     }
 
     /// The lists of every live block serving `class` (a block of that name, or an `extend`
-    /// block for it or for all names).
-    fn lists(&self, class: &str) -> &ClassSpellLists<'u> {
+    /// block for it or for all names), shared with every other select of the graph at its
+    /// current version.
+    fn lists(&self, class: &str) -> &ClassSpellLists {
         self.lists.get_or_init(|| {
-            let mut out = ClassSpellLists {
-                ids: HashSet::new(),
-                exprs: Vec::new(),
-            };
-            for info in self.graph.spell_infos().iter().filter(|i| {
-                i.sc.extend != Some(true) && i.name == class
-                    || i.sc.extend == Some(true)
-                        && (i.sc.all == Some(true) || i.name.eq_ignore_ascii_case(class))
-            }) {
-                for l in info.sc.list.iter().chain(info.sc.extends.iter()) {
-                    if l.is_spell_id() {
-                        out.ids.insert(l.supports.trim());
-                    } else if let Ok(Some(expr)) = l.expr() {
-                        out.exprs.push(expr);
-                    }
+            let key = (self.graph.version, class.to_string());
+            if let Some(hit) = self.graph.spell_lists.borrow().get(&key) {
+                return Rc::clone(hit);
+            }
+            let lists = Rc::new(self.collect_lists(class));
+            let mut cache = self.graph.spell_lists.borrow_mut();
+            cache.retain(|k, _| k.0 == self.graph.version);
+            cache.insert(key, Rc::clone(&lists));
+            lists
+        })
+    }
+
+    fn collect_lists(&self, class: &str) -> ClassSpellLists {
+        let mut out = ClassSpellLists {
+            ids: HashSet::new(),
+            exprs: Vec::new(),
+            hits: vec![Cell::new(None); self.graph.uni.len()],
+        };
+        for info in self.graph.spell_infos().iter().filter(|i| {
+            i.sc.extend != Some(true) && i.name == class
+                || i.sc.extend == Some(true)
+                    && (i.sc.all == Some(true) || i.name.eq_ignore_ascii_case(class))
+        }) {
+            for l in info.sc.list.iter().chain(info.sc.extends.iter()) {
+                if l.is_spell_id() {
+                    out.ids.insert(l.supports.trim().to_string());
+                } else if let Ok(Some(expr)) = l.expr() {
+                    out.exprs.push(expr);
                 }
             }
-            out
-        })
+        }
+        out
     }
 
     /// A replaced known spell of a select authored as `$(spellcasting:list),<spell levels>`
@@ -1794,10 +1847,7 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
                 return true;
             }
         }
-        lists
-            .exprs
-            .iter()
-            .any(|e| crate::eval::supports_match(e, element, &crate::eval::NoDynamics))
+        lists.expr_matches(self.graph.uni, element)
     }
 }
 

@@ -1247,6 +1247,16 @@ impl Universe {
         )
     }
 
+    /// The place of `e` among this universe's elements; `None` for an element of another universe.
+    pub(crate) fn index_of(&self, e: &UElem) -> Option<usize> {
+        let size = std::mem::size_of::<UElem>();
+        let at = std::ptr::from_ref(e)
+            .addr()
+            .checked_sub(self.elems.as_ptr().addr())?;
+        let i = at / size;
+        (at % size == 0 && i < self.elems.len()).then_some(i)
+    }
+
     /// All elements of a type, in load order (derived ones after their class).
     pub fn by_type<'a>(&'a self, ty: &str) -> impl Iterator<Item = &'a UElem> + 'a {
         self.by_type
