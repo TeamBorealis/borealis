@@ -383,14 +383,14 @@
         {
           "kind": "stat",
           "name": "channel divinity:count",
-          "value": "1",
+          "value": "2",
           "bonus": "base",
           "level": 6
         },
         {
           "kind": "stat",
           "name": "channel divinity:count",
-          "value": "1",
+          "value": "3",
           "bonus": "base",
           "level": 18
         }

@@ -120,12 +120,16 @@ def dc_stats(prefix, ability, extra_base=8):
     return [stat(f'{prefix}:dc', extra_base), stat(f'{prefix}:dc', 'proficiency'), stat(f'{prefix}:dc', f'{ability}:modifier')]
 
 def step_stats(name, table, bonus=None, start_level=1):
-    """absolute per-level table {level: value} -> incremental `stat` rules (same-name rules add)."""
+    """absolute per-level table {level: value} -> level-gated `stat` rules.
+
+    Without `bonus`, same-name rules add, so each rule is the step (v - prev). With `bonus`, rules
+    sharing the label do not add: only the highest counts (the engine's stats.rs, as Aurora), so
+    each rule carries the absolute value at its level (1, 2, 3), not the step (1, +1, +1)."""
     rules, prev = [], 0
     for lvl in sorted(table):
         v = table[lvl]
         if v != prev:
-            rules.append(stat(name, v - prev, level=lvl, bonus=bonus))
+            rules.append(stat(name, v if bonus else v - prev, level=lvl, bonus=bonus))
             prev = v
     return rules
 
