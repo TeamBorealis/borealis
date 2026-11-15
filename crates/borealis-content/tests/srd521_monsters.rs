@@ -697,6 +697,7 @@ fn renamed_creatures_map_to_their_srd51_counterparts() {
             .find(|s| s.element.name == name)
             .unwrap()
             .element
+            .as_ref()
             .clone()
     };
     let goblin = el("Goblin Warrior");

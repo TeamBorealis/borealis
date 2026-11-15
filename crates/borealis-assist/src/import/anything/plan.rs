@@ -61,7 +61,7 @@ fn archetype_select(store: &ContentStore, class: &Element) -> Option<(String, St
 fn candidate(store: &ContentStore, class: &Element) -> Option<Cand> {
     let (supports, select_name, gate) = archetype_select(store, class)?;
     let mut levels: Vec<u32> = vec![gate];
-    for a in store.by_type("Archetype").map(|s| &s.element) {
+    for a in store.by_type("Archetype").map(|s| s.element.as_ref()) {
         if !a.supports.contains(&supports) {
             continue;
         }
@@ -91,7 +91,7 @@ fn candidate(store: &ContentStore, class: &Element) -> Option<Cand> {
 fn candidates(store: &ContentStore, edition: Edition) -> Vec<Cand> {
     let mut c: Vec<Cand> = store
         .by_type("Class")
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| in_edition(e, edition))
         .filter_map(|e| candidate(store, e))
         .collect();
@@ -1097,7 +1097,7 @@ pub(crate) fn subrace_parent(
     let race = store
         .by_type("Race")
         .chain(store.by_type("Species"))
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| in_edition(e, edition))
         .find(|e| norm(&e.name) == h || contains_words(&h, &norm(&e.name)))?;
     let key = subrace_select(store, race)?;

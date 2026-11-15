@@ -12,6 +12,7 @@ import { useSettings } from "../../state/SettingsContext";
 import { useAsync, useDebounced } from "../../state/useAsync";
 import { RULES_GROUP, SCOPES, badgeOf, footerText, groupRows, highlightParts, initialEdition, rowOfElement, rowOfHit, showSemanticHint, type ResultRow } from "./searchModel";
 import { useSemanticStatus } from "../../state/semantic";
+import { useCopyToHomebrew } from "../homebrew/CopyToHomebrew";
 import "./compendium.css";
 
 const PAGE = 40;
@@ -22,6 +23,7 @@ type Scope = (typeof SCOPES)[number]["id"];
 function Detail({ id, onSource, onNavigate }: { id: string; onSource: (s: string) => void; onNavigate: () => void }) {
   const api = useApi();
   const { aiEnabled } = usePlatform();
+  const copier = useCopyToHomebrew(onNavigate);
   const d = useAsync(() => api.getElement({ elementId: id }), [api, id]);
   if (d.error) return <Alert tone="danger">{d.error}</Alert>;
   if (!d.data) return <p className="empty">Loading...</p>;
@@ -39,6 +41,13 @@ function Detail({ id, onSource, onNavigate }: { id: string; onSource: (s: string
       {!statBlock && facts}
       <h4>Source</h4>
       <a href={`#source-${e.source}`} onClick={(ev) => { ev.preventDefault(); onSource(e.source); }}>{e.sourceName}</a>
+      {copier.enabled && (
+        <>
+          <h4>Homebrew</h4>
+          <a href="#copy-to-homebrew" onClick={(ev) => { ev.preventDefault(); copier.open({ id: e.id, name: e.name, isClass: e.type === "class" }); }}>Copy to homebrew</a>
+          {copier.dialog}
+        </>
+      )}
       {aiEnabled && (
         <>
           <h4>Assistant</h4>

@@ -10,6 +10,8 @@ export interface RouteDef {
   readonly secondary: boolean;
   /** Only when the optional AI assistant is on (never on mobile). */
   readonly ai?: boolean;
+  /** Only while the homebrew creator is on (HC3). */
+  readonly creator?: boolean;
 }
 
 export const ROUTES: readonly RouteDef[] = [
@@ -23,6 +25,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: "/search", label: "Search", icon: "book-search", needsCharacter: false, secondary: true },
   { path: "/compendium", label: "Compendium", icon: "book", needsCharacter: false, secondary: true },
   { path: "/content", label: "Content", icon: "box", needsCharacter: false, secondary: true },
+  { path: "/homebrew", label: "Homebrew", icon: "pen", needsCharacter: false, secondary: true, creator: true },
   { path: "/notes", label: "Notes", icon: "file", needsCharacter: false, secondary: true },
   { path: "/import", label: "Import", icon: "upload", needsCharacter: false, secondary: true, ai: true },
   { path: "/ai", label: "AI Assistant", icon: "bot", needsCharacter: false, secondary: true, ai: true },

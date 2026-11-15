@@ -199,46 +199,8 @@ impl AppState {
         limit: Option<usize>,
         offset: Option<usize>,
     ) -> ApiResult<Page<SlotOption>> {
-        let key = decode_slot(slot_id)?;
         self.read(id, |ctx, session| {
-            let state = &session.character.build;
-            let snap = ctx.hub.derive(state);
-            let slot = snap
-                .slots
-                .iter()
-                .find(|s| s.key == key && s.rejected.is_none())
-                .ok_or_else(|| ApiError::not_found("That selection slot does not exist."))?;
-            let skip = offset.unwrap_or(0);
-            let take = match limit {
-                None | Some(0) => usize::MAX,
-                Some(n) => n.min(MAX_PAGE),
-            };
-            if slot.ty == "List" {
-                return Ok(list_page(slot, query, skip, take));
-            }
-            let versions = chosen_versions(ctx, state, slot);
-            let offered = slot.options.iter().chain(
-                versions
-                    .iter()
-                    .filter(|v| !slot.options.iter().any(|o| o.id == v.id)),
-            );
-            let candidates = offered
-                .filter_map(|o| ctx.hub.element(&o.id).map(|el| (o, el)))
-                .map(|(o, el)| Candidate::new(o, el, &ctx.hub.store, state.ruleset))
-                .collect();
-            let chosen = slot.chosen.as_ref().map(|c| c.id.as_str());
-            let rows = group_rows(candidates, chosen, query);
-            // rows of the page only are mapped (a summary renders the description)
-            let items = rows
-                .iter()
-                .skip(skip)
-                .take(take)
-                .filter_map(|row| row_option(&ctx.hub.store, row))
-                .collect();
-            Ok(Page {
-                total: rows.len(),
-                items,
-            })
+            slot_options_page(ctx, &session.character.build, slot_id, query, limit, offset)
         })
     }
 
@@ -288,29 +250,7 @@ impl AppState {
         element_id: &str,
     ) -> ApiResult<CharacterSnapshot> {
         let key = decode_slot(slot_id)?;
-        self.mutate(id, |ctx, d| {
-            let engine = &ctx.hub.engine;
-            let snap = ctx.hub.derive(&d.character.build);
-            let slot = snap
-                .slots
-                .iter()
-                .find(|s| s.key == key)
-                .ok_or_else(|| ApiError::not_found("That selection slot does not exist."))?;
-            if slot.locked && !slot.chosen.as_ref().is_some_and(|c| c.id == element_id) {
-                return Err(ApiError::invalid(LOCKED_SLOT));
-            }
-            let choice = if slot.ty == "List" {
-                let item = element_id
-                    .parse()
-                    .map_err(|_| ApiError::invalid("Malformed list choice."))?;
-                Choice::ListItem(item)
-            } else {
-                Choice::Element(element_id.to_string())
-            };
-            let out = commands::select_derived(engine, &d.character.build, &snap, &key, choice)?;
-            apply_filled(ctx, d, out);
-            Ok(())
-        })
+        self.mutate(id, |ctx, d| select_in(ctx, d, &key, element_id))
     }
 
     /// Empty a slot.
@@ -319,15 +259,7 @@ impl AppState {
     /// `not_found` if the character does not exist.
     pub fn clear_selection(&self, id: &str, slot_id: &str) -> ApiResult<CharacterSnapshot> {
         let key = decode_slot(slot_id)?;
-        self.mutate(id, |ctx, d| {
-            let snap = ctx.hub.derive(&d.character.build);
-            if snap.slots.iter().any(|s| s.key == key && s.locked) {
-                return Err(ApiError::invalid(LOCKED_SLOT));
-            }
-            let out = commands::clear(&ctx.hub.engine, &d.character.build, &key)?;
-            apply(d, out);
-            Ok(())
-        })
+        self.mutate(id, |ctx, d| clear_in(ctx, d, &key))
     }
 
     /// Set experience points (never levels up by itself).
@@ -640,6 +572,113 @@ fn list_option(item: i64, text: &str, source: &str) -> SlotOptionBase {
 }
 
 /// A page of a `List` slot's entries whose normalized text contains the normalized query.
+/// The rows of slot `slot_id` of `state` ([`AppState::get_slot_options`]; Try it lists a trial character's choices
+/// with it too).
+///
+/// # Errors
+/// `invalid_argument` for a malformed slot id, `not_found` for a slot the state does not have.
+pub(crate) fn slot_options_page(
+    ctx: &Ctx<'_>,
+    state: &CharacterState,
+    slot_id: &str,
+    query: Option<&str>,
+    limit: Option<usize>,
+    offset: Option<usize>,
+) -> ApiResult<Page<SlotOption>> {
+    let key = decode_slot(slot_id)?;
+    let snap = ctx.hub.derive(state);
+    let slot = snap
+        .slots
+        .iter()
+        .find(|s| s.key == key && s.rejected.is_none())
+        .ok_or_else(|| ApiError::not_found("That selection slot does not exist."))?;
+    let skip = offset.unwrap_or(0);
+    let take = match limit {
+        None | Some(0) => usize::MAX,
+        Some(n) => n.min(MAX_PAGE),
+    };
+    if slot.ty == "List" {
+        return Ok(list_page(slot, query, skip, take));
+    }
+    let versions = chosen_versions(ctx, state, slot);
+    let offered = slot.options.iter().chain(
+        versions
+            .iter()
+            .filter(|v| !slot.options.iter().any(|o| o.id == v.id)),
+    );
+    let candidates = offered
+        .filter_map(|o| ctx.hub.element(&o.id).map(|el| (o, el)))
+        .map(|(o, el)| Candidate::new(o, el, &ctx.hub.store, state.ruleset))
+        .collect();
+    let chosen = slot.chosen.as_ref().map(|c| c.id.as_str());
+    let rows = group_rows(candidates, chosen, query);
+    // rows of the page only are mapped (a summary renders the description)
+    let items = rows
+        .iter()
+        .skip(skip)
+        .take(take)
+        .filter_map(|row| row_option(&ctx.hub.store, row))
+        .collect();
+    Ok(Page {
+        total: rows.len(),
+        items,
+    })
+}
+
+/// Put `element_id` into slot `key` of the draft's character (a `List` slot takes the item number), then choose the
+/// defaults of the slots it brought ([`AppState::apply_selection`]; Try it's choices too). A locked slot refuses
+/// anything but its own pick.
+///
+/// # Errors
+/// `not_found` for an unknown slot, `invalid_argument` for a locked slot or a malformed list choice, and the
+/// engine's refusal.
+pub(crate) fn select_in(
+    ctx: &Ctx<'_>,
+    d: &mut Draft,
+    key: &borealis_engine::SlotKey,
+    element_id: &str,
+) -> ApiResult<()> {
+    let engine = &ctx.hub.engine;
+    let snap = ctx.hub.derive(&d.character.build);
+    let slot = snap
+        .slots
+        .iter()
+        .find(|s| &s.key == key)
+        .ok_or_else(|| ApiError::not_found("That selection slot does not exist."))?;
+    if slot.locked && !slot.chosen.as_ref().is_some_and(|c| c.id == element_id) {
+        return Err(ApiError::invalid(LOCKED_SLOT));
+    }
+    let choice = if slot.ty == "List" {
+        let item = element_id
+            .parse()
+            .map_err(|_| ApiError::invalid("Malformed list choice."))?;
+        Choice::ListItem(item)
+    } else {
+        Choice::Element(element_id.to_string())
+    };
+    let out = commands::select_derived(engine, &d.character.build, &snap, key, choice)?;
+    apply_filled(ctx, d, out);
+    Ok(())
+}
+
+/// Empty slot `key` of the draft's character ([`AppState::clear_selection`]); a locked slot refuses.
+///
+/// # Errors
+/// `invalid_argument` for a locked slot.
+pub(crate) fn clear_in(
+    ctx: &Ctx<'_>,
+    d: &mut Draft,
+    key: &borealis_engine::SlotKey,
+) -> ApiResult<()> {
+    let snap = ctx.hub.derive(&d.character.build);
+    if snap.slots.iter().any(|s| &s.key == key && s.locked) {
+        return Err(ApiError::invalid(LOCKED_SLOT));
+    }
+    let out = commands::clear(&ctx.hub.engine, &d.character.build, key)?;
+    apply(d, out);
+    Ok(())
+}
+
 fn list_page(
     slot: &SlotSnapshot,
     query: Option<&str>,

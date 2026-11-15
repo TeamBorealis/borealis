@@ -101,7 +101,7 @@ impl ContentHub {
         self.store.element(id).or_else(|| {
             Self::UNIVERSE_RULESETS
                 .iter()
-                .find_map(|r| self.engine.universe(*r).get(id).map(|u| &u.el))
+                .find_map(|r| self.engine.universe(*r).get(id).map(|u| u.el.as_ref()))
         })
     }
 
@@ -130,7 +130,7 @@ impl ContentHub {
         Self::UNIVERSE_RULESETS
             .iter()
             .flat_map(move |r| self.engine.universe(*r).by_type(ty))
-            .map(|u| &u.el)
+            .map(|u| u.el.as_ref())
             .filter(|el| self.store.element(&el.id).is_none())
             .filter(move |el| seen.insert(el.id.clone()))
     }
@@ -167,7 +167,33 @@ impl ContentHub {
         prefs: &ContentPrefs,
         on_step: &mut dyn FnMut(LoadStep),
     ) -> ApiResult<Self> {
+        Self::load_from(paths, settings, prefs, on_step, None)
+    }
+
+    /// Load everything again to replace `previous` (a pack added, removed, switched on or off; New pack): the same
+    /// hub as [`ContentHub::load_with`] gives, sharing with `previous` every pack file and element that did not
+    /// change, so the two hubs together cost one hub plus what changed (item Isq-Y).
+    ///
+    /// # Errors
+    /// `content_error` if a bundled pack is missing or invalid.
+    pub fn reload(
+        paths: &AppPaths,
+        settings: &AppSettings,
+        prefs: &ContentPrefs,
+        previous: &Self,
+    ) -> ApiResult<Self> {
+        Self::load_from(paths, settings, prefs, &mut |_| {}, Some(previous))
+    }
+
+    fn load_from(
+        paths: &AppPaths,
+        settings: &AppSettings,
+        prefs: &ContentPrefs,
+        on_step: &mut dyn FnMut(LoadStep),
+        previous: Option<&Self>,
+    ) -> ApiResult<Self> {
         let mut timer = LoadTimer::new();
+        let old_builder = previous.map(|h| h.builder.as_ref());
         let (bundled, custom) = pack_dirs(paths, prefs);
         let total = bundled.len() + custom.len();
         let editions = prefs.source_editions();
@@ -188,12 +214,17 @@ impl ContentHub {
                     );
                 }
                 on_step(LoadStep::Engine);
+                let builder = match old_builder {
+                    Some(old) => cached.builder.sharing_files_with(old),
+                    None => cached.builder,
+                };
                 return Ok(Self::assemble(
-                    cached.builder,
+                    builder,
                     cached.load_warnings,
                     settings,
                     editions,
                     timer,
+                    previous,
                 ));
             }
             Err(miss) => {
@@ -208,7 +239,7 @@ impl ContentHub {
                 total,
                 custom: false,
             });
-            builder = builder.add_pack_dir(dir)?;
+            builder = builder.add_parsed_pack_sharing(ParsedPack::read(dir)?, old_builder);
         }
         timer.step("bundled packs", &format!("{} packs", bundled.len()));
         let mut load_warnings = Vec::new();
@@ -221,7 +252,7 @@ impl ContentHub {
             });
             // Read the pack on its own first: a broken pack leaves the builder untouched.
             match ParsedPack::read(dir) {
-                Ok(pack) => builder = builder.add_parsed_pack(pack),
+                Ok(pack) => builder = builder.add_parsed_pack_sharing(pack, old_builder),
                 Err(e) => {
                     tracing::warn!("skipping user pack {}: {e}", dir.display());
                     load_warnings.push(format!("A user content pack could not be loaded: {e}"));
@@ -233,7 +264,7 @@ impl ContentHub {
             &format!("{} packs, {} skipped", custom.len(), load_warnings.len()),
         );
         on_step(LoadStep::Engine);
-        let hub = Self::assemble(builder, load_warnings, settings, editions, timer);
+        let hub = Self::assemble(builder, load_warnings, settings, editions, timer, previous);
         let write = content_cache::save_in_background(
             cache_file,
             key,
@@ -254,21 +285,28 @@ impl ContentHub {
         }
     }
 
-    /// Build the store and the engine over a builder holding every enabled pack.
+    /// Build the store and the engine over a builder holding every enabled pack (sharing unchanged elements with
+    /// the `previous` hub's store, when it replaces one).
     fn assemble(
         builder: ContentStoreBuilder,
         load_warnings: Vec<String>,
         settings: &AppSettings,
         editions: BTreeMap<String, Ruleset>,
         mut timer: LoadTimer,
+        previous: Option<&Self>,
     ) -> Self {
         // IM14: books whose edition the user set are re-tagged at load (also in AI draft builds)
         let builder = builder.with_source_editions(editions);
-        // The builder is kept for later rebuilds, so the store is built from a copy.
-        let store = builder.clone().build();
+        // The builder is kept for later rebuilds, so the store is built from a copy (which shares its files).
+        let store = builder
+            .clone()
+            .build_reusing(previous.map(|h| h.store.as_ref()));
         timer.step("build", &format!("{} elements", store.len()));
-        let engine = Engine::with_settings(&store, settings.engine_settings());
-        timer.step("engine", "");
+        let engine = engine_over(&store, settings, previous.map(|h| &h.engine));
+        timer.step(
+            "engine",
+            &format!("{} prepared elements taken over", reused_elements(&engine)),
+        );
         timer.total(&format!(
             "{} elements, {} files",
             store.len(),
@@ -284,18 +322,99 @@ impl ContentHub {
         }
     }
 
+    /// The builder of this hub with the custom pack `pack.info().id` replaced in its load position (the homebrew
+    /// creator's fast reload, spec 14.1): no other pack is read again. `None` when the hub does not hold that pack
+    /// (it is turned off, or failed to load): the caller reloads everything instead.
+    #[must_use]
+    pub fn builder_with_pack(&self, pack: ParsedPack) -> Option<ContentStoreBuilder> {
+        self.builder.as_ref().clone().replace_pack(pack)
+    }
+
+    /// A hub over a builder and the store already built from it ([`ContentHub::builder_with_pack`], then
+    /// `builder.clone().build()`): the engine is prepared for it, the load warnings are kept.
+    #[must_use]
+    pub fn from_built(
+        builder: ContentStoreBuilder,
+        store: ContentStore,
+        load_warnings: Vec<String>,
+        settings: &AppSettings,
+    ) -> Self {
+        Self::from_built_over(builder, store, load_warnings, settings, None)
+    }
+
+    /// [`ContentHub::from_built`] over the hub it replaces (still alive): the engine takes over the prepared elements
+    /// of `previous`'s engine whose store element `store` shares (a creator save, New pack; IzDfk). The engine is the
+    /// one a build from scratch makes.
+    #[must_use]
+    pub fn from_built_over(
+        builder: ContentStoreBuilder,
+        store: ContentStore,
+        load_warnings: Vec<String>,
+        settings: &AppSettings,
+        previous: Option<&ContentHub>,
+    ) -> Self {
+        let engine = engine_over(&store, settings, previous.map(|h| &h.engine));
+        Self {
+            store: Arc::new(store),
+            engine,
+            builder: Arc::new(builder),
+            load_warnings,
+            derived: DeriveCache::default(),
+            cache_write: Mutex::new(None),
+        }
+    }
+
+    /// Write this hub's content cache in the background for the pack folders as they are now (after a fast reload,
+    /// so the next start reads the cache instead of every pack).
+    pub fn save_cache(&self, paths: &AppPaths, prefs: &ContentPrefs) {
+        let (bundled, custom) = pack_dirs(paths, prefs);
+        let key = CacheKey::new(
+            &folders(&bundled),
+            &folders(&custom),
+            &prefs.disabled_packs,
+            &prefs.source_editions(),
+        );
+        let write = content_cache::save_in_background(
+            content_cache::cache_file(&paths.data),
+            key,
+            Arc::clone(&self.builder),
+            self.load_warnings.clone(),
+        );
+        if let Ok(mut slot) = self.cache_write.lock() {
+            *slot = write;
+        }
+    }
+
     /// Rebuild the engine for new settings, sharing the store and the builder.
     #[must_use]
     pub fn with_settings(&self, settings: &AppSettings) -> Self {
         Self {
             store: Arc::clone(&self.store),
-            engine: Engine::with_settings(&self.store, settings.engine_settings()),
+            engine: engine_over(&self.store, settings, Some(&self.engine)),
             builder: Arc::clone(&self.builder),
             load_warnings: self.load_warnings.clone(),
             derived: DeriveCache::default(),
             cache_write: Mutex::new(None),
         }
     }
+}
+
+/// The engine for `store`, over `previous` (an engine of a store that is still alive) when there is one.
+fn engine_over(store: &ContentStore, settings: &AppSettings, previous: Option<&Engine>) -> Engine {
+    match previous {
+        Some(previous) => {
+            Engine::with_settings_reusing(store, settings.engine_settings(), previous)
+        }
+        None => Engine::with_settings(store, settings.engine_settings()),
+    }
+}
+
+/// Prepared elements an engine took over from the one it was built over, in both universes.
+pub(crate) fn reused_elements(engine: &Engine) -> usize {
+    [Ruleset::Dnd2014, Ruleset::Dnd2024]
+        .iter()
+        .map(|r| engine.universe(*r).reused_elements())
+        .sum()
 }
 
 fn folders(packs: &[(String, PathBuf)]) -> Vec<PathBuf> {
@@ -409,6 +528,14 @@ pub struct AppState {
     pub vectors: crate::vector_service::VectorService,
     /// The Obsidian vault's link and tag cache and folder watcher (GitHub #15).
     pub vault: crate::vault::VaultService,
+    /// Homebrew creator drafts (memory cache over `<data>/homebrew-drafts/`, spec 10.1).
+    pub(crate) hb_drafts: crate::homebrew_drafts::CreatorDrafts,
+    /// Try it's test characters (memory only, spec 9).
+    pub(crate) hb_trials: crate::homebrew_trial::CreatorTrials,
+    /// The homebrew creator's undoable pack changes (deletes, multi-select edits; spec 10.2, 12.5).
+    pub(crate) hb_undo: crate::homebrew_undo::CreatorUndo,
+    /// The engine checks of drafts take turns (`homebrew_check_draft`).
+    pub(crate) hb_checks: crate::homebrew_check_gate::CheckGate,
 }
 
 impl AppState {
@@ -491,6 +618,10 @@ impl AppState {
             picked: crate::picked_paths::PickedPaths::default(),
             content_update: Mutex::new(crate::settings_dto::ContentUpdateStatus::default()),
             vault: crate::vault::VaultService::default(),
+            hb_drafts: crate::homebrew_drafts::CreatorDrafts::default(),
+            hb_trials: crate::homebrew_trial::CreatorTrials::default(),
+            hb_undo: crate::homebrew_undo::CreatorUndo::default(),
+            hb_checks: crate::homebrew_check_gate::CheckGate::default(),
         }
     }
 

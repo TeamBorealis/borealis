@@ -20,6 +20,7 @@ use crate::ids;
 use crate::universe::UElem;
 use borealis_content::{ContentStore, MapKind, Ruleset};
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 /// Add to each native 2024 element the supports that appends put on the superseded elements it
 /// is `equivalent` to (same type), plus the names of the `ID_` support tags among them.
@@ -49,9 +50,10 @@ pub(crate) fn share(
         })
         .collect();
     for (i, tags, replaced) in additions {
-        elems[i].supports.extend(tags);
+        Arc::make_mut(&mut elems[i].supports).extend(tags);
         elems[i].replaced_supports = replaced.tags;
         elems[i].replaced_ids = replaced.ids;
+        elems[i].touched = true;
     }
 }
 
@@ -107,7 +109,7 @@ fn superseded_tags(
     let mut out = Replaced::default();
     for c in superseded_counterparts(u, elems, pos) {
         out.ids.push(c.el.id.clone());
-        for t in &c.supports {
+        for t in c.supports.iter() {
             let carried = own.is_some_and(|n| n.contains(t.as_str()));
             if !carried && !out.tags.contains(t) {
                 out.tags.push(t.clone());

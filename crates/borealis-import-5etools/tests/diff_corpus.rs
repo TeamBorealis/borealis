@@ -390,7 +390,7 @@ fn subclass_of(
     let prefix = format!("ID_5ET_{book}_SUBCLASS_");
     let hits: Vec<String> = store
         .iter()
-        .map(|se| &se.element)
+        .map(|se| se.element.as_ref())
         .filter(|e| {
             e.ty == "Archetype"
                 && e.name == name

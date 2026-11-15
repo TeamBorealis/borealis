@@ -2,13 +2,15 @@
 //!
 //! Lines look like `content load: user packs 812 ms (143 packs, 0 skipped)` and end with a
 //! `content load: total ...` line, so a slow launch can be read from the log file (Settings >
-//! About > logs, or `adb logcat -s RustStdoutStderr` on a phone).
+//! About > logs, or `adb logcat -s RustStdoutStderr` on a phone). [`LoadTimer::named`] times another sequence the
+//! same way (the homebrew creator's save: `homebrew save: build 84 ms`).
 
 use std::time::{Duration, Instant};
 
 /// Times consecutive steps of one load.
 #[derive(Debug)]
 pub struct LoadTimer {
+    what: &'static str,
     started: Instant,
     last: Instant,
 }
@@ -23,8 +25,15 @@ impl LoadTimer {
     /// Start timing now.
     #[must_use]
     pub fn new() -> Self {
+        Self::named("content load")
+    }
+
+    /// Start timing a sequence whose lines start with `what`.
+    #[must_use]
+    pub fn named(what: &'static str) -> Self {
         let now = Instant::now();
         Self {
+            what,
             started: now,
             last: now,
         }
@@ -35,23 +44,23 @@ impl LoadTimer {
         let now = Instant::now();
         let took = now - self.last;
         self.last = now;
-        log_line(label, took, detail);
+        log_line(self.what, label, took, detail);
         took
     }
 
     /// Log the time since [`LoadTimer::new`].
     pub fn total(&self, detail: &str) -> Duration {
         let took = self.started.elapsed();
-        log_line("total", took, detail);
+        log_line(self.what, "total", took, detail);
         took
     }
 }
 
-fn log_line(label: &str, took: Duration, detail: &str) {
+fn log_line(what: &str, label: &str, took: Duration, detail: &str) {
     let ms = took.as_millis();
     if detail.is_empty() {
-        tracing::info!("content load: {label} {ms} ms");
+        tracing::info!("{what}: {label} {ms} ms");
     } else {
-        tracing::info!("content load: {label} {ms} ms ({detail})");
+        tracing::info!("{what}: {label} {ms} ms ({detail})");
     }
 }

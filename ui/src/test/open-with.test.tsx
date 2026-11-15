@@ -33,3 +33,22 @@ describe("Open with: character files", () => {
     expect(importCharacter).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("Open with: a file Android did not open (H5wn8)", () => {
+  it("shows why instead of doing nothing, and imports nothing", async () => {
+    // Arrange
+    const api = mock({ mobile: true });
+    const importCharacter = vi.spyOn(api, "importCharacter");
+    const why = "\u201cEmber.borealis-pack.zip\u201d is a file Borealis shared itself, so it was not opened again.";
+    renderApp("/characters", { api });
+    await screen.findByRole("button", { name: /Import characters/ });
+
+    // Act
+    api.openedFiles = [{ fileName: "Ember.borealis-pack.zip", contentBase64: "", refused: why }];
+    act(() => { window.dispatchEvent(new CustomEvent("borealis-open-file")); });
+
+    // Assert
+    expect(await screen.findByText(why)).toBeTruthy();
+    expect(importCharacter).not.toHaveBeenCalled();
+  });
+});

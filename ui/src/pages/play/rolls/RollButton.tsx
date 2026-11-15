@@ -34,7 +34,7 @@ export function PressButton({ label, children, menuLabel, items, onTap, disabled
       <button type="button" className={`btn btn-sm pr-roll ${className}`.trim()} aria-label={label} disabled={disabled} {...press}>
         {icon && <Icon name="dice" />}<span className="pr-roll-value">{children}</span>
       </button>
-      <button type="button" className="btn btn-sm pr-more" aria-label={`More: ${menuLabel}`} title="More ways" aria-haspopup="menu"
+      <button type="button" className="btn btn-sm pr-more" aria-label={`More: ${menuLabel}`} title="More ways"
         aria-expanded={anchor !== null} disabled={disabled} onClick={(e) => setAnchor(e.currentTarget.previousElementSibling as HTMLElement)}>
         <Icon name="caret" />
       </button>

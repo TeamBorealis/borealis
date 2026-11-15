@@ -1,11 +1,11 @@
 //! Compendium services: ranked search with filters, element detail and facets.
 
-use crate::compendium_monster::{monster_facts, monster_html};
+use crate::compendium_monster::monster_html;
 use crate::dto::{ElementSummary, Page};
 use crate::dto_ext::{CompendiumFacets, CompendiumQuery, ElementDetail, ElementFact, Facet};
 use crate::elements::{plain_text, summary};
 use crate::error::{ApiError, ApiResult};
-use crate::gear_info::{category, cost_cp, weapon_properties};
+use crate::gear_info::{category, cost_cp};
 use crate::ids::{title_case, ui_type};
 use crate::sanitize::sanitize_html;
 use crate::state::{AppState, ContentHub};
@@ -127,7 +127,7 @@ impl AppState {
         let mut hits: Vec<(u8, &Element)> = hub
             .store
             .iter()
-            .map(|s| &s.element)
+            .map(|s| s.element.as_ref())
             .chain(hub.derived_elements(MULTICLASS_TYPE))
             .filter(|e| wanted(e))
             .filter_map(|e| {
@@ -184,14 +184,7 @@ impl AppState {
         let el = hub
             .element(element_id)
             .ok_or_else(|| ApiError::not_found("That element does not exist."))?;
-        let mut html = description_html(&hub, el);
-        html.push_str(&mastery_html(&hub.store, el));
-        Ok(ElementDetail {
-            summary: summary(&hub.store, el),
-            description_html: html,
-            facts: facts(&hub.store, el),
-            grants: crate::element_grants::grants(&hub.store, el),
-        })
+        Ok(element_detail(&hub, el))
     }
 
     /// Type and source filters with their counts.
@@ -202,7 +195,7 @@ impl AppState {
         let hub = self.hub()?;
         let mut types: BTreeMap<&str, usize> = BTreeMap::new();
         let mut sources: BTreeMap<&str, usize> = BTreeMap::new();
-        for e in hub.store.iter().map(|s| &s.element) {
+        for e in hub.store.iter().map(|s| s.element.as_ref()) {
             if !is_listed(e, None) {
                 continue;
             }
@@ -230,12 +223,39 @@ impl AppState {
     }
 }
 
+/// One element as the description pane shows it: sanitised description, facts and grants, looked up in `hub`
+/// (the element itself need not be in it: the homebrew creator previews a draft this way).
+#[must_use]
+pub(crate) fn element_detail(hub: &ContentHub, el: &Element) -> ElementDetail {
+    element_detail_with(hub, &[], el)
+}
+
+/// [`element_detail`] of an element not loaded yet (a creator draft's), its grants and `<div element>` references
+/// named from `own` (the elements written with it) before the hub.
+pub(crate) fn element_detail_with(
+    hub: &ContentHub,
+    own: &[Element],
+    el: &Element,
+) -> ElementDetail {
+    let store = &hub.store;
+    let mut html = description_html(hub, own, el);
+    html.push_str(&mastery_html(store, el));
+    ElementDetail {
+        summary: summary(store, el),
+        description_html: html,
+        facts: facts(store, el),
+        grants: crate::element_grants::grants_with(store, own, el),
+    }
+}
+
 /// The element's sanitised description, its `<div element="ID"/>` references replaced by the
-/// referenced elements' text as Aurora's description panel shows them (GitHub #53); a monster's
-/// stat block sections follow it.
-fn description_html(hub: &ContentHub, el: &Element) -> String {
+/// referenced elements' text as Aurora's description panel shows them (GitHub #53), looked up in
+/// `own` before the hub; a monster's stat block sections follow it.
+fn description_html(hub: &ContentHub, own: &[Element], el: &Element) -> String {
     let source = |id: &str| {
-        hub.element(id)
+        own.iter()
+            .find(|o| o.id == id)
+            .or_else(|| hub.element(id))
             .map(|r| (r.name.clone(), r.description.clone()))
     };
     let mut html = sanitize_html(&borealis_engine::inject::inject_references(
@@ -257,7 +277,7 @@ fn mastery_html(store: &ContentStore, el: &Element) -> String {
     let named = |name: &str| {
         store
             .iter()
-            .map(|s| &s.element)
+            .map(|s| s.element.as_ref())
             .filter(|m| m.ty == MASTERY_PROPERTY_TYPE)
             .find(|m| m.name.eq_ignore_ascii_case(name))
     };
@@ -325,6 +345,50 @@ fn damage_text(el: &Element) -> String {
     })
 }
 
+/// A weapon's category as its `Weapon Category` element names it (`Martial Melee`); empty for other elements.
+fn weapon_category(store: &ContentStore, el: &Element) -> String {
+    const PREFIX: &str = "ID_INTERNAL_WEAPON_CATEGORY_";
+    if el.ty != "Weapon" {
+        return String::new();
+    }
+    el.supports
+        .iter()
+        .find(|s| s.starts_with(PREFIX))
+        .map(|id| {
+            store.element(id).map_or_else(
+                || title_case(&id[PREFIX.len()..].replace('_', " ").to_lowercase()),
+                |c| c.name.clone(),
+            )
+        })
+        .unwrap_or_default()
+}
+
+/// A weapon's properties as their `Weapon Property` elements name them (`Two-Handed`), a versatile weapon's with
+/// its two-handed dice (`Versatile (1d10)`).
+fn property_names(store: &ContentStore, el: &Element) -> Vec<String> {
+    const PREFIX: &str = "ID_INTERNAL_WEAPON_PROPERTY_";
+    let mut out: Vec<String> = el
+        .supports
+        .iter()
+        .filter_map(|id| {
+            let rest = id.strip_prefix(PREFIX)?;
+            Some(store.element(id).map_or_else(
+                || title_case(&rest.replace('_', " ").to_lowercase()),
+                |p| p.name.clone(),
+            ))
+        })
+        .collect();
+    if let Some(v) = el
+        .setter_value("versatile")
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+    {
+        out.retain(|p| !p.eq_ignore_ascii_case("Versatile"));
+        out.push(format!("Versatile ({v})"));
+    }
+    out
+}
+
 pub(crate) fn facts(store: &ContentStore, el: &Element) -> Vec<ElementFact> {
     let mut out: Vec<ElementFact> = Vec::new();
     out.extend(fact("Type", type_label(ui_type(&el.ty))));
@@ -340,7 +404,6 @@ pub(crate) fn facts(store: &ContentStore, el: &Element) -> Vec<ElementFact> {
             out.extend(fact(label, v));
         }
     }
-    out.extend(monster_facts(el));
     if el.ty == "Spell" {
         out.extend(fact("Components", components(el)));
         if flag(el, "isConcentration") {
@@ -351,11 +414,12 @@ pub(crate) fn facts(store: &ContentStore, el: &Element) -> Vec<ElementFact> {
         }
     } else {
         out.extend(fact("Category", category(el)));
+        out.extend(fact("Weapon category", weapon_category(store, el)));
         if cost_cp(el) > 0 {
             out.extend(fact("Cost", cost_text(el)));
         }
         out.extend(fact("Damage", damage_text(el)));
-        out.extend(fact("Properties", weapon_properties(el).join(", ")));
+        out.extend(fact("Properties", property_names(store, el).join(", ")));
         out.extend(crate::gear_facts::mastery_names(store, el).and_then(|m| fact("Mastery", m)));
         if let Some(w) = el.setter("weight").map(|w| w.value.clone()) {
             out.extend(fact("Weight", w));

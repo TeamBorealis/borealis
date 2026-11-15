@@ -1,0 +1,706 @@
+{
+  "cases": [
+    {
+      "case": "a closed combo value that is not a choice",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "mode": "sometimes",
+              "spell": {
+                "id": "ID_X",
+                "name": "X",
+                "type": "Spell"
+              }
+            },
+            "key": "b-grant_spell",
+            "kind": "grant_spell",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Gives a spell: pick how from the list.",
+          "path": "blocks.0.fields.mode"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "a closed combo's choice",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "mode": "known",
+              "spell": {
+                "id": "ID_X",
+                "name": "X",
+                "type": "Spell"
+              }
+            },
+            "key": "b-grant_spell",
+            "kind": "grant_spell",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [],
+      "skills": []
+    },
+    {
+      "case": "a chips value that is not a choice",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "damage_types": [
+                "fire",
+                "plasma"
+              ]
+            },
+            "key": "b-pact_weapon",
+            "kind": "pact_weapon",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Pact weapon: pick damage types from the list.",
+          "path": "blocks.0.fields.damage_types"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "a closed action that is not a choice",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "action": "minute",
+              "dice": "1d8",
+              "name": "Mend"
+            },
+            "key": "b-healing",
+            "kind": "healing",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Healing ability: pick takes from the list.",
+          "path": "blocks.0.fields.action"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "a number in a combo",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "sense": 60
+            },
+            "key": "b-sense",
+            "kind": "sense",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Special sense: pick sense from the list.",
+          "path": "blocks.0.fields.sense"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "any text in an open combo",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "range": 30,
+              "sense": "echolocation"
+            },
+            "key": "b-sense",
+            "kind": "sense",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [],
+      "skills": []
+    },
+    {
+      "case": "a regained-on value that is not a choice",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "id": "Embers",
+              "max": {
+                "type": "fixed",
+                "value": 2
+              },
+              "recharge": "long_rest"
+            },
+            "key": "b-resource",
+            "kind": "resource",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Limited uses / pool: pick regained on from the list.",
+          "path": "blocks.0.fields.recharge"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "a single choice where a verbatim reader writes a list",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "damage_types": "fire"
+            },
+            "key": "b-pact_weapon",
+            "kind": "pact_weapon",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [],
+      "skills": []
+    },
+    {
+      "case": "a single value that is not a choice where a verbatim reader writes a list",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "damage_types": "plasma"
+            },
+            "key": "b-pact_weapon",
+            "kind": "pact_weapon",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Pact weapon: pick damage types from the list.",
+          "path": "blocks.0.fields.damage_types"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "a variant of an unknown kind",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "id": "Embers",
+              "max": {
+                "type": "dice",
+                "value": "1d4"
+              }
+            },
+            "key": "b-resource",
+            "kind": "resource",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Limited uses / pool: pick maximum from the list.",
+          "path": "blocks.0.fields.max"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "a variant of a known kind",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "id": "Embers",
+              "max": {
+                "type": "fixed",
+                "value": 2
+              }
+            },
+            "key": "b-resource",
+            "kind": "resource",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [],
+      "skills": []
+    },
+    {
+      "case": "a group part that is not a choice",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "free_cast": {
+                "recharge": "weekly",
+                "uses": 1
+              },
+              "spell": {
+                "id": "ID_X",
+                "name": "X",
+                "type": "Spell"
+              }
+            },
+            "key": "b-grant_spell",
+            "kind": "grant_spell",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Gives a spell: pick regained on from the list.",
+          "path": "blocks.0.fields.free_cast.recharge"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "a map key that is a choice",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "id": "Embers",
+              "max": {
+                "type": "fixed",
+                "value": 2
+              },
+              "regain": {
+                "long_rest": 1
+              }
+            },
+            "key": "b-resource",
+            "kind": "resource",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [],
+      "skills": []
+    },
+    {
+      "case": "a map key outside its closed choices",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "id": "Embers",
+              "max": {
+                "type": "fixed",
+                "value": 2
+              },
+              "regain": {
+                "dawn": 1
+              }
+            },
+            "key": "b-resource",
+            "kind": "resource",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.shape",
+          "message": "This value can't be read. Undo the last change or enter it again.",
+          "path": "blocks.0.fields.regain"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "a toggle's effect naming a skill no content adds",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "effects": [
+                {
+                  "fields": {
+                    "roll": "ability_check",
+                    "skill": "Alchemy"
+                  },
+                  "key": "e0",
+                  "kind": "roll_advantage",
+                  "sentence": ""
+                }
+              ],
+              "id": "rage",
+              "name": "Rage"
+            },
+            "key": "b-toggle",
+            "kind": "toggle",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Advantage on a roll: pick skill from the list.",
+          "path": "blocks.0.fields.effects.0.fields.skill"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "a toggle's effect naming a loaded homebrew skill",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "effects": [
+                {
+                  "fields": {
+                    "roll": "ability_check",
+                    "skill": "Alchemy"
+                  },
+                  "key": "e0",
+                  "kind": "roll_advantage",
+                  "sentence": ""
+                }
+              ],
+              "id": "rage",
+              "name": "Rage"
+            },
+            "key": "b-toggle",
+            "kind": "toggle",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [],
+      "skills": [
+        "alchemy"
+      ]
+    },
+    {
+      "case": "a skill list with a skill no content adds",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "skills": [
+                "Arcana",
+                "Alchemy"
+              ]
+            },
+            "key": "b-skill_bonus",
+            "kind": "skill_bonus",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Bonus to skills: pick skills from the list.",
+          "path": "blocks.0.fields.skills"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "a roll's skill no content adds",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "roll": "ability_check",
+              "skill": "Alchemy"
+            },
+            "key": "b-roll_advantage",
+            "kind": "roll_advantage",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Advantage on a roll: pick skill from the list.",
+          "path": "blocks.0.fields.skill"
+        }
+      ],
+      "skills": []
+    },
+    {
+      "case": "a skill list with a loaded homebrew skill",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "skills": [
+                "Arcana",
+                "Alchemy"
+              ]
+            },
+            "key": "b-skill_bonus",
+            "kind": "skill_bonus",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [],
+      "skills": [
+        "alchemy"
+      ]
+    },
+    {
+      "case": "a loaded homebrew skill in another case",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "roll": "ability_check",
+              "skill": "alchemy"
+            },
+            "key": "b-roll_advantage",
+            "kind": "roll_advantage",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [],
+      "skills": [
+        "alchemy"
+      ]
+    },
+    {
+      "case": "a loaded homebrew skill with other spacing",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "roll": "ability_check",
+              "skill": "Sea  Lore"
+            },
+            "key": "b-roll_advantage",
+            "kind": "roll_advantage",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [],
+      "skills": [
+        "sea lore"
+      ]
+    },
+    {
+      "case": "one of the eighteen in another case",
+      "form": {
+        "blocks": [
+          {
+            "fields": {
+              "skills": [
+                "arcana"
+              ]
+            },
+            "key": "b-skill_bonus",
+            "kind": "skill_bonus",
+            "sentence": ""
+          }
+        ],
+        "children": [],
+        "fields": {
+          "name": "Howl"
+        },
+        "key": "",
+        "kind": "other",
+        "preserved": []
+      },
+      "problems": [
+        {
+          "code": "block.choice",
+          "message": "Bonus to skills: pick skills from the list.",
+          "path": "blocks.0.fields.skills"
+        }
+      ],
+      "skills": [
+        "alchemy"
+      ]
+    }
+  ]
+}

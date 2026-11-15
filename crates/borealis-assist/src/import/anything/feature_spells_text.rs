@@ -41,7 +41,7 @@ impl SpellBook {
     pub(crate) fn new(store: &ContentStore, edition: Edition, own: &[String]) -> Self {
         let mut spells: HashMap<String, (String, Option<u32>)> = store
             .by_type("Spell")
-            .map(|s| &s.element)
+            .map(|s| s.element.as_ref())
             .filter(|e| in_edition(e, edition))
             .map(|e| {
                 let level = e.setter_value("level").and_then(|v| v.trim().parse().ok());

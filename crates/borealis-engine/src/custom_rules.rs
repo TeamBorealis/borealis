@@ -107,14 +107,15 @@ impl Prereq {
     }
 }
 
-/// `data.repeatable.allowed`.
+/// `data.repeatable.allowed`, or `data.repeatable` itself when it is a plain boolean (the 2024 SRD's eldritch
+/// invocations store `"repeatable": true`; its feats store `{"allowed": true, ..}`).
 #[must_use]
 pub fn is_repeatable(el: &Element) -> bool {
-    el.data
-        .get("repeatable")
-        .and_then(|r| r.get("allowed"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false)
+    match el.data.get("repeatable") {
+        Some(Value::Bool(b)) => *b,
+        Some(r) => r.get("allowed").and_then(Value::as_bool).unwrap_or(false),
+        None => false,
+    }
 }
 
 fn str_field(c: &CustomRule, key: &str) -> Option<String> {
@@ -533,6 +534,12 @@ fn ability_select(
     (rule, effects)
 }
 
+/// Can [`normalize`] change `el` at all (it rewrites custom rules only; an element without any is left as it is)?
+#[must_use]
+pub fn normalizes(el: &Element) -> bool {
+    el.rules.iter().any(|r| matches!(r, Rule::Custom(_)))
+}
+
 /// Rewrite the custom kinds of `el` into core rules; returns the ability effects per rule index.
 pub fn normalize(el: &mut Element) -> Effects {
     let mut effects = Effects::new();
@@ -626,6 +633,29 @@ mod tests {
             kind: kind.unwrap_or_default(),
             fields: m,
         }
+    }
+
+    fn with_data(data: Value) -> Element {
+        let mut e = Element::new("ID_T_REPEAT", "Repeat", "Option", "Test");
+        if let Value::Object(m) = data {
+            e.data = m.into_iter().collect();
+        }
+        e
+    }
+
+    /// H_2C0: the 2024 SRD's invocations store `repeatable` as a plain boolean; the feats store `{allowed, ..}`.
+    #[test]
+    fn repeatable_reads_the_object_and_the_plain_boolean() {
+        assert!(is_repeatable(&with_data(json!({"repeatable": true}))));
+        assert!(is_repeatable(&with_data(
+            json!({"repeatable": {"allowed": true, "distinct_param": "spell_list"}})
+        )));
+        assert!(!is_repeatable(&with_data(json!({"repeatable": false}))));
+        assert!(!is_repeatable(&with_data(
+            json!({"repeatable": {"allowed": false}})
+        )));
+        assert!(!is_repeatable(&with_data(json!({}))));
+        assert!(!is_repeatable(&with_data(json!({"repeatable": "yes"}))));
     }
 
     #[test]

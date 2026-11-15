@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { createContext, Fragment, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { mdiImage } from "@mdi/js";
 import { Alert, Icon, SafeHtml } from "../../components";
 import { useShell } from "../../components/shell/ShellContext";
@@ -6,6 +6,7 @@ import type { Api, ElementDetail } from "../../api/contract";
 import { useApi } from "../../state/ApiContext";
 import { useAsync } from "../../state/useAsync";
 import { DescriptionGrants } from "./DescriptionGrants";
+import { useCopyToHomebrew } from "../homebrew/CopyToHomebrew";
 
 /** Read-aloud via the platform speech engine; absent engines simply disable the button. */
 function useReadAloud() {
@@ -26,16 +27,38 @@ function useReadAloud() {
   return { supported, speaking, toggle, stop };
 }
 
+/**
+ * True where the pane is drawn inside another landmark (the creator's phone PREVIEW sub-tab, in the editor's region): it
+ * is then a named region, not an aside, since an aside belongs at the top level (H-ajc, axe
+ * `landmark-complementary-is-top-level`).
+ */
+export const NestedPane = createContext(false);
+
+/** The pane's landmark: an aside, or a region where it is nested ([`NestedPane`]). */
+function PaneLandmark({ children }: { children?: ReactNode }) {
+  const nested = useContext(NestedPane);
+  return nested
+    ? <section className="desc-pane" aria-label="Description">{children}</section>
+    : <aside className="desc-pane" aria-label="Description">{children}</aside>;
+}
+
+/** An empty description pane (nothing described yet). */
+export function EmptyPane() {
+  return <PaneLandmark />;
+}
+
 /** The right-hand ElementDescriptionPanel: command icons, big uppercase title, italic intro, ruled section headings. */
-export function PaneShell({ title, intro, children, readText, imageIcon = true }: {
+export function PaneShell({ title, intro, children, readText, imageIcon = true, commands }: {
   title: ReactNode; intro?: ReactNode; children?: ReactNode; readText?: string; imageIcon?: boolean;
+  /** More command icons after read-aloud (the builder's "Copy to homebrew"). */
+  commands?: ReactNode;
 }) {
   const voice = useReadAloud();
   const stopVoice = voice.stop;
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { ref.current?.scrollTo?.({ top: 0 }); stopVoice(); }, [readText, stopVoice]);
   return (
-    <aside className="desc-pane" aria-label="Description">
+    <PaneLandmark>
       <div className="desc-cmds">
         {imageIcon && <button type="button" className="desc-cmd" disabled title="No image available" aria-label="Image (none available)"><svg className="icon desc-image-icon" viewBox="3 3 18 18" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d={mdiImage} /></svg></button>}
         <button type="button" className={`desc-cmd desc-voice ${voice.speaking ? "active" : ""}`} disabled={!voice.supported || !readText}
@@ -43,13 +66,14 @@ export function PaneShell({ title, intro, children, readText, imageIcon = true }
           onClick={() => readText && voice.toggle(readText)}>
           <Icon name={voice.speaking ? "stop" : "mic"} />
         </button>
+        {commands}
       </div>
       <div className="desc-scroll" ref={ref} tabIndex={0}>
         <h2 className="desc-title">{title}</h2>
         {intro && <p className="desc-intro">{intro}</p>}
         {children}
       </div>
-    </aside>
+    </PaneLandmark>
   );
 }
 
@@ -84,10 +108,11 @@ const HOST_FACTS: readonly string[] = ["Type", "Source", "Category"];
  */
 const lastShown = new WeakMap<Api, ElementDetail>();
 
-/** Loads one element and renders it in the pane. */
-export function DescriptionPane({ elementId, fallback }: { elementId: string | null; fallback: ReactNode }) {
+/** Loads one element and renders it in the pane. `copyable`: the builder's pane offers "Copy to homebrew" (spec 2, 11). */
+export function DescriptionPane({ elementId, fallback, copyable = false }: { elementId: string | null; fallback: ReactNode; copyable?: boolean }) {
   const api = useApi();
   const { openCompendium } = useShell();
+  const copier = useCopyToHomebrew();
   const el = useAsync(() => (elementId ? api.getElement({ elementId }) : Promise.resolve(null)), [api, elementId]);
   useEffect(() => { if (el.data) lastShown.set(api, el.data); }, [api, el.data]);
   if (!elementId) return <>{fallback}</>;
@@ -95,11 +120,30 @@ export function DescriptionPane({ elementId, fallback }: { elementId: string | n
   const held = lastShown.get(api);
   const d = el.data ?? (held?.id === elementId ? held : null);
   if (!d) return <PaneShell title="Loading" imageIcon={false}><p className="muted">Loading...</p></PaneShell>;
+  // Rendered in place (not as a child component), so the pane stays the same element from Loading to loaded.
+  const copy = copyable && copier.enabled
+    ? (
+      <button type="button" className="desc-cmd desc-copy" title="Copy to homebrew" aria-label="Copy to homebrew"
+        onClick={() => copier.open({ id: d.id, name: d.name, isClass: d.type === "class" })}>
+        <Icon name="copy" />
+      </button>
+    )
+    : null;
+  return <>{detailPane(d, openCompendium, copy)}{copier.dialog}</>;
+}
+
+/** One element in the pane, exactly as the builder shows it (also the homebrew creator's live preview, spec 13.2). */
+export function ElementDetailView({ d }: { d: ElementDetail }) {
+  const { openCompendium } = useShell();
+  return detailPane(d, openCompendium);
+}
+
+function detailPane(d: ElementDetail, openCompendium: ReturnType<typeof useShell>["openCompendium"], commands?: ReactNode): ReactNode {
   const dupIntro = repeatsBody(d.shortDescription, d.descriptionHtml);
   const facts = d.facts.filter((f) => !HOST_FACTS.includes(f.label));
   const plain = `${d.name}. ${d.shortDescription} ${d.descriptionHtml.replace(/<[^>]+>/g, " ")}`;
   return (
-    <PaneShell title={d.name} intro={dupIntro ? undefined : d.shortDescription} readText={plain}>
+    <PaneShell title={d.name} intro={dupIntro ? undefined : d.shortDescription} readText={plain} commands={commands}>
       {d.prerequisites && <p className="desc-line"><i>Prerequisite.</i> {d.prerequisites}</p>}
       <SafeHtml html={d.descriptionHtml} />
       {facts.length > 0 && (

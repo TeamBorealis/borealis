@@ -370,7 +370,8 @@ fn stats(snap: &Engine) -> CharacterStats {
         .iter()
         .map(|s| SkillEntry {
             key: s.name.clone(),
-            name: title_case(&s.name),
+            // a homebrew skill's own name ("Lore (Tides)"); the eighteen are named from their key
+            name: s.label.clone().unwrap_or_else(|| title_case(&s.name)),
             ability: crate::ids::ability_key(&s.ability),
             bonus: s.total,
             proficiency: if s.expertise {
@@ -393,7 +394,8 @@ fn stats(snap: &Engine) -> CharacterStats {
         let e = &reg.element;
         match e.ty.as_str() {
             "Language" => languages.push(e.name.clone()),
-            "Proficiency" => {
+            // a homebrew `Skill` element the character has is its skill proficiency, like an SRD skill's Proficiency
+            "Proficiency" | "Skill" => {
                 let (label, value) = e.name.split_once(" (").map_or_else(
                     || ("Proficiency".to_string(), e.name.clone()),
                     |(l, v)| (l.to_string(), v.trim_end_matches(')').to_string()),

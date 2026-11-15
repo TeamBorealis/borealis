@@ -62,6 +62,39 @@ describe("--kb keyboard inset (B-48 WP1, spec sec. 5.4)", () => {
     off();
   });
 
+  it("undoes the page scroll iOS makes for a focused field, so the inset and kb-open come back (H5wMs)", () => {
+    const root = document.documentElement;
+    const vv = Object.assign(new EventTarget(), { height: 874, offsetTop: 0 });
+    let scrollY = 0;
+    let innerHeight = 874;
+    const win = Object.defineProperties(new EventTarget(), {
+      innerHeight: { get: () => innerHeight },
+      scrollY: { get: () => scrollY },
+      visualViewport: { value: vv },
+      // what the simulator showed: scrolled back, the layout viewport is the whole screen again
+      scrollTo: { value: (_x: number, y: number) => { scrollY = y; innerHeight = 874; vv.offsetTop = 0; } },
+    });
+    const field = document.createElement("div");
+    field.setAttribute("contenteditable", "true");
+    field.tabIndex = 0; // jsdom does not make a contenteditable focusable by itself
+    document.body.appendChild(field);
+    const off = installKeyboardInset(win as unknown as Window, root);
+    field.focus();
+    // iOS 27 simulator, the description focused: the document scrolled by 232 and innerHeight shrank to 642
+    scrollY = 232; innerHeight = 642; vv.height = 478; vv.offsetTop = 232;
+    win.dispatchEvent(new Event("scroll"));
+    expect(scrollY).toBe(0);
+    expect(root.style.getPropertyValue("--kb")).toBe("396px");
+    expect(root.classList.contains("kb-open")).toBe(true);
+    // with nothing to type in, a scroll is left alone
+    field.blur();
+    scrollY = 40;
+    win.dispatchEvent(new Event("scroll"));
+    expect(scrollY).toBe(40);
+    off();
+    root.classList.remove("kb-open");
+  });
+
   it("does nothing without a visualViewport (old WebViews)", () => {
     const root = document.documentElement;
     const off = installKeyboardInset({ innerHeight: 800 } as unknown as Window, root);

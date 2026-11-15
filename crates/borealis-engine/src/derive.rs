@@ -143,7 +143,7 @@ fn build_inputs<'u>(
         "Attuned items",
         i32::try_from(attuned).unwrap_or(0),
     );
-    for (skill, _) in SKILLS {
+    for skill in skill_keys(graph.uni) {
         s(&format!("{skill}:passive"), "Initial", 10);
     }
     // Aurora seeds the chosen Companion element's proficiency bonus, which its
@@ -160,16 +160,33 @@ fn build_inputs<'u>(
     } else {
         (graph.active_stat_rules(None), Vec::new())
     };
+    let mut builtin = stats::builtin_groups();
+    let mut merges = spells::spell_merges(graph);
+    for c in graph.uni.content_skills() {
+        builtin.extend(stats::skill_groups(&c.key));
+        merges.push((
+            format!("{}:misc", c.key),
+            stats::ABILITY_CHECKS_GROUP.to_string(),
+        ));
+    }
     StatInputs {
         rules,
         skipped,
         trace,
         seeds,
-        builtin: stats::builtin_groups(),
+        builtin,
         base_scores: state.abilities.base,
         use_ability_max: use_max,
-        merges: spells::spell_merges(graph),
+        merges,
     }
+}
+
+/// The statistic keys of every skill: the eighteen, then the ones content adds.
+fn skill_keys(uni: &Universe) -> impl Iterator<Item = &str> {
+    SKILLS
+        .iter()
+        .map(|(k, _)| *k)
+        .chain(uni.content_skills().iter().map(|c| c.key.as_str()))
 }
 
 impl<'u> Evaluation<'u> {
@@ -340,24 +357,28 @@ impl<'u> Evaluation<'u> {
         let half = half_proficiency_skills(&self.graph);
         let unproficient_bonus =
             !crate::rule_view::live_rules(&self.graph, &["skill_bonus_unproficient"]).is_empty();
+        let content = self.uni.content_skills().iter();
         SKILLS
             .iter()
-            .map(|(name, ab)| {
+            .map(|(name, ab)| (*name, *ab, None))
+            .chain(content.map(|c| (c.key.as_str(), c.ability, Some(c.name.clone()))))
+            .map(|(name, ab, label)| {
                 let p = self.stats.sum(&format!("{name}:proficiency"));
                 let misc = self.stats.sum(&format!("{name}:misc"))
                     + self.stats.sum(crate::play_rules::D20_GROUP)
                     + crate::attack_rules::skill_bonus(&self.graph, name, p, mods, prof);
-                let total = p + mods[*ab] + misc;
+                let total = p + mods[ab] + misc;
                 SkillSnapshot {
                     name: (*name).to_string(),
-                    ability: ABILITIES[*ab].to_string(),
+                    ability: ABILITIES[ab].to_string(),
                     proficiency: p,
                     misc,
                     total,
                     proficient: p > 0,
                     expertise: prof > 0 && p >= 2 * prof,
-                    half_proficiency: p <= 0 && (unproficient_bonus || half.contains(*name)),
+                    half_proficiency: p <= 0 && (unproficient_bonus || half.contains(name)),
                     passive: self.stats.sum(&format!("{name}:passive")) + total,
+                    label,
                 }
             })
             .collect()
@@ -779,6 +800,7 @@ impl<'u> Evaluation<'u> {
             resource_costs,
             toggles,
             exhaustion,
+            conditions: crate::conditions::snapshots(&self.graph, &state.play.conditions),
             inspiration,
             inspiration_sources,
             martial_arts,
@@ -987,7 +1009,7 @@ fn met_content_problems(
             Rule::Grant(g) => graph.uni.get(&g.id),
             _ => None,
         })
-        .filter(|t| matches!(t.req, crate::universe::Cond::Invalid))
+        .filter(|t| matches!(*t.req, crate::universe::Cond::Invalid))
         .map(|t| t.el.id.as_str());
     let met: std::collections::HashSet<&str> = slots
         .iter()

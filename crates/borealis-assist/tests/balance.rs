@@ -61,7 +61,7 @@ fn monster_hp_far_above_its_cr_is_flagged() {
     let store = common::pack_ctx().base.build();
     let mut m = store
         .by_type("Monster")
-        .map(|s| s.element.clone())
+        .map(|s| s.element.as_ref().clone())
         .find(|e| e.data.get("cr").and_then(Value::as_str) == Some("1"))
         .expect("a CR 1 monster");
     let honest = balance_report(&baselines(), &m);

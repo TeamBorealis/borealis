@@ -101,6 +101,10 @@ function moveFocus(list: HTMLElement, key: string): boolean {
   return true;
 }
 
+/** The row of an option with no words (a select's empty choice, e.g. a new spell's school): a native select shows a blank
+ * line, a sheet row needs a name to be read and tapped (axe button-name, WB-27). */
+export const NO_CHOICE = "None";
+
 function SheetOptions({ label, options, value, focusValue, onChoose }: {
   label: string; options: readonly ComboOption[]; value: string; focusValue: string | undefined; onChoose: (o: ComboOption) => void;
 }) {
@@ -115,7 +119,7 @@ function SheetOptions({ label, options, value, focusValue, onChoose }: {
           <button key={o.value} type="button" role="option" aria-selected={selected} disabled={o.disabled}
             className={`select-sheet-row ${selected ? "current" : ""}`.trim()} data-autofocus={o.value === focusValue ? "" : undefined}
             onClick={() => onChoose(o)}>
-            <span className="select-sheet-label">{o.label}</span>
+            <span className="select-sheet-label">{o.label || NO_CHOICE}</span>
             <span className="select-sheet-mark" aria-hidden="true">{selected && <Icon name="check" />}</span>
           </button>
         );

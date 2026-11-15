@@ -52,10 +52,13 @@ interface Props {
   mastery?: string | null;
   /** TV2 (A12), phones: every row of the list shares one source, so the line drops it (the accessible name keeps it). */
   hideSource?: boolean;
+  /** A picker that keeps several choices (the creator's multi-select pickers): each row is a check box that a tap turns on
+   * and off. On phones a tap anywhere on the row toggles it (and describes it); the trailing mark is a square check box. */
+  multiple?: boolean;
 }
 
 /** One picker row (B-55): one name, its shown version's source and edition mark, and the version column. */
-export function PickerRow({ row, listSlot, showDescription, versionColumn, highlighted, menuOpen, notesOpen, notesId, onToggleNotes, onDescribe, onChoose, onOpenMenu, onKeyNav, mastery = null, hideSource = false }: Props) {
+export function PickerRow({ row, listSlot, showDescription, versionColumn, highlighted, menuOpen, notesOpen, notesId, onToggleNotes, onDescribe, onChoose, onOpenMenu, onKeyNav, mastery = null, hideSource = false, multiple = false }: Props) {
   const verRef = useRef<HTMLButtonElement | null>(null);
   const v = row.shown;
   const sel = row.chosen !== null;
@@ -69,12 +72,16 @@ export function PickerRow({ row, listSlot, showDescription, versionColumn, highl
     <li className={`pick-row ${sel ? "selected" : ""} ${highlighted ? "hl" : ""} ${marks.converted ? "is-converted" : ""}`} data-row={row.name}>
       <button type="button" className="pick-main" aria-pressed={sel} aria-disabled={disabled || undefined} title={v.disabledReason}
         aria-label={rowLabel(row, mastery)}
-        onClick={(e) => { if (onSource(e)) { onOpenMenu(verRef.current ?? e.currentTarget); return; } onDescribe(); }}
+        onClick={(e) => {
+          if (onSource(e)) { onOpenMenu(verRef.current ?? e.currentTarget); return; }
+          onDescribe();
+          if (multiple && phone && !disabled) onChoose();
+        }}
         onKeyDown={(e) => {
-          if (e.key === "Enter") { e.preventDefault(); if (!disabled && !sel) onChoose(); return; }
+          if (e.key === "Enter") { e.preventDefault(); if (!disabled && (multiple || !sel)) onChoose(); return; }
           onKeyNav(e);
         }}
-        onDoubleClick={(e) => { if (!onSource(e) && !sel && !disabled) onChoose(); }}>
+        onDoubleClick={(e) => { if (!onSource(e) && (multiple || !sel) && !disabled) onChoose(); }}>
         <span className={`pick-name ${disabled ? "disabled" : ""}`} aria-hidden="true">
           {row.name}{level && <span className="pick-sub"> {level}</span>}
           {v.prerequisites && <span className="pick-sub"> - Requires {v.prerequisites}</span>}
@@ -94,8 +101,11 @@ export function PickerRow({ row, listSlot, showDescription, versionColumn, highl
       </button>
       {/* A1 / TV1 (phones): the ring on the trailing edge is a real button that chooses the row; the name only describes it. */}
       {phone && (
-        <button type="button" className="pick-mark" aria-label={`Choose ${row.name}`} aria-pressed={sel} aria-disabled={disabled || undefined}
-          title={v.disabledReason} onClick={() => { if (!sel && !disabled) onChoose(); }} />
+        // a multi-select mark is a check box to screen readers ("Choose Elvish, check box, checked"), a single choice's
+        // ring a toggle button (WB-26)
+        <button type="button" className={multiple ? "pick-mark is-check" : "pick-mark"} aria-label={`Choose ${row.name}`}
+          role={multiple ? "checkbox" : undefined} aria-checked={multiple ? sel : undefined} aria-pressed={multiple ? undefined : sel} aria-disabled={disabled || undefined}
+          title={v.disabledReason} onClick={() => { if ((multiple || !sel) && !disabled) onChoose(); }} />
       )}
       {versionColumn && (
         <span className="pick-ver">

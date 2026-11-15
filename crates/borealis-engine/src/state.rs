@@ -308,6 +308,10 @@ pub struct PlayState {
     /// Exhaustion level.
     #[serde(default)]
     pub exhaustion: u32,
+    /// Ids of the conditions the user switched on (Prone, a homebrew condition): their rules apply while they are on
+    /// ([`crate::conditions`]). None is written while none is on, so older files load with none on.
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub conditions: BTreeSet<String>,
     /// The character holds (Heroic) Inspiration.
     #[serde(default)]
     pub heroic_inspiration: bool,

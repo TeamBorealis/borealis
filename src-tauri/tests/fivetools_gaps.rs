@@ -257,7 +257,7 @@ fn subrace_speed(store: &ContentStore) {
 fn renamed_subclass(w: &World<'_>, store: &ContentStore) {
     let qualified: Vec<_> = store
         .iter()
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| e.ty == "Archetype" && e.id.starts_with("ID_5ET_XGE_SUBCLASS_XPHB_"))
         .collect();
     assert!(qualified.len() >= 10, "readable XPHB-class XGE subclasses");

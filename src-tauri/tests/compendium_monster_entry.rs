@@ -55,7 +55,7 @@ fn monsters_have_their_own_type_with_a_count_and_filter() {
 }
 
 #[test]
-fn the_entry_reads_type_ac_hp_cr_then_the_stat_block_sections() {
+fn the_entry_reads_type_then_the_whole_stat_block_then_its_sections() {
     // Arrange
     let (_dir, app) = state();
 
@@ -70,14 +70,46 @@ fn the_entry_reads_type_ac_hp_cr_then_the_stat_block_sections() {
         .map(|f| (f.label.as_str(), f.value.as_str()))
         .collect();
     assert_eq!(facts.first(), Some(&("Type", "Monster")), "{facts:?}");
-    for want in [
-        ("Armor Class", "15 (leather armor, shield)"),
-        ("Hit Points", "7 (2d6)"),
-        ("Challenge", "1/4 (50 XP)"),
-    ] {
-        assert!(facts.contains(&want), "{want:?} not in {facts:?}");
-    }
+    assert!(
+        facts.iter().all(|(l, _)| *l != "Armor Class"),
+        "the stat block is the entry's text, not facts: {facts:?}"
+    );
+    // the whole stat block, in its order, before the sections
     let goblin_html = &goblin.description_html;
+    let order = [
+        "<p><i>Small humanoid (goblinoid), neutral evil</i></p>",
+        "<p><i>Armor Class.</i> 15 (leather armor, shield)</p>",
+        "<p><i>Hit Points.</i> 7 (2d6)</p>",
+        "<p><i>Speed.</i> 30 ft.</p>",
+        "<th>STR</th><th>DEX</th><th>CON</th><th>INT</th><th>WIS</th><th>CHA</th>",
+        "<td>8 (-1)</td><td>14 (+2)</td><td>10 (+0)</td><td>10 (+0)</td><td>8 (-1)</td><td>8 (-1)</td>",
+        "<p><i>Skills.</i> Stealth +6</p>",
+        "<p><i>Senses.</i> Darkvision 60 ft., passive Perception 9</p>",
+        "<p><i>Languages.</i> Common, Goblin</p>",
+        "<p><i>Challenge.</i> 1/4 (50 XP)</p>",
+        "<h4>Traits</h4>",
+    ];
+    let at: Vec<usize> = order
+        .iter()
+        .map(|o| {
+            goblin_html
+                .find(o)
+                .unwrap_or_else(|| panic!("{o} missing in {goblin_html}"))
+        })
+        .collect();
+    assert!(at.windows(2).all(|w| w[0] < w[1]), "{goblin_html}");
+    let unicorn_html = &unicorn.description_html;
+    for line in [
+        "<p><i>Speed.</i> 50 ft.</p>",
+        "<p><i>Damage Immunities.</i> Poison</p>",
+        "<p><i>Condition Immunities.</i> Charmed, Paralyzed, Poisoned</p>",
+        "<p><i>Languages.</i> Celestial, Elvish, Sylvan, telepathy 60 ft.</p>",
+    ] {
+        assert!(
+            unicorn_html.contains(line),
+            "{line} missing in {unicorn_html}"
+        );
+    }
     assert!(
         goblin_html.contains("<h4>Traits</h4><p><b><i>Nimble Escape.</i></b>"),
         "{goblin_html}"

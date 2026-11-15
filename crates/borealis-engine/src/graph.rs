@@ -10,9 +10,9 @@ use crate::eval::{
 use crate::ids;
 use crate::state::{CharacterState, Choice, ClassSlot, SlotKey};
 use crate::universe::{Cond, EditionStatus, UElem, URule, UStat, Universe};
-use borealis_content::expr::{Dynamic, SupportsExpr};
+use borealis_content::expr::{BoolExpr, Dynamic, SupportsExpr, SupportsLeaf};
 use borealis_content::{Rule, SourceRestriction};
-use std::cell::{OnceCell, RefCell};
+use std::cell::{Cell, OnceCell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
@@ -200,9 +200,20 @@ pub struct Graph<'u> {
     pub(crate) restricted: SourceRestriction,
     pub(crate) equip: EquipState,
     pub(crate) version: u64,
+    /// Bumped when a node with a spellcasting block is added or removed: the class spell lists ([`SpellDynamics`])
+    /// read only those nodes, so they stay valid while other nodes come and go (a rebuild replays every stored pick,
+    /// each adding a node).
+    pub(crate) spell_version: u64,
     /// Set when any requirement read a statistic group.
     pub stat_used: std::cell::Cell<bool>,
     pub(crate) slot_cache: RefCell<SlotCache>,
+    /// The class spell lists per spellcasting name at the current `spell_version`, shared by every spell select of
+    /// the graph ([`SpellDynamics`]): a large library offers thousands of spells to each of a caster's dozens
+    /// of spell slots, and each list's expressions were matched again for every slot.
+    pub(crate) spell_lists: RefCell<SpellListCache>,
+    /// Which candidates each select rule lets through at the current `version`, by (version, owner, rule index)
+    /// ([`Graph::slot_options`]: a rule's slots offer the same candidates).
+    pub(crate) option_cache: RefCell<OptionCache>,
     /// Diagnostics collected while expanding.
     pub diags: DiagSink,
     pub(crate) ruleset_hooks: &'static dyn crate::profile::RulesetProfile,
@@ -232,6 +243,8 @@ const MAX_PASSES: usize = 60;
 const MAX_NEST_DEPTH: usize = 64;
 
 type SlotCache = HashMap<(u64, u32), Rc<HashSet<String>>>;
+type SpellListCache = HashMap<(u64, String), Rc<ClassSpellLists>>;
+type OptionCache = HashMap<(u64, NodeId, usize), Rc<Vec<bool>>>;
 
 /// The notice for a stored choice whose element is not installed.
 fn missing_choice(id: &str) -> Diagnostic {
@@ -283,8 +296,11 @@ impl<'u> Graph<'u> {
             restricted: SourceRestriction::excluding(state.restricted_sources.iter().cloned()),
             equip: inputs.equip,
             version: 0,
+            spell_version: 0,
             stat_used: std::cell::Cell::new(false),
             slot_cache: RefCell::new(HashMap::new()),
+            spell_lists: RefCell::new(HashMap::new()),
+            option_cache: RefCell::new(HashMap::new()),
             diags: DiagSink::default(),
             ruleset_hooks: crate::profile::profile_for(state.ruleset),
             allow_cross_edition: state.allow_cross_edition.unwrap_or_else(|| {
@@ -362,6 +378,13 @@ impl<'u> Graph<'u> {
         }
         for it in inputs.items {
             g.add_root(it.e, Some((it.uid, it.attuned)));
+        }
+        // the conditions the user switched on (HC1): their rules apply while they are on; one whose content is gone,
+        // or that is no longer a condition one switches, is left out (it can still be switched off)
+        for id in &state.play.conditions {
+            if let Some(e) = uni.get(id).filter(|e| crate::conditions::is_switchable(e)) {
+                g.add_root(e, None);
+            }
         }
         g.run();
         // choices under content that is gone (a removed race's sub race) have no slot in the
@@ -501,6 +524,7 @@ impl<'u> Graph<'u> {
         self.names.add(&crate::eval::feature_name_key(&e.el.name));
         self.spell_blocks += usize::from(e.el.spellcasting.is_some());
         self.version += 1;
+        self.spell_version += u64::from(e.el.spellcasting.is_some());
         if matches!(e.el.ty.as_str(), "Class" | "Multiclass") {
             self.refresh_class_levels();
         }
@@ -522,6 +546,7 @@ impl<'u> Graph<'u> {
             let el = &self.nodes[n].e.el;
             self.names.remove(&crate::eval::feature_name_key(&el.name));
             self.spell_blocks -= usize::from(el.spellcasting.is_some());
+            self.spell_version += u64::from(el.spellcasting.is_some());
             touched_class |= matches!(self.nodes[n].e.el.ty.as_str(), "Class" | "Multiclass");
             stack.extend(self.nodes[n].children.clone());
         }
@@ -1030,7 +1055,8 @@ impl<'u> Graph<'u> {
                 let Some(target) = self.uni.get(&g.id) else {
                     continue;
                 };
-                if matches!(target.req, Cond::None) || out.iter().any(|t| t.el.id == target.el.id) {
+                if matches!(*target.req, Cond::None) || out.iter().any(|t| t.el.id == target.el.id)
+                {
                     continue;
                 }
                 let applied = n.children.iter().any(|c| {
@@ -1368,6 +1394,10 @@ impl<'u> Graph<'u> {
             {
                 return false;
             }
+            // HC13: secret languages are taught, not chosen (a stored choice of one is still replayed)
+            if secret_language_hidden(s, cand) {
+                return false;
+            }
         }
         // the supports filter before the duplicate check: most candidates of a long list fail it,
         // and every check up to the requirement is a pure test, so the order does not change the
@@ -1405,7 +1435,7 @@ impl<'u> Graph<'u> {
         // HR3: an ignored feat's requirements and prerequisites are skipped (an unreadable
         // requirement is a content problem, not a prerequisite: it still never holds, C1)
         if ignored == Some(PrereqKind::Feat) {
-            return !matches!(cand.req, Cond::Invalid);
+            return !matches!(*cand.req, Cond::Invalid);
         }
         if ignored.is_none() && !self.prereq_holds(cand) {
             return false;
@@ -1542,7 +1572,12 @@ impl<'u> Graph<'u> {
                 _ => None,
             });
             let toggled = crate::play_rules::active_toggle_stats(self, id);
-            for st in own.chain(self.list_effect_rules(id)).chain(toggled) {
+            let skill = n.e.skill_proficiency.iter();
+            for st in own
+                .chain(self.list_effect_rules(id))
+                .chain(toggled)
+                .chain(skill)
+            {
                 if st.inline {
                     continue;
                 }
@@ -1657,15 +1692,45 @@ pub struct SpellDynamics<'g, 'u> {
     retrained: bool,
     owner: Option<NodeId>,
     slot_level: OnceCell<u32>,
-    lists: OnceCell<ClassSpellLists<'u>>,
+    lists: OnceCell<Rc<ClassSpellLists>>,
 }
 
 /// The spell lists of the live spellcasting blocks that serve one spellcasting name.
-struct ClassSpellLists<'u> {
+pub(crate) struct ClassSpellLists {
     /// Single spell ids (`is_spell_id` entries), trimmed.
-    ids: HashSet<&'u str>,
+    ids: HashSet<String>,
     /// Parsed expression entries (unparsable or empty entries never match).
     exprs: Vec<SupportsExpr>,
+    /// Whether one of `exprs` matches an element of the universe, by its place there, once asked (a pure function of
+    /// the two: the expressions are matched without dynamic tokens).
+    hits: Vec<Cell<Option<bool>>>,
+}
+
+#[cfg(test)]
+thread_local! {
+    /// How often a candidate was matched against class spell list expressions (the cost [`ClassSpellLists`] bounds).
+    pub(crate) static LIST_MATCHES: Cell<usize> = const { Cell::new(0) };
+    /// How often the class spell lists were read from the graph's spellcasting blocks.
+    pub(crate) static LIST_COLLECTS: Cell<usize> = const { Cell::new(0) };
+}
+
+impl ClassSpellLists {
+    fn expr_matches(&self, uni: &Universe, element: &UElem) -> bool {
+        let hit = uni.index_of(element).and_then(|i| self.hits.get(i));
+        if let Some(known) = hit.and_then(Cell::get) {
+            return known;
+        }
+        #[cfg(test)]
+        LIST_MATCHES.with(|c| c.set(c.get() + 1));
+        let matches = self
+            .exprs
+            .iter()
+            .any(|e| crate::eval::supports_match(e, element, &crate::eval::NoDynamics));
+        if let Some(hit) = hit {
+            hit.set(Some(matches));
+        }
+        matches
+    }
 }
 
 impl<'g, 'u> SpellDynamics<'g, 'u> {
@@ -1721,28 +1786,44 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
     }
 
     /// The lists of every live block serving `class` (a block of that name, or an `extend`
-    /// block for it or for all names).
-    fn lists(&self, class: &str) -> &ClassSpellLists<'u> {
+    /// block for it or for all names), shared with every other select of the graph while no
+    /// node with a spellcasting block comes or goes.
+    fn lists(&self, class: &str) -> &ClassSpellLists {
         self.lists.get_or_init(|| {
-            let mut out = ClassSpellLists {
-                ids: HashSet::new(),
-                exprs: Vec::new(),
-            };
-            for info in self.graph.spell_infos().iter().filter(|i| {
-                i.sc.extend != Some(true) && i.name == class
-                    || i.sc.extend == Some(true)
-                        && (i.sc.all == Some(true) || i.name.eq_ignore_ascii_case(class))
-            }) {
-                for l in info.sc.list.iter().chain(info.sc.extends.iter()) {
-                    if l.is_spell_id() {
-                        out.ids.insert(l.supports.trim());
-                    } else if let Ok(Some(expr)) = l.expr() {
-                        out.exprs.push(expr);
-                    }
+            let key = (self.graph.spell_version, class.to_string());
+            if let Some(hit) = self.graph.spell_lists.borrow().get(&key) {
+                return Rc::clone(hit);
+            }
+            let lists = Rc::new(self.collect_lists(class));
+            let mut cache = self.graph.spell_lists.borrow_mut();
+            cache.retain(|k, _| k.0 == self.graph.spell_version);
+            cache.insert(key, Rc::clone(&lists));
+            lists
+        })
+    }
+
+    fn collect_lists(&self, class: &str) -> ClassSpellLists {
+        #[cfg(test)]
+        LIST_COLLECTS.with(|c| c.set(c.get() + 1));
+        let mut out = ClassSpellLists {
+            ids: HashSet::new(),
+            exprs: Vec::new(),
+            hits: vec![Cell::new(None); self.graph.uni.len()],
+        };
+        for info in self.graph.spell_infos().iter().filter(|i| {
+            i.sc.extend != Some(true) && i.name == class
+                || i.sc.extend == Some(true)
+                    && (i.sc.all == Some(true) || i.name.eq_ignore_ascii_case(class))
+        }) {
+            for l in info.sc.list.iter().chain(info.sc.extends.iter()) {
+                if l.is_spell_id() {
+                    out.ids.insert(l.supports.trim().to_string());
+                } else if let Ok(Some(expr)) = l.expr() {
+                    out.exprs.push(expr);
                 }
             }
-            out
-        })
+        }
+        out
     }
 
     /// A replaced known spell of a select authored as `$(spellcasting:list),<spell levels>`
@@ -1778,31 +1859,37 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
                 return true;
             }
         }
-        lists
-            .exprs
-            .iter()
-            .any(|e| crate::eval::supports_match(e, element, &crate::eval::NoDynamics))
+        lists.expr_matches(self.graph.uni, element)
     }
 }
 
 /// `$(spellcasting:list),1` / `$(spellcasting:list),(1||2)`: a class list and leveled spell
-/// levels only (no cantrips, no other terms).
+/// levels only (no cantrips, no other terms). Read from the parsed expression, so the spelling
+/// (`,` or `&&`, spaces, parentheses, term order) never changes the answer.
 fn literal_level_spell_select(supports: &str) -> bool {
-    let mut parts = supports.split(',');
-    if parts.next().map(str::trim) != Some("$(spellcasting:list)") {
-        return false;
+    fn leveled(e: &BoolExpr<SupportsLeaf>) -> bool {
+        match e {
+            BoolExpr::Leaf(SupportsLeaf::Tag(t)) => {
+                t.parse::<u32>().is_ok_and(|n| (1..=9).contains(&n))
+            }
+            BoolExpr::Or(items) => items.iter().all(leveled),
+            _ => false,
+        }
     }
-    let rest: Vec<&str> = parts.collect();
-    !rest.is_empty()
-        && rest.iter().all(|p| {
-            let levels: Vec<&str> = p
-                .split("||")
-                .map(|t| t.trim().trim_matches(|c| c == '(' || c == ')').trim())
-                .collect();
-            levels
-                .iter()
-                .all(|t| t.parse::<u32>().is_ok_and(|n| (1..=9).contains(&n)))
-        })
+    let is_list = |e: &BoolExpr<SupportsLeaf>| {
+        matches!(
+            e,
+            BoolExpr::Leaf(SupportsLeaf::Dynamic(Dynamic::SpellcastingList))
+        )
+    };
+    let Ok(Some(expr)) = SupportsExpr::parse(supports) else {
+        return false;
+    };
+    let BoolExpr::And(items) = expr.root() else {
+        return false;
+    };
+    items.iter().filter(|e| is_list(e)).count() == 1
+        && items.iter().all(|e| is_list(e) || leveled(e))
 }
 
 impl DynamicSupports for SpellDynamics<'_, '_> {
@@ -1831,6 +1918,30 @@ impl DynamicSupports for SpellDynamics<'_, '_> {
     }
 }
 
+/// The Secret tag of a language (Druidic, Thieves' Cant): its own tag, the implicit one of a `Secret` setter, or the
+/// Core support id.
+const SECRET_TAGS: [&str; 2] = ["Secret", "ID_INTERNAL_SUPPORT_LANGUAGE_SECRET"];
+
+/// HC13 (2): a language choice never offers a language tagged Secret, unless the choice itself names Secret or that
+/// language's id (the author asked for it). Secret languages arrive only by a grant.
+fn secret_language_hidden(s: &borealis_content::SelectRule, cand: &UElem) -> bool {
+    if s.ty != "Language"
+        || !cand
+            .supports
+            .iter()
+            .any(|t| SECRET_TAGS.contains(&t.as_str()))
+    {
+        return false;
+    }
+    let asked = s.supports.as_deref().unwrap_or_default();
+    let named = |word: &str| {
+        asked
+            .split(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+            .any(|w| w.eq_ignore_ascii_case(word))
+    };
+    !(named("Secret") || named(&cand.el.id))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1845,6 +1956,15 @@ mod tests {
         ));
         assert!(!literal_level_spell_select("$(spellcasting:list)"));
         assert!(!literal_level_spell_select("Warlock,1"));
+        // the spelling never matters (the homebrew creator writes `&&`)
+        assert!(literal_level_spell_select("$(spellcasting:list)&&1"));
+        assert!(literal_level_spell_select(
+            "(1||2||3)&&$(spellcasting:list)"
+        ));
+        assert!(literal_level_spell_select("$(spellcasting:list), 1, 2"));
+        assert!(!literal_level_spell_select("$(spellcasting:list)&&0"));
+        assert!(!literal_level_spell_select("$(spellcasting:list)||1"));
+        assert!(!literal_level_spell_select("$(spellcasting:list),1,Wizard"));
     }
 
     #[test]

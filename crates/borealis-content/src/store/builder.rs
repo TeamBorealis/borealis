@@ -1,9 +1,10 @@
 use super::{apply_append, load_order, ContentStore, LoadedIndex, StoredElement};
-use crate::element::Append;
+use crate::element::{Append, Element};
 use crate::error::ContentError;
 use crate::file::{ContentFile, IndexFile, PackFileKind, PackManifest, PackOrigin};
 use crate::issue::{Issue, IssueCode};
 use crate::ruleset::Ruleset;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Component, Path, PathBuf};
@@ -28,7 +29,8 @@ pub struct PackInfo {
 pub(super) struct PendingFile {
     pub(super) name: String,
     pub(super) origin: PackOrigin,
-    pub(super) file: ContentFile,
+    /// Shared by every copy of the builder (a copy of the builder copies no element).
+    pub(super) file: Arc<ContentFile>,
 }
 
 /// One pack folder read and parsed but not yet added to a builder ([`ParsedPack::read`],
@@ -60,23 +62,56 @@ impl ParsedPack {
         for entry in &manifest.files {
             let path = safe_join(dir, &entry.path)?;
             let text = read_text(&path)?;
-            let name = format!("{}/{}", manifest.id, entry.path);
             entries.push(match entry.kind {
-                PackFileKind::Content => {
-                    let mut file =
-                        ContentFile::from_json_str(&text).map_err(|e| e.in_file(&path))?;
-                    if file.ruleset.is_none() && manifest.rulesets.len() == 1 {
-                        file.ruleset = manifest.rulesets.first().copied();
-                    }
-                    ParsedEntry::Content(name, file)
-                }
+                PackFileKind::Content => ParsedEntry::Content(
+                    entry.path.clone(),
+                    ContentFile::from_json_str(&text).map_err(|e| e.in_file(&path))?,
+                ),
                 PackFileKind::Index => ParsedEntry::Index(
-                    name,
+                    entry.path.clone(),
                     IndexFile::from_json_str(&text).map_err(|e| e.in_file(&path))?,
                 ),
             });
         }
-        Ok(Self {
+        Ok(Self::assemble(manifest, entries))
+    }
+
+    /// A pack from its manifest and its content files held in memory, `(path in the manifest, file)`: the same
+    /// result as [`ParsedPack::read`] on a folder holding exactly these files (the homebrew creator builds the pack it
+    /// is about to write, checks it, then writes it). Files the manifest lists that are not given are left out.
+    #[must_use]
+    pub fn from_parts(manifest: PackManifest, files: Vec<(String, ContentFile)>) -> Self {
+        let entries = manifest
+            .files
+            .iter()
+            .filter(|f| f.kind == PackFileKind::Content)
+            .filter_map(|f| {
+                files
+                    .iter()
+                    .find(|(path, _)| *path == f.path)
+                    .map(|(path, file)| ParsedEntry::Content(path.clone(), file.clone()))
+            })
+            .collect();
+        Self::assemble(manifest, entries)
+    }
+
+    /// Entries are named `<pack id>/<path>`; a content file without its own ruleset takes the pack's only one.
+    fn assemble(manifest: PackManifest, entries: Vec<ParsedEntry>) -> Self {
+        let entries = entries
+            .into_iter()
+            .map(|e| match e {
+                ParsedEntry::Content(path, mut file) => {
+                    if file.ruleset.is_none() && manifest.rulesets.len() == 1 {
+                        file.ruleset = manifest.rulesets.first().copied();
+                    }
+                    ParsedEntry::Content(format!("{}/{path}", manifest.id), file)
+                }
+                ParsedEntry::Index(path, index) => {
+                    ParsedEntry::Index(format!("{}/{path}", manifest.id), index)
+                }
+            })
+            .collect();
+        Self {
             info: PackInfo {
                 id: manifest.id,
                 name: manifest.name,
@@ -86,7 +121,7 @@ impl ParsedPack {
             },
             origin: manifest.origin,
             entries,
-        })
+        }
     }
 
     /// The pack's manifest summary.
@@ -110,7 +145,9 @@ impl ParsedPack {
 
 /// Collects files and packs, then applies the load semantics in [`build`](Self::build).
 ///
-/// Methods consume and return the builder so a store is assembled as one expression.
+/// Methods consume and return the builder so a store is assembled as one expression. The files are shared, not
+/// copied, by a clone of the builder, so keeping a builder next to the store built from it, or a copy with one pack
+/// replaced, costs only what differs.
 #[derive(Debug, Clone, Default)]
 pub struct ContentStoreBuilder {
     pub(super) files: Vec<PendingFile>,
@@ -154,7 +191,7 @@ impl ContentStoreBuilder {
         self.files.push(PendingFile {
             name: name.into(),
             origin,
-            file,
+            file: Arc::new(file),
         });
         self
     }
@@ -202,6 +239,132 @@ impl ContentStoreBuilder {
         self
     }
 
+    /// [`add_parsed_pack`](Self::add_parsed_pack), taking each content file that equals the file of the same name
+    /// (and load semantics) in `previous` as that file, so this builder shares it instead of keeping a second copy
+    /// (a reload reads every pack again; only what changed stays new).
+    #[must_use]
+    pub fn add_parsed_pack_sharing(self, pack: ParsedPack, previous: Option<&Self>) -> Self {
+        let Some(previous) = previous else {
+            return self.add_parsed_pack(pack);
+        };
+        let from = self.files.len();
+        let mut next = self.add_parsed_pack(pack);
+        let added = &mut next.files[from..];
+        let names: std::collections::HashSet<&str> =
+            added.iter().map(|f| f.name.as_str()).collect();
+        let old: HashMap<&str, &PendingFile> = previous
+            .files
+            .iter()
+            .filter(|f| names.contains(f.name.as_str()))
+            .map(|f| (f.name.as_str(), f))
+            .collect();
+        for f in added {
+            if let Some(o) = old.get(f.name.as_str()) {
+                if o.origin == f.origin && o.file == f.file {
+                    f.file = Arc::clone(&o.file);
+                }
+            }
+        }
+        next
+    }
+
+    /// True when a pack with this id was added ([`add_parsed_pack`](Self::add_parsed_pack)).
+    #[must_use]
+    pub fn has_pack(&self, id: &str) -> bool {
+        self.packs.iter().any(|p| p.id == id)
+    }
+
+    /// The builder with the pack `pack.info().id` replaced by `pack`, in the same load position: its files and
+    /// indexes take the place of the old pack's, so the result equals adding the new pack in the old one's place
+    /// (the homebrew creator's fast reload, spec 14.1). `None` when no such pack was added.
+    #[must_use]
+    pub fn replace_pack(mut self, pack: ParsedPack) -> Option<Self> {
+        let id = pack.info.id.clone();
+        let pack_at = self.packs.iter().position(|p| p.id == id)?;
+        let prefix = format!("{id}/");
+        let file_at = self
+            .files
+            .iter()
+            .position(|f| f.name.starts_with(&prefix))
+            .unwrap_or_else(|| self.files_before_pack(pack_at));
+        let index_at = self
+            .indexes
+            .iter()
+            .position(|i| i.file.starts_with(&prefix))
+            .unwrap_or(self.indexes.len());
+        self.files.retain(|f| !f.name.starts_with(&prefix));
+        self.indexes.retain(|i| !i.file.starts_with(&prefix));
+        let file_at = file_at.min(self.files.len());
+        let index_at = index_at.min(self.indexes.len());
+        let mut files = Vec::new();
+        let mut indexes = Vec::new();
+        for entry in pack.entries {
+            match entry {
+                ParsedEntry::Content(name, file) => files.push(PendingFile {
+                    name,
+                    origin: pack.origin,
+                    file: Arc::new(file),
+                }),
+                ParsedEntry::Index(name, index) => indexes.push(LoadedIndex { file: name, index }),
+            }
+        }
+        self.files.splice(file_at..file_at, files);
+        self.indexes.splice(index_at..index_at, indexes);
+        self.packs[pack_at] = pack.info;
+        Some(self)
+    }
+
+    /// The ids of the packs added, in load order.
+    pub fn pack_ids(&self) -> impl Iterator<Item = &str> {
+        self.packs.iter().map(|p| p.id.as_str())
+    }
+
+    /// The builder with `pack` added at position `at` of the load order (0 = first; past the end = last): the same
+    /// builder as adding the packs in that order, `pack` among them (New pack in the homebrew creator puts its pack
+    /// where a full load of the library folders would read it, without reading the others again).
+    #[must_use]
+    pub fn insert_parsed_pack(mut self, at: usize, pack: ParsedPack) -> Self {
+        let at = at.min(self.packs.len());
+        let file_at = self.files_before_pack(at);
+        let earlier: Vec<String> = self.packs[..at]
+            .iter()
+            .map(|p| format!("{}/", p.id))
+            .collect();
+        let index_at = self
+            .indexes
+            .iter()
+            .rposition(|i| earlier.iter().any(|e| i.file.starts_with(e.as_str())))
+            .map_or(0, |i| i + 1);
+        let mut files = Vec::new();
+        let mut indexes = Vec::new();
+        for entry in pack.entries {
+            match entry {
+                ParsedEntry::Content(name, file) => files.push(PendingFile {
+                    name,
+                    origin: pack.origin,
+                    file: Arc::new(file),
+                }),
+                ParsedEntry::Index(name, index) => indexes.push(LoadedIndex { file: name, index }),
+            }
+        }
+        self.files.splice(file_at..file_at, files);
+        self.indexes.splice(index_at..index_at, indexes);
+        self.packs.insert(at, pack.info);
+        self
+    }
+
+    /// Where the files of the pack at `pack_at` go when it has none: after the files of every earlier pack.
+    fn files_before_pack(&self, pack_at: usize) -> usize {
+        let earlier: Vec<String> = self.packs[..pack_at]
+            .iter()
+            .map(|p| format!("{}/", p.id))
+            .collect();
+        self.files
+            .iter()
+            .rposition(|f| earlier.iter().any(|e| f.name.starts_with(e.as_str())))
+            .map_or(0, |i| i + 1)
+    }
+
     /// Load every content `*.json` below `dir` (skipping `pack.json` and `*.index.json`),
     /// ordered by the custom folder load order.
     ///
@@ -242,14 +405,55 @@ impl ContentStoreBuilder {
     /// * `<append>` records are applied last, in file order.
     #[must_use]
     pub fn build(self) -> ContentStore {
+        self.build_reusing(None)
+    }
+
+    /// [`build`](Self::build), sharing with `previous` (the store this one replaces) every element that comes out
+    /// equal to the element `previous` holds under its id: the result is the same store as `build` gives, but an
+    /// unchanged element is the very allocation `previous` holds (`Arc::ptr_eq`), so the two stores together cost one
+    /// store plus what changed (the homebrew creator's saves and every reload, item Isq-Y).
+    #[must_use]
+    pub fn build_reusing(self, previous: Option<&ContentStore>) -> ContentStore {
         let Self {
-            mut files,
+            files,
             packs,
             indexes,
             mut diagnostics,
             source_editions,
         } = self;
-        let retagged = apply_source_editions(&mut files, &source_editions);
+        let retagged = source_edition_tags(&files, &source_editions);
+        // the edition an element of a file is built with, and the book whose user edition set it
+        let edition_of = |file: &ContentFile, at: (usize, usize)| match retagged.get(&at) {
+            Some((ruleset, book)) => (Some(*ruleset), Some(book.clone())),
+            None => (file.elements[at.1].ruleset.or(file.ruleset), None),
+        };
+        // the previous store's element for each file element that is it as built (compared in parallel)
+        let reused: Vec<Vec<Option<Arc<Element>>>> = match previous {
+            None => Vec::new(),
+            Some(p) => files
+                .par_iter()
+                .enumerate()
+                .map(|(fi, pending)| {
+                    let file = pending.file.as_ref();
+                    (0..file.elements.len())
+                        .map(|ei| {
+                            let element = &file.elements[ei];
+                            let old = p.get_exact(&element.id)?;
+                            let (ruleset, _) = edition_of(file, (fi, ei));
+                            old.element
+                                .equals_with_ruleset(element, ruleset)
+                                .then(|| Arc::clone(&old.element))
+                        })
+                        .collect()
+                })
+                .collect(),
+        };
+        let shared = |element: Element| -> Arc<Element> {
+            match previous.and_then(|p| p.get_exact(&element.id)) {
+                Some(old) if *old.element == element => Arc::clone(&old.element),
+                _ => Arc::new(element),
+            }
+        };
         let mut slots: Vec<Option<StoredElement>> = Vec::new();
         let mut position: HashMap<String, usize> = HashMap::new();
         let mut appends: Vec<(Arc<str>, Append)> = Vec::new();
@@ -268,12 +472,9 @@ impl ContentStoreBuilder {
                 continue;
             }
             loaded_files.push(pending.name.clone());
-            let file_ruleset = pending.file.ruleset;
-            for (element_index, mut element) in pending.file.elements.into_iter().enumerate() {
-                let user_edition_book = retagged.get(&(file_index, element_index)).cloned();
-                if element.ruleset.is_none() {
-                    element.ruleset = file_ruleset;
-                }
+            let file = pending.file;
+            for (element_index, element) in file.elements.iter().enumerate() {
+                let (ruleset, user_edition_book) = edition_of(&file, (file_index, element_index));
                 if let Some(&old) = position.get(&element.id) {
                     match pending.origin {
                         PackOrigin::Core => {
@@ -308,6 +509,17 @@ impl ContentStoreBuilder {
                     }
                 }
                 position.insert(element.id.clone(), slots.len());
+                // the previous store's element when it is this one as built, else a copy with its edition
+                let element = match reused
+                    .get(file_index)
+                    .and_then(|f| f[element_index].clone())
+                {
+                    Some(old) => old,
+                    None => Arc::new(Element {
+                        ruleset,
+                        ..element.clone()
+                    }),
+                };
                 slots.push(Some(StoredElement {
                     element,
                     file: Arc::clone(&name),
@@ -317,13 +529,7 @@ impl ContentStoreBuilder {
                     user_edition_book,
                 }));
             }
-            appends.extend(
-                pending
-                    .file
-                    .appends
-                    .into_iter()
-                    .map(|a| (Arc::clone(&name), a)),
-            );
+            appends.extend(file.appends.iter().map(|a| (Arc::clone(&name), a.clone())));
         }
 
         for (file, append) in appends {
@@ -353,7 +559,7 @@ impl ContentStoreBuilder {
                         .chain(added)
                         .collect();
                     slots[idx] = Some(StoredElement {
-                        element: merged,
+                        element: Arc::new(merged),
                         extended: true,
                         appended_supports,
                         ..stored.clone()
@@ -364,20 +570,58 @@ impl ContentStoreBuilder {
 
         let elements = super::alias::resolve_phb24_aliases(
             slots.into_iter().flatten().collect(),
-            |s: &StoredElement| &s.element,
-            |s, element| StoredElement { element, ..s },
+            |s: &StoredElement| s.element.as_ref(),
+            |s, element| StoredElement {
+                element: Arc::new(element),
+                ..s
+            },
         );
+        // an element an `<append>` or an alias rewrite made anew may still equal the previous store's
+        let elements = match previous {
+            None => elements,
+            Some(_) => elements
+                .into_iter()
+                .map(|s| {
+                    if Arc::strong_count(&s.element) > 1 {
+                        return s;
+                    }
+                    StoredElement {
+                        element: shared(Arc::unwrap_or_clone(s.element)),
+                        ..s
+                    }
+                })
+                .collect(),
+        };
         ContentStore::assemble(elements, loaded_files, packs, indexes, diagnostics)
+    }
+
+    /// The builder with each file that equals the file of the same name (and load semantics) in `previous` replaced by
+    /// that file: the result builds the same store, sharing those files with `previous` (a reload that read every pack
+    /// again from disk keeps one copy of what did not change).
+    #[must_use]
+    pub fn sharing_files_with(mut self, previous: &Self) -> Self {
+        let old: HashMap<&str, &PendingFile> = previous
+            .files
+            .iter()
+            .map(|f| (f.name.as_str(), f))
+            .collect();
+        for f in &mut self.files {
+            if let Some(o) = old.get(f.name.as_str()) {
+                if o.origin == f.origin && !Arc::ptr_eq(&o.file, &f.file) && o.file == f.file {
+                    f.file = Arc::clone(&o.file);
+                }
+            }
+        }
+        self
     }
 }
 
-/// IM14: re-tag the elements of books the user set an edition for (see
-/// [`ContentStoreBuilder::with_source_editions`]). Returns the book key that applied to each
-/// (file, element) position it changed.
-fn apply_source_editions(
-    files: &mut [PendingFile],
+/// IM14: the new edition of the elements of books the user set an edition for (see
+/// [`ContentStoreBuilder::with_source_editions`]), with the book key that applied, by (file, element) position.
+fn source_edition_tags(
+    files: &[PendingFile],
     editions: &BTreeMap<String, Ruleset>,
-) -> HashMap<(usize, usize), String> {
+) -> HashMap<(usize, usize), (Ruleset, String)> {
     let mut changed = HashMap::new();
     if editions.is_empty() {
         return changed;
@@ -423,7 +667,7 @@ fn apply_source_editions(
         };
         by_key.get(&super::source_key(name)).cloned()
     };
-    for (fi, pending) in files.iter_mut().enumerate().filter(|(_, p)| custom(p)) {
+    for (fi, pending) in files.iter().enumerate().filter(|(_, p)| custom(p)) {
         let file_ruleset = pending.file.ruleset;
         let books: Vec<Option<(Ruleset, String)>> = pending
             .file
@@ -438,7 +682,7 @@ fn apply_source_editions(
             .cloned()
             .flatten()
             .filter(|b| books.iter().all(|x| x.as_ref() == Some(b)));
-        for (ei, el) in pending.file.elements.iter_mut().enumerate() {
+        for (ei, el) in pending.file.elements.iter().enumerate() {
             let helper = el.ty != "Source" && super::is_unrestrictable_source(&el.source);
             let set = if helper { follow.clone() } else { book_of(el) };
             let neutral = el.ruleset.or(file_ruleset) == Some(Ruleset::Any);
@@ -446,8 +690,7 @@ fn apply_source_editions(
                 continue;
             }
             if let Some((r, book)) = set {
-                el.ruleset = Some(r);
-                changed.insert((fi, ei), book);
+                changed.insert((fi, ei), (r, book));
             }
         }
     }

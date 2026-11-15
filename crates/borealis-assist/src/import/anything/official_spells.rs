@@ -122,7 +122,7 @@ impl<'a> Known<'a> {
         };
         for e in store
             .by_type("Spell")
-            .map(|s| &s.element)
+            .map(|s| s.element.as_ref())
             .filter(|e| in_edition(e, plan.edition))
         {
             let level = e.setter_value("level").and_then(|v| v.trim().parse().ok());

@@ -21,6 +21,8 @@ pub struct Engine {
     universes: [Universe; 2],
     /// Process-unique id of this engine (its content and settings never change after build).
     serial: u64,
+    /// Built with the [`StandardAdapter`]: an engine built over this one may take its prepared elements over.
+    standard: bool,
 }
 
 /// Source of [`Engine::serial`].
@@ -36,7 +38,24 @@ impl Engine {
     /// Prepare an engine with explicit settings.
     #[must_use]
     pub fn with_settings(store: &ContentStore, settings: EngineSettings) -> Self {
-        Self::with_adapter(store, settings, &StandardAdapter)
+        let mut engine = Self::with_adapter(store, settings, &StandardAdapter);
+        engine.standard = true;
+        engine
+    }
+
+    /// [`Engine::with_settings`] over `previous`, an engine of an earlier store that is still alive (the content a
+    /// creator save replaces): the prepared elements whose store element the new store shares are taken over
+    /// ([`Universe::with_adapter_reusing`]). The engine is the one [`Engine::with_settings`] builds.
+    #[must_use]
+    pub fn with_settings_reusing(
+        store: &ContentStore,
+        settings: EngineSettings,
+        previous: &Engine,
+    ) -> Self {
+        let previous = previous.standard.then_some(previous);
+        let mut engine = Self::build(store, settings, &StandardAdapter, previous);
+        engine.standard = true;
+        engine
     }
 
     /// Prepare an engine whose foreign-edition content goes through `adapter`.
@@ -46,11 +65,22 @@ impl Engine {
         settings: EngineSettings,
         adapter: &dyn EditionAdapter,
     ) -> Self {
+        Self::build(store, settings, adapter, None)
+    }
+
+    fn build(
+        store: &ContentStore,
+        settings: EngineSettings,
+        adapter: &dyn EditionAdapter,
+        previous: Option<&Engine>,
+    ) -> Self {
         // PF1 (B-235): the two universes are independent, so they are built side by side.
         let [first, second] = all_profiles().map(|p| p.ruleset());
+        let before = |r: Ruleset| previous.map(|e| e.universe(r));
         let universes = std::thread::scope(|scope| {
-            let other = scope.spawn(|| Universe::with_adapter(store, second, adapter));
-            let one = Universe::with_adapter(store, first, adapter);
+            let other = scope
+                .spawn(|| Universe::with_adapter_reusing(store, second, adapter, before(second)));
+            let one = Universe::with_adapter_reusing(store, first, adapter, before(first));
             let two = other
                 .join()
                 .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
@@ -60,6 +90,7 @@ impl Engine {
             settings,
             universes,
             serial: NEXT_SERIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+            standard: false,
         }
     }
 

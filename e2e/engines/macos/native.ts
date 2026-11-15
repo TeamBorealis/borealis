@@ -37,6 +37,13 @@ export async function clickAt(x: number, y: number, count = 1): Promise<void> {
   await run(await binary('click'), [String(x), String(y), String(count)], { timeout: 10_000 });
 }
 
+/** The pids among `pids` that answer an accessibility request within ax-alive's timeout. */
+export async function responsivePids(pids: readonly number[]): Promise<ReadonlySet<number>> {
+  if (pids.length === 0) return new Set();
+  const { stdout } = await run(await binary('ax-alive'), pids.map(String), { timeout: 15_000 });
+  return new Set([...stdout.matchAll(/pid=(\d+) alive=true/g)].map((m) => Number(m[1])));
+}
+
 /** The exact instructions for the user; nothing here changes TCC. */
 export function permissionMessage(missing: Permissions): string {
   const lines = ['Borealis macOS e2e cannot drive the desktop yet: macOS privacy grants are missing.'];

@@ -307,7 +307,7 @@ impl AppState {
         let items: Vec<&Element> = hub
             .store
             .iter()
-            .map(|s| &s.element)
+            .map(|s| s.element.as_ref())
             .filter(|e| is_item(e))
             .collect();
         let uni = hub.engine.universe(scope.universe_ruleset());

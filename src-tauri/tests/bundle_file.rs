@@ -356,19 +356,28 @@ fn os_opened_bundles_are_queued_by_path_and_android_bytes_become_files() {
         borealis_lib::content_preview::OpenedFile {
             file_name: "Mira.borealis".into(),
             content_base64: STANDARD.encode(b"PK-not-checked-here"),
+            refused: None,
         },
         borealis_lib::content_preview::OpenedFile {
             file_name: "set.index".into(),
             content_base64: STANDARD.encode(b"<index/>"),
+            refused: None,
         },
         borealis_lib::content_preview::OpenedFile {
             file_name: "msf:1234".into(),
             content_base64: STANDARD.encode(b"not a zip at all"),
+            refused: None,
+        },
+        // H5wn8: a file Android did not open stays for the UI's message, even with a bundle's name
+        borealis_lib::content_preview::OpenedFile {
+            file_name: "Shared.borealis".into(),
+            content_base64: String::new(),
+            refused: Some("not opened".into()),
         },
     ];
     let rest = inbox::claim_bundles(&b.state, opened);
     let names: Vec<_> = rest.iter().map(|f| f.file_name.as_str()).collect();
-    assert_eq!(names, ["set.index", "msf:1234"]);
+    assert_eq!(names, ["set.index", "msf:1234", "Shared.borealis"]);
     let queued = inbox::take_opened_paths();
     assert_eq!(queued.len(), 1);
     assert!(queued[0].starts_with(borealis_lib::device_sync::incoming_dir(&b.state)));
@@ -408,6 +417,7 @@ fn an_android_opened_bundle_keeps_its_own_name_and_its_copy_is_removed() {
     let opened = |name: &str| borealis_lib::content_preview::OpenedFile {
         file_name: name.into(),
         content_base64: STANDARD.encode(&bytes),
+        refused: None,
     };
     for (given, shown) in [
         (

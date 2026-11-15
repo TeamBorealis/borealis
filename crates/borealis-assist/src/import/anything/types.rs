@@ -1,40 +1,13 @@
 //! Serializable stage results of the "import anything" pipeline. Every stage returns plain data
 //! so the UI can show progress, persist a draft and resume it.
 
-use borealis_content::Ruleset;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::balance::BalanceReport;
 
-/// Rules edition of the source.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Edition {
-    /// 2014 rules.
-    #[serde(rename = "2014")]
-    Y2014,
-    /// 2024 rules.
-    #[serde(rename = "2024")]
-    Y2024,
-}
-
-impl Edition {
-    /// The engine ruleset.
-    pub fn ruleset(self) -> Ruleset {
-        match self {
-            Self::Y2014 => Ruleset::Dnd2014,
-            Self::Y2024 => Ruleset::Dnd2024,
-        }
-    }
-
-    /// From an engine ruleset (`Any` counts as 2014).
-    pub fn from_ruleset(r: Ruleset) -> Self {
-        match r {
-            Ruleset::Dnd2024 => Self::Y2024,
-            _ => Self::Y2014,
-        }
-    }
-}
+/// Rules edition of the source (`borealis_authoring::Edition`, shared with the homebrew creator).
+pub use borealis_authoring::Edition;
 
 /// What a piece of source describes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

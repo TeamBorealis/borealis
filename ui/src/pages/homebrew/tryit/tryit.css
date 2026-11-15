@@ -1,0 +1,66 @@
+/* Try it (spec 9, 13.9): the Level up flyout's panel with the New character flyout's expanders, tiles and option boxes.
+   Layout only: colours, type and borders come from the classes it reuses (v4-*, lvl-*, ap-grid, pick-*). */
+
+.hb-try { gap: 0; }
+.hb-try.v4-new .aur-expander:last-of-type { flex: none; min-height: 0; display: block; }
+.hb-try.v4-new .aur-expander:last-of-type .aur-expander-body { display: block; }
+.hb-try .hb-problems { margin: 4px 0 0; }
+.hb-try-status { margin: 4px 0 6px; }
+.hb-try-busy { font-size: 10px; color: var(--text-secondary); }
+.hb-try-warn { color: var(--aur-warning); }
+
+/* SETUP */
+.hb-try-draft { margin: 2px 0 4px; }
+.hb-try-draft .v4-fl { margin-top: 0; }
+.hb-try-draft-name { display: block; font-size: 13px; font-weight: 600; color: var(--gold); }
+.hb-try-check { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: #d5d5d5; cursor: pointer; }
+.hb-try-slider { display: block; width: 100%; margin: 8px 0 2px; }
+.hb-try-setup .v4-abil { margin-bottom: 4px; }
+.hb-try-setup .v4-tile-abil { cursor: pointer; }
+
+/* SUMMARY: dashed panels (AuroraPanel) */
+.hb-try-summary { display: flex; flex-direction: column; gap: 6px; }
+.hb-try-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.hb-try-tile { padding: 4px 6px 5px; border: 1px dashed #3b3f42; text-align: center; }
+.hb-try-tile b { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
+.hb-try-tile > span { display: block; margin-top: 2px; font-size: 13px; font-weight: 600; }
+/* In the summary gold means "changed by the element" (with the mark), so the ability values are plain here. */
+.hb-try-abil .hb-try-abil-tile > span { color: var(--text); }
+.hb-try-tile > span span, .hb-try-abil-tile span span, .hb-try-abil-tile i span { display: inline; margin: 0; }
+.hb-try-abil .hb-try-abil-tile { cursor: default; height: auto; padding-bottom: 5px; }
+.hb-try-abil-tile i { display: block; margin-top: 3px; font-size: 10px; font-style: normal; color: var(--text-secondary); }
+.hb-try-panel { padding: 6px 8px 7px; border: 1px dashed var(--accent); background: #191b1d; }
+.hb-try-panel .v4-fl { margin: 0 0 3px; }
+.hb-try-lines { margin: 0; padding: 0; list-style: none; font-size: 12px; line-height: 16px; }
+.hb-try-dim, .hb-try-none { color: var(--text-secondary); font-size: 11px; }
+.hb-try-none { margin: 0; }
+.hb-try-slots { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; }
+.hb-try-changed { color: var(--gold); font-weight: 600; }
+.hb-try-mark { margin-left: 1px; color: var(--gold); font-weight: 600; }
+
+/* LEVEL LADDER: the Aurora grid (ap-grid), the current level as the selected row */
+.hb-try-ladder { max-height: none; }
+html:not(.phone) .hb-try-ladder .ap-grid { width: 100%; table-layout: fixed; }
+html:not(.phone) .hb-try-ladder th:first-child, html:not(.phone) .hb-try-ladder td.hb-try-lvl { width: 42px; }
+html:not(.phone) .hb-try-ladder th:last-child, html:not(.phone) .hb-try-ladder td.hb-try-slotcell { width: 86px; text-align: right; }
+html:not(.phone) .hb-try-ladder td { vertical-align: top; white-space: normal; }
+/* Phones (spec 16): the ladder as one-line rows, the level then its detail line. */
+html.phone .hb-try-ladder td.hb-try-lvl { display: flex; align-items: center; gap: 10px; min-width: 0; }
+html.phone .hb-try-ladder td.hb-try-lvl .ap-name { flex: none; width: auto; min-width: 2.5ch; }
+html.phone .hb-try-ladder .ph-row-detail { flex: 1; min-width: 0; margin: 0; padding: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hb-try-ladder .ap-name { font-style: normal; }
+.hb-try-gained, .hb-try-choices, .hb-try-problem { display: block; }
+.hb-try-choices { font-style: italic; color: var(--text-secondary); }
+.hb-try-problem { display: flex; gap: 4px; align-items: flex-start; }
+.hb-try-problem.hb-error { color: var(--aur-danger-bright, var(--aur-danger)); }
+.hb-try-problem.hb-warning { color: var(--aur-warning); }
+.hb-try-problem .icon { flex: none; width: 12px; height: 12px; margin-top: 2px; }
+html.phone .hb-try-ladder .hide-narrow { display: none; }
+html.phone .hb-try-draft p { margin-left: 0; }
+
+/* CHOICES: the Build pickers keep their own band (the flyout-variant expander around them is band-less, and its descendant
+   rule would reach the pickers' heads too). */
+html:not(.phone) .hb-try .pick .aur-expander-head { background: var(--highlight); border: 1px solid var(--bp-rule, var(--accent-80)); min-height: 26px; }
+html:not(.phone) .hb-try .pick .aur-expander-toggle, html:not(.phone) .hb-try .pick .aur-expander-extra, html:not(.phone) .hb-try .pick .aur-expander-chev { color: #fff; }
+html:not(.phone) .hb-try .pick .aur-expander-title { font-size: var(--fs-sm); }
+.hb-try .pick-stack { margin-top: 4px; }

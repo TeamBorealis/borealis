@@ -1,0 +1,461 @@
+{
+  "condition": {
+    "original": "ID_AA_BB&&!ID_CC_DD&&[str:13]&&[character:4]&&[level:3]&&[warlock:2]&&[feature:Rage]&&[spellcasting:1]&&[type:Spell]&&[innate speed:fly:1]&&([ranger:archetype:hunter]||!([wis:13]||[int:13]))",
+    "value": {
+      "model": {
+        "items": [
+          {
+            "node": "row",
+            "row": {
+              "id": "ID_AA_BB",
+              "row": "has"
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "id": "ID_CC_DD",
+              "row": "lacks"
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "ability": "strength",
+              "min": 13,
+              "row": "ability"
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "min": 4,
+              "row": "characterLevel"
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "min": 3,
+              "row": "level"
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "class": "warlock",
+              "min": 2,
+              "row": "classLevel"
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "name": "Rage",
+              "row": "feature"
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "level": 1,
+              "row": "spellcasting"
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "row": "type",
+              "value": "Spell"
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "min": 1,
+              "row": "statistic",
+              "stat": "innate speed:fly"
+            }
+          },
+          {
+            "items": [
+              {
+                "node": "row",
+                "row": {
+                  "row": "kept",
+                  "text": "[ranger:archetype:hunter]"
+                }
+              },
+              {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "ability": "wisdom",
+                      "min": 13,
+                      "row": "ability"
+                    }
+                  },
+                  {
+                    "node": "row",
+                    "row": {
+                      "ability": "intelligence",
+                      "min": 13,
+                      "row": "ability"
+                    }
+                  }
+                ],
+                "mode": "none",
+                "node": "group"
+              }
+            ],
+            "mode": "any",
+            "node": "group"
+          }
+        ],
+        "mode": "all",
+        "node": "group"
+      },
+      "shape": "model"
+    }
+  },
+  "conditionKept": {
+    "original": "((",
+    "value": {
+      "reason": "Borealis can't read this condition (missing operand).",
+      "shape": "kept",
+      "text": "(("
+    }
+  },
+  "dialects": [
+    "formula",
+    "saveDc",
+    "breathDc",
+    "noteDc",
+    "value",
+    "valueOrClassLevel"
+  ],
+  "equipped": {
+    "original": "[armor:light]&&[armor:medium]&&[armor:heavy]&&[armor:none]&&[shield:any]&&[main:weapon]&&[main:versatile]&&[offhand:id_x_dagger]&&[attunement:id_x_ring]&&[item:id_x_cloak]&&[pet:any]",
+    "value": {
+      "model": {
+        "items": [
+          {
+            "node": "row",
+            "row": {
+              "row": "slot",
+              "slot": "armor",
+              "test": {
+                "kind": "light"
+              }
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "row": "slot",
+              "slot": "armor",
+              "test": {
+                "kind": "medium"
+              }
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "row": "slot",
+              "slot": "armor",
+              "test": {
+                "kind": "heavy"
+              }
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "row": "slot",
+              "slot": "armor",
+              "test": {
+                "kind": "none"
+              }
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "row": "slot",
+              "slot": "shield",
+              "test": {
+                "kind": "any"
+              }
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "row": "slot",
+              "slot": "mainHand",
+              "test": {
+                "kind": "weapon"
+              }
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "row": "slot",
+              "slot": "mainHand",
+              "test": {
+                "kind": "versatile"
+              }
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "row": "slot",
+              "slot": "offHand",
+              "test": {
+                "item": "id_x_dagger",
+                "kind": "item"
+              }
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "item": "id_x_ring",
+              "row": "attuned"
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "item": "id_x_cloak",
+              "row": "wearing"
+            }
+          },
+          {
+            "node": "row",
+            "row": {
+              "row": "kept",
+              "text": "[pet:any]"
+            }
+          }
+        ],
+        "mode": "all",
+        "node": "group"
+      },
+      "shape": "model"
+    }
+  },
+  "formula": {
+    "original": "max(1, wisdom:modifier) + ceil(cleric level / 2) - floor(proficiency) * min(3, 4) / 2",
+    "value": {
+      "model": {
+        "left": {
+          "left": {
+            "args": [
+              {
+                "term": "number",
+                "value": 1
+              },
+              {
+                "ability": "wisdom",
+                "term": "ability"
+              }
+            ],
+            "term": "max"
+          },
+          "op": "add",
+          "right": {
+            "den": {
+              "term": "number",
+              "value": 2
+            },
+            "num": {
+              "class": "cleric",
+              "term": "classLevel"
+            },
+            "term": "ceilDiv"
+          },
+          "term": "binary"
+        },
+        "op": "sub",
+        "right": {
+          "left": {
+            "left": {
+              "arg": {
+                "term": "proficiency"
+              },
+              "term": "floor"
+            },
+            "op": "mul",
+            "right": {
+              "args": [
+                {
+                  "term": "number",
+                  "value": 3
+                },
+                {
+                  "term": "number",
+                  "value": 4
+                }
+              ],
+              "term": "min"
+            },
+            "term": "binary"
+          },
+          "op": "div",
+          "right": {
+            "term": "number",
+            "value": 2
+          },
+          "term": "binary"
+        },
+        "term": "binary"
+      },
+      "shape": "model"
+    }
+  },
+  "problems": [
+    {
+      "message": "Give the feature's name.",
+      "path": "items.0"
+    }
+  ],
+  "saveDc": {
+    "original": "spell save DC (Cleric)",
+    "value": {
+      "model": {
+        "class": "Cleric",
+        "term": "classSaveDc"
+      },
+      "shape": "model"
+    }
+  },
+  "tagFilter": {
+    "original": "$(spellcasting:list),(1||2)||$(spellcasting:slots),$(param:Spell List)||Exotic||ID_AA_BB||$(custom)",
+    "value": {
+      "model": {
+        "root": {
+          "items": [
+            {
+              "items": [
+                {
+                  "node": "row",
+                  "row": {
+                    "row": "classList"
+                  }
+                },
+                {
+                  "items": [
+                    {
+                      "node": "row",
+                      "row": {
+                        "row": "tag",
+                        "tag": "1"
+                      }
+                    },
+                    {
+                      "node": "row",
+                      "row": {
+                        "row": "tag",
+                        "tag": "2"
+                      }
+                    }
+                  ],
+                  "mode": "any",
+                  "node": "group"
+                }
+              ],
+              "mode": "all",
+              "node": "group"
+            },
+            {
+              "items": [
+                {
+                  "node": "row",
+                  "row": {
+                    "row": "castableLevel"
+                  }
+                },
+                {
+                  "node": "row",
+                  "row": {
+                    "name": "Spell List",
+                    "row": "choice"
+                  }
+                }
+              ],
+              "mode": "all",
+              "node": "group"
+            },
+            {
+              "node": "row",
+              "row": {
+                "row": "tag",
+                "tag": "Exotic"
+              }
+            },
+            {
+              "node": "row",
+              "row": {
+                "id": "ID_AA_BB",
+                "row": "element"
+              }
+            },
+            {
+              "node": "row",
+              "row": {
+                "row": "kept",
+                "text": "$(custom)"
+              }
+            }
+          ],
+          "mode": "any",
+          "node": "group"
+        },
+        "specific": false
+      },
+      "shape": "model"
+    }
+  },
+  "tagFilterSpecific": {
+    "value": {
+      "model": {
+        "root": {
+          "items": [
+            {
+              "node": "row",
+              "row": {
+                "id": "ID_AA_BB",
+                "row": "element"
+              }
+            },
+            {
+              "node": "row",
+              "row": {
+                "id": "ID_CC_DD",
+                "row": "element"
+              }
+            }
+          ],
+          "mode": "any",
+          "node": "group"
+        },
+        "specific": true
+      },
+      "shape": "model"
+    }
+  },
+  "value": {
+    "original": "proficiency:half",
+    "value": {
+      "model": {
+        "term": "halfProficiency"
+      },
+      "shape": "model"
+    }
+  }
+}

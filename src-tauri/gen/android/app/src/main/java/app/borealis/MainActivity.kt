@@ -91,18 +91,34 @@ class MainActivity : TauriActivity() {
     for (uri in uris) {
       val why = OpenedUriRules.refusal(uri.scheme, uri.authority, own)
       if (why != null) {
-        Log.w(TAG, "not opening a shared file: $why")
+        refuse(uri, why)
+        added = true
         continue
       }
       // Streamed with the cap: an oversized or endless stream is dropped, never buffered whole.
-      val bytes = try {
-        contentResolver.openInputStream(uri)?.use { OpenedUriRules.readCapped(it) }
-      } catch (e: Exception) { null } ?: continue
-      if (bytes.isEmpty()) continue
-      OpenedFiles.add(displayName(uri), Base64.encodeToString(bytes, Base64.NO_WRAP))
+      val read = try {
+        contentResolver.openInputStream(uri)?.use { OpenedUriRules.readCapped(it) ?: TOO_LARGE }
+      } catch (e: Exception) { null }
+      when {
+        read == null -> refuse(uri, OpenedUriRules.Refusal.UNREADABLE)
+        read === TOO_LARGE -> refuse(uri, OpenedUriRules.Refusal.TOO_LARGE)
+        read.isEmpty() -> refuse(uri, OpenedUriRules.Refusal.EMPTY)
+        else -> OpenedFiles.add(displayName(uri), Base64.encodeToString(read, Base64.NO_WRAP))
+      }
       added = true
     }
     if (added) nudge()
+  }
+
+  /** A file not read is reported to the UI with why (H5wn8): the app never ignores a share silently. */
+  private fun refuse(uri: Uri, why: OpenedUriRules.Refusal) {
+    Log.w(TAG, "not opening a shared file: ${why.why}")
+    val name = if (why == OpenedUriRules.Refusal.NOT_CONTENT || why == OpenedUriRules.Refusal.NO_PROVIDER) {
+      uri.lastPathSegment?.substringAfterLast('/') ?: "file"
+    } else {
+      displayName(uri)
+    }
+    OpenedFiles.refuse(name, OpenedUriRules.message(name, why))
   }
 
   /** Authorities of this app's own content providers (FileProvider, library providers). */
@@ -137,6 +153,8 @@ class MainActivity : TauriActivity() {
 
   companion object {
     private const val TAG = "Borealis"
+    /** Marks a stream over the cap (`readCapped` answered null). */
+    private val TOO_LARGE = ByteArray(0)
   }
 }
 
@@ -147,6 +165,12 @@ object OpenedFiles {
   @Synchronized
   fun add(fileName: String, contentBase64: String) {
     queue.add(JSONObject().put("fileName", fileName).put("contentBase64", contentBase64))
+  }
+
+  /** A file that was not opened, with the message the UI shows instead (`refused`). */
+  @Synchronized
+  fun refuse(fileName: String, message: String) {
+    queue.add(JSONObject().put("fileName", fileName).put("contentBase64", "").put("refused", message))
   }
 
   @Synchronized

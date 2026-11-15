@@ -203,6 +203,8 @@
 .toast.error { background: var(--aur-danger); }
 .toast.warning { background: var(--aur-warning); }
 .toast button { background: transparent; border: 0; color: inherit; cursor: pointer; font-weight: 700; min-height: 28px; }
+.toast .toast-action { text-transform: uppercase; color: var(--gold); }
+html.phone .toast .toast-action { min-height: var(--ph-hit); padding: 0 12px; }
 @media (max-width: 899px) { .toasts { bottom: calc(var(--bottom-chrome) + var(--sp-3)); right: max(var(--sp-3), var(--safe-r)); left: max(var(--sp-3), var(--safe-l)); max-width: none; } }
 
 /* Empty / alert */

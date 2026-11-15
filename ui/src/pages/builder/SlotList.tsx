@@ -5,7 +5,7 @@ import { haptic } from "../../lib/haptics";
 import { revealAtTop } from "../../lib/scrollReveal";
 import { useCharacter } from "../../state/CharacterContext";
 import { DescriptionPane } from "./DescriptionPane";
-import { type DescribeFn, groupSlots, isListSlot, PickerGroup, type SlotGroup } from "./PickerGroup";
+import { type DescribeFn, groupSlots, isListSlot, numberedNames, PickerGroup, type SlotGroup } from "./PickerGroup";
 
 const EMPTY_TEXT = "Your character doesn't have any selections available here. This area fills in as your build allows for choices.";
 
@@ -79,15 +79,18 @@ export function SlotList({ slots, emptyText = EMPTY_TEXT, describedId, onDescrib
     void mutate((api, id) => api.clearSelection({ characterId: id, slotId }));
   };
   if (groups.length === 0) return <p className="build-empty">{emptyText}</p>;
+  // H-ajc: two pickers of one name (a "2 of" rule) are told apart, as regions and as filter bars (axe `landmark-unique`)
+  const regionNames = numberedNames(groups.map((g) => g.label ?? g.title));
+  const pickerNames = numberedNames(groups.map((g) => g.title));
   const list = (
     <div className="pick-stack" ref={stackRef}>
       {groups.map((g, i) => (
-        <section key={g.key} aria-label={g.label ?? g.title}>
-          {g.label && (i === 0 || groups[i - 1]!.label !== g.label) && <h3 className="pick-group-label">{g.label}</h3>}
+        <section key={g.key} aria-label={regionNames[i]}>
+          {g.label && (i === 0 || groups[i - 1]!.label !== g.label) && <h2 className="pick-group-label">{g.label}</h2>}
           <PickerGroup characterId={snapshot.id} group={g} isNext={g.slots.some((s) => s.id === wanted)}
             open={isOpen(g)} onToggle={(o) => setOpenKeys((m) => ({ ...m, [g.key]: o }))}
             describedId={described} onDescribe={describe} onChoose={(s, e) => void choose(s, e)} onClear={clear}
-            inlineId={inline && g.slots.some((s) => s.id === inline.slotId) ? inline.id : null} />
+            inlineId={inline && g.slots.some((s) => s.id === inline.slotId) ? inline.id : null} name={pickerNames[i]} />
         </section>
       ))}
     </div>

@@ -224,6 +224,13 @@ export class ContentService {
     return pack;
   }
 
+  /** Homebrew creator: add or replace one of the user's own packs (listed beside imported packs) and hot-reload. */
+  putOwnPack(pack: ContentPack): ContentPack {
+    this.imported = [...this.imported.filter((p) => p.id !== pack.id), pack];
+    this.reloaded();
+    return { ...pack, enabled: !this.disabled.has(pack.id) };
+  }
+
   addHomebrew(json: Record<string, unknown>): ContentPack {
     const name = String(json.name ?? "Unnamed");
     const el: MockElement = {

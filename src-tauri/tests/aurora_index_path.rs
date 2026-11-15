@@ -84,7 +84,7 @@ fn store_by_id(state: &AppState) -> BTreeMap<String, String> {
     hub.store
         .iter()
         .map(|e| {
-            let mut el = e.element.clone();
+            let mut el = e.element.as_ref().clone();
             el.supports.sort();
             let json = serde_json::to_string(&el).expect("element json");
             (e.element.id.clone(), json)

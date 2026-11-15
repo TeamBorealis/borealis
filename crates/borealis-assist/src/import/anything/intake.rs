@@ -149,7 +149,7 @@ fn library_item<'a>(store: &'a ContentStore, edition: Edition, name: &str) -> Op
     let key = norm(name);
     store
         .iter()
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| ITEM_TYPES.contains(&e.ty.as_str()) && in_edition(e, edition))
         .find(|e| norm(&e.name) == key)
 }

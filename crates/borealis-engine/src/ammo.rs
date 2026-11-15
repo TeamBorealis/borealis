@@ -124,8 +124,8 @@ pub fn loaded(uni: &Universe, state: &CharacterState, weapon: &UElem) -> Option<
         let Some((base, adorner)) = item_base::resolve(uni, it) else {
             continue;
         };
-        let parts: Vec<&Element> = std::iter::once(&base.el)
-            .chain(adorner.map(|a| &a.el))
+        let parts: Vec<&Element> = std::iter::once(base.el.as_ref())
+            .chain(adorner.map(|a| a.el.as_ref()))
             .collect();
         if !parts.iter().any(|p| is_ammunition(p)) {
             continue;

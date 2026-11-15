@@ -38,10 +38,16 @@
 .desc-pane h3, .desc-h { margin: 23px 0 6px; padding-bottom: 1px; font-size: 16px; font-weight: 600; text-transform: uppercase; color: var(--desc-head); border-bottom: 1px solid #333333; }
 .desc-pane .rich p { margin: 0 0 6px; }
 .desc-line { margin: 0 0 6px; }
+/* P2b: the facts after a description start a block of their own, so the first one doesn't read as the text's last line. */
+.desc-pane .rich:not(:empty) + .desc-facts { margin-top: 12px; }
 .desc-pane h3.desc-src-h { margin: 20px 0 0; padding: 0; border-bottom: 0; font-size: var(--fs-sm); }
 .desc-source { padding: 0; background: none; border: 0; font: inherit; color: #1e50e6; font-style: italic; text-decoration: underline; text-decoration-color: #1e50e6; text-underline-offset: 2px; cursor: pointer; text-align: left; }
 :root[data-theme="light"] .desc-source { color: #0044aa; text-decoration-color: #0044aa; }
 .desc-pane ul { margin: 0 0 6px; padding-left: 18px; }
+/* P2b: a description's table (a creature's six scores, a list by level): plain rows, the pane's heading ink on its headers. */
+.desc-pane .rich table { border-collapse: collapse; margin: 0 0 6px; }
+.desc-pane .rich th, .desc-pane .rich td { padding: 0 12px 1px 0; text-align: left; vertical-align: top; }
+.desc-pane .rich th { font-weight: 600; color: var(--desc-head); }
 /* A6: a class's later-level grants fold under "Later levels"; each line leads with its level. */
 .desc-grant-lvl { color: var(--gray-5); }
 p.desc-grant-lvl { margin: 0 0 2px; font-style: italic; }

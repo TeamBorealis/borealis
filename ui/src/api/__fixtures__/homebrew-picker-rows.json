@@ -1,0 +1,648 @@
+{
+  "cases": [
+    {
+      "case": "every spell",
+      "filters": {},
+      "ids": [
+        "ID_T_SPELL_Alarm",
+        "ID_T_SPELL_Bless",
+        "ID_T_SPELL_Fire Bolt",
+        "ID_U_SPELL_FIREBALL",
+        "ID_T_SPELL_Fireball",
+        "ID_T_SPELL_Hex",
+        "ID_T_SPELL_Hunter's Mark"
+      ],
+      "query": "",
+      "target": {
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "any type",
+      "filters": {},
+      "ids": [
+        "ID_T_SPELL_Alarm",
+        "ID_T_FEAT_ALERT",
+        "ID_T_SPELL_Bless",
+        "ID_T_SPELL_Fire Bolt",
+        "ID_T_OPTION_FIRE_FORM",
+        "ID_U_SPELL_FIREBALL",
+        "ID_T_SPELL_Fireball",
+        "ID_T_SPELL_Hex",
+        "ID_T_SPELL_Hunter's Mark"
+      ],
+      "query": "",
+      "target": {
+        "types": []
+      }
+    },
+    {
+      "case": "a feat picker",
+      "filters": {},
+      "ids": [
+        "ID_T_FEAT_ALERT"
+      ],
+      "query": "",
+      "target": {
+        "types": [
+          "Feat"
+        ]
+      }
+    },
+    {
+      "case": "two types",
+      "filters": {},
+      "ids": [
+        "ID_T_FEAT_ALERT",
+        "ID_T_OPTION_FIRE_FORM"
+      ],
+      "query": "",
+      "target": {
+        "types": [
+          "Feat",
+          "Option"
+        ]
+      }
+    },
+    {
+      "case": "spells by name",
+      "filters": {},
+      "ids": [
+        "ID_T_SPELL_Fire Bolt",
+        "ID_U_SPELL_FIREBALL",
+        "ID_T_SPELL_Fireball"
+      ],
+      "query": "fire",
+      "target": {
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "a name's middle, any case",
+      "filters": {},
+      "ids": [
+        "ID_U_SPELL_FIREBALL",
+        "ID_T_SPELL_Fireball"
+      ],
+      "query": "  BALL ",
+      "target": {
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "two words in order",
+      "filters": {},
+      "ids": [
+        "ID_T_SPELL_Fire Bolt"
+      ],
+      "query": "fire bolt",
+      "target": {
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "two words out of order",
+      "filters": {},
+      "ids": [],
+      "query": "bolt fire",
+      "target": {
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "words of the summary",
+      "filters": {},
+      "ids": [],
+      "query": "evocation",
+      "target": {
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "the Wizard list",
+      "filters": {},
+      "ids": [
+        "ID_T_SPELL_Alarm",
+        "ID_T_SPELL_Fire Bolt",
+        "ID_U_SPELL_FIREBALL",
+        "ID_T_SPELL_Fireball"
+      ],
+      "query": "",
+      "target": {
+        "tags": [
+          "Wizard"
+        ],
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "one of two lists",
+      "filters": {},
+      "ids": [
+        "ID_T_SPELL_Alarm",
+        "ID_T_SPELL_Bless",
+        "ID_T_SPELL_Hunter's Mark"
+      ],
+      "query": "",
+      "target": {
+        "tags": [
+          "Cleric",
+          "Ranger"
+        ],
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "tags match exactly",
+      "filters": {},
+      "ids": [],
+      "query": "",
+      "target": {
+        "tags": [
+          "wizard"
+        ],
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "a lower-case tag",
+      "filters": {},
+      "ids": [
+        "ID_T_SPELL_Hex"
+      ],
+      "query": "",
+      "target": {
+        "tags": [
+          "warlock"
+        ],
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "a tag and a name",
+      "filters": {},
+      "ids": [
+        "ID_T_SPELL_Fire Bolt",
+        "ID_U_SPELL_FIREBALL",
+        "ID_T_SPELL_Fireball"
+      ],
+      "query": "fire",
+      "target": {
+        "tags": [
+          "Wizard"
+        ],
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "origin feats",
+      "filters": {},
+      "ids": [
+        "ID_T_FEAT_ALERT"
+      ],
+      "query": "",
+      "target": {
+        "tags": [
+          "Origin Feat"
+        ],
+        "types": [
+          "Feat"
+        ]
+      }
+    },
+    {
+      "case": "a class option's group",
+      "filters": {},
+      "ids": [
+        "ID_T_OPTION_FIRE_FORM"
+      ],
+      "query": "",
+      "target": {
+        "tags": [
+          "Elemental Form"
+        ],
+        "types": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "case": "no tags is no tag filter",
+      "filters": {},
+      "ids": [
+        "ID_T_SPELL_Alarm",
+        "ID_T_SPELL_Bless",
+        "ID_T_SPELL_Fire Bolt",
+        "ID_U_SPELL_FIREBALL",
+        "ID_T_SPELL_Fireball",
+        "ID_T_SPELL_Hex",
+        "ID_T_SPELL_Hunter's Mark"
+      ],
+      "query": "",
+      "target": {
+        "tags": [],
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "a school, any case",
+      "filters": {
+        "spellSchool": "enchantment"
+      },
+      "ids": [
+        "ID_T_SPELL_Bless",
+        "ID_T_SPELL_Hex"
+      ],
+      "query": "",
+      "target": {
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "levels",
+      "filters": {
+        "spellLevels": [
+          0,
+          3
+        ]
+      },
+      "ids": [
+        "ID_T_SPELL_Fire Bolt",
+        "ID_U_SPELL_FIREBALL",
+        "ID_T_SPELL_Fireball"
+      ],
+      "query": "",
+      "target": {
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "rituals",
+      "filters": {
+        "ritual": true
+      },
+      "ids": [
+        "ID_T_SPELL_Alarm"
+      ],
+      "query": "",
+      "target": {
+        "types": []
+      }
+    },
+    {
+      "case": "concentration",
+      "filters": {
+        "concentration": true
+      },
+      "ids": [
+        "ID_T_SPELL_Bless"
+      ],
+      "query": "",
+      "target": {
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "a Magic filter leaves other types out",
+      "filters": {
+        "spellLevels": [
+          1
+        ]
+      },
+      "ids": [
+        "ID_T_SPELL_Alarm",
+        "ID_T_SPELL_Bless",
+        "ID_T_SPELL_Hex",
+        "ID_T_SPELL_Hunter's Mark"
+      ],
+      "query": "",
+      "target": {
+        "types": []
+      }
+    },
+    {
+      "case": "a book",
+      "filters": {
+        "sources": [
+          "Other"
+        ]
+      },
+      "ids": [
+        "ID_U_SPELL_FIREBALL"
+      ],
+      "query": "",
+      "target": {
+        "types": [
+          "Spell"
+        ]
+      }
+    },
+    {
+      "case": "the 2014 edition",
+      "filters": {
+        "edition": "dnd2014"
+      },
+      "ids": [
+        "ID_T_SPELL_Alarm",
+        "ID_T_SPELL_Bless",
+        "ID_T_SPELL_Fire Bolt",
+        "ID_T_OPTION_FIRE_FORM",
+        "ID_U_SPELL_FIREBALL",
+        "ID_T_SPELL_Hex",
+        "ID_T_SPELL_Hunter's Mark"
+      ],
+      "query": "",
+      "target": {
+        "types": []
+      }
+    },
+    {
+      "case": "the 2024 edition and a list",
+      "filters": {
+        "edition": "dnd2024"
+      },
+      "ids": [
+        "ID_T_SPELL_Alarm",
+        "ID_U_SPELL_FIREBALL",
+        "ID_T_SPELL_Fireball"
+      ],
+      "query": "",
+      "target": {
+        "tags": [
+          "Wizard"
+        ],
+        "types": [
+          "Spell"
+        ]
+      }
+    }
+  ],
+  "loaded": [
+    {
+      "id": "ID_T_SPELL_Fire Bolt",
+      "level": 0,
+      "name": "Fire Bolt",
+      "prerequisites": null,
+      "rulesets": [
+        "dnd2014"
+      ],
+      "school": "Evocation",
+      "shortDescription": "",
+      "source": "Test",
+      "sourceName": "Test",
+      "spell": {
+        "castingTime": "",
+        "concentration": false,
+        "duration": "",
+        "material": false,
+        "materialText": "",
+        "range": "",
+        "ritual": false,
+        "somatic": false,
+        "verbal": false
+      },
+      "tags": [
+        "Wizard",
+        "Sorcerer"
+      ],
+      "type": "spell"
+    },
+    {
+      "id": "ID_T_SPELL_Fireball",
+      "level": 3,
+      "name": "Fireball",
+      "prerequisites": null,
+      "rulesets": [
+        "dnd2024"
+      ],
+      "school": "Evocation",
+      "shortDescription": "",
+      "source": "Test",
+      "sourceName": "Test",
+      "spell": {
+        "castingTime": "",
+        "concentration": false,
+        "duration": "",
+        "material": false,
+        "materialText": "",
+        "range": "",
+        "ritual": false,
+        "somatic": false,
+        "verbal": false
+      },
+      "tags": [
+        "Wizard"
+      ],
+      "type": "spell"
+    },
+    {
+      "id": "ID_U_SPELL_FIREBALL",
+      "level": 3,
+      "name": "Fireball",
+      "prerequisites": null,
+      "rulesets": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "school": "Evocation",
+      "shortDescription": "",
+      "source": "Other",
+      "sourceName": "Other",
+      "spell": {
+        "castingTime": "",
+        "concentration": false,
+        "duration": "",
+        "material": false,
+        "materialText": "",
+        "range": "",
+        "ritual": false,
+        "somatic": false,
+        "verbal": false
+      },
+      "tags": [
+        "Wizard"
+      ],
+      "type": "spell"
+    },
+    {
+      "id": "ID_T_SPELL_Alarm",
+      "level": 1,
+      "name": "Alarm",
+      "prerequisites": null,
+      "rulesets": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "school": "Abjuration",
+      "shortDescription": "",
+      "source": "Test",
+      "sourceName": "Test",
+      "spell": {
+        "castingTime": "",
+        "concentration": false,
+        "duration": "",
+        "material": false,
+        "materialText": "",
+        "range": "",
+        "ritual": true,
+        "somatic": false,
+        "verbal": false
+      },
+      "tags": [
+        "Wizard",
+        "Ranger"
+      ],
+      "type": "spell"
+    },
+    {
+      "id": "ID_T_SPELL_Bless",
+      "level": 1,
+      "name": "Bless",
+      "prerequisites": null,
+      "rulesets": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "school": "enchantment",
+      "shortDescription": "",
+      "source": "Test",
+      "sourceName": "Test",
+      "spell": {
+        "castingTime": "",
+        "concentration": true,
+        "duration": "",
+        "material": false,
+        "materialText": "",
+        "range": "",
+        "ritual": false,
+        "somatic": false,
+        "verbal": false
+      },
+      "tags": [
+        "Cleric",
+        "Paladin"
+      ],
+      "type": "spell"
+    },
+    {
+      "id": "ID_T_SPELL_Hex",
+      "level": 1,
+      "name": "Hex",
+      "prerequisites": null,
+      "rulesets": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "school": "Enchantment",
+      "shortDescription": "",
+      "source": "Test",
+      "sourceName": "Test",
+      "spell": {
+        "castingTime": "",
+        "concentration": false,
+        "duration": "",
+        "material": false,
+        "materialText": "",
+        "range": "",
+        "ritual": false,
+        "somatic": false,
+        "verbal": false
+      },
+      "tags": [
+        "warlock"
+      ],
+      "type": "spell"
+    },
+    {
+      "id": "ID_T_SPELL_Hunter's Mark",
+      "level": 1,
+      "name": "Hunter's Mark",
+      "prerequisites": null,
+      "rulesets": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "school": "Divination",
+      "shortDescription": "",
+      "source": "Test",
+      "sourceName": "Test",
+      "spell": {
+        "castingTime": "",
+        "concentration": false,
+        "duration": "",
+        "material": false,
+        "materialText": "",
+        "range": "",
+        "ritual": false,
+        "somatic": false,
+        "verbal": false
+      },
+      "tags": [
+        "Ranger"
+      ],
+      "type": "spell"
+    },
+    {
+      "id": "ID_T_FEAT_ALERT",
+      "name": "Alert",
+      "prerequisites": null,
+      "rulesets": [
+        "dnd2024"
+      ],
+      "shortDescription": "",
+      "source": "Test",
+      "sourceName": "Test",
+      "tags": [
+        "Origin Feat",
+        "Feat"
+      ],
+      "type": "feat"
+    },
+    {
+      "id": "ID_T_OPTION_FIRE_FORM",
+      "name": "Fire Form",
+      "prerequisites": null,
+      "rulesets": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "shortDescription": "",
+      "source": "Test",
+      "sourceName": "Test",
+      "tags": [
+        "Elemental Form"
+      ],
+      "type": "option"
+    }
+  ]
+}

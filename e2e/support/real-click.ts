@@ -1,13 +1,27 @@
+import { settledBox } from './settle.js';
 import type { BrowserLike, LocatorLike, ScreenLike } from './types.js';
 
 interface HitReport { ok: boolean; top: string }
 
 /**
- * Real-pointer click: resolve the element's centre, confirm with `elementFromPoint` that the
- * element (or a descendant) is the topmost thing there, then click that viewport point with the
- * real mouse (`screen.tapAt` = Playwright `page.mouse.click`). A scrim or z-order bug that
- * covers the control fails here with the covering element named, whereas a locator
- * `tap()` would just auto-wait/scroll and may hit the same bug silently.
+ * Scroll the element of `css` whose centre is nearest the locator's box into its scroll container's view, as a user
+ * would before clicking it (a control below the pane's fold is covered by the pane).
+ */
+async function scrollToView(browser: BrowserLike, locator: LocatorLike, css: string): Promise<void> {
+  const box = await locator.boundingBox();
+  if (!box) return;
+  await browser.evaluate(({ css, x, y }) => {
+    const dist = (e: Element) => { const r = e.getBoundingClientRect(); return Math.hypot(r.x + r.width / 2 - x, r.y + r.height / 2 - y); };
+    Array.from(document.querySelectorAll(css)).sort((a, b) => dist(a) - dist(b))[0]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, { css, x: box.x + box.width / 2, y: box.y + box.height / 2 });
+}
+
+/**
+ * Real-pointer click: scroll the element into view, resolve its centre once it has stopped moving, confirm with
+ * `elementFromPoint` that the element (or a descendant) is the topmost thing there, then click that viewport point
+ * with the real mouse (`screen.tapAt` = Playwright `page.mouse.click`). A scrim or z-order bug that covers the control
+ * fails here with the covering element named, whereas a locator `tap()` would just auto-wait/scroll and may hit the
+ * same bug silently.
  *
  * `css` identifies the element in the page for the hit test (the locator cannot cross into
  * `evaluate`); it must match the element the locator resolves to.
@@ -18,8 +32,9 @@ export async function realClick(
   css: string,
 ): Promise<void> {
   await locator.waitFor({ state: 'visible' });
-  const box = await locator.boundingBox();
-  if (!box) throw new Error(`realClick: no box for ${css}`);
+  await scrollToView(browser, locator, css);
+  // a form still laying out around the control (a problem list growing above it) moves it on a loaded machine
+  const box = await settledBox(locator);
   const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   const hit = await browser.evaluate(({ css, x, y }): HitReport => {
     const top = document.elementFromPoint(x, y);

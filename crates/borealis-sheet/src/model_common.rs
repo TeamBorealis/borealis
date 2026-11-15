@@ -243,13 +243,25 @@ fn abilities(snap: &CharacterSnapshot) -> Vec<AbilityData> {
         .collect()
 }
 
+/// A skill's field key: its name with `_` for every character that is not a letter or digit (`sleight_of_hand`).
+fn skill_key(name: &str) -> String {
+    name.chars()
+        .map(|c| if c.is_alphanumeric() { c } else { '_' })
+        .collect()
+}
+
+/// A skill's printed name: a homebrew skill's own (`label`), else the key in title case.
+fn skill_name(s: &borealis_engine::snapshot::SkillSnapshot) -> String {
+    s.label.clone().unwrap_or_else(|| title_case(&s.name))
+}
+
 fn skills(snap: &CharacterSnapshot) -> (Vec<SkillData>, Vec<PassiveData>) {
     let skills: Vec<SkillData> = snap
         .skills
         .iter()
         .map(|s| SkillData {
-            key: s.name.replace(' ', "_"),
-            name: title_case(&s.name),
+            key: skill_key(&s.name),
+            name: skill_name(s),
             ability: ability_key(&s.ability),
             total: s.total,
             proficient: s.proficient,
@@ -263,8 +275,8 @@ fn skills(snap: &CharacterSnapshot) -> (Vec<SkillData>, Vec<PassiveData>) {
         .iter()
         .filter(|s| s.name == "perception" || s.misc != 0)
         .map(|s| PassiveData {
-            key: s.name.replace(' ', "_"),
-            label: format!("Passive {}", title_case(&s.name)),
+            key: skill_key(&s.name),
+            label: format!("Passive {}", skill_name(s)),
             value: s.passive,
         })
         .collect();

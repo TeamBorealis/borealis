@@ -1,0 +1,779 @@
+{
+  "cases": [
+    {
+      "case": "level and one of two abilities",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 4,
+                      "row": "characterLevel"
+                    }
+                  },
+                  {
+                    "items": [
+                      {
+                        "node": "row",
+                        "row": {
+                          "ability": "strength",
+                          "min": 13,
+                          "row": "ability"
+                        }
+                      },
+                      {
+                        "node": "row",
+                        "row": {
+                          "ability": "dexterity",
+                          "min": 13,
+                          "row": "ability"
+                        }
+                      }
+                    ],
+                    "mode": "any",
+                    "node": "group"
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Level 4+, Strength or Dexterity 13+"
+    },
+    {
+      "case": "class level written as level",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 3,
+                      "row": "level"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Level 3+"
+    },
+    {
+      "case": "one ability",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "ability": "wisdom",
+                      "min": 13,
+                      "row": "ability"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Wisdom 13+"
+    },
+    {
+      "case": "abilities with different minimums",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "ability": "strength",
+                      "min": 13,
+                      "row": "ability"
+                    }
+                  },
+                  {
+                    "node": "row",
+                    "row": {
+                      "ability": "charisma",
+                      "min": 15,
+                      "row": "ability"
+                    }
+                  }
+                ],
+                "mode": "any",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Strength 13+ or Charisma 15+"
+    },
+    {
+      "case": "three abilities",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "ability": "intelligence",
+                      "min": 13,
+                      "row": "ability"
+                    }
+                  },
+                  {
+                    "node": "row",
+                    "row": {
+                      "ability": "wisdom",
+                      "min": 13,
+                      "row": "ability"
+                    }
+                  },
+                  {
+                    "node": "row",
+                    "row": {
+                      "ability": "charisma",
+                      "min": 13,
+                      "row": "ability"
+                    }
+                  }
+                ],
+                "mode": "any",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Intelligence or Wisdom or Charisma 13+"
+    },
+    {
+      "case": "a class level",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "class": "wizard",
+                      "min": 5,
+                      "row": "classLevel"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Wizard level 5+"
+    },
+    {
+      "case": "a feature",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "name": "Fighting Style",
+                      "row": "feature"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Fighting Style Feature"
+    },
+    {
+      "case": "spellcasting",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "level": 1,
+                      "row": "spellcasting"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Spellcasting Feature"
+    },
+    {
+      "case": "spell slots",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "level": 3,
+                      "row": "spellcasting"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Spell slots of level 3"
+    },
+    {
+      "case": "an element by id",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "id": "ID_X_FEAT_TOUGH",
+                      "row": "has"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Tough"
+    },
+    {
+      "case": "without an element",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "id": "ID_X_FEAT_TOUGH",
+                      "row": "lacks"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "No Tough"
+    },
+    {
+      "case": "none of",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "ability": "strength",
+                      "min": 13,
+                      "row": "ability"
+                    }
+                  },
+                  {
+                    "node": "row",
+                    "row": {
+                      "ability": "dexterity",
+                      "min": 13,
+                      "row": "ability"
+                    }
+                  }
+                ],
+                "mode": "none",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Not Strength 13+ or Dexterity 13+"
+    },
+    {
+      "case": "all of with a group of other rows",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 4,
+                      "row": "characterLevel"
+                    }
+                  },
+                  {
+                    "items": [
+                      {
+                        "node": "row",
+                        "row": {
+                          "name": "Rage",
+                          "row": "feature"
+                        }
+                      },
+                      {
+                        "node": "row",
+                        "row": {
+                          "class": "wizard",
+                          "min": 2,
+                          "row": "classLevel"
+                        }
+                      }
+                    ],
+                    "mode": "any",
+                    "node": "group"
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Level 4+, Rage Feature or Wizard level 2+"
+    },
+    {
+      "case": "a statistic",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 1,
+                      "row": "statistic",
+                      "stat": "innate speed:fly"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "A flying speed"
+    },
+    {
+      "case": "a speed of at least",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 30,
+                      "row": "statistic",
+                      "stat": "innate speed:climb"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Climbing speed 30+ ft."
+    },
+    {
+      "case": "a statistic the picker names",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 60,
+                      "row": "statistic",
+                      "stat": "darkvision:range"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Darkvision range 60+"
+    },
+    {
+      "case": "a statistic of the author's",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 2,
+                      "row": "statistic",
+                      "stat": "my homebrew:counter"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "My homebrew counter 2+"
+    },
+    {
+      "case": "a test words can't say",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "row": "type",
+                      "value": "Spell"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": ""
+    },
+    {
+      "case": "an element and a level",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "id": "ID_X_RACE_ELF",
+                      "row": "has"
+                    }
+                  },
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 8,
+                      "row": "characterLevel"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "Elf, Level 8+"
+    },
+    {
+      "case": "the author's own words",
+      "form": {
+        "blocks": [],
+        "children": [],
+        "fields": {
+          "category": "General",
+          "name": "Sample",
+          "prerequisiteText": "4th level, sworn to the Order",
+          "requirements": {
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 4,
+                      "row": "characterLevel"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          }
+        },
+        "key": "e",
+        "kind": "feat",
+        "preserved": []
+      },
+      "prerequisite": "4th level, sworn to the Order"
+    }
+  ],
+  "names": {
+    "ID_X_FEAT_TOUGH": "Tough",
+    "ID_X_RACE_ELF": "Elf"
+  }
+}

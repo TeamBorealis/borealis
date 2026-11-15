@@ -224,6 +224,63 @@ impl Element {
         }
     }
 
+    /// True when `self` equals `other` with its `ruleset` set to `ruleset` (what a store build makes of a file's
+    /// element), without copying `other`.
+    #[must_use]
+    pub fn equals_with_ruleset(&self, other: &Self, ruleset: Option<Ruleset>) -> bool {
+        // every field by name, so a new field cannot be left out of the comparison
+        let Self {
+            id,
+            name,
+            ty,
+            source,
+            ruleset: _,
+            supports,
+            prerequisite,
+            requirements,
+            description,
+            sheet,
+            compendium,
+            setters,
+            rules,
+            spellcasting,
+            equipment,
+            source_ref,
+            multiclass,
+            extract,
+            maps_to,
+            renamed_from,
+            legacy_alias,
+            profile_overrides,
+            data,
+            extra,
+        } = other;
+        self.ruleset == ruleset
+            && self.id == *id
+            && self.name == *name
+            && self.ty == *ty
+            && self.source == *source
+            && self.supports == *supports
+            && self.prerequisite == *prerequisite
+            && self.requirements == *requirements
+            && self.description == *description
+            && self.sheet == *sheet
+            && self.compendium == *compendium
+            && self.setters == *setters
+            && self.rules == *rules
+            && self.spellcasting == *spellcasting
+            && self.equipment == *equipment
+            && self.source_ref == *source_ref
+            && self.multiclass == *multiclass
+            && self.extract == *extract
+            && self.maps_to == *maps_to
+            && self.renamed_from == *renamed_from
+            && self.legacy_alias == *legacy_alias
+            && self.profile_overrides == *profile_overrides
+            && self.data == *data
+            && self.extra == *extra
+    }
+
     /// The type as a [`KnownType`], if recognised.
     #[must_use]
     pub fn known_type(&self) -> Option<KnownType> {

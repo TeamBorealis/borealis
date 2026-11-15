@@ -1,0 +1,975 @@
+{
+  "form": {
+    "blocks": [
+      {
+        "fields": {
+          "equipped": {
+            "original": "[armor:none]",
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "row": "slot",
+                      "slot": "armor",
+                      "test": {
+                        "kind": "none"
+                      }
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          },
+          "name": "speed",
+          "value": "40"
+        },
+        "key": "b0",
+        "kind": "stat",
+        "preserved": [
+          {
+            "key": "minimum",
+            "label": "A setting Borealis does not use (“minimum”)"
+          }
+        ],
+        "sentence": "Changes Walking speed: +40, while wearing no armor"
+      },
+      {
+        "fields": {
+          "id": {
+            "id": "ID_GL_TRAIT_PACK_TACTICS",
+            "name": "Pack Tactics",
+            "type": "Racial Trait"
+          },
+          "level": 3,
+          "requirements": {
+            "original": "[level:3]",
+            "value": {
+              "model": {
+                "items": [
+                  {
+                    "node": "row",
+                    "row": {
+                      "min": 3,
+                      "row": "level"
+                    }
+                  }
+                ],
+                "mode": "all",
+                "node": "group"
+              },
+              "shape": "model"
+            }
+          },
+          "type": "Racial Trait"
+        },
+        "key": "b1",
+        "kind": "grant",
+        "sentence": "From level 3: gives Pack Tactics, only if level 3 or higher"
+      },
+      {
+        "fields": {
+          "name": "Language (Wolf)",
+          "supports": {
+            "original": "Standard||Exotic",
+            "value": {
+              "model": {
+                "root": {
+                  "items": [
+                    {
+                      "node": "row",
+                      "row": {
+                        "row": "tag",
+                        "tag": "Standard"
+                      }
+                    },
+                    {
+                      "node": "row",
+                      "row": {
+                        "row": "tag",
+                        "tag": "Exotic"
+                      }
+                    }
+                  ],
+                  "mode": "any",
+                  "node": "group"
+                },
+                "specific": false
+              },
+              "shape": "model"
+            }
+          },
+          "type": "Language"
+        },
+        "key": "b2",
+        "kind": "select",
+        "sentence": "Lets the player choose: Language (Wolf), from Standard or Exotic"
+      },
+      {
+        "fields": {
+          "items": [
+            {
+              "id": 1,
+              "text": "Grey"
+            },
+            {
+              "id": 2,
+              "text": "White"
+            }
+          ],
+          "name": "Coat (Wolf)",
+          "type": "List"
+        },
+        "key": "b3",
+        "kind": "list",
+        "sentence": "Lets the player pick from a written list: Coat (Wolf)"
+      },
+      {
+        "fields": {
+          "id": "howl",
+          "max": {
+            "expr": {
+              "original": "max(1, wisdom:modifier)",
+              "value": {
+                "model": {
+                  "args": [
+                    {
+                      "term": "number",
+                      "value": 1
+                    },
+                    {
+                      "ability": "wisdom",
+                      "term": "ability"
+                    }
+                  ],
+                  "term": "max"
+                },
+                "shape": "model"
+              }
+            },
+            "type": "formula"
+          },
+          "name": "Howl",
+          "regain": {
+            "short_rest": 1
+          }
+        },
+        "key": "b4",
+        "kind": "resource",
+        "sentence": "Limited uses: Howl (the higher of 1 and Wisdom modifier)"
+      },
+      {
+        "fields": {
+          "damage_types": [
+            "bludgeoning"
+          ],
+          "dice": "1d6",
+          "plus": [
+            {
+              "original": "dexterity:modifier",
+              "value": {
+                "model": {
+                  "ability": "dexterity",
+                  "term": "ability"
+                },
+                "shape": "model"
+              }
+            },
+            {
+              "original": "monk level",
+              "value": {
+                "model": {
+                  "class": "monk",
+                  "term": "classLevel"
+                },
+                "shape": "model"
+              }
+            }
+          ]
+        },
+        "key": "b5",
+        "kind": "damage_reduction",
+        "sentence": "Reduces bludgeoning damage by 1d6 + Dexterity modifier + Monk level"
+      },
+      {
+        "fields": {
+          "activation": "bonus_action",
+          "effects": [
+            {
+              "fields": {
+                "ability": "strength",
+                "roll": "ability_check"
+              },
+              "key": "e0",
+              "kind": "roll_advantage",
+              "sentence": "Advantage on Strength checks"
+            },
+            {
+              "fields": {
+                "name": "speed",
+                "value": "10"
+              },
+              "key": "e1",
+              "kind": "stat",
+              "sentence": "Changes Walking speed: +10"
+            }
+          ],
+          "id": "frenzy",
+          "name": "Frenzy"
+        },
+        "key": "b6",
+        "kind": "toggle",
+        "sentence": "On/off state: Frenzy (2 effects)"
+      },
+      {
+        "fields": {},
+        "key": "b7",
+        "kind": "unknown",
+        "preserved": [
+          {
+            "key": "rule",
+            "label": "A rule Borealis does not read (“howl”)"
+          }
+        ],
+        "sentence": "Kept as is: a rule this creator does not edit"
+      }
+    ],
+    "children": [],
+    "fields": {
+      "allowDuplicate": true,
+      "compendium": false,
+      "description": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "A ",
+                "type": "text"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "wolf",
+                "type": "text"
+              },
+              {
+                "text": ".",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "edition": "dnd2024",
+      "keywords": [
+        "beast",
+        "pet"
+      ],
+      "mapsTo": {
+        "dnd2014": {
+          "id": "ID_WOLF",
+          "missing": true,
+          "name": "",
+          "type": ""
+        },
+        "dnd2024": null,
+        "kind": "approximate"
+      },
+      "name": "Wolf",
+      "prerequisiteText": "Level 3",
+      "requirements": {
+        "original": "[level:3]",
+        "value": {
+          "model": {
+            "items": [
+              {
+                "node": "row",
+                "row": {
+                  "min": 3,
+                  "row": "level"
+                }
+              }
+            ],
+            "mode": "all",
+            "node": "group"
+          },
+          "shape": "model"
+        }
+      },
+      "setters": [
+        {
+          "attributes": {
+            "unit": "ft"
+          },
+          "name": "speed",
+          "value": "40"
+        }
+      ],
+      "sheet": {
+        "action": null,
+        "alt": null,
+        "display": null,
+        "lines": [
+          {
+            "action": null,
+            "level": 2,
+            "text": "Bite {{level}}",
+            "usage": null
+          }
+        ],
+        "usage": "1/Long Rest"
+      },
+      "source": "Gloom",
+      "summary": "A wolf.",
+      "tags": [
+        "Beast"
+      ],
+      "type": "Companion"
+    },
+    "key": "e",
+    "kind": "other",
+    "preserved": [
+      {
+        "key": "data.pack_size",
+        "label": "Stored detail “pack size”"
+      }
+    ]
+  },
+  "kinds": [
+    {
+      "description": "A language characters can speak.",
+      "editions": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "elementTypes": [
+        "Language"
+      ],
+      "fields": [
+        {
+          "bindings": [
+            "name"
+          ],
+          "control": "text",
+          "key": "name",
+          "label": "Name",
+          "required": true,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "ruleset"
+          ],
+          "choices": [
+            {
+              "label": "The pack's edition",
+              "value": ""
+            },
+            {
+              "label": "2014",
+              "value": "dnd2014"
+            },
+            {
+              "label": "2024",
+              "value": "dnd2024"
+            },
+            {
+              "label": "Either edition",
+              "value": "any"
+            }
+          ],
+          "control": "combo",
+          "help": "The rules it is written for: the pack's edition unless you pick one.",
+          "key": "edition",
+          "label": "Edition",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "source"
+          ],
+          "control": "text",
+          "expert": true,
+          "key": "source",
+          "label": "Source",
+          "readOnly": true,
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:standard",
+            "setter:exotic",
+            "setter:secret",
+            "supports:Standard|Exotic|Secret|Rare",
+            "data.rarity"
+          ],
+          "choices": [
+            {
+              "label": "Standard",
+              "value": "standard"
+            },
+            {
+              "label": "Exotic (2024: rare)",
+              "value": "exotic"
+            },
+            {
+              "label": "Secret",
+              "value": "secret"
+            }
+          ],
+          "control": "combo",
+          "help": "Language choices offer languages by rarity: most offer standard ones, some exotic (2024: rare) ones. Secret languages are given by a feature, not chosen.",
+          "key": "rarity",
+          "label": "Rarity",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:script"
+          ],
+          "control": "text",
+          "key": "script",
+          "label": "Script",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:speakers"
+          ],
+          "control": "text",
+          "key": "speakers",
+          "label": "Typical speakers",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "supports"
+          ],
+          "control": "tags",
+          "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+          "key": "tags",
+          "label": "Tags",
+          "picker": {
+            "types": [
+              "Tag",
+              "Language"
+            ]
+          },
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:short"
+          ],
+          "control": "text",
+          "help": "Shown in the second column of pickers.",
+          "key": "summary",
+          "label": "Summary line",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "requirements"
+          ],
+          "control": "condition",
+          "help": "What a character needs before it is offered. Leave it empty for none.",
+          "key": "requirements",
+          "label": "Prerequisite",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "prerequisite"
+          ],
+          "control": "text",
+          "help": "Written from the prerequisite while left empty or as written; type to reword it.",
+          "key": "prerequisiteText",
+          "label": "Prerequisite as shown",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:allow duplicate"
+          ],
+          "control": "check",
+          "help": "A character may take it again from another choice.",
+          "key": "allowDuplicate",
+          "label": "Can be taken more than once",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:keywords"
+          ],
+          "control": "chips",
+          "help": "Extra words that describe it, such as fire or healing.",
+          "key": "keywords",
+          "label": "Keywords",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "rules"
+          ],
+          "control": "blocks",
+          "help": "What it does to a character: each rule gives something, offers a choice or changes a number.",
+          "key": "rules",
+          "label": "Rules",
+          "required": false,
+          "tab": "rules"
+        },
+        {
+          "bindings": [
+            "description"
+          ],
+          "control": "richText",
+          "help": "The text shown in the description pane and the Compendium.",
+          "key": "description",
+          "label": "Description",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "sheet"
+          ],
+          "control": "sheet",
+          "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level.",
+          "key": "sheet",
+          "label": "On the character sheet",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "compendium.display"
+          ],
+          "control": "check",
+          "help": "Turn it off for a helper element that players never look up on its own.",
+          "key": "compendium",
+          "label": "Show in Compendium",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "maps_to"
+          ],
+          "control": "mapsTo",
+          "expert": true,
+          "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
+          "key": "mapsTo",
+          "label": "2014/2024 counterpart",
+          "required": false,
+          "tab": "description"
+        }
+      ],
+      "group": "small",
+      "id": "language",
+      "label": "Language",
+      "parentKinds": [],
+      "pluralLabel": "Languages",
+      "tabs": [
+        {
+          "id": "general",
+          "label": "GENERAL"
+        },
+        {
+          "id": "rules",
+          "label": "RULES"
+        },
+        {
+          "id": "description",
+          "label": "DESCRIPTION"
+        }
+      ]
+    },
+    {
+      "description": "Any other kind of element, with the parts every form shares (expert).",
+      "editions": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "elementTypes": [],
+      "fields": [
+        {
+          "bindings": [
+            "name"
+          ],
+          "control": "text",
+          "key": "name",
+          "label": "Name",
+          "required": true,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "ruleset"
+          ],
+          "choices": [
+            {
+              "label": "The pack's edition",
+              "value": ""
+            },
+            {
+              "label": "2014",
+              "value": "dnd2014"
+            },
+            {
+              "label": "2024",
+              "value": "dnd2024"
+            },
+            {
+              "label": "Either edition",
+              "value": "any"
+            }
+          ],
+          "control": "combo",
+          "help": "The rules it is written for: the pack's edition unless you pick one.",
+          "key": "edition",
+          "label": "Edition",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "source"
+          ],
+          "control": "text",
+          "expert": true,
+          "key": "source",
+          "label": "Source",
+          "readOnly": true,
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "allowCustom": true,
+          "bindings": [
+            "type"
+          ],
+          "choices": [
+            {
+              "label": "Companion",
+              "value": "Companion"
+            },
+            {
+              "label": "Companion Action",
+              "value": "Companion Action"
+            },
+            {
+              "label": "Companion Feature",
+              "value": "Companion Feature"
+            },
+            {
+              "label": "Companion Reaction",
+              "value": "Companion Reaction"
+            },
+            {
+              "label": "Companion Trait",
+              "value": "Companion Trait"
+            },
+            {
+              "label": "Familiar",
+              "value": "Familiar"
+            },
+            {
+              "label": "Familiar Action",
+              "value": "Familiar Action"
+            },
+            {
+              "label": "Familiar Feature",
+              "value": "Familiar Feature"
+            },
+            {
+              "label": "Familiar Trait",
+              "value": "Familiar Trait"
+            },
+            {
+              "label": "Property",
+              "value": "Property"
+            }
+          ],
+          "control": "combo",
+          "help": "Companion, Familiar, Property, or any type your content uses that has no form of its own.",
+          "key": "type",
+          "label": "Type",
+          "picker": {
+            "types": [
+              "Element Type"
+            ]
+          },
+          "required": true,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setters"
+          ],
+          "control": "setters",
+          "help": "Each property is a name and a value; the names other elements of this type use are offered.",
+          "key": "setters",
+          "label": "Properties",
+          "picker": {
+            "types": [
+              "Setter Name"
+            ]
+          },
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "supports"
+          ],
+          "control": "tags",
+          "help": "Choices offer elements by their tags (Fighting Style, Wizard). Pick one content uses, or type a new one.",
+          "key": "tags",
+          "label": "Tags",
+          "picker": {
+            "types": [
+              "Tag"
+            ]
+          },
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:short"
+          ],
+          "control": "text",
+          "help": "Shown in the second column of pickers.",
+          "key": "summary",
+          "label": "Summary line",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "requirements"
+          ],
+          "control": "condition",
+          "help": "What a character needs before it is offered. Leave it empty for none.",
+          "key": "requirements",
+          "label": "Prerequisite",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "prerequisite"
+          ],
+          "control": "text",
+          "help": "Written from the prerequisite while left empty or as written; type to reword it.",
+          "key": "prerequisiteText",
+          "label": "Prerequisite as shown",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:allow duplicate"
+          ],
+          "control": "check",
+          "help": "A character may take it again from another choice.",
+          "key": "allowDuplicate",
+          "label": "Can be taken more than once",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setter:keywords"
+          ],
+          "control": "chips",
+          "help": "Extra words that describe it, such as fire or healing.",
+          "key": "keywords",
+          "label": "Keywords",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "rules"
+          ],
+          "control": "blocks",
+          "help": "What it does to a character: each rule gives something, offers a choice or changes a number.",
+          "key": "rules",
+          "label": "Rules",
+          "required": false,
+          "tab": "rules"
+        },
+        {
+          "bindings": [
+            "description"
+          ],
+          "control": "richText",
+          "help": "The text shown in the description pane and the Compendium.",
+          "key": "description",
+          "label": "Description",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "sheet"
+          ],
+          "control": "sheet",
+          "help": "How it shows on the character sheet: a short name, its uses, its action and lines by level.",
+          "key": "sheet",
+          "label": "On the character sheet",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "compendium.display"
+          ],
+          "control": "check",
+          "help": "Turn it off for a helper element that players never look up on its own.",
+          "key": "compendium",
+          "label": "Show in Compendium",
+          "required": false,
+          "tab": "description"
+        },
+        {
+          "bindings": [
+            "maps_to"
+          ],
+          "control": "mapsTo",
+          "expert": true,
+          "help": "The same element in the other edition, used when content of one edition is adapted to the other.",
+          "key": "mapsTo",
+          "label": "2014/2024 counterpart",
+          "required": false,
+          "tab": "description"
+        }
+      ],
+      "group": "expert",
+      "id": "other",
+      "label": "Other element",
+      "parentKinds": [],
+      "pluralLabel": "Other elements",
+      "tabs": [
+        {
+          "id": "general",
+          "label": "GENERAL"
+        },
+        {
+          "id": "rules",
+          "label": "RULES"
+        },
+        {
+          "id": "description",
+          "label": "DESCRIPTION"
+        }
+      ]
+    },
+    {
+      "description": "Adds tags, properties or rules to an element of another pack.",
+      "editions": [
+        "dnd2014",
+        "dnd2024"
+      ],
+      "elementTypes": [],
+      "fields": [
+        {
+          "bindings": [
+            "id"
+          ],
+          "control": "reference",
+          "key": "target",
+          "label": "Adds to",
+          "required": true,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "type"
+          ],
+          "control": "text",
+          "expert": true,
+          "key": "type",
+          "label": "Type",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "supports"
+          ],
+          "control": "tags",
+          "key": "tags",
+          "label": "Tags it adds",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "setters"
+          ],
+          "control": "setters",
+          "expert": true,
+          "help": "A property is added only when the element has none with that name.",
+          "key": "setters",
+          "label": "Properties it adds",
+          "required": false,
+          "tab": "general"
+        },
+        {
+          "bindings": [
+            "rules"
+          ],
+          "control": "blocks",
+          "key": "rules",
+          "label": "Rules it adds",
+          "required": false,
+          "tab": "rules"
+        }
+      ],
+      "group": "expert",
+      "id": "append",
+      "label": "Addition to an element",
+      "parentKinds": [],
+      "pluralLabel": "Additions to elements",
+      "tabs": [
+        {
+          "id": "general",
+          "label": "GENERAL"
+        },
+        {
+          "id": "rules",
+          "label": "RULES"
+        }
+      ]
+    }
+  ]
+}

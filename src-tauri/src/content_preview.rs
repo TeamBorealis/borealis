@@ -114,6 +114,10 @@ pub struct ImportPreview {
     pub index_url: Option<String>,
     /// IM14: the books of the set with their editions; the user may change them before Install.
     pub books: Vec<crate::content_dto::PreviewBook>,
+    /// A homebrew creator pack file (`creator.json` inside, spec 14.2): installs editable; when its pack is installed
+    /// already, Replace or Import as a copy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub homebrew: Option<crate::homebrew_transfer::HomebrewImportInfo>,
 }
 
 /// A file handed to the app by the OS ("open with" / share), waiting for the UI. Android's activity
@@ -123,16 +127,20 @@ pub struct ImportPreview {
 pub struct OpenedFile {
     pub file_name: String,
     pub content_base64: String,
+    /// The file was not opened (Android: a URI Borealis does not read, H5wn8): what the UI tells the user instead.
+    /// The content is empty then.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub refused: Option<String>,
 }
 
 pub(crate) struct Staged {
     /// Keeps the staged folder alive until the preview is installed or dropped.
-    _scratch: Scratch,
-    out_dir: PathBuf,
-    id: String,
-    file_name: String,
-    report: MigrationReport,
-    preview: ImportPreview,
+    pub(crate) scratch: Scratch,
+    pub(crate) out_dir: PathBuf,
+    pub(crate) id: String,
+    pub(crate) file_name: String,
+    pub(crate) report: MigrationReport,
+    pub(crate) preview: ImportPreview,
 }
 
 static STAGED: Mutex<Vec<(String, Staged)>> = Mutex::new(Vec::new());
@@ -211,6 +219,21 @@ impl AppState {
         editions: Option<&BTreeMap<String, Ruleset>>,
         sink: &dyn EventSink,
     ) -> ApiResult<ImportPackResult> {
+        self.install_import_preview_as(preview_id, editions, false, sink)
+    }
+
+    /// [`Self::install_import_preview`]; a homebrew pack file (`ImportPreview.homebrew`) is installed as a copy with
+    /// `as_copy` (spec 14.2: Import as a copy), else as it is (Replace when its pack is installed).
+    ///
+    /// # Errors
+    /// As [`Self::install_import_preview`].
+    pub fn install_import_preview_as(
+        &self,
+        preview_id: &str,
+        editions: Option<&BTreeMap<String, Ruleset>>,
+        as_copy: bool,
+        sink: &dyn EventSink,
+    ) -> ApiResult<ImportPackResult> {
         let _guard = self.content_lock()?;
         let staged = {
             let mut all = STAGED.lock()?;
@@ -225,6 +248,9 @@ impl AppState {
             }
             all.remove(at).1
         };
+        if staged.preview.homebrew.is_some() {
+            return self.install_creator_staged(staged, as_copy, sink);
+        }
         // what the preview showed is what installs: the user's changes, and every book whose
         // shown edition is not the detected one (review M2)
         let mut chosen: BTreeMap<String, Ruleset> = staged
@@ -300,6 +326,13 @@ impl AppState {
     fn stage_import(&self, inputs: Inputs, format: Option<&str>) -> ApiResult<Staged> {
         let scratch = Scratch::new(&self.paths.data)?;
         let out_dir = scratch.0.join("out");
+        if let Inputs::Files(files) = &inputs {
+            // spec 14.2: a homebrew pack file (`creator.json` inside) installs as the creator's pack, unconverted
+            if let Some(pack) = crate::homebrew_transfer::creator_pack_in(files)? {
+                let file_name = files[0].0.clone();
+                return self.stage_creator_pack(scratch, out_dir, file_name, pack);
+            }
+        }
         let (display, id, file_name, file_count, conv) = match inputs {
             Inputs::Folder(dir) => {
                 let name = dir.file_name().map_or_else(
@@ -345,9 +378,10 @@ impl AppState {
                 &self.paths.library().join(&id),
                 &self.content_prefs(),
             ),
+            homebrew: None,
         };
         Ok(Staged {
-            _scratch: scratch,
+            scratch,
             out_dir,
             id,
             file_name,
@@ -362,7 +396,7 @@ pub(crate) struct Converted {
     pub(crate) converted: usize,
     pub(crate) skipped: usize,
     pub(crate) format: String,
-    counts: BTreeMap<String, usize>,
+    pub(crate) counts: BTreeMap<String, usize>,
     pub(crate) raw: Vec<borealis_content::Issue>,
     /// Source element type by id (converted, dropped and renamed elements).
     pub(crate) types: BTreeMap<String, String>,
@@ -699,6 +733,7 @@ pub fn push_opened_file(path: &Path) {
         q.push(OpenedFile {
             file_name,
             content_base64: STANDARD.encode(bytes),
+            refused: None,
         });
     }
 }

@@ -61,7 +61,7 @@ pub fn inventory_snapshot(
         }
         let adorner = it.adorner.as_deref().and_then(|a| uni.get(a));
         let (restriction, barred) =
-            attunement::line_restriction(uni, graph, &e.el, adorner.map(|a| &a.el));
+            attunement::line_restriction(uni, graph, &e.el, adorner.map(|a| a.el.as_ref()));
         if att && barred {
             diags.push(
                 Diagnostic::new(
@@ -239,7 +239,7 @@ pub fn attacks_with(
             _ => own_ability,
         });
         let loaded = crate::ammo::loaded(uni, state, e);
-        let enh = weapon_enhancement(&e.el, adorner.map(|a| &a.el))
+        let enh = weapon_enhancement(&e.el, adorner.map(|a| a.el.as_ref()))
             + loaded.as_ref().map_or(0, |l| l.enhancement);
         let proficient = pact.is_some()
             || crate::item_prof::weapon_proficient(graph, e)

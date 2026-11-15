@@ -200,6 +200,7 @@ Every command returns the full `CharacterSnapshot`; the new blocks live in `snap
 | `spend_resource` / `restore_resource` | `characterId, resourceId, uses?` (default 1) | `CharacterSnapshot` (`requirement_failed` when too few uses, `not_found` for an unknown id) |
 | `short_rest` / `long_rest` | `characterId` | `CharacterSnapshot` (rests end toggles; Long Rest refills and lowers exhaustion by 1 in 2024). Spell tracker: a Short Rest gives back the Pact Magic slots and short-rest trackers; a Long Rest every slot and every short- or long-rest tracker, and ends concentration |
 | `set_toggle` | `characterId, toggleId, on` | `CharacterSnapshot` (Rage etc.; `play.toggles[].active`, `play.defenses`) |
+| `set_condition` | `characterId, conditionId, on` | `CharacterSnapshot` (HC1, 1.5.1: `play.conditions[]` lists the conditions the character can switch on, by name: `id`, `name`, `on`, `description` HTML, `effects` one line per rule, `source`; never Exhaustion, which has its levels, nor the engine's helper conditions. While on, the condition's rules apply like any element the character has, and requirements naming it hold. Kept with the character in `play.conditions` (written only when one is on), unchanged by rests. Switching on an id that is not listed is `not_found`; any id can be switched off) |
 | `set_exhaustion` | `characterId, level` | `CharacterSnapshot` |
 | `set_heroic_inspiration` | `characterId, has` | `CharacterSnapshot` |
 | `choose_weapon_masteries` | `characterId, weaponIds: string[]` | replaces all picks in slot order (slots = `Weapon` selects named "...Mastery"); `invalid_argument` for duplicates, `requirement_failed` for too many / not allowed |
@@ -392,6 +393,393 @@ user's `note` (<= 2000 chars) and `source` (null unless `includeSource`; drafts 
 the last 8 previews; `import_report_send` posts the stored bytes (HTTPS, no redirects) and forgets them; failures are `io_error`,
 an expired preview `not_found`. Payloads over 1.4 MB are refused with `invalid_argument`.
 
+### Homebrew creator
+
+The 1.5.0 creator (decisions HC1-HC4; `specs/homebrew-creator-spec.md` is the source of truth, section 15.2). Types:
+`ui/src/api/types/homebrew.ts` (TS) and `src-tauri/src/homebrew_dto.rs` (Rust, checked against the generated contract by
+`src-tauri/tests/contract_homebrew.rs`; the form is `borealis_authoring::form::FormState`). Wrappers:
+`src-tauri/src/commands_homebrew.rs`, delegating to `homebrew_packs.rs` (packs, delete), `homebrew_draft_api.rs`
+(drafts), `homebrew_refs.rs` (picker rows) and `homebrew_creator.rs` (catalogs); the AI path keeps `homebrew_api.rs`.
+Commands that write packs run through `commands_content.rs::blocking`.
+
+**Feature switch (HC3).** `AppSettings.creatorEnabled` (default `false`, no settings control) shows START > HOMEBREW and the
+creator's entry points; until 1.5.0 the UI reaches these commands only with it on (dev builds and the web mock's `?creator=1`).
+
+**Not implemented yet.** Until a command's work item lands (spec section 21), it rejects with `requirement_failed` and
+`details: { notImplemented: "<command>" }`. Implemented in the backend: the catalogs and kinds, packs, the element list,
+drafts (new, open, update, save, discard, list), delete, duplicate and reference options (WB-04/05/06), the
+validation of drafts with `homebrew_check_draft` (WB-07), Try it (WB-08), and bulk edit, undo, where-used and spell
+lists (WB-23, `homebrew_expert.rs`, `homebrew_undo.rs`), and the pack file (WB-24, `homebrew_transfer.rs`). Copies (WB-22) are implemented, deep ones too. `homebrew_new_draft` with
+`parentId` makes a child (WB-16). The web mock
+implements packs, elements and drafts in memory (kinds are sample forms).
+
+| Command | Args (camelCase keys) | Returns |
+|---|---|---|
+| `homebrew_kinds` | none | `HomebrewKindDescriptor[]` (fields, sub-tabs, bindings, editions; implemented, WB-04 descriptors) |
+| `homebrew_block_catalog` | none | `HomebrewBlockSpec[]` (implemented, WB-05) |
+| `homebrew_stat_catalog` | none | `HomebrewStatGroup[]` (implemented, WB-05; plus a group `yourContent` for names loaded packs use) |
+| `homebrew_create_pack` | `{ request: HomebrewPackRequest }` (`name, code, edition: dnd2014\|dnd2024\|any, author?, description?, license?`) | `ContentPack` (`kind: "homebrew"`) |
+| `homebrew_update_pack` | `{ packId, patch: HomebrewPackPatch }` | `ContentPack` |
+| `homebrew_list_elements` | `{ packId }` | `HomebrewElementSummary[]` |
+| `homebrew_new_draft` | `{ packId, kind, copyFrom?, parentId?, parentKey?, deepCopy? }` | `HomebrewDraftView` |
+| `homebrew_open_draft` | `{ packId, elementId?, draftId? }` | `HomebrewDraftView` (resumes the element's edited draft; `draftId` resumes a never-saved element's draft) |
+| `homebrew_update_draft` | `{ draftId, form: HomebrewForm }` | `HomebrewDraftView` (autosaved; preview, problems, generated data) |
+| `homebrew_check_draft` | `{ draftId }` | `HomebrewProblem[]` (engine checks, the 1-20 sweep, choices that offer nothing, balance hints; never errors; runs off the main thread) |
+| `homebrew_save_draft` | `{ draftId }` | `HomebrewSaveResult` (`{ pack, elementIds }`); `invalid_argument` with `details` = the problems when errors exist |
+| `homebrew_discard_draft` | `{ draftId }` | `void` |
+| `homebrew_list_drafts` | none | `HomebrewDraftSummary[]` |
+| `homebrew_delete_elements` | `{ packId, elementIds, confirm }` | `HomebrewDeleteResult` (`{ deleted, usedBy, pack, undoId }`) |
+| `homebrew_child_use` | `{ draftId, childKey }` | `HomebrewCharacterRef[]`: the local characters that use the saved child `childKey` of the draft or a saved child inside it (asked before it is removed: the save deletes it); a child the draft made, or an unknown key, is used by no one |
+| `homebrew_duplicate_element` | `{ packId, elementId }` | `HomebrewDraftView` |
+| `homebrew_bulk_edit` | `{ packId, elementIds, patch: HomebrewBulkPatch }` (`edition?`, `addTags?`, `removeTags?` together; or `moveToPackId`; or `duplicate: true`) | `HomebrewBulkResult` (`{ pack, elementIds, undoId }`); `invalid_argument` with `details` = the problems when an element can't take the change (nothing changes) |
+| `homebrew_undo` | `{ undoId }` | `ContentPack` (a delete or bulk edit undone; `requirement_failed` when a pack changed since, `not_found` once used) |
+| `homebrew_reference_options` | `{ target: HomebrewPickerTarget, query, filters: HomebrewPickerFilters, page: { offset, limit }, draftId? }` | `Page<HomebrewPickerRow>` |
+| `homebrew_where_used` | `{ elementId }` | `HomebrewElementRef[]` (loaded elements, and the own packs' unsaved new drafts with their `draftId`, that grant, select, require or list it, a choice matching as the engine does: derived spell tags, `$(spellcasting:list)`/`$(spellcasting:slots)`, IM16; strongest use first) |
+| `homebrew_spell_list` | `{ packId, listTag, expandedOf? }` | `HomebrewSpellListView` (every loaded spell and the pack's own, `onList`, `removable`; with `expandedOf` a subclass's expanded list, `expandedOf` set in the view) |
+| `homebrew_set_spell_list` | `{ packId, listTag, expandedOf?, add, remove }` | `HomebrewSpellListView` (one write; own spells change their tags, loaded spells get the pack's append; an expanded list changes the own subclass's `spellcasting.extends` (or its own feature's that holds them), or the pack's append's `spellcasting` for a loaded subclass) |
+| `homebrew_keep_spell_list_checks` | `{ packId, kept: HomebrewKeptChecks }` | `void` (a pack's unsaved SPELL LISTS checks, `{ list, pending: [{ id, on }] }`, kept on the device in `<data>/homebrew-drafts/spell-lists/<packId>.json`, never synced; an empty `list` or `pending` forgets them) |
+| `homebrew_kept_spell_list_checks` | `{ packId }` | `HomebrewKeptChecks \| null` |
+| `homebrew_trial_start` | `{ draftId, setup: HomebrewTrialSetup }` | `HomebrewTrialView` (`{ trialId, snapshot, ladder, problems, changed }`) |
+| `homebrew_trial_update` | `{ trialId, change: HomebrewTrialChange }` | `HomebrewTrialView` |
+| `homebrew_trial_end` | `{ trialId }` | `void` |
+| `homebrew_trial_options` | `{ trialId, slotId, query?, limit?, offset? }` | `Page<SlotOption>` (a trial choice's options, as `get_slot_options`) |
+| `homebrew_export_pack` | `{ packId, leaveOutCopiedText }` | `HomebrewExportResult` (`{ fileName, path, shared, dataBase64, leftOut }`: desktop saves through a save dialog, `path` null when cancelled; Android opens the share sheet, `shared`; elsewhere `dataBase64` for the web view's share sheet or a download) |
+
+- **Pack file (WB-24, `homebrew_transfer.rs`, spec 14.2).** `homebrew_export_pack` writes a `.borealis-pack.zip`: the pack
+  folder `<packId>/` with `pack.json`, its content file and `creator.json` (no drafts, no `.trash`, no `pack-meta.json`).
+  With `leaveOutCopiedText` the elements `creator.json` marks `nonSrdText` export without their text (description and sheet
+  texts empty; a creature's stat-block texts read "Text left out of this shared copy." and its flavour text goes); the marks
+  stay, so the imported pack is still not redistributable. Only `kind: "homebrew"` packs export (`requirement_failed`).
+  `HomebrewElementSummary.copiedText` marks the elements that still hold copied text (the export dialog's count). Import
+  goes through `preview_import_pack`: one `.zip` holding a `creator.json` beside a `pack.json` is a creator pack, installed
+  unconverted as `kind: "homebrew"`; its preview carries `homebrew: { code, codeTaken, copyCode, copyName, replaceUsedBy, replaceDrops }`, no `books`
+  (`replaceUsedBy`: the local characters that use an element of the installed pack the file lacks, the delete check's
+  scan; `replaceDrops`: those elements' names; both empty when Replace loses nothing, and the UI's Replace asks first
+  otherwise).
+  When its pack is installed (`replacesExisting`), `install_import_preview` replaces it (the old folder is copied to
+  `<data>/sync/trash/<ms>-<packId>`, swept after 30 days) or, with `asCopy: true`, installs a copy: code `copyCode`, pack id
+  `homebrew-<copyCode>`, name `copyName`, every `ID_<CODE>_` token of the pack and every element id given again with the
+  references following (other packs' ids untouched), `creator.json` re-keyed with its provenance, no retired ids. A code
+  another pack uses (`codeTaken`, pack not installed) installs only as a copy. `content-reloaded` reason
+  `homebrew-pack-imported`. The creator workspace opens the open element again on that reason and on `device-sync`, so a
+  draft whose element changed asks "Keep my draft / Use the saved version" (spec 10.1, 14.4).
+- **Expert features (WB-23, `homebrew_expert.rs`).** *Where used* runs the delete scan's reference scanner
+  (`borealis_authoring::pack::use_of`: ids as whole tokens, so `!ID_A,ID_B` counts) over every loaded element:
+  `grants` (a grant or a custom rule naming it), `selects` (a choice offering it by id, or by a tag it carries, of its
+  type), `requires`, `lists` (a spell list that offers the spell, an `extend`, or the id anywhere else: a package,
+  `data.owner`). *SPELL LISTS*: own spells change their tags through their form (`data.classes` follows), loaded
+  spells get the pack's append `{id, supports: [tag]}` (HC5, never an in-place edit); only own spells and own appends
+  come off. A subclass's expanded list (P2b; picker type `Expanded Spell List` in `homebrew_reference_options`: the
+  subclasses with one, and a non-bundled pack's subclasses whose class casts) is a list too: an own subclass's
+  `spellcasting.extends` (`{name: <class list>, extend: true}`), or the pack's append `{id, spellcasting}` on a loaded
+  subclass (adopted by a subclass that has no spellcasting of its own). *Bulk edit* changes each element through its form (`form::bulk_patched`: the tags field, a spell's lists;
+  the edition field; a class keeps its edition, R4); a move keeps ids, `creator.json` entries and editions (an element
+  that followed its pack's edition takes it along) and retires the ids in the old pack; refused when an element has
+  unsaved changes; duplicates use WB-22's copier. Deletes and bulk edits return an `undoId`: `homebrew_undo` writes
+  every pack it touched back as it was (content and `creator.json`), as one change, when no pack changed since; made
+  elements' ids are retired. Undo records live in memory (the last 20). *DATA view*: `generated.tree` is
+  `HomebrewDataNode[]` (one top line per element, keys in file order, setters as `name: value`, descriptions `html`,
+  expressions `expr`, rules with their block sentence); `generated.json` is the element (one) or the elements (several)
+  as the content file writes them. `HomebrewElementSummary` carries `tags` and `text` (summary + description as plain
+  text, 400 characters) for the list filter.
+- **Try it (WB-08, `homebrew_trial.rs`).** A trial is a test character on a private engine that holds the draft's
+  elements (with the ids they would get now); it is never saved, listed or opened as a character, and never changes the
+  open character. `setup: {}` takes the defaults: the draft's (else its pack's) edition, the SRD picks of that edition
+  (Fighter, Human, Soldier, the first SRD subclass), the standard array by the class's main abilities, and the level
+  the draft is first on the character. The draft takes its slot by element type (class/species/background at level 1,
+  else the first choice that offers it, a feat at the first ability score improvement, a spell through its class's
+  lists, an item added and equipped, anything else as a test grant). A choice holding the draft comes back `locked`
+  and refuses changes (`invalid_argument`). `change` is a level (clamped to 1-20), a setup (another edition or
+  `asSecondClass` starts from that setup's picks; new `abilityScores` keep the choices) or `{slotId, elementId}`
+  (`null` clears). `asSecondClass` builds Fighter 1, then the draft from level 2 through the `Multiclass` slot and
+  reports a missed multiclass prerequisite (it is taken anyway). `changed` lists snapshot paths and `<list>:<name>`
+  entries that differ from the same character without the draft. Two trials are kept at once; one idle for 30 minutes
+  is dropped, and every trial command then answers `not_found`.
+- **Ids never reach the screen.** They travel in `HomebrewRef`, picker rows and summaries; the UI shows names.
+- **Form.** `HomebrewForm { kind, fields, blocks, children, preserved }`: `fields` holds one value per
+  `HomebrewFieldSpec.key` of the kind; `blocks` are rule blocks (`{ key, kind, sentence, fields }`); `children` are the child
+  elements edited inside (a class's features); `preserved` lists the parts kept byte-for-byte (spec 3.4). The value shapes of
+  builders (WB-02), rich text (WB-03), blocks (WB-05) and per-kind fields (WB-04) are typed by those items.
+- **Expression builders (WB-02).** A field or block field with the `condition`, `tagFilter`, `equipped` or `formula`
+  control holds a `HomebrewExprValue<M>` `{ value: { shape: "model", model } | { shape: "kept", text, reason }, original? }`
+  (types in `types/homebrew.ts`; a sample of every variant in `api/__fixtures__/homebrew-expr-builders.json`, written by
+  `crates/borealis-authoring/tests/expr_dto.rs`). The UI edits `model` and sends `original` back unchanged: the backend
+  writes the original text while the model means the same, else canonical text. Kept text is read-only (Remove only).
+  Formula fields are read by different engine readers; `HomebrewFormulaDialect` says which terms a field offers.
+- **Block catalog (WB-05).** `homebrew_block_catalog` lists the core blocks (`grant`, `select`, `list` = a select of
+  type `List`, `stat`), one block per custom rule kind the engine reads (`custom_rules::KNOWN_KINDS`, 69) and the toggle
+  effect `speed_multiply` (`effectOnly`). A block's `fields` are `HomebrewBlockField`s: exactly the rule fields the
+  engine reads, never an unmodelled one; `level` and `requirements` are not fields but the flags `levelGated` ("From
+  level") and `onlyIf` ("Only if", the condition builder). `bindings[0]` is the field's path in the rule (`max.expr`);
+  `formula` fields carry the `dialect` of their reader; `shownAsNote` fields are text the engine shows verbatim. The
+  control vocabulary is documented on `HomebrewControl`. A block's `sentence` (in `HomebrewBlock`) comes from
+  `borealis_authoring::blocks::sentence`. The web mock serves the same catalogs (`api/mock/homebrew-catalog.ts`, generated
+  by `src-tauri/tests/contract_homebrew.rs`).
+- **Statistic catalog (WB-05).** `homebrew_stat_catalog` groups every statistic name the bundled packs use, in plain words;
+  `classScoped` entries are patterns (`{class}:spellcasting:slots:{n}`) written from a class picker and a number. Names
+  the loaded packs use that the catalog doesn't know come last, in the group `yourContent`.
+- **Form values (WB-04).** Rust `borealis_authoring::form` reads an element into a form and writes it back (an unchanged
+  form writes the element byte for byte). A field's value has the shape of its control: `text`/`multiline`/`combo` a
+  string (`""` = not set), `check` a boolean, `tags`/`chips` a string list, `reference` a `HomebrewRef` or null,
+  `condition` a `HomebrewExprValue`, `richText` the description tree (`DocJson`), `sheet` a `HomebrewSheetValue`,
+  `setters` `HomebrewSetterRow[]` (expert rows), `mapsTo` a `HomebrewMapsToValue` (sample: `api/__fixtures__/homebrew-form.json`,
+  written by `crates/borealis-authoring/tests/form_dto.rs`). `HomebrewForm.key` identifies a form inside the draft
+  (children are matched by it; a new child gets a new key). `preserved` (on the form and on each block) lists the
+  parts kept from the original as `{key, label}`: the UI may only remove entries; the backend keeps the bytes and the
+  element id. `HomebrewFieldSpec.readOnly` marks a shown-only field (Source); the `blocks` control marks where the
+  block list goes.
+- **Blocks in a form (WB-04/WB-05 join).** Each rule is read by the block catalog (`form::CatalogBlockCodec`):
+  `HomebrewBlock.kind` is the `HomebrewBlockSpec.kind` of its dialog (`list` for a select of type `List`), `fields` holds
+  one value per offered field plus the gate fields `level` and `requirements`, in the shape of the field's control
+  (`HomebrewBlockValue<C>` in `types/homebrew.ts`: builder controls a `HomebrewExprValue`, `formulas` a list of them,
+  `reference` a `HomebrewRef`, `references` a list, `blocks` nested `HomebrewBlock`s with no `preserved`, the rest the
+  stored JSON). Fields the dialog doesn't offer, and stored values its controls can't hold, are the block's `preserved`
+  parts; a rule the catalog has no block for is kept whole (no fields, one part). An unchanged block field writes its
+  stored JSON back; an edited one is written canonically. The backend rewrites each block's `sentence` from its values
+  after every update. A new block, or a block whose kind changes, needs a new `key` (a changed kind drops the old kept
+  parts).
+- **Storage (WB-06).** A creator pack is `<data>/library/homebrew-<code>/`: `pack.json`, `content.json` (the pack's
+  `Source` element first, then the elements in creation order), `pack-meta.json` (`kind: homebrew`) and `creator.json`
+  (`{ format: "borealis-creator/1", code, createdWith, elements: { <id>: { kind, createdAt, copiedFrom?, nonSrdText } },
+  retiredIds }`). Packs made elsewhere (`ai_add_homebrew_to_pack`, "Import anything") get a `creator.json` on their first
+  save; other packs are copy-only (`requirement_failed`, HC5). Every file is replaced atomically, in the order
+  `creator.json`, `content.json`, `pack.json`; each save bumps the patch version. A save re-adds only its pack to the loaded
+  content (`content-reloaded` reason `homebrew-saved`; a turned-off pack reloads everything, `homebrew-saved-full-reload`).
+  Drafts are `<data>/homebrew-drafts/<draftId>.json` (`{ format: "borealis-hb-draft/1", draftId, packId, elementId, kind,
+  form, baseIds, baseDigest, updatedAt, copiedFrom? }`, the full form with its memo), written by the first
+  `homebrew_update_draft` (opening writes none), never synced or bundled (HC7, `is_excluded`). A draft or `creator.json`
+  that can't be read is set aside as `.bad`, never deleted. `baseChanged` is true when the saved elements the draft started
+  from changed since (another device, an edit outside the app). Ids are given on the first save and never change; deleted
+  ids go to `retiredIds` and a copy of the deleted elements to the pack's `.trash/`. Delete without `confirm` first scans
+  the characters folder and the open characters: when any uses an element, nothing is deleted and `usedBy` lists them.
+  `homebrew_update_draft` ignores what the UI sends for read-only fields (Source). Picker rows are the loaded elements plus,
+  with `draftId`, the pack's never-saved elements (`draft: true`, with the id they would get now); spells carry `level`,
+  `school` and `spell`.
+- **Problems (WB-07)** are plain sentences (no ids, keys or jargon) with a form `path` (`fields.level`,
+  `blocks.2.fields.number`, `blocks.0.fields.effects.1.fields.name`, `children.0.fields.name`; null = the element), the
+  `elementId` of a saved element (null for one not saved yet) and a `code`: an `IssueCode` (`dangling_reference`), a rule
+  problem (`content.unknown_rule_kind`, `content.unknown_rule_field`), or the creator's own (`form.required`, `form`,
+  `block.required`, `block.range`, `block.dice`, `block.choice`, `block.shape`, `lint.duplicate_name`,
+  `lint.empty_description`, `lint.escape`, `lint.unknown_pool`, `lint.not_offered`, `lint.select_empty`,
+  `lint.spell_list_empty`, `form.class_edition`, `form.edition_adapted`, `engine.refused`, `sweep.<finding>`,
+  `balance.<metric>`); sentences per code: `borealis_authoring::check::messages` (the edition codes:
+  `borealis_authoring::form::edition_problems`).
+  `homebrew_update_draft` sends the live pipeline's problems (spec 8.1 steps 1-5: form, schema, the content validator over
+  the loaded content plus the draft, rule problems, lints); `homebrew_check_draft` the engine checks (steps 6-7), all
+  warnings or info. Errors block Save (`homebrew_save_draft` runs the live pipeline, then the validator on the saved
+  pack); warnings and info never do. Balance hints are `info`.
+- **Item forms (WB-12).** Kinds `item`, `weapon`, `armor`, `magicItem`, `itemPack`, `equipmentPackage` (spec 4.9).
+  Their fields use `section` (SectionSecondary heading), `min`/`max` (`number`) and `picker` (`reference`/`references`:
+  element types, `multiple` for several). Values: `number` a whole number, `references` a `HomebrewRef[]`, `tagFilter` a
+  `HomebrewExprValue<HomebrewTagFilter>`, `contents` a `HomebrewContentsRow[]` (an item pack's `extract.items`),
+  `packageOptions` a `HomebrewPackageOption[]` (an Equipment Package's `data.options`); rows' `kept` travel back
+  unchanged. Each field writes every location that holds it: a weapon's category, properties, damage type and mastery
+  are `supports` ids (plus the `damage` setter's `type`, the `mastery` setter, and the 2024 `data` mirrors when the
+  element has them); an armor's Armor Class and stealth disadvantage are its `stat ac:armored:armor` / `ac:shield` and
+  `grant ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE` rules, and a magic armor's bonus its AC rule. Rules a field writes are
+  not blocks (the block list holds the others). Bad values (dice, ranges, costs, coins) are `form` problems at the field.
+  A magic item's `nameFormat` (control `nameFormat`, the `name-format` setter as a string) is text with value chips:
+  `{{parent}}` (the base item's name) and `{{enhancement}}` (its bonus) are shown by their words and inserted from
+  buttons; braces can't be typed (spec 7.4). The web mock serves the six descriptors from `api/mock/homebrew-kinds.ts` with every other kind, written by
+  `src-tauri/tests/contract_homebrew.rs`.
+- **Spell form (WB-11).** Kind `spell` (element type `Spell`, spec 4.1). Its fields bind the engine setter and, only when
+  the element already has it, the 2024 mirror in `data` (`level` = setter `level` + `data.level`, `school`, `verbal`/
+  `somatic`/`material` = `hasVerbalComponent`... + `data.components.v/s/m`, `concentration`, `ritual`, `materialCost` =
+  `data.material_cost.amount`, `materialConsumed` = `.consumed`, `reactionTrigger` = `data.reaction_trigger`). `level` is
+  a combo of `"0"` (Cantrip) to `"9"`. `spellLists` (control `spellLists`, a string list) holds every support tag of the
+  spell, the way Aurora content puts a spell on a class list (`supports` + `data.classes`); the spell form has no `tags`
+  field. The lists it offers are the picker rows of the type `"Spell List"` (`homebrew_reference_options` with
+  `target.types: ["Spell List"]`: one row per `spellcasting.list.supports` list tag of the loaded content and the
+  pack's drafts, `id` = `name` = the list; an expression list such as `(Cleric||Wizard)` or
+  `Wizard,(Abjuration||Evocation)` gives each list tag it names, never a school, a level, `Ritual` or a spell id), plus
+  the lists the spell already has, plus new names. A list that no loaded class declares and no spell choice picks from
+  is a warning at `fields.spellLists` (`lint.unknown_spell_list`, naming a near spelling), and a spell on no list a hint
+  (`lint.no_spell_list`); the web mock words both the same way. `HomebrewFieldSpec.default`
+  is the value a new element starts with (`homebrew_new_draft` fills it in: a new spell is a 1st-level action, Self,
+  Instantaneous, V and S; its school is the author's choice), and `section` groups fields under a SectionSecondary heading.
+  The web mock serves the real descriptor of every kind whose form has landed (`api/mock/homebrew-kinds.ts`, written by
+  `src-tauri/tests/contract_homebrew.rs`; `BOREALIS_UPDATE_SNAPSHOTS=1` rewrites it). Tab labels are upper case (`GENERAL`).
+- **Feat form (WB-13).** Kind `feat` (element type `Feat`, spec 4.2), for 2014 and 2024 feats. `category` (combo with
+  custom text: Origin, General, Fighting Style, Epic Boon) binds the setter `category`, the support tags
+  `"<Category> Feat"` and `"Feat"` (what a 2024 feat choice offers by) and, when the element has it, `data.category`;
+  empty = a 2014 feat (no category setter or tags). `requirements` (control `condition`) is one condition for
+  `requirements` and, when the element has it, `data.prerequisite` (`level_min`, `abilities_any`, `requires_feature`:
+  the part of the condition every character must meet; terms only `data.prerequisite` held are read into the condition).
+  `prerequisiteText` is the display `prerequisite`: left empty, or as it was written from the condition, it is written
+  from the condition ("Level 4+, Strength or Dexterity 13+"); typed, it is kept. `repeatable` binds the setter
+  `allow duplicate` (a feat stored with it keeps it) and `data.repeatable.allowed` (a new feat that can be taken again
+  gets `{allowed: true}`); `repeatDistinct` ("Spell List") is `data.repeatable.distinct_param` (`spell_list`). The feat
+  form has no `allowDuplicate` field. Kind `featFeature` (element type `Feat Feature`, group `child`, `parentKinds:
+  ["feat"]`) has the shared parts only; it is not offered by New element.
+- **Species forms (WB-15).** Kinds `species` (element type `Species`, 2024), `race` (`Race`), `subRace` (`Sub Race`)
+  and `raceVariant` (`Race Variant`, all 2014), spec 4.4. Fields that hold rules: `size` (chips of Tiny..Gargantuan: one
+  is a `grant` of `ID_SIZE_<SIZE>`, two or more a `select_size`), `speed`, `flySpeed`, `swimSpeed`, `climbSpeed`,
+  `burrowSpeed` (control `number`, feet, 0 = none: `stat innate speed[:mode]` `bonus base`), `darkvision` (the grant of
+  `ID_VISION_DARKVISION`, plus `stat darkvision:range` when not 60), `blindsight`, `tremorsense`, `truesight` (`sense`
+  rules), `traits` (control `children` since P2a, `picker.types ["Racial Trait"]`: a `grant` each); 2014 kinds also
+  `strength`..`charisma` (number -10..10: `stat <ability>`), `languages` (references of `Language`: grants) and
+  `languageChoice` (number: a `select` of `Standard||Exotic` languages; its stored label is kept). `creatureType` is
+  `data.creature_type`; `data.size`, `data.speed` and `data.traits` are written when the element has them. `subRace`
+  and `raceVariant` have `parent` (required text): the tag the race's choice offers it by, its first support tag; a
+  `parent` no loaded race's choice offers is the warning `lint.not_offered` at `fields.parent`. `race` has
+  `maleNames`, `femaleNames`, `familyNames` (chips: `names` setters with `type`) and `subraces` (combo: `""` none,
+  `required`, `optional`: the race's own `select` of type `Sub Race`; a new one is named "<Race> Subrace" and offers the
+  tag of the race's name, a stored one keeps its name and tag; a choice with a number or a level stays a block). A rule a field doesn't write exactly
+  (a trait from level 5, an increase with a condition) stays a block; the rules come back in their stored order. Child
+  kinds `racialTrait` (`parentKinds ["species","race","subRace","raceVariant"]`) and `speciesTraitOption`
+  (`["species","racialTrait"]`, 2024) have the shared parts only and are not offered by New element. `min`/`max` and
+  `picker` are the field spec parts the item forms use (above).
+- **Children (WB-16).** `homebrew_new_draft {packId, kind, parentId, copyFrom?}` makes a child: `parentId` is a draft of
+  the pack (its `draftId`) or a saved element of it (its draft is opened or resumed); the child (new, or a copy of the
+  loaded element `copyFrom`) is the parent form's last child, listed in the parent's children field for its type (a
+  class feature at level 1 on the LEVELS grid, a class's starting-equipment package). The answer is the parent's
+  `HomebrewDraftView` (its draft is written); `invalid_argument` when the parent's form has no place for that kind. A
+  children field (controls `children`, `levels`, `package`) holds `HomebrewChildEntry[]` `{ level?, child?, element? }`:
+  `child` is the key of a child form of the draft, `element` a `HomebrewRef` to an element not edited here (a copied
+  class still gives the original's features). A child no children field lists and no rule of the parent gives (a trait
+  granted with a condition) is a problem at `children.<i>`.
+- **Children inside children (P2a).** A child form has children of its own: a background variant's `feature`
+  (`children` of `backgroundFeature`, granted by the variant) and a racial trait's `lineage` (`children` of
+  `speciesTraitOption`, 2024: one `select` of type `Species Trait Option` named after the trait, offering the options by
+  id `ID_A|ID_B`; the SRD's choices by tag stay blocks). `homebrew_new_draft {parentId, parentKey}` makes the child inside
+  the child form `parentKey` of the parent's draft (`not_found` for a key the draft has none of); the answer is the
+  parent's draft. A saved element opens with its children and theirs (keys `e`, `e/0`, `e/0/0`); a nested child takes
+  its edition from the element above when it has none. The species `traits` field is a `children` field too (P2a, was
+  `references`): traits made inside the species, or ones that exist given by reference (`element` entries); the
+  `data.traits` mirror is kept. A `children` field offers "Give one that exists" (the reference picker of its type).
+  A field limited to the other edition (`editions`) is shown while its value isn't empty nor its starting value, with a
+  note: it still writes its rules.
+- **Class option groups (P2a, spec 4.8).** The "Lets the player choose" block of type `Option` shows the group (its
+  `supports` as one tag), the options of that group (`homebrew_reference_options` with `tags: [group]`) and New option:
+  `homebrew_new_draft {kind: "classOption"}`, `homebrew_update_draft` (name, `group`, `className` = the class's name,
+  `edition`), `homebrew_save_draft` (the option is saved at once).
+- **Renamed class (P2a, spec 4.7).** Saving a class whose subclass choice's tag changed (renamed: "<Class> Subclass";
+  or a 2014 label changed) rewrites that tag on the pack's saved subclasses of it (`data.class` = the class, or the 2024
+  tag with no `data.class`), and their `data.class_name`, so the class keeps offering them.
+- **Class form (WB-16).** Kind `class` (element type `Class`, spec 4.5), tabs GENERAL, PROFICIENCIES, LEVELS,
+  SPELLCASTING (WB-17), MULTICLASS, EQUIPMENT, RULES, DESCRIPTION. A new class (`homebrew_new_draft {kind: "class"}`) has
+  the pack's edition (2024 for a Both-editions pack) and three generated children on the grid: Ability Score Improvement
+  (4, 8, 12, 16, 19; 2024: 4, 8, 12, 16), the subclass choice (3) and, 2024 only, the Epic Boon (19). Fields: `hitDie`
+  (setter `hd` + 2024 mirrors), `primaryAbilities` (`data.primary_abilities`), the first-class-only `savingThrows`,
+  `armor`, `weapons`, `tools` (grants with `requirements: "!<multiclass id>"`) and `skills` (control `skillChoice`,
+  `HomebrewSkillChoice { count, skills: HomebrewRef[], tagged? }`: the select `"Skill Proficiency (<Class>)"`; `tagged`
+  is a 2014 tag filter kept as is); `levels` (control `levels`, class features each at a level); `table` (control
+  `classTable`, `HomebrewTableColumn[] { key, label, values[20] }` = `data.progression`, which `table` maximums read);
+  `multiclass` (the section on/off), `mcRequirements`, `mcPrerequisite` (written from the condition while empty or as
+  written), `mcProficiencies`, `mcProficiencyText` (likewise); `equipment` (control `package`, one entry: the
+  Equipment Package child edited inline with its `options`). The multiclass id is generated (`ID_<CODE>_MULTICLASS_
+  <CLASS>`, a copy's too) and every "first class only" names it. Kind `classFeature` (child of `class`) has the shared
+  parts plus `asiLevels` (control `numbers`), `subclassLabel` and `epicBoon` (2024; `editions: ["dnd2024"]`): their
+  rules are written from the class's name (`"Ability Score Improvement (<Class> N)"`, 2014 `"Improvement Option
+  (<Class> N)"`; select `Archetype` supporting `"<Class> Subclass"` or, 2014, the label; `"Epic Boon (<Class>)"`). A
+  feature's `data.class`/`data.level` follow the class. A class feature's block holds `fields.againAt` (levels): the
+  block is written again at those levels ("also gained again at levels"; the base level in its name and supports is
+  renumbered). `HomebrewFieldSpec.editions` limits a field to editions.
+- **Spellcasting section (WB-17).** Kinds `classFeature` and `feat` have a SPELLCASTING tab (spec 4.6) with the fields
+  `casts` (the `spellcasting` node on/off), `casterName` (expert; empty = the class's name: a class's feature follows its
+  class), `ability`, `preparation` (`prepared` = `prepare` + `list.known`, `spellbook` = `prepare` only, `known`),
+  `spellList` (`list.supports`, empty = the spellcasting name; a `combo` with `allowCustom` whose suggestions are the
+  `"Spell List"` picker rows, `picker.types: ["Spell List"]`), `swap` (`allow_replace`), `casterType` (`""`, `full`,
+  `halfUp`, `halfDown`, `third`, `pact`, `custom`: the `<name>:spellcasting:slots:N` stats, 2014 pact `slots:count`/`slot`,
+  2024 pact `pact_magic`), `slotTable` (control `slotTable`, `number[][]` 20 x 9 for `custom`, else `[]`),
+  `multiclassSlots` (`auto` = the type's `ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_*`, a specific one, or `none`),
+  `prepared` (control `levelCounts`, `number[]` 20: `prepare` stats), `prepareFormula` (2014: `level`, `half`, `""`),
+  `cantrips` and `known` (control `levelCounts`, `HomebrewLevelCounts { levels, statistic, replace? }`: the choices and
+  count stats) and `preparedChange` (2024 `prepared_spell_change`). The class kind's SPELLCASTING tab edits the section
+  of its Spellcasting feature (a `classFeature` child at level 1, made with `homebrew_new_draft {parentId}`); a 2024
+  class's `data.progression` spellcasting columns (`cantrips`, `prepared`, `slot_N`, `pact_slots`, `pact_slot_level`)
+  and `data.spellcasting` (when present) are written from that section whenever it was edited. No new command.
+- **Subclasses and class options (WB-18).** Kind `subclass` (type `Archetype`; tabs GENERAL, LEVELS, SPELLCASTING,
+  RULES, DESCRIPTION): `parentClass` (`reference`, picker `Class`: `data.class` + `data.class_name`), and three
+  read-only fields the backend writes from the class picked (`homebrew_update_draft`, from the class's `select` of type
+  `Archetype`, also a class of the pack not saved yet): `subclassTag` (the support tag that choice offers subclasses
+  by), `levelGained` (`data.level_gained`) and `subclassLevels` (`number[]`, the levels the class gives subclass features
+  at; derived, never stored). The UI shows read-only fields from the last answer's form. `levels` is the LEVELS grid of
+  `subclassFeature` children (type `Archetype Feature`; a child gets `data.class` = the class's name, `data.subclass`,
+  `data.level`; it has the spellcasting section, named after the subclass). Kind `classOption` (type `Option`):
+  `group` (required combo with custom text: the first support tag + `data.group` when present), `className`
+  (`data.class_name`), `repeatable` (`data.repeatable`: a stored boolean keeps its shape, a new one is
+  `{allowed: true}`), the shared condition `requirements` (`[warlock:2]`). House-rule settings (an `Option` with a
+  `default` setter) open in the generic form. No new command or type. A `group` that no loaded or drafted choice names,
+  that no other loaded option is in, for an option no rule gives by its id, is the warning `lint.group_not_offered` at
+  `fields.group` (naming a near spelling); the web mock has no such check (its sample content holds no choices).
+- **Small types and the generic form (WB-19).** One `small` kind per type of spec 4.10. Fields that bind several
+  locations: `language.rarity` (`standard`/`exotic`/`secret`: the setters, the tag `Standard`/`Exotic`/`Secret`, 2024
+  `Rare` for exotic, and `data.rarity`), `proficiency.covers` (`references`, picker `Proficiency`: its plain `grant`s
+  of `Proficiency`), `condition.listed` (`check`: the tag `Condition` and `data.tag`), `rulesText.glossaryGroup`
+  (`data.tag` and the tag of that name). Deity `alignment`, `domains`, `symbol` are required. The generic form
+  (`other`): `type` is a combo with custom text whose `picker.types` is `["Element Type"]`, and `setters` (rows with
+  attributes) has `picker.types` `["Setter Name"]`: these are pseudo picker types of `homebrew_reference_options`
+  (one row per word, the word as id and name). `["Element Type"]` lists the open types (the fixed Companion,
+  Familiar and Property types, then the loaded types with no form of their own); `["Setter Name", "<type>"]` lists
+  the setter names the type requires and the ones its loaded elements use. A new or retyped generic element whose
+  type has its own form, or is `Source`/`Multiclass`, has an error at `fields.type` (code `form.type`).
+- **Homebrew skills are character skills (1.5.1, HC1).** A `Skill` element with an `ability` setter adds a skill: the
+  character's `stats.skills` lists it after the eighteen (`key` = its name in lower case, `name` = the element's name,
+  `ability`, `bonus`, `proficiency`), the PDF and HTML sheets print it, and having the element (granted, or picked by
+  a `Proficiency` choice tagged Skill, which now also offers `Skill` elements) is proficiency in it. The background
+  `skills` field and the class `skills` choice have `picker.types` `["Proficiency", "Skill"]`; a background writes a
+  picked Skill as `grant type="Skill"`. A Skill named like an ability or another statistic (Strength, AC, Level), or
+  with a colon, has an error at `fields.name` (code `form.skill_name`). No new command or type.
+- **Suggestions from loaded content (1.5.1).** Two more pseudo picker types of `homebrew_reference_options`, one row
+  per word: `["Item Category"]` lists the `category` setter values of loaded and drafted elements of the item forms'
+  types (first spelling, sorted); the item forms' `category` combo (custom text) has `picker.types` `["Item Category"]`
+  and offers them after its fixed choices. `["Tag", "<type>", ...]` lists the tags (`supports`, no `ID_` ids) loaded
+  and drafted elements of those types carry; the shared `tags` field has `picker.types` `["Tag", <the kind's element
+  types>]` and its chips suggest them (the generic form adds its `type`). The web mock reads the pack's saved elements.
+- **Background form (WB-14).** Kind `background` (type `Background`, both editions; a new one has its pack's edition,
+  2024 in a pack of both, and shows that edition's fields: `editions`). A tab whose fields are all of the other
+  edition is not shown (CHARACTERISTICS on a 2024 background). 2024: `abilityScores` (closed chips: three abilities,
+  `ability_distribution` with `pool`, `options [[2,1],[1,1,1]]`, `cap 20`, + `data.ability_scores`), `originFeat`
+  (control `featGrant`, `HomebrewFeatGrant` `{feat, params}`: `grant_feat` with `params` by the engine's param key,
+  + `data.origin_feat`, `data.origin_feat_params`). Both: `skills` and `tools` (`references` of Proficiency grants,
+  + `data.skills`, `data.tool`), `choices` (control `choices`, `HomebrewChoiceRow[]`: `select` of type Language or
+  Proficiency with `number` and a tag filter), `equipment` (`package`: `equipment_package` + `data.equipment_package`).
+  2014: `languages`, `feature` (`children` of `backgroundFeature`, granted), `variants` (`children` of
+  `backgroundVariant`, offered by an optional `select` of type `Background Variant` by id), `personalityTraits`,
+  `ideals`, `bonds`, `flaws` (control `writtenList`, `HomebrewWrittenList` `{count, items}`: `select` of type `List`,
+  items numbered 1..n), `equipmentNote` (rich text, the `equipment` part). New pseudo picker type
+  `["Feat Parameter", "<feat id>"]` (the feat's `select_param` names) and `["Feat Parameter", "<feat id>", "<name>"]`
+  (that choice's options). `HomebrewPickerTarget.tags` is now sent in descriptors (skills: tag `Skill`).
+- **Creature form (WB-20).** Kind `creature` (type `Monster`, both editions; a new one has its pack's edition, 2024 in
+  a pack of both). The stat block lives in `data` (`MonsterData`); every key is a field, read and written through the
+  typed model. Tabs GENERAL, STATISTICS, ACTIONS, LEGENDARY, RULES, DESCRIPTION. Fields hold the model's own shape
+  (snake_case inside: `homebrewCreature.ts`) except four wrappers: `armorClass` `{entries, note}` (`data.ac`,
+  `data.ac_note`), `hitPoints` `{average, formula, note}` (`average: null` is worked out from the dice), `senses`
+  (`passive_perception: null` is 10 + Perception or the Wisdom modifier) and `challenge` `{cr, note, xp, xpLair,
+  proficiencyBonus}` (`xp` / `proficiencyBonus` null follow the CR). `statBlock` (`data.ruleset`, expert, read-only)
+  follows the edition. New controls: `armorClass`, `hitPoints`, `speeds`, `initiative` (2024), `abilities`, `bonuses`
+  (saves or skills, keys in `choices`), `damage`, `senses`, `challenge`, `entries` (traits, actions, bonus actions,
+  reactions: name, text, usage, condition, attack, save, spellcasting with spell refs `{name, id?, note?}`: a spell
+  that isn't loaded is typed by its name alone, each spell has an editable note; names and notes are trimmed and a blank
+  note left out), `legendary`, `lair`. Problems:
+  `form.required` (size, creature type, alignment), `form` (creature type missing, unreadable dice or CR), and the stat
+  block validator's `invalid_monster_data` / `non_standard_monster_xp` at the field (`fields.armorClass`, an entry at
+  `fields.actions.2`) with a sentence per part; the content schema's duplicates inside such a stat block are dropped.
+  The preview is the compendium's monster entry: the whole stat block in its `descriptionHtml` (type line, armor class,
+  hit points, initiative, speed, the six scores, saves, skills, damage and condition lines, senses, languages,
+  challenge, then the sections); its facts are only `Type` and `Source`.
+- **Copies (WB-22, spec 11, 12.3).** `homebrew_new_draft {packId, copyFrom, deepCopy?}` copies any loaded element (not a
+  book): `kind` is not read (the copy opens in its element's form). The copy has no id until its first save, is named
+  "<Name> (copy)", keeps the rules, tags, description and edition (its `edition` field is the original's), and drops the
+  2024 mirror keys no field writes (the `data` keys the engine reads or a parent rewrites stay), the 2014/2024
+  counterpart (`mapsTo` null), what it replaces, its earlier type name and its source reference. `deepCopy: true` copies
+  the parts too, ids cleared: a class's features, starting equipment and (2024 shape, "<Class> Subclass") its subclasses
+  with their features; a species' or race's traits and their lineage options; a background's feature, variants and
+  package; a subclass's or feat's own features. The parts are the form's `children`; subclasses are not in the view: they
+  are kept with the draft and saved with it (`elementIds` lists them after the form's), and `HomebrewDraftView.savedWith`
+  (absent when none) names them in saving order, which the editor shows as "Saved with it: Evoker.". On save every reference to a
+  copied original names its copy, and a copied lineage choice offers the copied options by id (they lose the original's
+  tag, so the original never offers them). Without `deepCopy` the copy grants the originals. A 2024 subclass choice's tag
+  is written from the class name without the characters a tag can't hold ("Wizard (copy)" offers "Wizard copy
+  Subclass"). `homebrew_duplicate_element` copies a class deep (its subclasses in the pack too); a duplicate keeps the
+  original's `copiedFrom`. `creator.json` records `copiedFrom {id, packId, srd}` for every copied element, and
+  `nonSrdText` when a non-bundled original had a description; the pack then lists `redistributable: false`.
+  `HomebrewPickerFilters.srdOnly` ("Start from a template") lists bundled elements only. Problems: a class read from an
+  element keeps its edition (`form.class_edition`, error at `fields.edition`); an element of one edition in a pack of the
+  other is `form.edition_adapted` (warning).
+- **Events:** saves end with the existing `borealis://content-reloaded`.
+
 ### AI tasks
 
 `ai_start_task` modes and what they need (`params` is a free JSON object, camelCase):
@@ -472,7 +860,8 @@ without the host: the host commands answer `invalid_argument` / `supported: fals
   the user's book editions (IM14, `sourceEditions`: book name key -> `dnd2014`/`dnd2024`; unknown keys a newer app
   wrote are kept) are stored in `content-prefs.json` in the data folder. `preview_import_pack` lists the set's `books`
   (`{ name, detected, edition, setByUser }`) and `install_import_preview` takes an optional
-  `editions: Record<bookName, Ruleset>` stored before the install. A re-import without the preview never changes an
+  `editions: Record<bookName, Ruleset>` stored before the install (and `asCopy` for a homebrew pack file, see Homebrew
+  creator, Pack file). A re-import without the preview never changes an
   installed book's edition: a changed guess is stored as the book's previous edition. `set_pack_enabled`, `remove_pack`, `import_pack`, `import_5etools`,
   `clear_downloaded_content` and `update_indexes` all hot-reload the ContentStore and Engine and emit
   `borealis://content-reloaded` (`reason`: `pack-enabled`, `pack-removed`, `pack-imported`, `5etools-imported`,

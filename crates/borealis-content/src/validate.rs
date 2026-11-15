@@ -176,9 +176,30 @@ fn book_abbreviations(store: &ContentStore) -> HashSet<String> {
         .collect()
 }
 
+/// What the element checks ask of the loaded content: is an id defined, is it an element's id.
+trait Universe {
+    /// An element id, an alias or a synthesized multiclass id.
+    fn contains_id(&self, id: &str) -> bool;
+    /// The id of a stored element.
+    fn has_element(&self, id: &str) -> bool;
+}
+
+impl Universe for ContentStore {
+    fn contains_id(&self, id: &str) -> bool {
+        ContentStore::contains_id(self, id)
+    }
+
+    fn has_element(&self, id: &str) -> bool {
+        self.get(id).is_some()
+    }
+}
+
 struct Ctx<'a> {
-    store: &'a ContentStore,
-    stored: &'a StoredElement,
+    store: &'a dyn Universe,
+    /// The file the checked element comes from.
+    file: &'a str,
+    /// The checked element's id.
+    id: &'a str,
     /// [`book_abbreviations`] of the store.
     books: &'a HashSet<String>,
     issues: Vec<Issue>,
@@ -186,11 +207,8 @@ struct Ctx<'a> {
 
 impl Ctx<'_> {
     fn push(&mut self, issue: Issue) {
-        self.issues.push(
-            issue
-                .in_file(self.stored.file.to_string())
-                .at_element(self.stored.element.id.clone()),
-        );
+        self.issues
+            .push(issue.in_file(self.file).at_element(self.id));
     }
 
     fn check_ref(&mut self, id: &str, path: &str, what: &str) {
@@ -451,7 +469,7 @@ impl Ctx<'_> {
                     IssueCode::MulticlassIdSameAsClass,
                     "multiclass id must differ from the class id (rename _CLASS_ to _MULTICLASS_)",
                 ));
-            } else if self.store.get(&m.id).is_some() {
+            } else if self.store.has_element(&m.id) {
                 self.push(Issue::error(
                     IssueCode::DuplicateId,
                     format!("multiclass id {} collides with an element id", m.id),
@@ -497,14 +515,7 @@ pub fn validate_store(store: &ContentStore) -> Vec<Issue> {
         if !seen_ids.insert(stored.element.id.as_str()) {
             continue;
         }
-        let mut ctx = Ctx {
-            store,
-            stored,
-            books: &books,
-            issues: Vec::new(),
-        };
-        ctx.check_element(&stored.element);
-        issues.extend(ctx.issues);
+        issues.extend(check_one(store, stored, &books));
     }
     for name in store.undefined_sources() {
         issues.push(Issue::info(
@@ -513,6 +524,94 @@ pub fn validate_store(store: &ContentStore) -> Vec<Issue> {
         ));
     }
     issues
+}
+
+/// [`validate_store`] for some elements only: the load diagnostics and the element checks concerning these ids
+/// (the homebrew creator checks the elements it is about to save without checking the whole library).
+#[must_use]
+pub fn validate_elements(store: &ContentStore, ids: &HashSet<&str>) -> Vec<Issue> {
+    let mut issues: Vec<Issue> = store
+        .diagnostics()
+        .iter()
+        .filter(|i| i.element.as_deref().is_some_and(|e| ids.contains(e)))
+        .cloned()
+        .collect();
+    let books = book_abbreviations(store);
+    let mut sorted: Vec<&str> = ids.iter().copied().collect();
+    sorted.sort_unstable();
+    for stored in sorted.into_iter().filter_map(|id| store.get(id)) {
+        issues.extend(check_one(store, stored, &books));
+    }
+    issues
+}
+
+fn check_one(store: &ContentStore, stored: &StoredElement, books: &HashSet<String>) -> Vec<Issue> {
+    check_with(store, &stored.file, &stored.element, books)
+}
+
+fn check_with(
+    store: &dyn Universe,
+    file: &str,
+    element: &Element,
+    books: &HashSet<String>,
+) -> Vec<Issue> {
+    let mut ctx = Ctx {
+        store,
+        file,
+        id: &element.id,
+        books,
+        issues: Vec::new(),
+    };
+    ctx.check_element(element);
+    ctx.issues
+}
+
+/// The loaded content with a draft on top: the draft's elements (and their multiclass nodes) are defined, the
+/// elements it `hides` (the saved versions it no longer has) are not.
+struct Overlay<'a> {
+    base: &'a ContentStore,
+    own: HashSet<&'a str>,
+    own_multiclass: HashSet<&'a str>,
+    hidden: &'a HashSet<&'a str>,
+}
+
+impl Universe for Overlay<'_> {
+    fn contains_id(&self, id: &str) -> bool {
+        self.own.contains(id)
+            || self.own_multiclass.contains(id)
+            || (!self.hidden.contains(id) && self.base.contains_id(id))
+    }
+
+    fn has_element(&self, id: &str) -> bool {
+        self.own.contains(id) || (!self.hidden.contains(id) && self.base.get(id).is_some())
+    }
+}
+
+/// The element checks of [`validate_elements`] for `elements` (a draft of the homebrew creator, file `file`) as if
+/// they were loaded on top of `base`, without building a store: references resolve against the draft and `base`,
+/// minus the ids in `hidden` (saved elements the draft removes). Load diagnostics (duplicate ids, appends) are not
+/// part of it: a draft's ids are generated, and its appends are checked by the store when it is saved.
+#[must_use]
+pub fn validate_overlay(
+    base: &ContentStore,
+    file: &str,
+    elements: &[Element],
+    hidden: &HashSet<&str>,
+) -> Vec<Issue> {
+    let overlay = Overlay {
+        base,
+        own: elements.iter().map(|e| e.id.as_str()).collect(),
+        own_multiclass: elements
+            .iter()
+            .filter_map(|e| e.multiclass.as_ref().map(|m| m.id.as_str()))
+            .collect(),
+        hidden,
+    };
+    let books = book_abbreviations(base);
+    elements
+        .iter()
+        .flat_map(|e| check_with(&overlay, file, e, &books))
+        .collect()
 }
 
 #[cfg(test)]
@@ -861,5 +960,62 @@ mod tests {
         assert!(is_synthesized_id("ID_WOTC_PHB_RACIAL_TRAIT_X_IGNORE"));
         assert!(is_synthesized_id("ID_PHB_INTERNAL_ITEM_FEAT_PROXY_X"));
         assert!(!is_synthesized_id("ID_PHB_SPELL_FIREBALL"));
+    }
+
+    fn grant(id: &str) -> Rule {
+        Rule::Grant(GrantRule {
+            id: id.into(),
+            ..GrantRule::default()
+        })
+    }
+
+    #[test]
+    fn overlay_resolves_against_the_draft_and_the_base_minus_hidden_ids() {
+        let base = store(vec![
+            Element::new("ID_BASE", "Base", "Feat", "Core"),
+            Element::new("ID_OLD_CHILD", "Old", "Feat Feature", "Core"),
+        ]);
+        let mut root = Element::new("ID_ROOT", "Root", "Feat", "Core");
+        root.rules = vec![
+            grant("ID_BASE"),
+            grant("ID_CHILD"),
+            grant("ID_OLD_CHILD"),
+            grant("ID_NOWHERE"),
+        ];
+        let child = Element::new("ID_CHILD", "Child", "Feat Feature", "Core");
+        let hidden: HashSet<&str> = ["ID_OLD_CHILD"].into_iter().collect();
+        let issues = validate_overlay(&base, "draft", &[root, child], &hidden);
+        let dangling: Vec<(&str, &str)> = issues
+            .iter()
+            .filter(|i| i.code == IssueCode::DanglingReference)
+            .map(|i| {
+                (
+                    i.path.as_deref().unwrap_or(""),
+                    i.file.as_deref().unwrap_or(""),
+                )
+            })
+            .collect();
+        assert_eq!(dangling, vec![("rules[2]", "draft"), ("rules[3]", "draft")]);
+        assert!(issues
+            .iter()
+            .all(|i| i.element.as_deref() == Some("ID_ROOT")));
+    }
+
+    #[test]
+    fn overlay_reports_what_validate_elements_reports_for_a_loaded_element() {
+        let mut e = Element::new("bad id", "X", "Spell", "Core");
+        e.rules = vec![grant("ID_GONE")];
+        let loaded = store(vec![e.clone()]);
+        let ids: HashSet<&str> = ["bad id"].into_iter().collect();
+        let mut expected = codes(&validate_elements(&loaded, &ids));
+        let mut got = codes(&validate_overlay(
+            &store(Vec::new()),
+            "t.json",
+            &[e],
+            &HashSet::new(),
+        ));
+        expected.sort();
+        got.sort();
+        assert_eq!(got, expected);
     }
 }

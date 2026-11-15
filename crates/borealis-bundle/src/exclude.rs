@@ -4,12 +4,14 @@
 use serde_json::{Map, Value};
 
 /// Directory names (any depth, case-insensitive) that never travel: search indexes and extracted
-/// text, embedding models, import drafts, the AI profile, sync state/trash, logs, and the device
-/// link state (`link/`: paired-device registry; borealis-link `DATA_PATHS`).
+/// text, embedding models, import drafts, homebrew creator drafts (HC7: drafts stay on the device, only saved
+/// elements travel with their pack), the AI profile, sync state/trash, logs, and the device link state (`link/`:
+/// paired-device registry; borealis-link `DATA_PATHS`).
 const EXCLUDED_DIRS: &[&str] = &[
     "search",
     "models",
     "import-drafts",
+    "homebrew-drafts",
     "ai-profile",
     "sync",
     "logs",

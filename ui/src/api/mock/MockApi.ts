@@ -1,4 +1,4 @@
-import type { Api, ApiEvents, BookRuleset, EventName, Ruleset, SlotOption, SlotOptionsArgs, SwitchVersionResult } from "../contract";
+import type { Api, ApiEvents, BookRuleset, HomebrewKeptChecks, EventName, Ruleset, SlotOption, SlotOptionsArgs, SwitchVersionResult } from "../contract";
 import type {
   AddedKind,
   AiHostStatus,
@@ -38,13 +38,20 @@ import * as play from "./play";
 import * as hp from "./hit-points";
 import * as track from "./spell-tracker";
 import { renderSheetHtml } from "./sheet";
-import { buildSlotDefs } from "./slots";
+import { buildSlotDefs, type SlotDef } from "./slots";
+import type { MockElement } from "./data-types";
 import { DEFAULT_PAGE, groupRows, queryRows, switchVersionChoices, toVersion } from "./slot-options";
 import { OPTION_DEFS, buildName, buildSnapshot, setMockDeities } from "./snapshot";
 import { NO_COMPANIONS, addCompanion, removeCompanion, updateCompanionOf } from "./companions";
 import { type MockCharacter, type RuleSettings, levelOf } from "./state";
 import { findByWireId, toWireSlotId } from "./slot-ids";
 import { MOCK_INDEX_STATUS, mockPassage, mockSearch } from "./search";
+import { FEAT_PARAMETER_PICKER } from "./homebrew-background";
+import { ELEMENT_TYPE_PICKER, EXPANDED_LIST_PICKER, ITEM_CATEGORY_PICKER, MockHomebrew, SETTER_NAME_PICKER, TAG_PICKER } from "./homebrew";
+import { MockTrials } from "./homebrew-trial";
+import { MOCK_BLOCK_CATALOG, MOCK_STAT_CATALOG } from "./homebrew-catalog";
+import { referenceRows, spellListNames, wordRows } from "./homebrew-check";
+import { SKILL_NAME_PICKER } from "./homebrew-skills";
 
 export interface MockApiOptions {
   /** Artificial latency per call in ms (default 0). */
@@ -85,6 +92,8 @@ export interface MockApiOptions {
   contentNotices?: boolean;
   /** B-191: Deity element names the content offers (Manage > Deity lists them; default none, as the SRD). */
   deities?: readonly string[];
+  /** HC3: the homebrew creator is switched on (`?creator=1`); off by default, as in 1.4.x builds. */
+  creatorEnabled?: boolean;
 }
 
 const PROFILES: Record<"dnd2014" | "dnd2024", RulesetProfile> = {
@@ -110,6 +119,8 @@ export class MockApi implements Api {
   private ai: MockAi;
   private setup: MockAiSetup;
   private imp: MockImport;
+  private homebrew: MockHomebrew;
+  private trials: MockTrials;
   /** Mock native dialogs (`pickPath`); tests may set `picks.next`. */
   readonly picks = new MockPicks();
   readonly fivetoolsUrls = new MockFiveToolsUrls();
@@ -142,9 +153,13 @@ export class MockApi implements Api {
     setClasslessEdition(opts.classlessEdition ?? null);
     setBackgroundAbilityList(opts.backgroundAbilityList ?? false);
     setMockDeities(opts.deities ?? []);
+    this.settings = { ...this.settings, creatorEnabled: opts.creatorEnabled ?? false };
     this.content = new ContentService((p) => this.emit("content:progress", p), () => this.emit("content:reloaded", { reason: "content changed" }), (p) => this.emit("import5etools:progress", p));
     this.ai = new MockAi((e) => this.emit("ai:event", e), { chunkDelayMs: opts.aiChunkDelayMs ?? 25, available: opts.aiAvailable ?? true });
     this.setup = new MockAiSetup((e) => this.emit("aisetup:event", e), opts.aiSetup);
+    this.homebrew = new MockHomebrew((pack) => this.content.putOwnPack(pack), () => spellListNames(this.loadedElements()),
+      (id) => this.loadedElements().find((e) => e.id === id)?.name ?? null);
+    this.trials = new MockTrials({ rules: () => this.rules, draft: (id) => this.homebrew.trialDraft(id) });
     this.imp = new MockImport((e) => this.emit("import:event", e), opts.importStepMs ?? 300);
     this.link = new MockDeviceLink((st) => this.emit("link:status", st), {
       mobile: this.mobile, peerAfterMs: opts.linkPeerAfterMs ?? null, devices: opts.linkDevices,
@@ -316,11 +331,15 @@ export class MockApi implements Api {
 
   async getSlotOptions(a: SlotOptionsArgs): Promise<Page<SlotOption>> {
     await this.tick();
-    const c = this.snapshotChar(a.characterId);
+    return this.slotOptionsOf(this.snapshotChar(a.characterId), a);
+  }
+
+  /** A slot's option rows for a mock character (the Build pickers, and Try it's choices). */
+  private slotOptionsOf(c: MockCharacter, a: Omit<SlotOptionsArgs, "characterId">, extra?: (def: SlotDef) => MockElement[]): Page<SlotOption> {
     const def = findByWireId(buildSlotDefs(c), a.slotId);
     if (!def) throw apiError("not_found", `Unknown slot ${a.slotId}`);
     const { snapshot } = buildSnapshot(c, this.rules);
-    const offered = def.candidates
+    const offered = [...def.candidates, ...(extra?.(def) ?? [])]
       .filter((e) => {
         if (e.type !== "multiclass") return true;
         const cls = getClass(e.id.slice(6));
@@ -484,6 +503,7 @@ export class MockApi implements Api {
   async shortRest(a: { characterId: string }) { return this.mutate(a.characterId, play.shortRest); }
   async longRest(a: { characterId: string }) { return this.mutate(a.characterId, play.longRest); }
   async setToggle(a: { characterId: string; toggleId: string; on: boolean }) { return this.mutate(a.characterId, (c) => play.setToggle(c, a.toggleId, a.on)); }
+  async setCondition(a: { characterId: string; conditionId: string; on: boolean }) { return this.mutate(a.characterId, (c) => play.setCondition(c, a.conditionId, a.on)); }
   async setExhaustion(a: { characterId: string; level: number }) { return this.mutate(a.characterId, (c) => play.setExhaustion(c, a.level)); }
   async setHeroicInspiration(a: { characterId: string; has: boolean }) { return this.mutate(a.characterId, (c) => play.setInspiration(c, a.has)); }
   /** Spell tracker (GitHub #2); `sc` = the spellcasting the snapshot shows. */
@@ -648,11 +668,14 @@ export class MockApi implements Api {
   openedFiles: OpenedFile[] = [];
   async previewImportPack({ request }: Parameters<Api["previewImportPack"]>[0]) {
     await this.tick();
+    const packFile = request.files ? this.homebrew.previewFile(request.files) : null;
+    if (packFile) return packFile;
     const folder = request.folder ? { name: this.picks.resolve(request.folder, "content-folder").split("/").pop() ?? "content", files: this.folderFiles } : null;
     return this.previews.preview(request, folder, this.content.editions);
   }
-  async installImportPreview({ previewId, editions }: { previewId: string; editions?: Record<string, BookRuleset> | null }) {
+  async installImportPreview({ previewId, editions, asCopy }: Parameters<Api["installImportPreview"]>[0]) {
     await this.tick();
+    if (this.homebrew.hasStagedFile(previewId)) return this.homebrew.installFile(previewId, asCopy === true);
     const { preview, texts } = this.previews.take(previewId, editions);
     for (const [book, edition] of Object.entries(editions ?? {})) this.content.editions.set(book, edition);
     if (!preview.converted) throw apiError("invalid_argument", "Nothing could be imported.");
@@ -661,10 +684,10 @@ export class MockApi implements Api {
     // The install report lists every issue of the staged conversion (the preview's list, uncapped there).
     return { ...installed, report: { ...installed.report, issues: preview.diagnostics } };
   }
-  async cancelImportPreview({ previewId }: { previewId: string }) { await this.tick(); this.previews.cancel(previewId); }
+  async cancelImportPreview({ previewId }: { previewId: string }) { await this.tick(); this.homebrew.cancelFile(previewId); this.previews.cancel(previewId); }
   async takeOpenedFiles() { await this.tick(); const out = this.openedFiles; this.openedFiles = []; return out; }
   async setPackEnabled(a: { packId: string; enabled: boolean }) { await this.tick(); return this.content.setEnabled(a.packId, a.enabled); }
-  async removePack({ packId }: { packId: string }) { await this.tick(); return this.content.remove(packId); }
+  async removePack({ packId }: { packId: string }) { await this.tick(); this.homebrew.forgetPack(packId); return this.content.remove(packId); }
   async listSources() { await this.tick(); return this.content.sources(); }
   async setSourceEdition(a: { sourceId: string; edition: BookRuleset }) { await this.tick(); return this.content.setSourceEdition(a.sourceId, a.edition); }
   async listIndexes() { await this.tick(); return this.content.listIndexes(); }
@@ -947,4 +970,71 @@ export class MockApi implements Api {
   async importDiscard({ draftId }: { draftId: string }) { await this.tick(); this.imp.discard(draftId); }
   async importReportPreview(req: Parameters<Api["importReportPreview"]>[0]) { await this.tick(); return this.reports.preview(req, (id) => this.imp.get(id)); }
   async importReportSend({ previewId }: { previewId: string }) { await this.tick(); return this.reports.send(previewId); }
+
+  /* Homebrew creator (packs, elements and drafts in memory; the rest rejects as the backend does until its work item lands) */
+  async homebrewKinds() { await this.tick(); return this.homebrew.kinds(); }
+  async homebrewBlockCatalog() { await this.tick(); return MOCK_BLOCK_CATALOG; }
+  async homebrewStatCatalog() { await this.tick(); return MOCK_STAT_CATALOG; }
+  async homebrewCreatePack({ request }: Parameters<Api["homebrewCreatePack"]>[0]) { await this.tick(); return this.homebrew.createPack(request); }
+  async homebrewUpdatePack({ packId, patch }: Parameters<Api["homebrewUpdatePack"]>[0]) { await this.tick(); return this.homebrew.updatePack(packId, patch); }
+  async homebrewListElements({ packId }: { packId: string }) { await this.tick(); return this.homebrew.listElements(packId); }
+  async homebrewNewDraft({ packId, kind, copyFrom, parentId, parentKey, deepCopy }: Parameters<Api["homebrewNewDraft"]>[0]) {
+    await this.tick();
+    const loaded = copyFrom ? this.content.search({ query: "", limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items.find((e) => e.id === copyFrom) : undefined;
+    return this.homebrew.newDraft(packId, kind, copyFrom, parentId, deepCopy, loaded ? { name: loaded.name, type: loaded.type } : undefined, parentKey);
+  }
+  async homebrewChildUse({ draftId, childKey }: Parameters<Api["homebrewChildUse"]>[0]) { await this.tick(); return this.homebrew.childUse(draftId, childKey); }
+  async homebrewOpenDraft({ packId, elementId, draftId }: Parameters<Api["homebrewOpenDraft"]>[0]) { await this.tick(); return this.homebrew.openDraft(packId, elementId, draftId); }
+  async homebrewUpdateDraft({ draftId, form }: Parameters<Api["homebrewUpdateDraft"]>[0]) { await this.tick(); return this.homebrew.updateDraft(draftId, form); }
+  async homebrewCheckDraft({ draftId }: { draftId: string }) { await this.tick(); return this.homebrew.checkDraft(draftId); }
+  async homebrewSaveDraft({ draftId }: { draftId: string }) { await this.tick(); return this.homebrew.saveDraft(draftId); }
+  async homebrewDiscardDraft({ draftId }: { draftId: string }) { await this.tick(); this.homebrew.discardDraft(draftId); }
+  async homebrewListDrafts() { await this.tick(); return this.homebrew.listDrafts(); }
+  async homebrewDeleteElements({ packId, elementIds }: Parameters<Api["homebrewDeleteElements"]>[0]) { await this.tick(); return this.homebrew.deleteElements(packId, elementIds); }
+  async homebrewDuplicateElement({ packId, elementId }: { packId: string; elementId: string }) { await this.tick(); return this.homebrew.duplicateElement(packId, elementId); }
+  async homebrewBulkEdit({ packId, elementIds, patch }: Parameters<Api["homebrewBulkEdit"]>[0]) { await this.tick(); return this.homebrew.bulkEdit(packId, elementIds, patch); }
+  async homebrewUndo({ undoId }: { undoId: string }) { await this.tick(); return this.homebrew.undo(undoId); }
+  async homebrewReferenceOptions({ target, query, filters, page, draftId }: Parameters<Api["homebrewReferenceOptions"]>[0]) {
+    await this.tick();
+    if (target.types.includes(EXPANDED_LIST_PICKER)) {
+      const q = query.trim().toLowerCase();
+      const rows = this.homebrew.expandedListRows(this.loadedElements()).filter((r) => r.name.toLowerCase().includes(q));
+      return { total: rows.length, items: rows.slice(page.offset, page.offset + page.limit) };
+    }
+    if (target.types.includes(ELEMENT_TYPE_PICKER) || target.types.includes(SETTER_NAME_PICKER) || target.types.includes(ITEM_CATEGORY_PICKER)
+      || target.types[0] === TAG_PICKER || target.types[0] === FEAT_PARAMETER_PICKER || target.types.includes(SKILL_NAME_PICKER)) return wordRows(this.homebrew.words(target.types), target.types[0]!, query, page);
+    // "Start from a template" (spec 11, `srdOnly: true`): the SRD copy sources only; "New from copy..." (`srdOnly: false`)
+    // adds them to the rest
+    const copying = filters?.srdOnly === true ? "srd" : filters?.srdOnly === false ? "any" : undefined;
+    const loaded = copying === "srd" ? [] : this.content.search({ query, limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items;
+    return referenceRows(loaded, this.homebrew.pickerRows(draftId, copying, target.tags ?? []), target, query, page, filters ?? {});
+  }
+  async homebrewWhereUsed({ elementId }: { elementId: string }) { await this.tick(); return this.homebrew.whereUsed(elementId, this.loadedElements()); }
+  async homebrewSpellList({ packId, listTag, expandedOf }: Parameters<Api["homebrewSpellList"]>[0]) {
+    await this.tick();
+    return expandedOf ? this.homebrew.expandedList(packId, expandedOf, this.loadedElements()) : this.homebrew.spellList(packId, listTag, this.loadedElements());
+  }
+  async homebrewSetSpellList({ packId, listTag, expandedOf, add, remove }: Parameters<Api["homebrewSetSpellList"]>[0]) {
+    await this.tick();
+    return expandedOf ? this.homebrew.setExpandedList(packId, expandedOf, add, remove, this.loadedElements())
+      : this.homebrew.setSpellList(packId, listTag, add, remove, this.loadedElements());
+  }
+  /** Unsaved SPELL LISTS checks kept per pack: the mock's device (it outlives the UI's memory, as the backend's files). */
+  private keptLists = new Map<string, HomebrewKeptChecks>();
+  async homebrewKeepSpellListChecks({ packId, kept }: Parameters<Api["homebrewKeepSpellListChecks"]>[0]) {
+    await this.tick();
+    if (kept.list.trim() && kept.pending.length) this.keptLists.set(packId, kept);
+    else this.keptLists.delete(packId);
+  }
+  async homebrewKeptSpellListChecks({ packId }: { packId: string }) { await this.tick(); return this.keptLists.get(packId) ?? null; }
+  /** Every loaded element of the sample content (the creator's own packs are `MockHomebrew`'s). */
+  private loadedElements() { return this.content.search({ query: "", limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items; }
+  async homebrewTrialStart({ draftId, setup }: Parameters<Api["homebrewTrialStart"]>[0]) { await this.tick(); return this.trials.start(draftId, setup); }
+  async homebrewTrialUpdate({ trialId, change }: Parameters<Api["homebrewTrialUpdate"]>[0]) { await this.tick(); return this.trials.update(trialId, change); }
+  async homebrewTrialEnd({ trialId }: { trialId: string }) { await this.tick(); this.trials.end(trialId); }
+  async homebrewTrialOptions({ trialId, ...rest }: Parameters<Api["homebrewTrialOptions"]>[0]) {
+    await this.tick();
+    return this.slotOptionsOf(this.trials.character(trialId), rest, (def) => this.trials.extraOptions(trialId, def));
+  }
+  async homebrewExportPack({ packId, leaveOutCopiedText }: Parameters<Api["homebrewExportPack"]>[0]) { await this.tick(); return this.homebrew.exportPack(packId, leaveOutCopiedText); }
 }

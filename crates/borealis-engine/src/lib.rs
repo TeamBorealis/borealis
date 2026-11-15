@@ -13,6 +13,8 @@ pub mod cantrips;
 pub mod combat;
 pub mod commands;
 pub mod compat;
+pub mod conditions;
+pub mod content_skills;
 pub mod custom_rules;
 pub mod diag;
 pub mod engine;
@@ -68,6 +70,9 @@ mod derive;
 mod features;
 mod retrain;
 pub mod text;
+
+#[cfg(test)]
+mod engine_reuse_tests;
 
 pub use adapter::{
     Adaptation, EditionAdapter, PassThroughAdapter, StandardAdapter, FLEXIBLE_INCREASE_NAME,

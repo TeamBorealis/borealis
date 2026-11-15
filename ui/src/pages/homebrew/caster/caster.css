@@ -1,0 +1,15 @@
+/* Spellcasting section (WB-17, spec 4.6, 13.8): the class table grid of the LEVELS tab (ap-grid) with the counts and
+   the spell slots of each slot level; slot cells read-only unless the caster type is a custom table. Tokens only (U7). */
+.hb-caster-table .hb-slot-col, .hb-caster-table .hb-slot-cell { width: 44px; text-align: center; }
+.hb-caster-table .hb-counter { width: 64px; }
+/* Desktop (WB-26, U7): LEVEL 44, each count column 64 (its heading, CANTRIPS or PREPARED, whole), each slot level 30;
+   nine slot levels and two counts fit the editor column at 1355 px. More columns than fit scroll in the grid's frame
+   (a fixed table grows to the sum of its columns) instead of squeezing a count column to nothing. */
+html:not(.phone) .hb-caster-table thead th:first-child { width: 44px; }
+html:not(.phone) .hb-caster-table thead th:not(:first-child):not(.hb-slot-col) { width: 64px; }
+html:not(.phone) .hb-caster-table .hb-slot-col { width: 30px; padding-left: 0; padding-right: 0; }
+.hb-slot-cell { color: var(--text-body); }
+.hb-caster-flags { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.hb-caster-flag { display: inline-flex; flex-direction: column; gap: 4px; }
+.hb-caster-flag label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-2xs); }
+.hb-caster-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }

@@ -436,13 +436,25 @@ fn extra_damage_text(l: &Live<'_>, graph: &Graph<'_>, stats: &StatSet) -> String
     t
 }
 
+/// One `damage_reduction` `plus` term (`dexterity:modifier`, `monk level`): a small value read
+/// with a proficiency bonus of 0, else the level in the class it names. The homebrew creator
+/// checks its text against this reader.
+#[must_use]
+pub fn reduction_term(
+    term: &str,
+    mods: &[i32; 6],
+    class_levels: &std::collections::HashMap<String, i32>,
+) -> i32 {
+    crate::rule_view::eval_value(term, mods, 0).unwrap_or_else(|| {
+        let class = term.trim_end_matches(" level").to_lowercase();
+        class_levels.get(&class).copied().unwrap_or(0)
+    })
+}
+
 fn deflect_text(l: &Live<'_>, graph: &Graph<'_>, mods: &[i32; 6]) -> String {
     let mut flat = 0;
     for p in l.list("plus") {
-        flat += crate::rule_view::eval_value(&p, mods, 0).unwrap_or_else(|| {
-            let class = p.trim_end_matches(" level").to_lowercase();
-            graph.class_levels.get(&class).copied().unwrap_or(0)
-        });
+        flat += reduction_term(&p, mods, &graph.class_levels);
     }
     let all = !live_rules(graph, &["damage_reduction_all_types"]).is_empty();
     let types = if all {

@@ -17,7 +17,7 @@ export interface MainTabDef {
 
 /** Classic builder main tab order, plus PLAY (Borealis play mode). START also owns every non-character screen. */
 export const MAIN_TABS: readonly MainTabDef[] = [
-  { id: "start", label: "Start", short: "Start", to: "/characters", icon: "users", needsCharacter: false, match: ["/characters", "/compendium", "/search", "/content", "/notes", "/import", "/ai", "/setup", "/settings", "/more"] },
+  { id: "start", label: "Start", short: "Start", to: "/characters", icon: "users", needsCharacter: false, match: ["/characters", "/compendium", "/search", "/content", "/notes", "/homebrew", "/import", "/ai", "/setup", "/settings", "/more"] },
   { id: "build", label: "Build", short: "Build", to: "/builder", icon: "hammer", needsCharacter: true, match: ["/builder"] },
   { id: "magic", label: "Magic", short: "Magic", to: "/spells", icon: "sparkles", needsCharacter: true, match: ["/spells"] },
   { id: "equipment", label: "Equipment", short: "Gear", to: "/equipment", icon: "backpack", needsCharacter: true, match: ["/equipment"] },
@@ -28,19 +28,21 @@ export const MAIN_TABS: readonly MainTabDef[] = [
 
 /**
  * Route-based sub-tabs for the START section: the classic builder's CHARACTER COLLECTION | SOURCES | ADDITIONAL CONTENT, then
- * Borealis's NOTES (GitHub #15). START owns every screen that needs no character, and Borealis additions follow the classic
- * builder's own items. `desktopOnly` sub-tabs are hidden on phones.
+ * Borealis's HOMEBREW (the creator, spec section 2: after Additional Content) and NOTES (GitHub #15). START owns every screen
+ * that needs no character, and Borealis additions follow the classic builder's own items. `desktopOnly` sub-tabs are hidden
+ * on phones; `creator` sub-tabs only show while the homebrew creator is on (HC3).
  */
-export const START_SUBNAV: readonly { to: string; label: string; desktopOnly?: boolean }[] = [
+export const START_SUBNAV: readonly { to: string; label: string; desktopOnly?: boolean; creator?: boolean }[] = [
   { to: "/characters", label: "Character Collection" },
   { to: "/content/sources", label: "Sources" },
   { to: "/content", label: "Additional Content" },
+  { to: "/homebrew", label: "Homebrew", creator: true },
   { to: "/notes", label: "Notes" },
 ];
 
 /** The START sub-tabs this build shows. */
-export function startSubnav(mobile: boolean): readonly { to: string; label: string }[] {
-  return START_SUBNAV.filter((s) => !(mobile && s.desktopOnly));
+export function startSubnav(mobile: boolean, creator = false): readonly { to: string; label: string }[] {
+  return START_SUBNAV.filter((s) => !(mobile && s.desktopOnly) && (creator || !s.creator));
 }
 
 export function activeTab(pathname: string): MainTabDef {
@@ -68,6 +70,8 @@ export interface MenuEntry {
   directOnly?: boolean;
   /** Hidden on phones (no entry uses it since Notes came to phones, B-221). */
   desktopOnly?: boolean;
+  /** Shown only while the homebrew creator is on (HC3). */
+  creator?: boolean;
 }
 export interface MenuDef { id: string; label: string; entries: MenuEntry[] }
 
@@ -80,6 +84,7 @@ export const MENUS: readonly MenuDef[] = [
     { id: "load", label: "Load Character", to: "/characters?load=1" },
     { id: "find", label: "Search Characters", to: "/characters?find=1" },
     { id: "import", label: "Import Characters", to: "/import", noAiTo: "/characters?load=1" },
+    { id: "new-homebrew", label: "New homebrew element...", to: "/homebrew?new=1", creator: true },
     { id: "s1", label: "", separator: true },
     { id: "send", label: "Send to device...", action: "send-to-device" },
     { id: "receive", label: "Receive from device...", action: "receive-from-device" },
@@ -115,15 +120,16 @@ export const MENUS: readonly MenuDef[] = [
 ];
 
 /** The menus for the current AI state and build: AI entries appear only when AI is on, the AI importer entry is hidden (Load
- * Character covers it), a store build has no entry that points at downloads outside the store, and phones have no
- * desktop-only entry. */
-export function visibleMenus(aiEnabled: boolean, storeBuild = false, mobile = false): readonly MenuDef[] {
+ * Character covers it), a store build has no entry that points at downloads outside the store, phones have no
+ * desktop-only entry, and creator entries show only while the homebrew creator is on (HC3). */
+export function visibleMenus(aiEnabled: boolean, storeBuild = false, mobile = false, creator = false): readonly MenuDef[] {
   return MENUS.map((m) => ({
     ...m,
     entries: m.entries
       .filter((e) => aiEnabled || (!e.ai && !e.noAiTo))
       .filter((e) => !(storeBuild && e.directOnly))
-      .filter((e) => !(mobile && e.desktopOnly)),
+      .filter((e) => !(mobile && e.desktopOnly))
+      .filter((e) => creator || !e.creator),
   }));
 }
 

@@ -76,7 +76,24 @@ fn kind_of(pack: &InstalledPack) -> (PackKind, Option<bool>) {
         "homebrew" => PackKind::Homebrew,
         _ => PackKind::Imported,
     };
-    (kind, user_import)
+    // CS1/HC8: a homebrew pack holding text copied from the user's non-SRD imports is not redistributable
+    let copied_text = kind == PackKind::Homebrew
+        && read_json(&pack.dir.join(borealis_authoring::pack::CREATOR_FILE))
+            .and_then(|v| v.get("elements").and_then(Value::as_object).cloned())
+            .is_some_and(|els| els.values().any(|e| e["nonSrdText"] == true));
+    (kind, user_import.or(copied_text.then_some(false)))
+}
+
+/// The homebrew creator edits a pack in place (spec 10.3, HC5) when it is the user's own: a homebrew pack
+/// (`pack-meta.json` kind `homebrew`, the creator's and `ai_add_homebrew_to_pack`'s) or the user's own conversion
+/// ("Import anything", `import.json` origin `user-import`). Bundled, downloaded and imported packs have an upstream
+/// that would overwrite edits: they are copy-only.
+#[must_use]
+pub(crate) fn creator_editable(pack: &InstalledPack) -> bool {
+    !pack.bundled
+        && (kind_of(pack).0 == PackKind::Homebrew
+            || read_json(&pack.dir.join(IMPORT_META_FILE))
+                .is_some_and(|v| v["origin"] == "user-import"))
 }
 
 /// Counts and sources of a pack that is not loaded (read from its files).
@@ -135,23 +152,32 @@ impl AppState {
     /// # Errors
     /// `internal` if a lock is poisoned.
     pub fn list_packs(&self) -> ApiResult<Vec<ContentPack>> {
+        self.packs_listed(None)
+    }
+
+    /// [`Self::list_packs`], of the pack `only` alone when given (what a save of that pack answers with).
+    pub(crate) fn packs_listed(&self, only: Option<&str>) -> ApiResult<Vec<ContentPack>> {
         let hub = self.hub()?;
         let prefs = self.content_prefs();
-        let mut loaded: BTreeMap<&str, (usize, BTreeSet<String>)> = BTreeMap::new();
+        let mut loaded: BTreeMap<&str, (usize, BTreeSet<&str>)> = BTreeMap::new();
         for stored in hub.store.iter() {
             let pack = stored.file.split('/').next().unwrap_or_default();
+            if only.is_some_and(|o| o != pack) {
+                continue;
+            }
             let entry = loaded.entry(pack).or_default();
             entry.0 += 1;
-            entry.1.insert(stored.element.source.clone());
+            entry.1.insert(stored.element.source.as_str());
         }
         Ok(self
             .installed_packs()
             .iter()
+            .filter(|p| only.is_none_or(|o| p.manifest.id == o))
             .map(|p| {
                 let id = &p.manifest.id;
                 let enabled = id == CORE_PACK || !prefs.disabled_packs.contains(id);
                 let (element_count, sources) = match loaded.get(id.as_str()) {
-                    Some((n, s)) if enabled => (*n, s.clone()),
+                    Some((n, s)) if enabled => (*n, s.iter().map(|s| (*s).to_string()).collect()),
                     _ => disk_stats(p),
                 };
                 let (kind, redistributable) = kind_of(p);
@@ -190,7 +216,7 @@ impl AppState {
         for e in hub.store.by_type("Source") {
             descriptors
                 .entry(borealis_content::source_key(&e.element.name))
-                .or_insert(&e.element);
+                .or_insert(e.element.as_ref());
         }
         let mut out = Vec::new();
         for source in hub.store.source_names() {
@@ -210,7 +236,7 @@ impl AppState {
                     elements
                         .iter()
                         .find(|e| e.element.ty == "Source")
-                        .map(|e| &e.element)
+                        .map(|e| e.element.as_ref())
                 });
             let description = descriptor
                 .map(|e| plain_text(&e.description))
@@ -247,15 +273,22 @@ impl AppState {
         sink: &dyn EventSink,
         reason: &str,
     ) -> ApiResult<()> {
+        let mut timer = crate::load_timing::LoadTimer::named("content reload");
         let settings = self.settings()?;
-        let hub = ContentHub::load_with(&self.paths, &settings, prefs)?;
+        let previous = self.hub()?;
+        let hub = ContentHub::reload(&self.paths, &settings, prefs, &previous)?;
+        drop(previous);
+        timer.step("load", "");
         prefs.save(&self.paths.prefs_file())?;
         self.set_hub(hub)?;
+        timer.step("swap", "");
         // Characters imported earlier pick up newly available content without a re-import.
         if let Err(e) = self.recheck_missing_content() {
             tracing::warn!("re-checking imported characters failed: {e}");
         }
+        timer.step("characters", "");
         sink.content_reloaded(reason);
+        timer.total(reason);
         Ok(())
     }
 

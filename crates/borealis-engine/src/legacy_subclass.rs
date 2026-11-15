@@ -30,8 +30,10 @@ use crate::profile::{RulesetProfile, SubclassRename};
 use crate::universe::{Cond, EditionStatus, UElem, URule};
 use borealis_content::expr::{BoolExpr, RequirementsExpr, SupportsExpr, SupportsLeaf};
 use borealis_content::Rule;
+use rayon::prelude::*;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 const SUBCLASS: &str = "Archetype";
 const SUBCLASS_FEATURE: &str = "Archetype Feature";
@@ -103,8 +105,9 @@ pub(crate) fn adopt(
     let ctx = Ctx {
         elems,
         choices: &choices,
+        // each subclass on its own (in parallel)
         class_of: subclasses
-            .iter()
+            .par_iter()
             .map(|&i| (i, classes_of(elems, pos, &choices, i)))
             .collect(),
         keys: subclasses
@@ -114,8 +117,9 @@ pub(crate) fn adopt(
         subclasses: &subclasses,
         renames: profile.subclass_renames(),
     };
+    // planned on their own (in parallel, in order), applied one after the other
     let plans: Vec<(usize, Plan)> = subclasses
-        .iter()
+        .par_iter()
         .filter(|&&i| elems[i].edition.is_foreign())
         .map(|&i| (i, plan(&ctx, i)))
         .collect();
@@ -135,7 +139,7 @@ fn subclass_choices(elems: &[UElem], pos: &HashMap<String, usize>) -> Vec<Choice
         let class_key = name_key(&u.el.name);
         for at in reachable(elems, pos, class, CLASS_FEATURE) {
             let e = &elems[at];
-            for (rule, parsed) in e.el.rules.iter().zip(&e.rules) {
+            for (rule, parsed) in e.el.rules.iter().zip(e.rules.iter()) {
                 if let (Rule::Select(s), URule::Select { supports, .. }) = (rule, parsed) {
                     if let (true, Cond::Expr(expr)) = (s.ty == SUBCLASS, supports) {
                         out.push(Choice {
@@ -319,6 +323,8 @@ fn apply(
     a: usize,
     p: Plan,
 ) {
+    // whatever the plan does to it, the next build prepares it again
+    elems[a].touched = true;
     if p.reprinted {
         elems[a].superseded = true;
         add_note(
@@ -331,7 +337,7 @@ fn apply(
     let before = elems[a].supports.len();
     for t in p.tags {
         if !elems[a].supports.contains(&t) {
-            elems[a].supports.push(t);
+            Arc::make_mut(&mut elems[a].supports).push(t);
         }
     }
     // a tag set that still does not fit (an ID-range choice) is taken back
@@ -342,7 +348,7 @@ fn apply(
         .filter(|&c| choices.iter().any(|x| x.class == c && fits(&elems[a], x)))
         .collect();
     if classes.is_empty() {
-        elems[a].supports.truncate(before);
+        Arc::make_mut(&mut elems[a].supports).truncate(before);
         return;
     }
     if elems[a].supports.len() > before {
@@ -413,7 +419,8 @@ fn gate_overlaps(
 /// Add `gate` to the requirements of grant rule `k` (parsed copy included). False when the
 /// combined expression does not parse (the rule is left as it was).
 fn gate_grant(u: &mut UElem, k: usize, gate: &str) -> bool {
-    let Rule::Grant(g) = &mut u.el.rules[k] else {
+    u.touched = true;
+    let Rule::Grant(g) = &mut Arc::make_mut(&mut u.el).rules[k] else {
         return false;
     };
     let text = match g.requirements.as_deref().map(str::trim) {
@@ -424,7 +431,7 @@ fn gate_grant(u: &mut UElem, k: usize, gate: &str) -> bool {
         return false;
     };
     g.requirements = Some(text);
-    u.rules[k] = URule::Grant {
+    Arc::make_mut(&mut u.rules)[k] = URule::Grant {
         req: Cond::Expr(expr),
     };
     true

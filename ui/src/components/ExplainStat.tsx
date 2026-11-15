@@ -70,7 +70,7 @@ export function ExplainStat({ stat, label, value, children }: { stat: string; la
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" className="explain-trigger" aria-label={value ? `Explain ${label}, ${value}` : `Explain ${label}`} aria-haspopup="dialog" onClick={() => setOpen(true)}>{children}</button>
+      <button type="button" className="explain-trigger" aria-label={value ? `Explain ${label}, ${value}` : `Explain ${label}`} onClick={() => setOpen(true)}>{children}</button>
       {open && <ExplainDialog stat={stat} label={label} onClose={() => setOpen(false)} />}
     </>
   );

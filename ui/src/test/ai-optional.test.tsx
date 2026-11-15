@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { MockApi } from "../api/mock";
@@ -13,6 +13,35 @@ async function openMenu(user: ReturnType<typeof userEvent.setup>, name: string):
   const items = within(await screen.findByRole("menu")).getAllByRole("menuitem").map((i) => i.textContent ?? "");
   await user.keyboard("{Escape}");
   return items;
+}
+
+/** How much later each settings read after the first is answered: the app-update watcher reads the settings first, the
+ * SettingsProvider later in the same start-up (I0Ya0: 25 ms apart on an idle machine, more under load). */
+const LATER_READ_MS = 150;
+
+/** Resolves once every settings read the app started has been answered, settings coming `delayMs` late (a slow runner)
+ * and each read after the first `LATER_READ_MS` later still. The first answer is not enough (I0Ya0): it is the
+ * app-update watcher's, and a file dropped before the SettingsProvider's answer is routed as in a build without AI. */
+function settingsRead(api: MockApi, delayMs = 0): Promise<void> {
+  const getSettings = api.getSettings.bind(api);
+  let answered!: () => void;
+  const read = new Promise<void>((r) => { answered = r; });
+  let started = 0;
+  let pending = 0;
+  Object.assign(api, {
+    getSettings: async () => {
+      const late = started++ > 0 ? LATER_READ_MS : 0;
+      pending += 1;
+      try {
+        if (delayMs) await new Promise((r) => setTimeout(r, delayMs + late));
+        return await getSettings();
+      } finally {
+        pending -= 1;
+        if (pending === 0) answered();
+      }
+    },
+  });
+  return read;
 }
 
 function drop(files: File[]) {
@@ -106,6 +135,10 @@ describe("No AI on mobile", () => {
 });
 
 describe("Import without AI", () => {
+  /** How late the settings are read in the slow-runner case (ItXcI). */
+  const SLOW_SETTINGS_MS = 300;
+  /** How far past React's 5 ms time slice each scheduler task seems to run on the slow machine (I0Ya0). */
+  const OVERRUN_MS = 6;
   const file = (name: string, text = "<x/>", type = "") => new File([text], name, { type });
 
   it("converts XML and .index together into one preview, without installing", async () => {
@@ -142,8 +175,13 @@ describe("Import without AI", () => {
   });
 
   it("explains that PDFs and photos need the optional AI assistant, without opening the AI wizard", async () => {
-    renderApp("/characters");
+    // Same race as ItXcI: before the settings are read the build counts as one without AI (the shorter message), so
+    // the file is dropped once they were: all of them, the SettingsProvider's included (I0Ya0).
+    const api = mock();
+    const read = settingsRead(api, SLOW_SETTINGS_MS);
+    renderApp("/characters", { api });
     await screen.findByRole("heading", { name: "Characters" });
+    await act(async () => { await read; await new Promise((r) => setTimeout(r, 0)); });
     drop([file("sheet.pdf", "%PDF", "application/pdf")]);
     expect(await screen.findByText(/sheet\.pdf cannot be imported directly\. PDFs, photos and plain text need the optional AI assistant/)).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Import" })).toBeNull();
@@ -165,9 +203,44 @@ describe("Import without AI", () => {
   });
 
   it("with AI on, other files still go to the AI import page", async () => {
-    renderApp("/characters", { aiEnabled: true });
+    // ItXcI: on a slow runner the Characters page shows before the settings are read, and a file dropped then gets the
+    // neutral message (AI counts as off until then, by design). The settings come late here on purpose, so the test
+    // drops only once the AI "+" (a link to the import page, a file picker button while AI is off) shows they were read.
+    const api = mock({ aiEnabled: true });
+    void settingsRead(api, SLOW_SETTINGS_MS);
+    renderApp("/characters", { api });
     await screen.findByRole("heading", { name: "Characters" });
+    expect((await screen.findByRole("link", { name: "Import content" })).getAttribute("href")).toBe("/import");
     drop([file("notes.txt", "a class", "text/plain")]);
     expect(await screen.findByRole("heading", { name: "Import" })).toBeTruthy();
+  });
+
+  it("with AI on, a file dropped the moment the AI \"+\" shows goes to the AI import page, on a slow machine", async () => {
+    // I0Ya0: React runs a render's effects in a later task when the render overran its time slice (a loaded machine). The
+    // AI "+" then showed (the settings read) while the window's drop listener was still the one of the render before
+    // (AI off), and a file dropped then got the neutral message. Here every scheduler slice overruns (the clock runs
+    // fast), and the file is dropped as the "+" link is added to the page, before anything else runs.
+    const clock = performance.now.bind(performance);
+    let ahead = 0;
+    const slow = vi.spyOn(performance, "now").mockImplementation(() => clock() + (ahead += OVERRUN_MS));
+    try {
+      const api = mock({ aiEnabled: true });
+      void settingsRead(api, SLOW_SETTINGS_MS);
+      const dropped = new Promise<void>((resolve) => {
+        const seen = new MutationObserver(() => {
+          if (!document.querySelector('a.fab-import[href="/import"]')) return;
+          seen.disconnect();
+          drop([file("notes.txt", "a class", "text/plain")]);
+          resolve();
+        });
+        seen.observe(document.body, { childList: true, subtree: true });
+      });
+      renderApp("/characters", { api });
+      await dropped;
+      expect(await screen.findByRole("heading", { name: "Import" })).toBeTruthy();
+      expect(screen.queryByText(/notes\.txt cannot be imported/)).toBeNull();
+    } finally {
+      slow.mockRestore();
+    }
   });
 });

@@ -115,7 +115,7 @@ impl AppState {
         let mut hits: Vec<(u8, Hit<'_>)> = hub
             .store
             .iter()
-            .map(|s| &s.element)
+            .map(|s| s.element.as_ref())
             .filter(|e| is_item(e) && scope.admits(e) && source_ok(&e.source))
             .filter(|e| category.is_none_or(|c| list_category(e) == c))
             .filter_map(|e| rank(&e.name, &|| keywords(e)).map(|r| (r, Hit::Item(e))))
@@ -174,7 +174,7 @@ impl AppState {
                     engine
                         .universe(d.character.build.ruleset)
                         .get(item_id)
-                        .map(|u| &u.el)
+                        .map(|u| u.el.as_ref())
                 })
                 .filter(|e| is_item(e))
                 .ok_or_else(|| ApiError::not_found("That item does not exist."))?;

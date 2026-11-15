@@ -3,18 +3,29 @@ import type { BuilderTab, CharacterSnapshot, SelectionSlot } from "../api/contra
 import { isPhone } from "../lib/phone";
 import { openPackages } from "../pages/equipment/startingPackages";
 
+/**
+ * A status-bar line: the message, then an optional detail read after it (HC18: "Saved 'X' to Pack" + " · 2 problems").
+ * The bar keeps them in separate nodes, so a detail that comes later is announced on its own.
+ */
+export interface StatusLine {
+  readonly message: string;
+  readonly detail: string;
+}
+
 /** Status-bar message store: the bar logs what just happened (the classic builder keeps the last action visible until the next one). */
-let message = "";
+let line: StatusLine = { message: "", detail: "" };
 const listeners = new Set<() => void>();
 
-export function setStatus(next: string): void {
-  if (next === message) return;
-  message = next;
+export function setStatus(message: string, detail = ""): void {
+  if (message === line.message && detail === line.detail) return;
+  line = { message, detail };
   listeners.forEach((l) => l());
 }
-export const getStatus = (): string => message;
-export function useStatusMessage(): string {
-  return useSyncExternalStore((cb) => { listeners.add(cb); return () => { listeners.delete(cb); }; }, getStatus, getStatus);
+/** The line as it reads: the message, then its detail. */
+export const getStatus = (): string => line.message + line.detail;
+const getLine = (): StatusLine => line;
+export function useStatusLine(): StatusLine {
+  return useSyncExternalStore((cb) => { listeners.add(cb); return () => { listeners.delete(cb); }; }, getLine, getLine);
 }
 
 

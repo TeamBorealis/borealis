@@ -38,7 +38,7 @@ fn resolve_subclass(
     let lower = wanted.to_lowercase();
     store
         .by_type("Archetype")
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| e.ruleset.is_none_or(|r| r.compatible_with(ruleset)))
         .find(|e| e.id == wanted || e.name.to_lowercase() == lower)
         .map(|e| e.id.clone())

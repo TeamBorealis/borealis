@@ -304,9 +304,11 @@ const ABILITIES: [&str; 6] = [
     "charisma",
 ];
 
-/// Evaluate `8+strength+proficiency` / `spell save DC (Cleric)` style formulas. An ability term
-/// may also be written `<ability>:modifier`, the form resource formulas use.
-fn eval_formula(
+/// Evaluate a `save_dc` rule's formula: `8+strength+proficiency` / `spell save DC (Cleric)`. An
+/// ability term may also be written `<ability>:modifier`, the form resource formulas use. The
+/// homebrew creator writes these formulas and checks its text against this reader.
+#[must_use]
+pub fn eval_save_dc_formula(
     formula: &str,
     mods: &[i32; 6],
     prof: i32,
@@ -356,7 +358,7 @@ pub fn save_dcs(
             out.push(NamedSaveDc {
                 owner: el.id.clone(),
                 id: text(&v, "id"),
-                value: eval_formula(&formula, mods, prof, casters),
+                value: eval_save_dc_formula(&formula, mods, prof, casters),
                 formula,
             });
         }
@@ -366,7 +368,7 @@ pub fn save_dcs(
 
 #[cfg(test)]
 mod save_dc_tests {
-    use super::eval_formula;
+    use super::eval_save_dc_formula as eval_formula;
 
     #[test]
     fn save_dc_terms_read_abilities_in_both_forms() {

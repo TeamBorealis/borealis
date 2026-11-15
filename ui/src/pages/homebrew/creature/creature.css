@@ -1,0 +1,23 @@
+/* Creature form (WB-20, spec 4.11): the stat block's parts in the Manage character form style (13.4). Existing tokens only. */
+.hb-cr-part { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.hb-cr-grid { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.hb-cr-cell { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-md); color: var(--text-body); }
+.hb-cr-num, .hb-row-controls .aur-textbox.hb-cr-num { width: 64px; min-width: 64px; flex: 0 0 64px; }
+.hb-cr-ac .aur-textbox { flex: 1 1 120px; }
+.hb-cr-key { min-width: 120px; font-size: var(--fs-md); color: var(--text-body); }
+.hb-cr-abilities { display: grid; grid-template-columns: repeat(6, minmax(72px, 1fr)); gap: 6px; }
+.hb-cr-ability { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.hb-cr-ab-name { font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
+.hb-cr-ab-mod { font-size: 11px; color: var(--text-secondary); }
+.hb-cr-damage { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.hb-cr-damage .hb-chips, .hb-cr-damage .aur-textbox { flex: 1 1 160px; min-width: 0; }
+.hb-cr-spell-list { display: flex; flex-direction: column; gap: 4px; padding-left: 8px; border-left: 2px solid var(--accent-20); }
+.hb-cr-lair-option { align-items: flex-start; }
+.hb-cr-lair-option .hb-multiline { flex: 2 1 auto; min-height: 48px; }
+.hb-cr-entry-dialog .hb-cr-part { padding-left: 22px; }
+
+@media (max-width: 600px) {
+  .hb-cr-abilities { grid-template-columns: repeat(3, minmax(72px, 1fr)); }
+}
+/* a spell's note sits beside its name in the chip (HwTd4) */
+.hb-cr-spell .hb-cr-spell-note { width: 140px; min-width: 0; }

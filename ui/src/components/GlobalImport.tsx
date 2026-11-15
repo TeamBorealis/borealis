@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { classifyImport, RULES_IMPORT_ACCEPT, unsupportedImportMessage } from "../lib/importRouting";
 import { base64ToFile, fileToBase64, filesToInputs } from "../lib/files";
@@ -63,12 +63,20 @@ export function GlobalImport() {
     // A fresh state tells an already-open Characters page to list the new character (B-24: a cold-start open lands there).
     if (target) navigate(target, { state: { imported: Date.now() } });
   }, [api, toast, navigate, aiEnabled, aiAvailable, notice]);
+  // I0Ya0: the drop listeners read the render the page shows. A layout effect runs in the commit that shows the page, a
+  // plain effect may run a task later (a render that overran its time slice): a file dropped in between went to the
+  // listener of the render before (AI still off once the AI "+" showed).
+  const latest = useRef({ route, aiAvailable });
+  useLayoutEffect(() => { latest.current = { route, aiAvailable }; }, [route, aiAvailable]);
 
   // Files the OS opened with Borealis ("Open with" / share), drained on mount and when nudged: Tauri queues them
   // (macOS, iOS: `content:open-file`); Android's activity parks them for the backend and fires `borealis-open-file`.
   useEffect(() => {
     const drain = async () => {
-      const opened = await api.takeOpenedFiles().catch(() => []);
+      const taken = await api.takeOpenedFiles().catch(() => []);
+      // a file the OS handed over that was not opened says why (H5wn8), it is never dropped silently
+      taken.forEach((o) => { if (o.refused) toast.push(o.refused, "error"); });
+      const opened = taken.filter((o) => !o.refused);
       if (opened.length) void route(opened.map((o) => base64ToFile(o.fileName, o.contentBase64)));
       // `.borealis` bundles are kept as files by the backend; ask for them after the other files were taken.
       await openOsBundles(api);
@@ -78,12 +86,12 @@ export function GlobalImport() {
     const onOpen = () => void drain();
     window.addEventListener("borealis-open-file", onOpen);
     return () => { off(); window.removeEventListener("borealis-open-file", onOpen); };
-  }, [api, route]);
+  }, [api, route, toast]);
 
   // Files dropped from the OS on the desktop app: the backend handles the native drop and sends tokens and names only.
   useEffect(() => api.subscribe("files:dropped", (drop) => {
     void (async () => {
-      if (drop.rejected.length) toast.push(unsupportedImportMessage(drop.rejected, aiAvailable), "error");
+      if (drop.rejected.length) toast.push(unsupportedImportMessage(drop.rejected, latest.current.aiAvailable), "error");
       drop.bundles.forEach((b) => openBundleFile({ token: b.token, name: b.name }));
       const [folder] = drop.folders;
       if (folder && (await notice.ensure())) {
@@ -92,10 +100,10 @@ export function GlobalImport() {
       if (!drop.files.length) return;
       try {
         const opened = await api.takePickedFiles({ purpose: "dropped-file", tokens: drop.files.map((f) => f.token) });
-        await route(opened.map((o) => base64ToFile(o.fileName, o.contentBase64)));
+        await latest.current.route(opened.map((o) => base64ToFile(o.fileName, o.contentBase64)));
       } catch (e) { toast.push(errorMessage(e), "error"); }
     })();
-  }), [api, route, toast, aiAvailable, notice]);
+  }), [api, toast, notice]);
 
   useEffect(() => {
     const over = (e: DragEvent) => { if (hasFiles(e)) e.preventDefault(); };
@@ -104,12 +112,12 @@ export function GlobalImport() {
       e.preventDefault();
       if (onImport) return;
       const files = Array.from(e.dataTransfer?.files ?? []);
-      if (files.length) void route(files);
+      if (files.length) void latest.current.route(files);
     };
     window.addEventListener("dragover", over);
     window.addEventListener("drop", drop);
     return () => { window.removeEventListener("dragover", over); window.removeEventListener("drop", drop); };
-  }, [route, onImport]);
+  }, [onImport]);
 
   if (onImport) return <ImportPreviewHost />;
   if (aiEnabled) return <><ImportPreviewHost /><Link to="/import" className="fab-import" aria-label="Import content" title="Import content"><Icon name="plus" /></Link></>;

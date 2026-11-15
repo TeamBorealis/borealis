@@ -8,6 +8,7 @@ members = [
   "crates/borealis-sheet",
   "crates/borealis-ai",
   "crates/borealis-assist",
+  "crates/borealis-authoring",
   "crates/borealis-import-5etools",
   "crates/borealis-bundle",
   "crates/borealis-link",
@@ -46,6 +47,7 @@ borealis-migrate = { path = "crates/borealis-migrate" }
 borealis-sheet = { path = "crates/borealis-sheet" }
 borealis-ai = { path = "crates/borealis-ai" }
 borealis-assist = { path = "crates/borealis-assist" }
+borealis-authoring = { path = "crates/borealis-authoring" }
 borealis-search = { path = "crates/borealis-search" }
 borealis-embed = { path = "crates/borealis-embed" }
 # default-features = false: dependents opt into the network stack and OS store explicitly.
@@ -63,6 +65,24 @@ all = { level = "warn", priority = -1 }
 # slower, so a debug app (mobile e2e, `tauri dev`) would fail the on-device 40 ms semantic speed check for the wrong
 # reason (S3.4). Its build script gets the optimised level; Rust code keeps the debug profile.
 [profile.dev.package.llama-cpp-sys-2]
+opt-level = 3
+
+# Tests build the engine, the content store and every third-party crate at opt-level 1 (H_2KE): the character-building
+# suites (the re-creation suite `borealis-authoring/tests/recreation.rs` derives thousands of characters, and parses
+# and validates the bundled packs) ran about 10x slower at 0, most of it in dependencies (JSON, schema validation,
+# text) more than in the engine. Debug assertions and overflow checks stay on; workspace crates other than the two
+# keep opt-level 0, so a code change rebuilds quickly. `cargo build` and `tauri dev` (the dev profile) are unchanged.
+[profile.test.package."*"]
+opt-level = 1
+
+[profile.test.package.borealis-engine]
+opt-level = 1
+
+[profile.test.package.borealis-content]
+opt-level = 1
+
+# llama.cpp keeps its optimised C++ build in tests too (above).
+[profile.test.package.llama-cpp-sys-2]
 opt-level = 3
 
 [profile.release]

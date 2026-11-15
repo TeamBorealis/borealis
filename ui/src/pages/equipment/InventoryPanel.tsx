@@ -24,7 +24,7 @@ function Act({ icon, label, disabled, onClick }: { icon: GlyphName; label: strin
 /** The row's name: a click selects it; a long press (touch), right-click or the menu key opens the item menu. */
 function ItemName({ item, selected, onPick, onMenu }: { item: InventoryItem; selected: boolean; onPick: () => void; onMenu: (anchor: HTMLElement) => void }) {
   const press = usePress(onPick, onMenu);
-  return <button type="button" className="ap-name" aria-label={`Select ${item.displayName}`} aria-pressed={selected} aria-haspopup="menu" {...press}>{item.displayName}</button>;
+  return <button type="button" className="ap-name" aria-label={`Select ${item.displayName}`} aria-pressed={selected} {...press}>{item.displayName}</button>;
 }
 
 const Stat = ({ value, rest }: { value: ReactNode; rest?: string }) => <>{value}{rest ? <span className="eq-stat-rest">{rest}</span> : null}</>;

@@ -86,9 +86,15 @@ fn without_self(req: Option<&String>, el: Me<'_>) -> Option<String> {
     req.filter(|t| self_ref(t, el).is_none()).cloned()
 }
 
+/// Can [`normalize`] change `el` at all (it leaves every element that is not an item as it is)?
+#[must_use]
+pub fn normalizes(el: &Element) -> bool {
+    ITEM_TYPES.contains(&el.ty.as_str())
+}
+
 /// Rewrite the self-referencing conditions of an item's rules (see the module docs).
 pub fn normalize(el: &mut Element) {
-    if !ITEM_TYPES.contains(&el.ty.as_str()) {
+    if !normalizes(el) {
         return;
     }
     let me = Me {

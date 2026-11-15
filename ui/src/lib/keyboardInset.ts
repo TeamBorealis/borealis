@@ -57,11 +57,25 @@ function revealInScroller(field: HTMLElement, win: Window): void {
   if (typeof win.scrollTo === "function" && (win.scrollY ?? 0) > 0) win.scrollTo(0, 0);
 }
 
+/**
+ * H5wMs (WB-27, simulator): with a text field focused, iOS scrolls the document itself to bring the field above the
+ * keyboard (`scrollY` = the pan, and `innerHeight` shrinks with it), which carries the sticky heads off the top and leaves
+ * an inset of 0, so `kb-open` never came and the rich-text toolbar did not dock. The phone shell never scrolls (its
+ * content areas do), so the pan is undone at once; the keyboard then covers the bottom of the layout viewport, `--kb`
+ * measures it, and the focused field is centred in its own scroller above it.
+ */
+function undoPan(win: Window, root: HTMLElement): void {
+  const focused = root.ownerDocument.activeElement;
+  if (!(focused instanceof HTMLElement) || !focused.matches(TEXT_ENTRY)) return;
+  if (typeof win.scrollTo === "function" && (win.scrollY ?? 0) > 0) win.scrollTo(0, 0);
+}
+
 export function installKeyboardInset(win: Window, root: HTMLElement): () => void {
   const vv = win.visualViewport;
   if (!vv) return () => undefined;
   let last = -1;
   const update = () => {
+    undoPan(win, root);
     const kb = Math.max(keyboardInset(win.innerHeight, vv), nativeKb);
     if (kb === last) return;
     const opened = kb > last && kb > 0;
@@ -75,11 +89,13 @@ export function installKeyboardInset(win: Window, root: HTMLElement): () => void
   refresh = update;
   vv.addEventListener("resize", update);
   vv.addEventListener("scroll", update);
+  win.addEventListener?.("scroll", update);
   return () => {
     if (refresh === update) refresh = null;
     nativeKb = 0;
     vv.removeEventListener("resize", update);
     vv.removeEventListener("scroll", update);
+    win.removeEventListener?.("scroll", update);
     root.style.setProperty("--kb", "0px");
     root.classList.remove("kb-open");
   };

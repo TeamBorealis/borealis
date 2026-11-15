@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
 import type { ContentPack } from "../../api/contract";
 import { Button, useConfirm, useImportNotice, useToast } from "../../components";
 import { filesToInputs } from "../../lib/files";
@@ -18,13 +19,19 @@ const CONTENT_ACCEPT = ".xml,.index,.zip,.json,application/json,text/xml,applica
  *  `application/octet-stream`, so phones also accept that (the backend still checks every file). */
 const UNTYPED_FILE = "application/octet-stream";
 
+/** Why a pack can't be shared (CS1): a homebrew pack holds text copied from the user's imports (HC8, no book is
+ * named); any other is the user's own local conversion. */
+const notRedistributable = (p: ContentPack): string =>
+  p.kind === "homebrew" ? "Holds text copied from your imported books — not redistributable" : "Local import — not redistributable";
+
 export function PacksTab() {
   const api = useApi();
   const toast = useToast();
   const confirm = useConfirm();
   const notice = useImportNotice();
   const packs = useAsync(() => api.listPacks(), [api]);
-  const { mobile } = usePlatform();
+  const { mobile, creatorEnabled } = usePlatform();
+  const nav = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => api.subscribe("content:reloaded", packs.reload), [api, packs.reload]);
   const preview = (request: Parameters<typeof api.previewImportPack>[0]["request"]) => startImportPreview(api, request, (m) => toast.push(m, "error"));
@@ -61,9 +68,10 @@ export function PacksTab() {
         <span style={{ flex: 1, minWidth: "10rem" }}>
           <strong>{p.name}</strong> <span className="muted small">v{p.version}</span>
           <span className="muted small" style={{ display: "block" }}>{p.kind} · {p.rulesets.map((r) => (r === "dnd2024" ? "2024" : "2014")).join(", ")} · {p.elementCount} elements · {p.license}</span>
-          {p.redistributable === false && <span className="chip warning">Local import — not redistributable</span>}
+          {p.redistributable === false && <span className="chip warning">{notRedistributable(p)}</span>}
           {p.attribution && <span className="muted small" style={{ display: "block" }}>{p.attribution}</span>}
         </span>
+        {creatorEnabled && p.kind === "homebrew" && <Button small onClick={() => nav(`/homebrew/${encodeURIComponent(p.id)}`)}>Edit in Homebrew</Button>}
         {p.kind !== "bundled" && <Button small variant="danger" onClick={() => void remove(p)}>Remove</Button>}
       </div>
     </li>

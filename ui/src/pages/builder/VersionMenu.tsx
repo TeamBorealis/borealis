@@ -14,7 +14,7 @@ export const VersionButton = forwardRef<HTMLButtonElement, {
 }>(function VersionButton({ count, rowName, open, onOpen, className = "" }, ref) {
   const stop = (e: MouseEvent) => e.stopPropagation();
   return (
-    <button ref={ref} type="button" className={`pick-ver-btn ${className}`.trim()} aria-haspopup="listbox" aria-expanded={open}
+    <button ref={ref} type="button" className={`pick-ver-btn ${className}`.trim()} aria-expanded={open}
       aria-label={versionsLabel(count, rowName)} title={`${count} versions: choose a source`}
       onMouseDown={stop} onDoubleClick={stop} onClick={(e) => { e.stopPropagation(); onOpen(e.currentTarget); }}>
       <span className="pick-ver-count" aria-hidden="true">{count}</span>

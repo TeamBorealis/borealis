@@ -269,8 +269,7 @@ fn gated_resources_follow_their_level() {
 /// only shrinks: a new unread field fails `bundled_content_uses_only_registered_kinds_and_fields`
 /// until it has a reader or a documented reason, and cannot slip in as a new `GAP` without
 /// editing this list (review).
-const PINNED_GAPS: [(&str, &str); 12] = [
-    ("grant_spell", "ability"),
+const PINNED_GAPS: [(&str, &str); 11] = [
     ("martial_arts", "dexterous_attacks"),
     ("martial_arts", "monk_weapons"),
     ("movement_mode", "requires_resource"),
@@ -310,4 +309,65 @@ fn unmodelled_fields_are_pinned() {
     }
     let pinned: BTreeSet<_> = PINNED_GAPS.iter().copied().collect();
     assert_eq!(gaps, pinned, "the unread-field allow-list changed");
+}
+
+/// Every field the registry lists as unmodelled, checked against the engine's readers (H_2IU, 2026-11-14: each kind's
+/// reader reads none of them, and none prints a rule's fields verbatim; `damage_scaling.dice` was read by
+/// `breath::scaling_rows` and moved to the fields). A change to this list needs that check again.
+const AUDITED_UNMODELLED: [(&str, &str); 42] = [
+    ("cantrip_range_bonus", "choose_cantrip"),
+    ("cantrip_rider", "choose_cantrip"),
+    ("convert", "expires"),
+    ("damage_reduction", "reaction"),
+    ("damage_scaling", "scale"),
+    ("exhaustion", "dies_at_level"),
+    ("exhaustion", "reduce_on"),
+    ("expertise", "from"),
+    ("extra_attack_damage_modifier", "property"),
+    ("extra_damage", "first_target_only"),
+    ("extra_damage", "weapon"),
+    ("grant_spell", "auto_succeed_save"),
+    ("grant_spell", "condition"),
+    ("grant_spell", "counts_against_prepared"),
+    ("grant_spell", "max_roll"),
+    ("grant_spell", "no_material"),
+    ("grant_spell", "special_forms"),
+    ("grant_spell", "target"),
+    ("initiative_swap", "with_ally"),
+    ("martial_arts", "dexterous_attacks"),
+    ("martial_arts", "monk_weapons"),
+    ("movement_mode", "requires_resource"),
+    ("pact_magic", "slot_count_table"),
+    ("pact_magic", "slot_level_table"),
+    ("pact_magic", "slots_recover"),
+    ("resource", "counter"),
+    ("resource", "cure_poison_cost"),
+    ("resource", "kind_note"),
+    ("resource", "pool"),
+    ("resource", "start"),
+    ("resource", "step"),
+    ("ritual_casting", "requires_prepared"),
+    ("select_feat", "replace_on"),
+    ("select_param", "grants_resistance"),
+    ("select_param", "note"),
+    ("select_param", "reselect_on"),
+    ("skill_bonus_unproficient", "applies_to"),
+    ("skill_bonus_unproficient", "rounding"),
+    ("slot_recovery", "improved_at"),
+    ("spell_list_extend", "for_prepared"),
+    ("spellbook", "prepare_from"),
+    ("weapon_mastery", "change_on"),
+];
+
+#[test]
+fn every_unmodelled_field_was_checked_against_the_engine_readers() {
+    let listed: BTreeSet<(&str, &str)> = KNOWN_KINDS
+        .iter()
+        .flat_map(|s| s.unmodelled.iter().map(move |(f, _)| (s.kind, *f)))
+        .collect();
+    let audited: BTreeSet<_> = AUDITED_UNMODELLED.iter().copied().collect();
+    assert_eq!(
+        listed, audited,
+        "the unmodelled fields changed: check each against its kind's reader, then update AUDITED_UNMODELLED"
+    );
 }

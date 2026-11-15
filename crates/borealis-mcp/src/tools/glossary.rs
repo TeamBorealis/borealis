@@ -28,7 +28,7 @@ pub fn run(tools: &Tools, args: &Value) -> Result<Value, String> {
     let mut matches: Vec<Value> = tools
         .store
         .iter()
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| GLOSSARY_TYPES.contains(&e.ty.as_str()) && !e.id.starts_with("ID_INTERNAL"))
         .filter(|e| e.name.trim().to_lowercase() == term)
         .filter(|e| match (ruleset, e.ruleset) {

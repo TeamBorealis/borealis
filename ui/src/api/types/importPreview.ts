@@ -2,6 +2,7 @@
 
 import type { MigrationIssueCode } from "./content";
 import type { BookRuleset } from "./core";
+import type { HomebrewCharacterRef } from "./homebrew";
 
 export interface ImportFileInput {
   fileName: string;
@@ -65,6 +66,22 @@ export interface ImportPreview {
   indexUrl?: string;
   /** IM14: the books of the set and their editions; the user may change them before Install. */
   books: PreviewBook[];
+  /** A homebrew pack file (`.borealis-pack.zip` with `creator.json`, spec 14.2): it installs editable in Homebrew. */
+  homebrew?: HomebrewImportInfo;
+}
+
+/** What an import preview of a homebrew pack file adds. */
+export interface HomebrewImportInfo {
+  code: string;
+  /** Another pack or book uses the code: only Import as a copy (or Replace, when this pack is installed). */
+  codeTaken: boolean;
+  /** The code and name Import as a copy gives. */
+  copyCode: string;
+  copyName: string;
+  /** Replace (spec 10.3): the local characters that use an element of the installed pack this file lacks. */
+  replaceUsedBy: HomebrewCharacterRef[];
+  /** The names of those elements. */
+  replaceDrops: string[];
 }
 
 /** IM14: a book of an import preview. */
@@ -82,4 +99,6 @@ export interface PreviewBook {
 export interface OpenedFile {
   fileName: string;
   contentBase64: string;
+  /** Not opened (Android: a file Borealis does not read, H5wn8): the message shown instead; the content is empty. */
+  refused?: string;
 }

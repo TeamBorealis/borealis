@@ -119,6 +119,12 @@ pub const CONCENTRATION_SAVE_GROUP: &str = "concentration:save";
 /// other speed that is above 0; it never creates a speed the character lacks.
 pub const SPEED_ALL_GROUP: &str = "speed:all";
 
+/// The groups of one skill (its total, proficiency, misc bonus and passive score).
+#[must_use]
+pub fn skill_groups(key: &str) -> [String; 4] {
+    ["", ":proficiency", ":misc", ":passive"].map(|suffix| format!("{key}{suffix}"))
+}
+
 /// Names of the groups that are always present.
 #[must_use]
 pub fn builtin_groups() -> HashSet<String> {
@@ -140,9 +146,7 @@ pub fn builtin_groups() -> HashSet<String> {
         }
     }
     for (k, _) in SKILLS {
-        for suffix in ["", ":proficiency", ":misc", ":passive"] {
-            s.insert(format!("{k}{suffix}"));
-        }
+        s.extend(skill_groups(k));
     }
     for n in [
         "hp",

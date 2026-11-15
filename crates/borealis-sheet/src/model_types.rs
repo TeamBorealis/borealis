@@ -25,7 +25,7 @@ pub struct SheetData {
     pub identity: Identity,
     /// The six abilities in the order STR..CHA.
     pub abilities: Vec<AbilityData>,
-    /// The 18 skills in engine order.
+    /// The skills in engine order: the eighteen, then those homebrew content adds.
     pub skills: Vec<SkillData>,
     /// Passive scores printed on the sheet (Perception plus any with a bonus).
     pub passives: Vec<PassiveData>,

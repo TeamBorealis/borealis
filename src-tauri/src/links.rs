@@ -28,9 +28,11 @@ pub const GUIDE_MOVE_CHARACTERS: &str =
     "https://borealisbuilder.com/guides/move-characters-between-devices";
 /// Guide for the character sheet's preview and PDF save.
 pub const GUIDE_PRINT_SHEET: &str = "https://borealisbuilder.com/guides/print-character-sheet";
+/// Guide for the homebrew creator's New pack and New element (WB-28).
+pub const GUIDE_HOMEBREW_CREATOR: &str = "https://borealisbuilder.com/guides/homebrew-creator";
 
 /// Every address the app may open, exactly as written (`ui/src/lib/links.ts` lists the same).
-pub const ALLOWED: [&str; 11] = [
+pub const ALLOWED: [&str; 12] = [
     WEBSITE,
     NEWS,
     RELEASES,
@@ -42,6 +44,7 @@ pub const ALLOWED: [&str; 11] = [
     GUIDE_IMPORT_5ETOOLS,
     GUIDE_MOVE_CHARACTERS,
     GUIDE_PRINT_SHEET,
+    GUIDE_HOMEBREW_CREATOR,
 ];
 
 /// The allowed address equal to `url`, or `None`. Callers open the returned constant, never the

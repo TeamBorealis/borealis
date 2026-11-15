@@ -101,6 +101,25 @@ pub fn set_toggle(engine: &Engine, state: &CharacterState, id: &str, on: bool) -
     done(&rt, state)
 }
 
+/// Switch a condition on or off (HC1). Only a condition the snapshot lists can be switched on; any id can be
+/// switched off (a condition whose pack is gone). Rests leave conditions as they are.
+///
+/// # Errors
+/// Switching on an id that is no listed condition.
+pub fn set_condition(engine: &Engine, state: &CharacterState, id: &str, on: bool) -> CmdResult {
+    let mut next = state.clone();
+    if !on {
+        next.play.conditions.remove(id);
+        return Ok(CommandOutcome::new(next));
+    }
+    let snap = engine.derive_with(state, false);
+    if !snap.conditions.iter().any(|c| c.id == id) {
+        return Err(CommandError::UnknownElement(id.to_string()));
+    }
+    next.play.conditions.insert(id.to_string());
+    Ok(CommandOutcome::new(next))
+}
+
 /// Finish a Short Rest: resources regain what their rule says; toggles end; Pact Magic slots
 /// and short-rest custom trackers come back. Hit points are unchanged: hit dice are spent one
 /// at a time with [`super::spend_hit_die`], which the Play tab offers after the rest.

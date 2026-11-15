@@ -1,5 +1,5 @@
-import type { PlayExhaustion, PlayResource, PlayToggle } from "../../api/contract";
-import { Button, EmptyState, IconButton, Switch } from "../../components";
+import type { PlayCondition, PlayExhaustion, PlayResource, PlayToggle } from "../../api/contract";
+import { Button, EmptyState, IconButton, SafeHtml, Switch } from "../../components";
 import { Expander } from "../../components/controls";
 import { Tag } from "../ai/Panes";
 import { useCharacter } from "../../state/CharacterContext";
@@ -38,7 +38,7 @@ function Pips({ r }: { r: PlayResource }) {
   );
 }
 
-export type PlaySelection = { kind: "resource" | "toggle"; id: string } | null;
+export type PlaySelection = { kind: "resource" | "toggle" | "condition"; id: string } | null;
 interface Pickable { selected: PlaySelection; onSelect: (s: PlaySelection) => void }
 
 /**
@@ -125,8 +125,8 @@ export function TogglesCard({ toggles, resources, selected, onSelect }: { toggle
   );
 }
 
-/** Description pane body for the selected resource or state. */
-export function PlayDetail({ selected, resources, toggles }: { selected: PlaySelection; resources: PlayResource[]; toggles: PlayToggle[] }) {
+/** Description pane body for the selected resource, state or condition. */
+export function PlayDetail({ selected, resources, toggles, conditions = [] }: { selected: PlaySelection; resources: PlayResource[]; toggles: PlayToggle[]; conditions?: PlayCondition[] }) {
   const { snapshot } = useCharacter();
   const r = selected?.kind === "resource" ? resources.find((x) => x.id === selected.id) : undefined;
   const rolled = r && snapshot ? rolledChargeOf(snapshot, r.id) : null;
@@ -139,6 +139,10 @@ export function PlayDetail({ selected, resources, toggles }: { selected: PlaySel
     {state && <><h2>State</h2><p>{[state.activation, state.duration].filter(Boolean).join(" · ")}{state.activation || state.duration ? ". " : ""}Switching it on spends one use.</p><StateEffects t={state} /></>}</>);
   if (t) return (<><h1 className="v5-desc-title">{t.name}</h1><p className="v5-lead">{[t.activation, t.duration].filter(Boolean).join(" · ") || "State"}</p>
     <StateEffects t={t} /></>);
+  const c = selected?.kind === "condition" ? conditions.find((x) => x.id === selected.id) : undefined;
+  if (c) return (<><h1 className="v5-desc-title">{c.name}</h1><p className="v5-lead">{c.on ? "Condition · on" : "Condition"} · {c.source}</p>
+    <SafeHtml html={c.description} />
+    {c.effects.length > 0 && <><h2>Effects</h2><ul>{c.effects.map((e) => <li key={e}>{e}</li>)}</ul></>}</>);
   return (<><h1 className="v5-desc-title">Play</h1><p className="v5-lead">Select a resource or state to read its details.</p></>);
 }
 
@@ -149,7 +153,35 @@ export function exhaustionSummary(e: PlayExhaustion): string {
   return `Level ${e.level}: ${parts.join(", ")}.`;
 }
 
-export function ExhaustionCard({ exhaustion, inspiration }: { exhaustion: PlayExhaustion; inspiration: boolean }) {
+/**
+ * HC1: the conditions the character can switch on, under Exhaustion in the Conditions card, each row like a state's (its
+ * name selects it for the description pane, the switch turns it on). While on, its rules apply and it is tagged Active.
+ */
+function ConditionRows({ conditions, selected, onSelect }: { conditions: PlayCondition[] } & Pickable) {
+  const { mutate } = useCharacter();
+  if (conditions.length === 0) return null;
+  return (
+    <ul className="v5-list" aria-label="Conditions">
+      {conditions.map((c) => {
+        const picked = selected?.kind === "condition" && selected.id === c.id;
+        return (
+          <li key={c.id} className={`v5-line ${picked ? "is-selected" : ""}`}>
+            <button type="button" className="v5-row grow" aria-current={picked} onClick={() => onSelect({ kind: "condition", id: c.id })}>
+              <span className="grow">{c.name}</span>
+              {c.effects.length > 0 && <span className="meta">{c.effects.join(", ")}</span>}
+              {c.on && <Tag tone="ok">Active</Tag>}
+            </button>
+            <span className="v5-ctrls">
+              <Switch label={c.name} checked={c.on} onChange={(e) => void mutate((api, id) => api.setCondition({ characterId: id, conditionId: c.id, on: e.target.checked }))} />
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export function ExhaustionCard({ exhaustion, inspiration, conditions = [], selected = null, onSelect = () => undefined }: { exhaustion: PlayExhaustion; inspiration: boolean; conditions?: PlayCondition[] } & Partial<Pickable>) {
   const { mutate } = useCharacter();
   const set = (level: number) => void mutate((api, id) => api.setExhaustion({ characterId: id, level }));
   return (
@@ -168,6 +200,7 @@ export function ExhaustionCard({ exhaustion, inspiration }: { exhaustion: PlayEx
           <span>Heroic Inspiration</span>
         </div>
       </div>
+      <ConditionRows conditions={conditions} selected={selected} onSelect={onSelect} />
     </Expander>
   );
 }

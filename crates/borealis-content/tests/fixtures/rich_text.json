@@ -1,0 +1,2628 @@
+{
+  "about": "Shared rich-text fixtures (homebrew creator spec 7, 18): the Rust tree (borealis_content::rich) and the UI schema mirror (ui/src/pages/homebrew/rich) must both pass them. Rust: tests/rich_text_fixtures.rs; UI: rich.test.ts.",
+  "doc_lint": [
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "One\\nTwo",
+                "type": "text"
+              },
+              {
+                "text": " &amp; three",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "html": "<pre>\\n kept</pre>",
+              "joined": false,
+              "reason": "outside_palette"
+            },
+            "type": "kept"
+          }
+        ],
+        "type": "doc"
+      },
+      "findings": [
+        {
+          "found": "\\n",
+          "kind": "backslash_escape",
+          "path": [
+            0,
+            0
+          ],
+          "replacement": "\n"
+        },
+        {
+          "found": "&amp;",
+          "kind": "html_entity",
+          "path": [
+            0,
+            1
+          ],
+          "replacement": "&"
+        }
+      ],
+      "fixed": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "One",
+                "type": "text"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "type": "hard_break"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "Two",
+                "type": "text"
+              },
+              {
+                "text": " & three",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "html": "<pre>\\n kept</pre>",
+              "joined": false,
+              "reason": "outside_palette"
+            },
+            "type": "kept"
+          }
+        ],
+        "type": "doc"
+      },
+      "fixed_html": "<p><b>One<br />Two</b> &amp; three</p>\n<pre>\\n kept</pre>",
+      "name": "artefacts in a paragraph"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "content": [
+                  {
+                    "text": "ok",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              },
+              {
+                "content": [
+                  {
+                    "text": "a\\tb",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              }
+            ],
+            "type": "bullet_list"
+          },
+          {
+            "attrs": {
+              "joined": false,
+              "sections": false
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "x",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  },
+                  {
+                    "content": [
+                      {
+                        "text": "&quot;",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          },
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "attrs": {
+                  "bare": false,
+                  "joined": false
+                },
+                "content": [
+                  {
+                    "text": "\\\"",
+                    "type": "text"
+                  }
+                ],
+                "type": "paragraph"
+              }
+            ],
+            "type": "blockquote"
+          }
+        ],
+        "type": "doc"
+      },
+      "findings": [
+        {
+          "found": "\\t",
+          "kind": "backslash_escape",
+          "path": [
+            0,
+            1,
+            0
+          ],
+          "replacement": " "
+        },
+        {
+          "found": "&quot;",
+          "kind": "html_entity",
+          "path": [
+            1,
+            0,
+            1,
+            0
+          ],
+          "replacement": "\""
+        },
+        {
+          "found": "\\\"",
+          "kind": "backslash_escape",
+          "path": [
+            2,
+            0,
+            0
+          ],
+          "replacement": "\""
+        }
+      ],
+      "fixed": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "content": [
+                  {
+                    "text": "ok",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              },
+              {
+                "content": [
+                  {
+                    "text": "a b",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              }
+            ],
+            "type": "bullet_list"
+          },
+          {
+            "attrs": {
+              "joined": false,
+              "sections": false
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "x",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  },
+                  {
+                    "content": [
+                      {
+                        "text": "\"",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          },
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "attrs": {
+                  "bare": false,
+                  "joined": false
+                },
+                "content": [
+                  {
+                    "text": "\"",
+                    "type": "text"
+                  }
+                ],
+                "type": "paragraph"
+              }
+            ],
+            "type": "blockquote"
+          }
+        ],
+        "type": "doc"
+      },
+      "fixed_html": "<ul><li>ok</li><li>a b</li></ul>\n<table><tr><td>x</td><td>\"</td></tr></table>\n<blockquote><p>\"</p></blockquote>",
+      "name": "artefacts in lists, tables and quotes"
+    }
+  ],
+  "lint": [
+    {
+      "findings": [
+        {
+          "found": "\\n",
+          "kind": "backslash_escape",
+          "replacement": "\n"
+        }
+      ],
+      "fixed": "a\nb",
+      "text": "a\\nb"
+    },
+    {
+      "findings": [
+        {
+          "found": "\\\"",
+          "kind": "backslash_escape",
+          "replacement": "\""
+        },
+        {
+          "found": "\\\"",
+          "kind": "backslash_escape",
+          "replacement": "\""
+        }
+      ],
+      "fixed": "say \"hi\"",
+      "text": "say \\\"hi\\\""
+    },
+    {
+      "findings": [
+        {
+          "found": "\\'",
+          "kind": "backslash_escape",
+          "replacement": "'"
+        }
+      ],
+      "fixed": "it's",
+      "text": "it\\'s"
+    },
+    {
+      "findings": [
+        {
+          "found": "\\\\n",
+          "kind": "backslash_escape",
+          "replacement": "\n"
+        }
+      ],
+      "fixed": "\n double",
+      "text": "\\\\n double"
+    },
+    {
+      "findings": [
+        {
+          "found": "\\t",
+          "kind": "backslash_escape",
+          "replacement": " "
+        }
+      ],
+      "fixed": "tab here",
+      "text": "tab\\there"
+    },
+    {
+      "findings": [
+        {
+          "found": "\\/",
+          "kind": "backslash_escape",
+          "replacement": "/"
+        }
+      ],
+      "fixed": "slash / ok",
+      "text": "slash \\/ ok"
+    },
+    {
+      "findings": [
+        {
+          "found": "\\u2019",
+          "kind": "backslash_escape",
+          "replacement": "’"
+        }
+      ],
+      "fixed": "’ quote",
+      "text": "\\u2019 quote"
+    },
+    {
+      "findings": [
+        {
+          "found": "\\uD83D\\uDE00",
+          "kind": "backslash_escape",
+          "replacement": "😀"
+        }
+      ],
+      "fixed": "😀 dragon",
+      "text": "\\uD83D\\uDE00 dragon"
+    },
+    {
+      "findings": [
+        {
+          "found": "\\uD83D",
+          "kind": "backslash_escape",
+          "replacement": ""
+        }
+      ],
+      "fixed": " alone",
+      "text": "\\uD83D alone"
+    },
+    {
+      "findings": [
+        {
+          "found": "\\",
+          "kind": "stray_backslash",
+          "replacement": ""
+        }
+      ],
+      "fixed": "stray  slash",
+      "text": "stray \\ slash"
+    },
+    {
+      "findings": [
+        {
+          "found": "\\",
+          "kind": "stray_backslash",
+          "replacement": ""
+        }
+      ],
+      "fixed": "end",
+      "text": "end\\"
+    },
+    {
+      "findings": [
+        {
+          "found": "&amp;",
+          "kind": "html_entity",
+          "replacement": "&"
+        }
+      ],
+      "fixed": "Arms & Armor",
+      "text": "Arms &amp; Armor"
+    },
+    {
+      "findings": [
+        {
+          "found": "&amp;",
+          "kind": "html_entity",
+          "replacement": "&"
+        }
+      ],
+      "fixed": "Arms & Armor",
+      "text": "Arms &amp;amp;amp; Armor"
+    },
+    {
+      "findings": [
+        {
+          "found": "&#8217;",
+          "kind": "html_entity",
+          "replacement": "’"
+        }
+      ],
+      "fixed": "it’s",
+      "text": "it&#8217;s"
+    },
+    {
+      "findings": [
+        {
+          "found": "&#x2014;",
+          "kind": "html_entity",
+          "replacement": "—"
+        }
+      ],
+      "fixed": "— dash",
+      "text": "&#x2014; dash"
+    },
+    {
+      "findings": [
+        {
+          "found": "&quot;",
+          "kind": "html_entity",
+          "replacement": "\""
+        },
+        {
+          "found": "&quot;",
+          "kind": "html_entity",
+          "replacement": "\""
+        }
+      ],
+      "fixed": "\"q\"",
+      "text": "&quot;q&quot;"
+    },
+    {
+      "findings": [
+        {
+          "found": "&nbsp;",
+          "kind": "html_entity",
+          "replacement": " "
+        }
+      ],
+      "fixed": "a b",
+      "text": "a&nbsp;b"
+    },
+    {
+      "findings": [
+        {
+          "found": "&lt;",
+          "kind": "html_entity",
+          "replacement": "<"
+        },
+        {
+          "found": "&gt;",
+          "kind": "html_entity",
+          "replacement": ">"
+        }
+      ],
+      "fixed": "<b>",
+      "text": "&lt;b&gt;"
+    },
+    {
+      "findings": [
+        {
+          "found": "â€™",
+          "kind": "mojibake",
+          "replacement": "’"
+        }
+      ],
+      "fixed": "it’s",
+      "text": "itâ€™s"
+    },
+    {
+      "findings": [
+        {
+          "found": "Ã©",
+          "kind": "mojibake",
+          "replacement": "é"
+        }
+      ],
+      "fixed": "café",
+      "text": "cafÃ©"
+    },
+    {
+      "findings": [
+        {
+          "found": "â€œ",
+          "kind": "mojibake",
+          "replacement": "“"
+        },
+        {
+          "found": "â€",
+          "kind": "mojibake",
+          "replacement": "”"
+        }
+      ],
+      "fixed": "“quoted”",
+      "text": "â€œquotedâ€"
+    },
+    {
+      "findings": [],
+      "fixed": "Clean: “quoted”, naïve, São Paulo, Ärger, AT&T, a;b, &unknown;, &#+65;, &#0;, Ã",
+      "text": "Clean: “quoted”, naïve, São Paulo, Ärger, AT&T, a;b, &unknown;, &#+65;, &#0;, Ã"
+    }
+  ],
+  "normalize": [
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "Café",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "NFC",
+      "normalized": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "Café",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      }
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "a b",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "joined": false,
+              "sections": true
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "1 000",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "no-break space outside and inside cells",
+      "normalized": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "a b",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "joined": false,
+              "sections": true
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "1 000",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          }
+        ],
+        "type": "doc"
+      }
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "a\u0007b\tc\nd\u0000",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "control characters",
+      "normalized": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "ab\tc\nd",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      }
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "a",
+                "type": "text"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "b",
+                "type": "text"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "strong"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "c",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "adjacent text with the same marks",
+      "normalized": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "ab",
+                "type": "text"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "strong"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "c",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      }
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": true,
+              "joined": true
+            },
+            "content": [
+              {
+                "text": "a",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "b",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "bare only alone, first block not joined",
+      "normalized": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "a",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "b",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      }
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "one empty paragraph is an empty document",
+      "normalized": {
+        "type": "doc"
+      }
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false,
+              "level": 6
+            },
+            "content": [
+              {
+                "text": "h",
+                "type": "text"
+              }
+            ],
+            "type": "heading"
+          },
+          {
+            "attrs": {
+              "joined": false,
+              "level": 1
+            },
+            "content": [
+              {
+                "text": "h",
+                "type": "text"
+              }
+            ],
+            "type": "heading"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "heading levels",
+      "normalized": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false,
+              "level": 4
+            },
+            "content": [
+              {
+                "text": "h",
+                "type": "text"
+              }
+            ],
+            "type": "heading"
+          },
+          {
+            "attrs": {
+              "joined": false,
+              "level": 3
+            },
+            "content": [
+              {
+                "text": "h",
+                "type": "text"
+              }
+            ],
+            "type": "heading"
+          }
+        ],
+        "type": "doc"
+      }
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false,
+              "sections": true
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": true
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "A",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_header"
+                  }
+                ],
+                "type": "table_row"
+              },
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "1",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              },
+              {
+                "attrs": {
+                  "head": true
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "2",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          },
+          {
+            "attrs": {
+              "joined": false,
+              "sections": false
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": true
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "x",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "head rows lead a table with sections",
+      "normalized": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false,
+              "sections": true
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": true
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "A",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_header"
+                  }
+                ],
+                "type": "table_row"
+              },
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "1",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              },
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "2",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          },
+          {
+            "attrs": {
+              "joined": false,
+              "sections": false
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "x",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          }
+        ],
+        "type": "doc"
+      }
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": true
+            },
+            "content": [
+              {
+                "attrs": {
+                  "bare": true,
+                  "joined": true
+                },
+                "content": [
+                  {
+                    "text": "q",
+                    "type": "text"
+                  }
+                ],
+                "type": "paragraph"
+              },
+              {
+                "attrs": {
+                  "bare": false,
+                  "joined": true
+                },
+                "content": [
+                  {
+                    "text": "r",
+                    "type": "text"
+                  }
+                ],
+                "type": "paragraph"
+              }
+            ],
+            "type": "blockquote"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "blockquote children",
+      "normalized": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "attrs": {
+                  "bare": false,
+                  "joined": false
+                },
+                "content": [
+                  {
+                    "text": "q",
+                    "type": "text"
+                  }
+                ],
+                "type": "paragraph"
+              },
+              {
+                "attrs": {
+                  "bare": false,
+                  "joined": true
+                },
+                "content": [
+                  {
+                    "text": "r",
+                    "type": "text"
+                  }
+                ],
+                "type": "paragraph"
+              }
+            ],
+            "type": "blockquote"
+          }
+        ],
+        "type": "doc"
+      }
+    }
+  ],
+  "paste": [
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false,
+              "level": 3
+            },
+            "content": [
+              {
+                "text": "Title",
+                "type": "text"
+              }
+            ],
+            "type": "heading"
+          },
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "Some linked ",
+                "type": "text"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "bold",
+                "type": "text"
+              },
+              {
+                "text": " and ",
+                "type": "text"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "i"
+                    },
+                    "type": "italic"
+                  }
+                ],
+                "text": "italic",
+                "type": "text"
+              },
+              {
+                "text": " text.",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<div style=\"color:red\"><h1>Title</h1><p>Some <a href=\"https://example.com\">linked</a> <span style=\"font-weight:bold\">bold</span> and <span style=\"font-style:italic\">italic</span> text.</p><img src=\"x.png\"><script>alert(1)</script></div>",
+      "name": "styled web page",
+      "rendered": "<h3>Title</h3>\n<p>Some linked <b>bold</b> and <i>italic</i> text.</p>"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "Bold",
+                "type": "text"
+              },
+              {
+                "text": " plain",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "content": [
+                  {
+                    "text": "Item one",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              },
+              {
+                "content": [
+                  {
+                    "text": "Item two",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              }
+            ],
+            "type": "bullet_list"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<meta charset=\"utf-8\"><b style=\"font-weight:normal;\" id=\"docs-internal-guid-1\"><p dir=\"ltr\"><span style=\"font-weight:700;\">Bold</span><span style=\"font-weight:400;\"> plain</span></p><ul><li dir=\"ltr\"><p dir=\"ltr\"><span>Item one</span></p></li><li><p><span>Item two</span></p></li></ul></b>",
+      "name": "Google Docs",
+      "rendered": "<p><b>Bold</b> plain</p>\n<ul><li>Item one</li><li>Item two</li></ul>"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "content": [
+                  {
+                    "text": "Bullet one",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              },
+              {
+                "content": [
+                  {
+                    "text": "Bullet two",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              }
+            ],
+            "type": "bullet_list"
+          },
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "Between",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "content": [
+                  {
+                    "text": "Step one",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              },
+              {
+                "content": [
+                  {
+                    "text": "Step two",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              }
+            ],
+            "type": "ordered_list"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p class=MsoListParagraphCxSpFirst style='mso-list:l0 level1 lfo1'><!--[if !supportLists]--><span style='font-family:Symbol;mso-list:Ignore'>·<span>&nbsp;&nbsp;</span></span><!--[endif]-->Bullet one<o:p></o:p></p><p class=MsoListParagraphCxSpLast style='mso-list:l0 level1 lfo1'><span style='mso-list:Ignore'>·</span>Bullet two</p><p class=MsoNormal>Between</p><p style='mso-list:l1 level1 lfo2'><span style='mso-list:Ignore'>1.<span>&nbsp;</span></span>Step one</p><p style='mso-list:l1 level1 lfo2'><span style='mso-list:Ignore'>2.</span>Step two</p>",
+      "name": "Word lists",
+      "rendered": "<ul><li>Bullet one</li><li>Bullet two</li></ul>\n<p>Between</p>\n<ol><li>Step one</li><li>Step two</li></ol>"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false,
+              "sections": true
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "1 000",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  },
+                  {
+                    "content": [
+                      {
+                        "text": "a  b",
+                        "type": "text"
+                      },
+                      {
+                        "type": "hard_break"
+                      },
+                      {
+                        "text": "c",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          },
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "x y",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<table class=MsoTableGrid><tr><td><p class=MsoNormal>1&nbsp;000</p></td><td><p>a&nbsp;&nbsp;b</p><p>c</p></td></tr></table><p>x&nbsp;&nbsp; y</p>",
+      "name": "Word table and no-break spaces",
+      "rendered": "<table><tbody><tr><td>1 000</td><td>a  b<br />c</td></tr></tbody></table>\n<p>x y</p>"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "Line",
+                "type": "text"
+              },
+              {
+                "type": "hard_break"
+              },
+              {
+                "text": "next & it’s",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p>Line\\nnext &amp;amp; itâ€™s</p>",
+      "name": "escapes in pasted HTML",
+      "rendered": "<p>Line<br />next &amp; it’s</p>"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "S",
+                "type": "text"
+              },
+              {
+                "text": " ",
+                "type": "text"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "i"
+                    },
+                    "type": "italic"
+                  }
+                ],
+                "text": "E",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "joined": false,
+              "level": 4
+            },
+            "content": [
+              {
+                "text": "H",
+                "type": "text"
+              }
+            ],
+            "type": "heading"
+          },
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "attrs": {
+                  "bare": false,
+                  "joined": false
+                },
+                "content": [
+                  {
+                    "text": "q",
+                    "type": "text"
+                  }
+                ],
+                "type": "paragraph"
+              }
+            ],
+            "type": "blockquote"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p><strong>S</strong> <em>E</em></p><h4>H</h4><blockquote><p>q</p></blockquote>",
+      "name": "palette kept as is",
+      "rendered": "<p><b>S</b> <i>E</i></p>\n<h4>H</h4>\n<blockquote><p>q</p></blockquote>"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "First line still first",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "Second paragraph",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "Third",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "blank lines split paragraphs",
+      "rendered": "<p>First line still first</p>\n<p>Second paragraph</p>\n<p>Third</p>",
+      "text": "First line\nstill first\n\nSecond paragraph\r\n\r\nThird"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "One",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "Two \"quoted\" & café",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "literal escapes",
+      "rendered": "<p>One</p>\n<p>Two \"quoted\" &amp; café</p>",
+      "text": "One\\n\\nTwo \\\"quoted\\\" &amp;amp; cafÃ©"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "“Hello,” she said — it’s fine.",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "smart quotes stay characters",
+      "rendered": "<p>“Hello,” she said — it’s fine.</p>",
+      "text": "“Hello,” she said — it’s fine."
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "a b c d",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "name": "no-break spaces and runs",
+      "rendered": "<p>a b c d</p>",
+      "text": "a  b   c\t\td"
+    },
+    {
+      "doc": {
+        "type": "doc"
+      },
+      "name": "only white space",
+      "rendered": "",
+      "text": " \n\n \t "
+    }
+  ],
+  "plain": [
+    {
+      "normalized": "Fire bolt of doom",
+      "text": "  Fire bo\u0007lt\n\t of  doom "
+    },
+    {
+      "normalized": "Élan",
+      "text": "Élan"
+    },
+    {
+      "normalized": "x﻿y z",
+      "text": "x﻿y　z"
+    },
+    {
+      "normalized": "",
+      "text": ""
+    }
+  ],
+  "roundtrip": [
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "Fire & ice",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p>Fire &amp; ice</p>",
+      "name": "paragraph with an ampersand"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "a",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "b",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p>a</p>\n<p>b</p>",
+      "name": "paragraphs on separate lines"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "a",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "bare": false,
+              "joined": true
+            },
+            "content": [
+              {
+                "text": "b",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p>a</p><p>b</p>",
+      "name": "paragraphs written together"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "strong"
+                    },
+                    "type": "bold"
+                  },
+                  {
+                    "attrs": {
+                      "tag": "em"
+                    },
+                    "type": "italic"
+                  }
+                ],
+                "text": "Hit.",
+                "type": "text"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "strong"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": " ",
+                "type": "text"
+              },
+              {
+                "text": "5 damage, ",
+                "type": "text"
+              },
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "em"
+                    },
+                    "type": "italic"
+                  }
+                ],
+                "text": "x",
+                "type": "text"
+              },
+              {
+                "text": ".",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p><strong><em>Hit.</em> </strong>5 damage, <em>x</em>.</p>",
+      "name": "SRD 5.1 run-in heading"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "marks": [
+                  {
+                    "attrs": {
+                      "tag": "b"
+                    },
+                    "type": "bold"
+                  }
+                ],
+                "text": "Number of Uses.",
+                "type": "text"
+              },
+              {
+                "text": " Twice.",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p><b>Number of Uses.</b> Twice.</p>",
+      "name": "SRD 5.2.1 run-in heading"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "line one",
+                "type": "text"
+              },
+              {
+                "type": "hard_break"
+              },
+              {
+                "text": "line two",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p>line one<br />line two</p>",
+      "name": "hard break"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "content": [
+                  {
+                    "text": "One",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              },
+              {
+                "content": [
+                  {
+                    "marks": [
+                      {
+                        "attrs": {
+                          "tag": "em"
+                        },
+                        "type": "italic"
+                      }
+                    ],
+                    "text": "Two",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              }
+            ],
+            "type": "bullet_list"
+          },
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "content": [
+                  {
+                    "text": "First",
+                    "type": "text"
+                  }
+                ],
+                "type": "list_item"
+              }
+            ],
+            "type": "ordered_list"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<ul><li>One</li><li><em>Two</em></li></ul>\n<ol><li>First</li></ol>",
+      "name": "lists"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false,
+              "level": 3
+            },
+            "content": [
+              {
+                "text": "Heading",
+                "type": "text"
+              }
+            ],
+            "type": "heading"
+          },
+          {
+            "attrs": {
+              "joined": false,
+              "level": 4
+            },
+            "content": [
+              {
+                "text": "Subheading",
+                "type": "text"
+              }
+            ],
+            "type": "heading"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<h3>Heading</h3>\n<h4>Subheading</h4>",
+      "name": "headings"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false,
+              "sections": true
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": true
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "Level",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_header"
+                  },
+                  {
+                    "content": [
+                      {
+                        "text": "Uses",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_header"
+                  }
+                ],
+                "type": "table_row"
+              },
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "1",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  },
+                  {
+                    "content": [
+                      {
+                        "text": "2",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<table><thead><tr><th>Level</th><th>Uses</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>",
+      "name": "table with sections"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false,
+              "sections": false
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "d6",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_header"
+                  },
+                  {
+                    "content": [
+                      {
+                        "text": "Result",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              },
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<table><tr><th>d6</th><td>Result</td></tr><tr><td></td></tr></table>",
+      "name": "table with plain rows"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false
+            },
+            "content": [
+              {
+                "attrs": {
+                  "bare": false,
+                  "joined": false
+                },
+                "content": [
+                  {
+                    "text": "Quoted",
+                    "type": "text"
+                  }
+                ],
+                "type": "paragraph"
+              },
+              {
+                "attrs": {
+                  "joined": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "x",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "list_item"
+                  }
+                ],
+                "type": "bullet_list"
+              }
+            ],
+            "type": "blockquote"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<blockquote><p>Quoted</p>\n<ul><li>x</li></ul></blockquote>",
+      "name": "blockquote"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": true,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "Acolytes are junior members of a clergy & more.",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "Acolytes are junior members of a clergy &amp; more.",
+      "name": "plain text description"
+    },
+    {
+      "doc": {
+        "type": "doc"
+      },
+      "html": "",
+      "name": "empty description"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "“Quoted” — café, ’, אב, 日本 🐉 <3",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p>“Quoted” — café, ’, אב, 日本 🐉 &lt;3</p>",
+      "name": "literal unicode"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "Spells",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "html": "<pre> Level  Spells\n   3    Bless</pre>",
+              "joined": false,
+              "reason": "outside_palette"
+            },
+            "type": "kept"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p>Spells</p>\n<pre> Level  Spells\n   3    Bless</pre>",
+      "name": "kept preformatted table"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "html": "<p class=\"table-text\">cell</p>",
+              "joined": false,
+              "reason": "outside_palette"
+            },
+            "type": "kept"
+          },
+          {
+            "attrs": {
+              "html": "<h5 class=\"caption\">Table</h5>",
+              "joined": true,
+              "reason": "outside_palette"
+            },
+            "type": "kept"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p class=\"table-text\">cell</p><h5 class=\"caption\">Table</h5>",
+      "name": "kept attributes and h5"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "html": "<p>it&#8217;s</p>",
+              "joined": false,
+              "reason": "not_canonical"
+            },
+            "type": "kept"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p>it&#8217;s</p>",
+      "name": "kept numeric reference"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "html": "<p><i><b>Escape.</b></i> Climb.</p>",
+              "joined": false,
+              "reason": "not_canonical"
+            },
+            "type": "kept"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p><i><b>Escape.</b></i> Climb.</p>",
+      "name": "kept italic outside bold"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "bare": false,
+              "joined": false
+            },
+            "content": [
+              {
+                "text": "a",
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          },
+          {
+            "attrs": {
+              "html": " tail",
+              "joined": true,
+              "reason": "not_canonical"
+            },
+            "type": "kept"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<p>a</p> tail",
+      "name": "kept loose text"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "html": "<ul></ul>",
+              "joined": false,
+              "reason": "not_canonical"
+            },
+            "type": "kept"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<ul></ul>",
+      "name": "kept empty list"
+    },
+    {
+      "doc": {
+        "content": [
+          {
+            "attrs": {
+              "joined": false,
+              "sections": true
+            },
+            "content": [
+              {
+                "attrs": {
+                  "head": true
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "d6",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_header"
+                  },
+                  {
+                    "content": [
+                      {
+                        "text": "Result",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_header"
+                  }
+                ],
+                "type": "table_row"
+              },
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "1-3",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  },
+                  {
+                    "content": [
+                      {
+                        "marks": [
+                          {
+                            "attrs": {
+                              "tag": "b"
+                            },
+                            "type": "bold"
+                          },
+                          {
+                            "attrs": {
+                              "tag": "i"
+                            },
+                            "type": "italic"
+                          }
+                        ],
+                        "text": "Ash",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              },
+              {
+                "attrs": {
+                  "head": false
+                },
+                "content": [
+                  {
+                    "content": [
+                      {
+                        "text": "4-6",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  },
+                  {
+                    "content": [
+                      {
+                        "marks": [
+                          {
+                            "attrs": {
+                              "tag": "strong"
+                            },
+                            "type": "bold"
+                          }
+                        ],
+                        "text": "Fire",
+                        "type": "text"
+                      },
+                      {
+                        "type": "hard_break"
+                      },
+                      {
+                        "marks": [
+                          {
+                            "attrs": {
+                              "tag": "em"
+                            },
+                            "type": "italic"
+                          }
+                        ],
+                        "text": "cold",
+                        "type": "text"
+                      },
+                      {
+                        "text": " ash",
+                        "type": "text"
+                      }
+                    ],
+                    "type": "table_cell"
+                  }
+                ],
+                "type": "table_row"
+              }
+            ],
+            "type": "table"
+          }
+        ],
+        "type": "doc"
+      },
+      "html": "<table><thead><tr><th>d6</th><th>Result</th></tr></thead><tbody><tr><td>1-3</td><td><b><i>Ash</i></b></td></tr><tr><td>4-6</td><td><strong>Fire</strong><br /><em>cold</em> ash</td></tr></tbody></table>",
+      "name": "table cells with bold and italic (phone cell sheet)"
+    }
+  ]
+}

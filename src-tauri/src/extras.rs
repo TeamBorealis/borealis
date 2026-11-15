@@ -603,7 +603,7 @@ pub fn content_options(
     let mut defs: Vec<OptionDef> = hub
         .store
         .by_type("Option")
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| e.supports.is_empty() || is_held(e))
         .filter(|e| !BUILT_IN_OPTIONS.contains(&e.id.as_str()))
         .filter(|e| {

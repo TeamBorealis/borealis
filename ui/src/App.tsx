@@ -23,6 +23,17 @@ import { PlayPage } from "./pages/play/PlayPage";
 /** START > NOTES (GitHub #15) loads on first use: it brings the Markdown renderer, the sanitiser and the YAML reader. */
 const NotesPage = lazy(() => import("./pages/notes/NotesPage").then((m) => ({ default: m.NotesPage })));
 
+/** START > HOMEBREW (the homebrew creator, 1.5.0) loads on first use. */
+const HomebrewHome = lazy(() => import("./pages/homebrew/HomebrewHome").then((m) => ({ default: m.HomebrewHome })));
+const PackWorkspace = lazy(() => import("./pages/homebrew/PackWorkspace").then((m) => ({ default: m.PackWorkspace })));
+
+/** HC3: the creator's routes redirect to the characters while the creator is off, so a 1.4.x build never shows it. */
+function CreatorOnly({ children }: { children: ReactNode }) {
+  const { creatorEnabled, ready } = usePlatform();
+  if (!ready) return null;
+  return creatorEnabled ? <Suspense fallback={null}>{children}</Suspense> : <Navigate to="/characters" replace />;
+}
+
 /** Routes of the optional AI assistant: they redirect to the characters until it is on (and always on mobile). */
 function AiOnly({ children }: { children: ReactNode }) {
   const { aiEnabled, ready } = usePlatform();
@@ -47,6 +58,8 @@ export function App() {
         <Route path="/search" element={<CompendiumRoute />} />
         <Route path="/content" element={<ContentPage />} />
         <Route path="/content/sources" element={<SourcesPage />} />
+        <Route path="/homebrew" element={<CreatorOnly><HomebrewHome /></CreatorOnly>} />
+        <Route path="/homebrew/:packId" element={<CreatorOnly><PackWorkspace /></CreatorOnly>} />
         <Route path="/notes" element={<Suspense fallback={null}><NotesPage /></Suspense>} />
         <Route path="/import" element={<AiOnly><ImportPage /></AiOnly>} />
         <Route path="/ai" element={<AiOnly><AiPage /></AiOnly>} />

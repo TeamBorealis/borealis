@@ -8,11 +8,13 @@
 //! logs paths or indexed text, so no `search/` data can reach a bug report's log section (BR2).
 
 use crate::state::ContentHub;
-use borealis_search::{corpus, Corpus, DocsPack, SearchEngine, WriterBudget};
+use borealis_content::{Element, StoredElement};
+use borealis_search::{corpus, Corpus, DocsPack, PackInput, SearchEngine, WriterBudget};
 use serde::Serialize;
+use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, OnceLock, RwLock, RwLockReadGuard};
+use std::sync::{Arc, Mutex, OnceLock, RwLock, RwLockReadGuard, Weak};
 use std::time::{Duration, Instant};
 
 /// Folder of all search data under the app data folder (derived, cleared by "Clear caches").
@@ -78,6 +80,65 @@ pub trait StatusSink: Send + Sync {
     fn index_status(&self, status: &IndexStatus);
 }
 
+/// The elements a corpus input was made from, by identity (a content snapshot shares the elements that did not
+/// change with the one before it), and the fingerprints that input had: when the elements are the same ones, the
+/// input is the same and need not be made again. `Weak` keeps the addresses from being reused while they are compared.
+struct Made {
+    elements: Vec<Weak<Element>>,
+    fingerprints: Vec<(String, String)>,
+}
+
+impl Made {
+    fn of<'a>(elements: impl Iterator<Item = &'a StoredElement>, inputs: &[PackInput]) -> Self {
+        Self {
+            elements: elements.map(|s| Arc::downgrade(&s.element)).collect(),
+            fingerprints: inputs
+                .iter()
+                .map(|p| (p.pack.clone(), p.fingerprint.clone()))
+                .collect(),
+        }
+    }
+
+    fn same_elements<'a>(
+        &self,
+        mut elements: impl ExactSizeIterator<Item = &'a StoredElement>,
+    ) -> bool {
+        elements.len() == self.elements.len()
+            && elements
+                .by_ref()
+                .zip(&self.elements)
+                .all(|(s, w)| std::ptr::eq(Arc::as_ptr(&s.element), w.as_ptr()))
+    }
+
+    /// The inputs again, without their chunks, when the index holds exactly them: [`SearchEngine::sync`] passes over a
+    /// pack whose fingerprint it holds and never reads its chunks.
+    fn unchanged(&self, held: &BTreeMap<String, String>) -> Option<Vec<PackInput>> {
+        self.fingerprints
+            .iter()
+            .all(|(pack, fp)| held.get(pack) == Some(fp))
+            .then(|| {
+                self.fingerprints
+                    .iter()
+                    .map(|(pack, fingerprint)| PackInput {
+                        pack: pack.clone(),
+                        fingerprint: fingerprint.clone(),
+                        chunks: Vec::new(),
+                    })
+                    .collect()
+            })
+    }
+}
+
+/// What the last syncs were made from: the Rules corpus as a whole (it depends on the store through its condition and
+/// glossary elements alone), the Lore corpus per pack.
+#[derive(Default)]
+struct MadeFrom {
+    rules: Option<Made>,
+    lore: HashMap<String, Made>,
+    /// Inputs the last sync made again (the Rules corpus counts as one), the rest were unchanged.
+    remade: usize,
+}
+
 struct Inner {
     root: PathBuf,
     content_root: PathBuf,
@@ -90,6 +151,7 @@ struct Inner {
     usable: AtomicBool,
     sink: RwLock<Option<Arc<dyn StatusSink>>>,
     docs: OnceLock<Vec<DocsPack>>,
+    made: Mutex<MadeFrom>,
 }
 
 /// The app's search service (cheap to clone; all clones share one writer).
@@ -128,6 +190,7 @@ impl SearchService {
             usable: AtomicBool::new(false),
             sink: RwLock::new(None),
             docs: OnceLock::new(),
+            made: Mutex::new(MadeFrom::default()),
         }))
     }
 
@@ -238,9 +301,9 @@ impl SearchService {
             message: None,
         };
         self.set_status(step(0));
-        let rules = self.rules_inputs(hub);
+        let rules = self.rules_since(hub);
         self.set_status(step(1));
-        let lore = corpus::lore_packs(&hub.store);
+        let lore = self.lore_since(hub);
         let outcome = self.write(Corpus::Rules, &rules).and_then(|r| {
             self.set_status(step(2));
             self.write(Corpus::Lore, &lore).map(|l| (r, l))
@@ -251,6 +314,7 @@ impl SearchService {
                 tracing::info!(
                     rules_chunks = r,
                     lore_chunks = l,
+                    inputs_remade = self.inputs_remade(),
                     ms = began.elapsed().as_millis(),
                     "search: keyword indexes in sync"
                 );
@@ -298,6 +362,79 @@ impl SearchService {
             tracing::warn!("search: rules text skipped: {e}");
             corpus::rules_packs(&[], &hub.store).unwrap_or_default()
         })
+    }
+
+    /// The pack fingerprints the index holds for `corpus` (none before the engine is open).
+    fn held(&self, corpus: Corpus) -> BTreeMap<String, String> {
+        self.0
+            .engine
+            .read()
+            .ok()
+            .and_then(|g| {
+                g.as_ref()
+                    .and_then(|e| e.manifest().corpora.get(corpus.name()).cloned())
+            })
+            .map(|c| c.packs)
+            .unwrap_or_default()
+    }
+
+    /// The Rules inputs for `hub`; when its condition and glossary elements are the ones of the last sync and the index
+    /// holds what that sync wrote, the same inputs without their chunks (nothing to write).
+    fn rules_since(&self, hub: &ContentHub) -> Vec<PackInput> {
+        let held = self.held(Corpus::Rules);
+        let Ok(mut made) = self.0.made.lock() else {
+            return self.rules_inputs(hub);
+        };
+        made.remade = 0;
+        let elements: Vec<&StoredElement> = corpus::rules_elements(&hub.store).collect();
+        if let Some(inputs) = made
+            .rules
+            .as_ref()
+            .filter(|m| m.same_elements(elements.iter().copied()))
+            .and_then(|m| m.unchanged(&held))
+        {
+            return inputs;
+        }
+        let inputs = self.rules_inputs(hub);
+        made.rules = Some(Made::of(elements.into_iter(), &inputs));
+        made.remade += 1;
+        inputs
+    }
+
+    /// The Lore inputs for `hub`, made again only for the packs whose elements changed since the last sync (the
+    /// others as their inputs without chunks, when the index holds them): the same packs and fingerprints as
+    /// [`corpus::lore_packs`].
+    fn lore_since(&self, hub: &ContentHub) -> Vec<PackInput> {
+        let held = self.held(Corpus::Lore);
+        let Ok(mut made) = self.0.made.lock() else {
+            return corpus::lore_packs(&hub.store);
+        };
+        let groups = corpus::lore_pack_elements(&hub.store);
+        made.lore.retain(|pack, _| groups.contains_key(pack));
+        let mut inputs = Vec::new();
+        for (pack, elements) in &groups {
+            if let Some(again) = made
+                .lore
+                .get(pack)
+                .filter(|m| m.same_elements(elements.iter().copied()))
+                .and_then(|m| m.unchanged(&held))
+            {
+                inputs.extend(again);
+                continue;
+            }
+            let input = corpus::lore_pack(pack, elements);
+            let fresh = Made::of(elements.iter().copied(), input.as_slice());
+            made.lore.insert(pack.clone(), fresh);
+            made.remade += 1;
+            inputs.extend(input);
+        }
+        inputs
+    }
+
+    /// How many corpus inputs the last sync made again (the Rules corpus counts as one; each Lore pack as one).
+    #[must_use]
+    pub fn inputs_remade(&self) -> usize {
+        self.0.made.lock().map_or(0, |m| m.remade)
     }
 
     /// Sync one corpus under the writer lock; opens (and on damage rebuilds) the engine first.
@@ -368,6 +505,9 @@ impl SearchService {
             .write()
             .map_err(|_| std::io::Error::other("search index lock poisoned"))?;
         *guard = None;
+        if let Ok(mut made) = self.0.made.lock() {
+            *made = MadeFrom::default();
+        }
         self.0.started.store(false, Ordering::SeqCst);
         self.0.usable.store(false, Ordering::SeqCst);
         let dir = self

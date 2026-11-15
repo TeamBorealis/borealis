@@ -1,0 +1,69 @@
+/* Class form (WB-16, spec 13.8): the LEVELS grid in the DataGrid style of the level ladder (ap-grid), feature chips in
+   the FEATURES column, a Plus per row, the class table's counters as narrow cells. Tokens only (U7). */
+.hb-levels-wrap { overflow-x: auto; max-width: 100%; }
+.hb-levels { width: 100%; }
+html:not(.phone) .hb-levels { table-layout: fixed; }
+html:not(.phone) .hb-levels th:nth-child(1), html:not(.phone) .hb-levels th[scope="row"] { width: 52px; }
+html:not(.phone) .hb-levels thead th:nth-child(2), html:not(.phone) .hb-levels tbody td:nth-child(2) { width: 82px; }
+.hb-levels td, .hb-levels th { vertical-align: middle; white-space: normal; }
+.hb-levels thead th .hb-chip-x { margin-left: 4px; vertical-align: middle; }
+/* HC10 Q3 (U7: Aurora's DataGrid keeps its header): the header row is moved down while the grid scrolls past
+   (usePinnedHead; the frame scrolls sideways, which captures position: sticky). It paints over the rows, the level
+   numbers included (their row headers are the grid's own sticky cells). */
+.hb-levels thead th { z-index: 2; }
+.hb-levels tbody th { position: static; }
+/* Phones: the grid stays a grid (not the phone's one-line rows): the header row, a level per row, 44 px rows, sideways
+   scroll in its frame. Tokens from mobile-facelift-spec 3.3-3.5. */
+html.phone .hb-levels-wrap { border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .hb-levels-wrap .ap-grid { display: table; width: max-content; min-width: 100%; border-collapse: collapse; }
+html.phone .hb-levels-wrap .ap-grid thead { display: table-header-group; }
+html.phone .hb-levels-wrap .ap-grid tbody { display: table-row-group; }
+html.phone .hb-levels-wrap .ap-grid tbody tr { display: table-row; min-height: 0; padding: 0; cursor: default; }
+html.phone .hb-levels-wrap .ap-grid tbody tr:active { background: none; }
+html.phone .hb-levels-wrap .ap-grid th, html.phone .hb-levels-wrap .ap-grid td {
+  display: table-cell; height: var(--ph-hit); padding: 0 8px; text-align: center; vertical-align: middle; white-space: nowrap;
+  font: 400 var(--ph-t-sub)/1.2 var(--ph-font-ui); color: var(--ph-text);
+}
+html.phone .hb-levels-wrap .ap-grid thead th {
+  height: auto; padding: 8px; background: var(--ph-surface); box-shadow: inset 0 -1px 0 var(--ph-line);
+  font: 600 var(--ph-t-caption)/1.2 var(--ph-font-ui); color: var(--ph-text-2); text-transform: uppercase;
+}
+html.phone .hb-levels-wrap .ap-grid tbody th { background: none; font-weight: 600; }
+html.phone .hb-levels-wrap .hb-counter input { width: 48px; min-height: 36px; text-align: center; }
+.hb-level-features { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 26px; }
+.hb-feature-chip { display: inline-flex; align-items: center; gap: 2px; }
+.hb-feature-name { background: none; border: 0; padding: 0 2px; color: var(--text-body); font: inherit; cursor: pointer; text-align: left; }
+.hb-feature-name:focus-visible { text-decoration: underline; }
+@media (hover: hover) and (pointer: fine) { .hb-feature-name:hover { text-decoration: underline; } }
+.hb-missing .hb-feature-name { color: var(--aur-danger); }
+.hb-add-feature { margin-left: auto; }
+.hb-counter { width: 72px; }
+.hb-counter input { width: 100%; min-width: 3ch; background: var(--accent-20); border: 1px solid var(--accent-40); color: var(--text-body); font: inherit; padding: 1px 4px; }
+.hb-add-column { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.hb-add-column label { font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; }
+.hb-add-column .hb-field-help { flex-basis: 100%; margin: 0; }
+.hb-skill-choice { display: flex; flex-direction: column; gap: 6px; }
+.hb-package-field { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.hb-children .hb-pick-btn { margin-top: 4px; }
+.hb-link { background: none; border: 0; padding: 0; color: var(--highlight); font: inherit; text-decoration: underline; cursor: pointer; }
+.hb-child-body { display: flex; flex-direction: column; gap: 8px; }
+/* A subclass's grid (WB-18): the rows at the levels its class gives subclass features at. */
+.hb-marked-level th[scope="row"] { color: var(--highlight); }
+.hb-level-hint { color: var(--text-muted); font-style: italic; }
+/* Phones (spec 16): one row per level (O14 B: one-line rows, 48/52 high) that opens the level's sheet; the ability score
+   improvement levels as a 5-column grid of toggles. */
+.hb-level-rows { list-style: none; margin: 0; padding: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); overflow: hidden; }
+.hb-level-rows li + li { box-shadow: inset 0 1px 0 var(--ph-line); }
+.hb-level-row { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; width: 100%; min-height: var(--ph-row); height: auto; padding: 6px var(--ph-gutter); border: 0; border-radius: 0; background: none; text-align: left; cursor: pointer; }
+.hb-level-row:active { background: var(--ph-raised); }
+.hb-level-row-name { font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+.hb-level-row-detail { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }
+.hb-marked-level .hb-level-row-name { color: var(--ph-accent); }
+html.phone .hb-level-sheet .hb-level-features { gap: 8px; margin: 8px 0 12px; }
+html.phone .hb-level-sheet .hb-feature-name { min-height: var(--ph-hit); padding: 0 12px; border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text); font: 500 var(--ph-t-sub)/1.2 var(--ph-font-ui); }
+html.phone .hb-level-sheet .hb-chip-x { min-width: var(--ph-hit); min-height: var(--ph-hit); }
+html.phone .hb-level-sheet .hb-add-feature { margin-left: 0; border-radius: var(--ph-r-md); background: var(--ph-fill); }
+html.phone .hb-level-sheet .hb-counter { display: flex; flex-direction: column; gap: 4px; width: auto; }
+html.phone .hb-level-sheet .hb-counter input { min-height: var(--ph-hit); }
+html.phone .hb-numbers { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; width: 100%; }
+html.phone .hb-level-sheet .hb-add-feature { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; width: auto; color: var(--ph-accent); font: 600 var(--ph-t-sub)/1.2 var(--ph-font-ui); }

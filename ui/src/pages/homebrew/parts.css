@@ -1,0 +1,165 @@
+/* Homebrew creator controls (WB-10): pickers (13.5, 13.7, 5.2), builders (6.3), the rule block list and dialog (13.6),
+   sheet lines and kept parts. Composed from existing parts (Build picker rows, Magic grid and filter bar, the Attacks list
+   editor, Manage form fields); only layout lives here, with the existing tokens (no new colour, font, radius or shadow). */
+
+/* Fields that take the whole row of the form grid */
+.mg-grid .hb-wide { grid-column: 1 / -1; }
+.hb-readonly { margin: 0; min-height: 26px; display: flex; align-items: center; font-size: var(--fs-md); color: var(--text-secondary); }
+
+/* Picked values: chips with an X, the Pick / Add button (13.5 footer: check + chosen name + X) */
+.hb-ref, .hb-chips-open { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-height: 26px; }
+.hb-ref-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.hb-chip-item { display: inline-flex; align-items: center; gap: 4px; min-height: 24px; max-width: 100%; padding: 0 0 0 8px; background: var(--light-2); border-left: 4px solid var(--accent-80); font-size: 11px; color: var(--text-body); }
+.hb-chip-item .icon { width: 12px; height: 12px; }
+.hb-ref-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb-chip-item.hb-missing { border-left-color: var(--aur-danger); color: var(--aur-danger-bright); }
+.hb-chip-x { display: inline-grid; place-items: center; flex: none; width: 24px; min-width: 24px; height: 24px; min-height: 24px; padding: 0; background: transparent; border: 0; border-radius: 0; color: var(--gray-5); cursor: pointer; }
+.hb-chip-x .icon { width: 13px; height: 13px; }
+@media (hover: hover) and (pointer: fine) { .hb-chip-x:hover { background: rgb(255 255 255 / 0.1); color: var(--text); } }
+.hb-pick-btn { display: inline-flex; align-items: center; gap: 4px; height: 24px; min-height: 24px; padding: 0 8px 0 5px; background: var(--light-2); border: 0; border-radius: 2px; color: var(--text-body); font-size: 11px; font-weight: 600; cursor: pointer; }
+.hb-pick-btn .icon { width: 14px; height: 14px; }
+.hb-pick-btn:disabled { opacity: 0.5; cursor: default; }
+@media (hover: hover) and (pointer: fine) { .hb-pick-btn:hover:not(:disabled) { background: var(--light-3); } }
+.hb-invalid .hb-pick-btn { box-shadow: inset 0 0 0 1px var(--aur-danger); }
+.hb-chip-add { display: inline-flex; align-items: center; gap: 6px; }
+.hb-chip-add .aur-editable { width: 180px; }
+.hb-chip .icon { width: 11px; height: 11px; margin-right: 3px; vertical-align: -1px; }
+
+/* Reference picker dialog (13.5): the Build picker on the left, the description pane on the right */
+.dialog.hb-picker { height: min(92dvh, 760px); }
+.hb-picker .dialog-body { padding: 10px; display: flex; min-height: 0; }
+.hb-picker-body { display: grid; grid-template-columns: minmax(0, 11fr) minmax(250px, 5fr); gap: 10px; flex: 1; min-height: 0; }
+.hb-picker-list { min-height: 0; overflow-y: auto; }
+.hb-picker-desc { min-height: 0; display: flex; flex-direction: column; background: #131313; }
+.hb-picker-desc .desc-pane { flex: 1; min-height: 0; overflow-y: auto; }
+.hb-pick-type { display: flex; align-items: center; gap: 6px; padding: 4px 6px; }
+.hb-picker .pick { margin: 0; }
+.hb-spell-picker { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.hb-spell-picker .sp-main { max-height: none; }
+
+/* Statistic picker and the Add menu (5.2, 6.2): grouped plain-word rows */
+.hb-stat-groups { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.hb-stat-list { list-style: none; margin: 0; padding: 0; }
+.hb-stat-row { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 21px; height: auto; padding: 2px 8px; background: transparent; border: 0; border-radius: 0; text-align: left; font-size: 11px; color: var(--text-body); cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .hb-stat-row:hover { background: var(--accent-20); } }
+.hb-stat-more .icon { width: 12px; height: 12px; }
+.hb-stat-step { display: flex; flex-direction: column; gap: 8px; }
+.hb-stat-step-title { margin: 0; font-size: 13px; font-weight: 600; color: var(--text); }
+.hb-row-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Builders (6.3): All of / Any of / None of groups of rows */
+.hb-group { display: flex; flex-direction: column; gap: 4px; }
+.hb-group-nested { margin-left: 4px; padding: 4px 0 4px 10px; border-left: 2px solid var(--accent-80); }
+.hb-group-head { display: flex; align-items: center; gap: 6px; }
+.hb-group-head .aur-combo { width: auto; min-width: 110px; }
+.hb-group-mode { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.hb-group-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.hb-row-main { display: flex; align-items: flex-start; gap: 6px; }
+.hb-row-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; flex: 1 1 auto; }
+.hb-row-controls .aur-combo, .mg-f .hb-row-controls .aur-combo { width: auto; min-width: 120px; }
+.hb-row-controls .aur-textbox { width: auto; min-width: 140px; flex: 1 1 140px; }
+.hb-row-bad > .hb-row-main, .hb-formula-node.hb-row-bad > .hb-row-controls { box-shadow: -4px 0 0 var(--aur-danger); }
+.hb-row-msg p { display: flex; align-items: center; gap: 3px; margin: 2px 0 0; font-size: 11px; color: var(--aur-danger-bright); }
+.hb-row-msg .icon { width: 11px; height: 11px; }
+.hb-group-add, .hb-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.hb-kept { display: inline-flex; align-items: center; gap: 6px; padding: 2px 0 2px 8px; background: var(--light-2); border-left: 4px solid var(--gray-3); font-size: 11px; color: var(--text-secondary); }
+.hb-kept-label { font-size: 9px; font-weight: 600; text-transform: uppercase; color: var(--gray-6); }
+.hb-kept-text code { font-size: 10px; color: var(--text-muted); }
+.hb-tagfilter { display: flex; flex-direction: column; gap: 6px; }
+.hb-tagfilter > .aur-combo { width: auto; max-width: 280px; }
+.hb-count { display: flex; align-items: center; gap: 3px; margin: 0; font-size: 11px; color: var(--text-secondary); }
+.hb-count-zero { color: var(--aur-warning); }
+.hb-count .icon { width: 12px; height: 12px; }
+.hb-formula { display: flex; flex-direction: column; gap: 6px; }
+.hb-formula-root { display: flex; align-items: flex-start; gap: 6px; }
+.hb-formula-node { display: flex; flex-direction: column; gap: 4px; }
+.hb-formula-sub { display: flex; flex-direction: column; gap: 4px; margin-left: 4px; padding-left: 10px; border-left: 2px solid var(--accent-80); }
+.hb-formula-arg { display: flex; align-items: flex-start; gap: 6px; }
+.hb-formula-op { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.hb-formula-words { margin: 0; font-size: 11px; font-style: italic; color: var(--text-muted); }
+.hb-formula-list { display: flex; flex-direction: column; gap: 8px; }
+
+/* Block dialog fields (13.6: the Attack editor's fields, OK / Cancel) */
+.dialog.hb-block-dialog { width: min(100%, 400px); }
+.dialog.hb-block-dialog.wide { width: min(100%, 400px); }
+.hb-block-body { display: flex; flex-direction: column; gap: 6px; }
+.hb-bf-grid { display: flex; flex-direction: column; gap: 6px; }
+.hb-bf .aur-combo, .hb-bf .aur-textbox { width: 100%; }
+.hb-bf .hb-row-controls .aur-combo { width: auto; }
+.hb-bf-group, .hb-bf-rows { display: flex; flex-direction: column; gap: 6px; }
+.hb-bf-group > .hb-bf-grid { padding-left: 10px; border-left: 2px solid var(--accent-80); }
+.hb-bf-row { display: flex; align-items: flex-start; gap: 6px; padding: 5px 0 4px 10px; background: var(--light-2); border-left: 4px solid var(--accent-80); }
+.hb-bf-row > :first-child { flex: 1 1 auto; min-width: 0; }
+.hb-inline-check { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; font-size: var(--fs-md); color: var(--text-body); cursor: pointer; }
+.mg-f > label.hb-inline-check { font-size: var(--fs-md); font-weight: 400; text-transform: none; color: var(--text-body); }
+.hb-wrap { flex-wrap: wrap; }
+.hb-numbers { display: inline-flex; flex-wrap: wrap; gap: 2px; }
+html:not(.phone) .hb-numbers-10 { display: inline-grid; grid-template-columns: repeat(10, auto); }
+.hb-splits { display: flex; flex-direction: column; gap: 4px; }
+.hb-split { display: flex; align-items: center; gap: 4px; }
+.hb-warn-text { color: var(--aur-warning); }
+.hb-expert { display: inline-flex; align-items: center; margin-left: auto; padding-right: 6px; }
+.hb-band.aur-subband { display: flex; align-items: center; }
+
+/* Rule block list (13.6): the Attacks list cards, one plain sentence each */
+.hb-blocks .mg-toolbar { margin-top: 0; }
+.hb-blocks .mg-tool.wide { width: auto; padding: 0 10px 0 5px; gap: 6px; font-size: 11px; }
+.hb-block:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.hb-block h3 { display: flex; align-items: center; gap: 4px; }
+.hb-block h3 .icon { width: 13px; height: 13px; color: var(--aur-danger-bright); }
+.atk.hb-block-bad { border-left-color: var(--aur-danger); }
+.hb-block .info p.hb-block-msg { color: var(--aur-danger-bright); }
+.hb-block .btns button:disabled { opacity: 0.35; cursor: default; }
+
+/* Kept from the original (3.4) */
+.hb-preserved { margin-top: 16px; }
+.hb-kept-item { border-left-color: var(--gray-3); }
+
+/* Sheet lines with value chips (7.4) */
+.hb-sheet { display: flex; flex-direction: column; gap: 8px; }
+.hb-template { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; flex: 1 1 auto; min-width: 0; }
+.hb-template .hb-template-text { width: auto; min-width: 80px; flex: 1 1 120px; }
+.hb-value-chip { border-left-color: var(--gold); }
+.hb-inline-label { font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
+
+/* Phones (spec 16): sheets, 44/48 hit areas, one column */
+html.phone .hb-picker-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
+html.phone .hb-picker-desc { background: transparent; }
+html.phone .hb-picker-choose { margin: 8px 0; min-height: var(--ph-hit); }
+html.phone .hb-chip-x { width: var(--ph-hit); min-width: var(--ph-hit); height: var(--ph-hit); min-height: var(--ph-hit); }
+html.phone .hb-pick-btn { min-height: var(--ph-hit); height: auto; padding: 0 14px; border-radius: var(--ph-r-md); background: var(--ph-raised); color: var(--ph-text); font: 600 var(--ph-t-foot)/1.2 var(--ph-font-ui); }
+html.phone .hb-chip-item { min-height: var(--ph-hit); font-size: var(--ph-t-foot); }
+html.phone .hb-stat-row { min-height: 48px; font-size: var(--ph-t-body, 16px); }
+html.phone .hb-row-main { flex-wrap: wrap; }
+html.phone .hb-row-controls .aur-combo, html.phone .hb-row-controls .ph-select { min-width: 0; flex: 1 1 100%; }
+html.phone .hb-blocks .mg-tool { min-height: var(--ph-hit); min-width: var(--ph-hit); }
+html.phone .hb-block .btns button { width: var(--ph-hit); min-width: var(--ph-hit); height: var(--ph-hit); min-height: var(--ph-hit); }
+html.phone .dialog.hb-block-dialog { width: 100%; }
+html.phone .hb-inline-check { min-height: var(--ph-hit); }
+@media (max-width: 899px) { .hb-picker-body { grid-template-columns: minmax(0, 1fr); } .hb-picker-desc { max-height: 40dvh; } }
+/* The spell picker's grid fits the dialog's list column (the Magic grid's widths, narrower) */
+.hb-spell-picker .sp-grid .sp-name, .hb-spell-picker .sp-grid .sp-lvl { min-width: 150px; }
+.hb-spell-picker .sp-grid .sp-vsm { width: 58px; min-width: 58px; }
+.hb-spell-picker .sp-grid .sp-src { min-width: 120px; }
+.hb-expert-row { display: flex; justify-content: flex-end; padding: 4px 0 0; }
+
+/* Item forms (WB-12): pack contents rows and starting-equipment options, each option an accent panel (1px dashed
+   highlight border, accent-20 fill) with its rows and a coin line. */
+.hb-package { display: flex; flex-direction: column; gap: 8px; }
+.hb-package-option { margin: 0; padding: 6px 8px 8px; background: var(--accent-20); border: 1px dashed var(--accent-base); border-radius: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.hb-package-title { display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+.hb-package-letter .aur-textbox { flex: 0 0 48px; min-width: 48px; }
+.hb-package-coins { gap: 4px 12px; }
+/* A spell's lists (WB-11): check boxes in columns, Magic-filter density (spec 13.7), then the add box. */
+.hb-lists { display: flex; flex-direction: column; gap: 6px; }
+.hb-lists-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 2px 12px; }
+.hb-lists-item { display: flex; align-items: center; gap: 6px; min-height: 26px; font-size: 12px; color: var(--text-body); cursor: pointer; }
+.hb-lists-none { margin: 0; font-size: 11px; color: var(--text-secondary); }
+html.phone .hb-lists-item { min-height: var(--ph-hit); font: 400 var(--ph-t-foot)/1.2 var(--ph-font-ui); color: var(--ph-text); }
+/* Background form (WB-14): the origin feat's own choices, language and tool choice rows, written lists numbered 1..n. */
+.hb-feat-grant, .hb-choices, .hb-written-list { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.hb-choice-row { display: flex; flex-direction: column; gap: 4px; padding: 0 0 6px; }
+.hb-list-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.hb-list-item { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.hb-list-item .aur-textbox { flex: 1 1 auto; min-width: 0; }
+.hb-list-number { flex: 0 0 18px; text-align: right; font-size: 11px; font-weight: 600; color: var(--text-secondary); }

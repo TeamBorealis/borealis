@@ -118,7 +118,7 @@ describe('u7 screens', { tags: ['u7'] }, () => {
     expectLayout('sheet buttons share a row', first.top, second.top, 0);
   });
 
-  test('Compendium: bottom flyout 98 px under the client top, full width, Monster group and stat facts', async (ctx) => {
+  test('Compendium: bottom flyout 98 px under the client top, full width, Monster group and the stat block', async (ctx) => {
     const { screen, browser } = ctx;
     await bootToHome(ctx);
     await screen.getByLabel('Compendium search').fill('goblin');
@@ -137,7 +137,12 @@ describe('u7 screens', { tags: ['u7'] }, () => {
     expectLayout('monster result group', 'Monster', (await textsOf(ctx, '.v4-comp .aur-expander-title')).find((t) => /monster/i.test(t)) ?? '(none)');
     await realClick(ctx, browser.locator('.v4-el button[aria-selected]').first(), '.v4-el button[aria-selected]');
     await expect(browser.locator('.v4-desc article')).toBeVisible();
-    expectLayout('monster facts', 'Type|Armor Class|Hit Points|Challenge', (await textsOf(ctx, '.v4-desc dl.kv dt')).join('|'));
+    expectLayout('monster facts', 'Type', (await textsOf(ctx, '.v4-desc dl.kv dt')).join('|'));
+    // P2b: the whole stat block is the entry's text (type line, the lines, the six scores), before its sections
+    const block = await browser.evaluate((_: null) => document.querySelector('.v4-desc article')?.textContent ?? '', null);
+    for (const part of ['Small humanoid (goblinoid), neutral evil', 'Armor Class.', 'Speed.', 'STR', '14 (+2)', 'Senses.', 'Languages.', 'Challenge.', 'Traits']) {
+      if (!block.includes(part)) throw new Error(`the goblin's stat block has no "${part}": ${block}`);
+    }
     expectLayout('monster type fact', 'Monster', (await textsOf(ctx, '.v4-desc dl.kv dd'))[0] ?? '');
   });
 

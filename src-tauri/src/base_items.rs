@@ -6,7 +6,7 @@ use crate::equipment::item_row;
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 use borealis_engine::item_base::{can_adorn, needs_base};
-use borealis_engine::universe::Universe;
+use borealis_engine::universe::{UElem, Universe};
 
 /// The element types a base item can have.
 const BASE_TYPES: [&str; 2] = ["Armor", "Weapon"];
@@ -37,6 +37,25 @@ pub fn check_base(uni: &Universe, item_id: &str, base_id: Option<&str>) -> ApiRe
     }
 }
 
+/// The base items of `item` (a generic magic weapon or armor) that `admits`, by name then id.
+pub fn bases_by_name<'u>(
+    uni: &'u Universe,
+    item: &UElem,
+    admits: impl Fn(&UElem) -> bool,
+) -> Vec<&'u UElem> {
+    let mut bases: Vec<&UElem> = BASE_TYPES
+        .iter()
+        .flat_map(|ty| uni.by_type(ty))
+        .filter(|b| admits(b) && can_adorn(item, b))
+        .collect();
+    bases.sort_by(|a, b| {
+        a.el.name
+            .cmp(&b.el.name)
+            .then_with(|| a.el.id.cmp(&b.el.id))
+    });
+    bases
+}
+
 impl AppState {
     /// The base items `item_id` can be added on, by name; empty when it needs no base (a plain
     /// item, or a magic item that names its one base).
@@ -54,20 +73,11 @@ impl AppState {
         let Some(item) = uni.get(item_id).filter(|e| needs_base(uni, e)) else {
             return Ok(Vec::new());
         };
-        let mut bases: Vec<ItemSummary> = BASE_TYPES
-            .iter()
-            .flat_map(|ty| uni.by_type(ty))
-            .filter(|b| scope.admits(&b.el) && can_adorn(item, b))
+        Ok(bases_by_name(uni, item, |b| scope.admits(&b.el))
+            .into_iter()
             .filter_map(|b| hub.store.element(&b.el.id))
             .map(|el| item_row(&hub.store, el))
-            .collect();
-        bases.sort_by(|a, b| {
-            a.summary
-                .name
-                .cmp(&b.summary.name)
-                .then_with(|| a.summary.id.cmp(&b.summary.id))
-        });
-        Ok(bases)
+            .collect())
     }
 }
 

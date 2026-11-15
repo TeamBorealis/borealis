@@ -37,6 +37,18 @@ export interface PlayToggle {
   source: string;
 }
 
+/** A condition the character can switch on (Prone, a homebrew condition, HC1); while `on`, its rules apply. */
+export interface PlayCondition {
+  id: string;
+  name: string;
+  on: boolean;
+  /** Its description (HTML). */
+  description: string;
+  /** One line per rule ("Speed -10"); empty when it only has its text, as the SRD's conditions. */
+  effects: string[];
+  source: string;
+}
+
 export interface PlayExhaustion {
   linear: boolean;
   level: number;
@@ -195,6 +207,8 @@ export interface PlayState {
   resourceCosts: PlayResourceCost[];
   toggles: PlayToggle[];
   exhaustion: PlayExhaustion;
+  /** The conditions the character can switch on, by name (never Exhaustion, which has its levels). */
+  conditions: PlayCondition[];
   /** Heroic Inspiration (2024). */
   inspiration: boolean;
   inspirationSources: PlayInspirationSource[];

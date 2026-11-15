@@ -6,6 +6,7 @@ use crate::universe::EditionStatus;
 use crate::universe::UElem;
 use crate::universe::{Cond, URule};
 use borealis_content::Rule;
+use std::rc::Rc;
 
 impl<'u> Graph<'u> {
     /// Candidates a slot currently offers, in display order.
@@ -25,9 +26,14 @@ impl<'u> Graph<'u> {
         let uni = self.uni;
         let dyns = SpellDynamics::new(self, owner, slot.rule);
         let allowed = |c: &UElem| self.choice_allowed_with(owner, slot.rule, c, false, &dyns);
+        // which candidates pass does not depend on the slot, only on its rule: the slots of one rule (a spellbook's
+        // six spells) share it
+        let passing = self.passing_candidates(owner, slot.rule, &rule.ty, &allowed);
         let mut out: Vec<&'u UElem> = uni
             .select_candidates(&rule.ty, self.allow_cross_edition)
-            .filter(|c| current == Some(c.el.id.as_str()) || allowed(c))
+            .zip(passing.iter())
+            .filter(|(c, passes)| current == Some(c.el.id.as_str()) || **passes)
+            .map(|(c, _)| c)
             .collect();
         for alt in crate::custom_rules::alternatives_of(rule) {
             if let Some(c) = uni.get(alt) {
@@ -53,6 +59,31 @@ impl<'u> Graph<'u> {
             out.sort_by_cached_key(|c| c.el.name.to_lowercase());
         }
         out
+    }
+
+    /// For each of [`crate::universe::Universe::select_candidates`] of a select rule of `owner`, whether `allowed`
+    /// lets it through, at the graph's current version (computed once for all slots of the rule).
+    fn passing_candidates(
+        &self,
+        owner: NodeId,
+        rule_index: usize,
+        ty: &str,
+        allowed: &dyn Fn(&UElem) -> bool,
+    ) -> Rc<Vec<bool>> {
+        let key = (self.version, owner, rule_index);
+        if let Some(hit) = self.option_cache.borrow().get(&key) {
+            return Rc::clone(hit);
+        }
+        let passing: Rc<Vec<bool>> = Rc::new(
+            self.uni
+                .select_candidates(ty, self.allow_cross_edition)
+                .map(allowed)
+                .collect(),
+        );
+        let mut cache = self.option_cache.borrow_mut();
+        cache.retain(|k, _| k.0 == self.version);
+        cache.insert(key, Rc::clone(&passing));
+        passing
     }
 
     /// Does the slot offer anything at all? The same filters as [`Self::slot_options`]
@@ -207,7 +238,7 @@ impl<'u> Graph<'u> {
         let hidden: Vec<&UElem> = self
             .uni
             .select_candidates(&rule.ty, self.allow_cross_edition)
-            .filter(|c| matches!(c.req, Cond::Invalid) && seen.insert(c.el.id.as_str()))
+            .filter(|c| matches!(*c.req, Cond::Invalid) && seen.insert(c.el.id.as_str()))
             .filter(|c| {
                 self.choice_allowed_relaxed(owner, slot.rule, c, false, &dyns, false, relax)
             })
@@ -314,6 +345,104 @@ mod tests {
                 .state;
         }
         s
+    }
+
+    /// A large library offers thousands of spells to each of a caster's spell slots: one option listing matches each
+    /// candidate against the class spell lists once, not once per slot (item IzDRs: Try it took 38 s on 55,636
+    /// elements), and which candidates a rule lets through is worked out once for all of its slots.
+    #[test]
+    fn one_listing_matches_each_spell_against_the_class_lists_once() {
+        let e = engine();
+        let state = wizard(&e, 5);
+        let uni = e.universe(Ruleset::Dnd2014);
+        let ev = Evaluation::run(uni, &state, e.settings(), false);
+        let g = &ev.graph;
+        crate::graph::LIST_MATCHES.with(|c| c.set(0));
+        let mut spell_slots = 0;
+        let mut rules = std::collections::HashSet::new();
+        let mut candidates = std::collections::HashSet::new();
+        let mut listed = std::collections::HashSet::new();
+        for id in g.preorder() {
+            let n = &g.nodes[id];
+            for (si, slot) in n.slots.iter().enumerate() {
+                let borealis_content::Rule::Select(rule) = &n.e.el.rules[slot.rule] else {
+                    continue;
+                };
+                if rule.ty == "Spell" {
+                    spell_slots += 1;
+                    rules.insert((id, slot.rule));
+                    candidates.extend(
+                        uni.select_candidates(&rule.ty, g.allow_cross_edition)
+                            .map(|c| c.el.id.as_str()),
+                    );
+                }
+                listed.insert((id, slot.rule));
+                let _ = g.slot_options(id, si);
+            }
+        }
+        let matched = crate::graph::LIST_MATCHES.with(std::cell::Cell::get);
+        assert!(
+            spell_slots > rules.len(),
+            "{spell_slots} spell slots of {} rules",
+            rules.len()
+        );
+        assert!(candidates.len() > 100, "{} spells", candidates.len());
+        assert!(
+            matched > 0 && matched <= candidates.len(),
+            "{matched} class list matches for {spell_slots} spell slots over {} spells",
+            candidates.len()
+        );
+        // one entry per listed rule, shared by its slots
+        assert_eq!(g.option_cache.borrow().len(), listed.len());
+    }
+
+    /// A rebuild of the graph replays every stored pick, each adding a node; a spell pick's check reads the class
+    /// spell lists, which only nodes with a spellcasting block change. They are read once per such change, not once
+    /// per replayed spell (item IzDlk: the creator's level sweep of a class rebuilds a caster hundreds of times).
+    #[test]
+    fn a_rebuild_reads_the_class_spell_lists_once_per_spellcasting_change() {
+        let e = engine();
+        let mut state = wizard(&e, 9);
+        // the Wizard picks a spell in every open spell slot
+        loop {
+            let snap = e.derive(&state);
+            let taken: std::collections::HashSet<&str> = snap
+                .slots
+                .iter()
+                .filter_map(|s| s.chosen.as_ref().map(|c| c.id.as_str()))
+                .collect();
+            let open = snap.slots.iter().find_map(|s| {
+                (s.ty == "Spell" && s.chosen.is_none())
+                    .then(|| s.options.iter().find(|o| !taken.contains(o.id.as_str())))
+                    .flatten()
+                    .map(|o| (s.key.clone(), o.id.clone()))
+            });
+            let Some((key, id)) = open else { break };
+            state = commands::select(&e, &state, &key, Choice::Element(id))
+                .expect("a listed spell")
+                .state;
+        }
+        let picked = state
+            .selections
+            .iter()
+            .filter(|s| {
+                e.universe(Ruleset::Dnd2014)
+                    .get(match &s.choice {
+                        Choice::Element(id) => id,
+                        Choice::ListItem(_) => "",
+                    })
+                    .is_some_and(|u| u.el.ty == "Spell")
+            })
+            .count();
+        assert!(picked >= 20, "{picked} spells picked");
+        crate::graph::LIST_COLLECTS.with(|c| c.set(0));
+        let ev = Evaluation::run(e.universe(Ruleset::Dnd2014), &state, e.settings(), false);
+        let collects = crate::graph::LIST_COLLECTS.with(std::cell::Cell::get);
+        let blocks = ev.graph.spell_infos().len();
+        assert!(
+            collects <= 4 * blocks.max(1),
+            "the class spell lists were read {collects} times for {picked} spells and {blocks} spellcasting blocks"
+        );
     }
 
     /// The option list prepares the spell token context once per slot; it must offer exactly

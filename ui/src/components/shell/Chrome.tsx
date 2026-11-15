@@ -4,7 +4,7 @@ import { Portrait } from "../Portrait";
 import { Icon } from "../Icon";
 import { MetroProgressBar } from "../controls/Controls";
 import { ToolTip } from "../controls/Controls";
-import { useStatusMessage, setStatus } from "../../state/status";
+import { useStatusLine, setStatus } from "../../state/status";
 import { MAIN_TABS, activeTab, startSubnav } from "./sections";
 import { LINKS, openLink } from "../../lib/links";
 import { useApi } from "../../state/ApiContext";
@@ -76,7 +76,8 @@ export function MainTabs() {
   );
 }
 
-/** Character profile block (right of the tab row): name, build line, XP line, portrait; a ringed plus button when nothing is open. */
+/** Character profile block (right of the tab row): name, build line, XP line, portrait; a ringed plus button when nothing is open.
+ * IoeL0: a landmark of its own, so its build and XP lines are inside one (axe `region`). */
 export function ProfileBlock() {
   const nav = useNavigate();
   const { snapshot } = useShellActions();
@@ -93,7 +94,7 @@ export function ProfileBlock() {
   const openQuickView = () => setQuickOpen(true);
   const openPortraits = () => setPortraitsOpen(true);
   return (
-    <div className="aur-profile">
+    <section className="aur-profile" aria-label="Character profile">
       {quickOpen && <QuickViewFlyout snapshot={snapshot} onClose={() => setQuickOpen(false)} />}
       <div className="aur-profile-text">
         <button type="button" className="name" onClick={openQuickView}>{snapshot.name}</button>
@@ -103,7 +104,7 @@ export function ProfileBlock() {
       <button type="button" className="aur-portrait-btn" aria-label="Open portraits" onClick={openPortraits}>
         <Portrait src={snapshot.portrait} name={snapshot.name} className="aur-portrait" />
       </button>
-    </div>
+    </section>
   );
 }
 
@@ -118,7 +119,8 @@ export function SubBand() {
   const { pathname } = useLocation();
   const { setHost } = useShell();
   const start = activeTab(pathname).id === "start";
-  const subnav = startSubnav(usePlatform().mobile);
+  const { mobile, creatorEnabled } = usePlatform();
+  const subnav = startSubnav(mobile, creatorEnabled);
   // Longest matching sub-tab wins so /content/sources does not also light up Additional Content.
   const single = SINGLE_SUBTABS.find((s) => pathname === s.to || pathname.startsWith(`${s.to}/`));
   const activeSub = subnav.filter((s) => pathname === s.to || pathname.startsWith(`${s.to}/`)).sort((a, b) => b.to.length - a.to.length)[0]?.to;
@@ -127,8 +129,9 @@ export function SubBand() {
   useEffect(() => {
     strip.current?.querySelector<HTMLElement>('[aria-current="page"]')?.scrollIntoView?.({ inline: "nearest", block: "nearest" });
   }, [activeSub]);
+  // H-ajc: the band is a landmark of its own, so the quick bar beside the sub-tabs is inside one (axe `region`)
   return (
-    <div className="aur-subband">
+    <section className="aur-subband" aria-label="Sections and quick actions">
       <div className="aur-subtabs">
         {start && single && <div className="tabs sub"><span className="tab" aria-current="page">{single.label}</span></div>}
         {start && !single && (
@@ -139,7 +142,7 @@ export function SubBand() {
         <div className="aur-subtabs-host" ref={setHost} />
       </div>
       <QuickBar />
-    </div>
+    </section>
   );
 }
 
@@ -216,7 +219,7 @@ function useCompleteMoment(pathname: string): { shown: boolean; dismiss: () => v
 export function StatusBar({ compact, busy }: { compact?: boolean; busy?: boolean }) {
   const { snapshot, flow, setFlow, hasNext, goNext } = useShellActions();
   const { savedByUser } = useCharacter();
-  const message = useStatusMessage();
+  const { message, detail } = useStatusLine();
   const phone = usePhone();
   // B-139: on a phone the bar is a thin line on the footer's top edge (out of the flex row, so the wrapping message keeps its
   // width) and waits BUSY_SHOW_DELAY_MS. Desktop, at any width, keeps Aurora's inline 150 px bar at once (U7).
@@ -230,10 +233,12 @@ export function StatusBar({ compact, busy }: { compact?: boolean; busy?: boolean
   const moment = useCompleteMoment(pathname);
   const complete = phoneLine && moment.shown;
   const offer = (to: string) => { moment.dismiss(); nav(to); };
-  const folded = useStatusFold(text, hasNext || working || complete, phone);
+  const folded = useStatusFold(text + detail, hasNext || working || complete, phone);
   return (
     <footer className="aur-status" aria-label="Status" data-collapsed={phone ? String(folded) : undefined} data-pending={phone ? String(hasNext) : undefined}>
-      <span className="status-msg" role="status">{text}</span>
+      {/* HC18: the message and its detail are separate nodes and the region reads what changed (aria-atomic false), so a
+          detail added later ("· 2 problems" after "Saved 'X' to Pack") is announced alone, not the whole line again. */}
+      <span className="status-msg" role="status" aria-atomic="false"><span>{text}</span>{detail && <span>{detail}</span>}</span>
       {working && (phoneLine ? <MetroProgressBar label="Working" className="aur-status-busyline" /> : <MetroProgressBar label="Working" width={150} />)}
       <span className="spacer" />
       {!compact && (

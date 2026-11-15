@@ -49,8 +49,10 @@ fn save_ability(text: &str) -> Option<String> {
 }
 
 /// `8+constitution+proficiency` -> `8+constitution:modifier+proficiency` (a bare ability in
-/// a save DC formula is its modifier).
-fn modifier_terms(formula: &str) -> String {
+/// a save DC formula is its modifier): the text of a breath weapon's `data.dc` that the shared
+/// formula grammar then reads. The homebrew creator checks its DC text against this reader.
+#[must_use]
+pub fn dc_formula_text(formula: &str) -> String {
     formula
         .split('+')
         .map(|t| {
@@ -108,6 +110,16 @@ fn legacy_row(graph: &Graph<'_>, stats: &StatSet) -> Option<AttackSnapshot> {
 }
 
 /// The 2024 rows from `damage_scaling` rules with a save in their element's data.
+/// The dice a `damage_scaling` rule rolls at character level `level`: its `levels` table's, else (no table, or a level
+/// below the table's first) its `dice`. The Breath Weapon row and the rule's note line both read it.
+pub(crate) fn scaled_dice(l: &crate::rule_view::Live<'_>, level: u32) -> Option<String> {
+    l.c.fields
+        .get("levels")
+        .and_then(Value::as_object)
+        .and_then(|m| crate::cantrips::dice_for_level(m, level))
+        .or_else(|| l.str("dice").map(str::to_string))
+}
+
 fn scaling_rows(graph: &Graph<'_>, stats: &StatSet, mods: &[i32; 6]) -> Vec<AttackSnapshot> {
     let level = graph.total_level();
     crate::rule_view::live_rules(graph, &["damage_scaling"])
@@ -116,15 +128,10 @@ fn scaling_rows(graph: &Graph<'_>, stats: &StatSet, mods: &[i32; 6]) -> Vec<Atta
             let save = l.el.data.get("save").and_then(Value::as_str)?;
             let dc_formula = l.el.data.get("dc").and_then(Value::as_str)?;
             let dc =
-                crate::play_rules::eval_formula(graph, stats, mods, &modifier_terms(dc_formula))?;
+                crate::play_rules::eval_formula(graph, stats, mods, &dc_formula_text(dc_formula))?;
             let ability =
                 crate::ids::ability_index(save).map(|i| crate::ids::ABILITIES[i].to_string())?;
-            let dice =
-                l.c.fields
-                    .get("levels")
-                    .and_then(Value::as_object)
-                    .and_then(|m| crate::cantrips::dice_for_level(m, level))
-                    .or_else(|| l.str("dice").map(str::to_string))?;
+            let dice = scaled_dice(l, level)?;
             let ty = l
                 .str("type_from")
                 .and_then(|t| inline_text(graph, t))
@@ -152,7 +159,7 @@ mod tests {
     #[test]
     fn bare_abilities_in_a_dc_formula_are_modifiers() {
         assert_eq!(
-            super::modifier_terms("8+constitution+proficiency"),
+            super::dc_formula_text("8+constitution+proficiency"),
             "8+constitution:modifier+proficiency"
         );
     }

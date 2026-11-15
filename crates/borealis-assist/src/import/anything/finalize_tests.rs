@@ -373,6 +373,7 @@ fn quillback_json(xp: u64) -> Value {
         .find(|s| s.element.name == "Goblin")
         .expect("goblin")
         .element
+        .as_ref()
         .clone();
     e.id = "ID_T_MONSTER_FEN_QUILLBACK".into();
     e.name = "Fen Quillback".into();

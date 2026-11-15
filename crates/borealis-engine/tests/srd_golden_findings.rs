@@ -244,6 +244,148 @@ fn breath_weapon_rows_in_both_editions() {
     }
 }
 
+/// The srd-5.2.1 pack with its Dragonborn file edited by `edit` (a JSON value).
+fn engine_with_dragonborn(edit: impl Fn(&mut serde_json::Value)) -> Option<Engine> {
+    use borealis_content::{ContentFile, PackFileKind, PackManifest, ParsedPack};
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    let dir = root.join("srd-5.2.1");
+    let manifest = std::fs::read_to_string(dir.join("pack.json")).ok()?;
+    let manifest = PackManifest::from_json_str(&manifest).expect("manifest");
+    let files = manifest
+        .files
+        .iter()
+        .filter(|f| f.kind == PackFileKind::Content)
+        .map(|f| {
+            let text = std::fs::read_to_string(dir.join(&f.path)).expect("file");
+            let mut v: serde_json::Value = serde_json::from_str(&text).expect("json");
+            if f.path.ends_with("species/dragonborn.json") {
+                edit(&mut v);
+            }
+            let file = ContentFile::from_json_str(&v.to_string()).expect("content file");
+            (f.path.clone(), file)
+        })
+        .collect();
+    let store = ContentStoreBuilder::new()
+        .add_pack_dir(&root.join("core"))
+        .expect("core")
+        .add_parsed_pack(ParsedPack::from_parts(manifest, files))
+        .build();
+    Some(Engine::new(&store))
+}
+
+/// H_2IU: `damage_scaling.dice` is read (the rule kind registry lists it as a field): without a level table the
+/// Breath Weapon row rolls those dice.
+#[test]
+fn a_breath_weapon_without_its_level_table_rolls_its_dice() {
+    let Some(e) = engine_with_dragonborn(|v| {
+        for el in v["elements"].as_array_mut().expect("elements") {
+            let rules = el
+                .get_mut("rules")
+                .and_then(serde_json::Value::as_array_mut);
+            for r in rules.into_iter().flatten() {
+                if r["kind"] == "damage_scaling" {
+                    let rule = r.as_object_mut().expect("rule");
+                    rule.remove("levels");
+                    rule.insert("dice".into(), "3d12".into());
+                }
+            }
+        }
+    }) else {
+        return;
+    };
+    let s = hero(
+        &e,
+        Ruleset::Dnd2024,
+        &[
+            ("Race", "Dragonborn"),
+            ("Draconic Ancestry", "Gold Dragon"),
+            ("Class", "Fighter"),
+        ],
+        1,
+    );
+    let snap = e.derive(&s);
+    let row = snap
+        .attacks
+        .iter()
+        .find(|a| a.name == "Breath Weapon")
+        .expect("2024 row");
+    assert_eq!(row.damage, "3d12 fire");
+}
+
+/// Iqzgc: the rule's note line rolls the same dice as its Breath Weapon row: the level table's, else (no table, or a
+/// level below the table's first) the rule's `dice`.
+#[test]
+fn a_breath_weapon_s_note_rolls_the_dice_of_its_row() {
+    let dragonborn = |e: &Engine, level: u32| {
+        let s = hero(
+            e,
+            Ruleset::Dnd2024,
+            &[
+                ("Race", "Dragonborn"),
+                ("Draconic Ancestry", "Gold Dragon"),
+                ("Class", "Fighter"),
+            ],
+            level,
+        );
+        let snap = e.derive(&s);
+        let note = snap
+            .notes
+            .iter()
+            .find(|n| n.kind == "damage_scaling")
+            .map(|n| n.text.clone());
+        (row(&snap, "Breath Weapon").damage.clone(), note)
+    };
+    let edited = |levels: Option<serde_json::Value>| {
+        engine_with_dragonborn(move |v| {
+            for el in v["elements"].as_array_mut().expect("elements") {
+                let rules = el
+                    .get_mut("rules")
+                    .and_then(serde_json::Value::as_array_mut);
+                for r in rules.into_iter().flatten() {
+                    if r["kind"] == "damage_scaling" {
+                        let rule = r.as_object_mut().expect("rule");
+                        rule.remove("levels");
+                        rule.insert("dice".into(), "3d12".into());
+                        if let Some(l) = &levels {
+                            rule.insert("levels".into(), l.clone());
+                        }
+                    }
+                }
+            }
+        })
+    };
+    let Some(srd) = engine("srd-5.2.1") else {
+        return;
+    };
+    let note = |dice: &str| {
+        Some(format!(
+            "Breath Weapon: {dice} draconic ancestry damage type"
+        ))
+    };
+    assert_eq!(
+        dragonborn(&srd, 5),
+        ("2d10 fire".to_string(), note("2d10")),
+        "the table's dice"
+    );
+    let no_table = edited(None).expect("pack");
+    assert_eq!(
+        dragonborn(&no_table, 1),
+        ("3d12 fire".to_string(), note("3d12")),
+        "no table"
+    );
+    let late_table = edited(Some(serde_json::json!({"5": "4d12"}))).expect("pack");
+    assert_eq!(
+        dragonborn(&late_table, 1),
+        ("3d12 fire".to_string(), note("3d12")),
+        "below the table's first level"
+    );
+    assert_eq!(
+        dragonborn(&late_table, 5),
+        ("4d12 fire".to_string(), note("4d12")),
+        "from the table's first level"
+    );
+}
+
 fn add(e: &Engine, s: &CharacterState, id: &str) -> (CharacterState, String) {
     let next = commands::add_item(e, s, id, 1).expect("add item").state;
     let uid = next.inventory.items.last().unwrap().uid.clone();

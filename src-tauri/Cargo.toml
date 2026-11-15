@@ -45,6 +45,7 @@ serde_json.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-appender.workspace = true
+borealis-authoring.workspace = true
 borealis-content.workspace = true
 borealis-engine.workspace = true
 borealis-character.workspace = true
@@ -84,10 +85,11 @@ percent-encoding = "2"
 # PF1 (B-235): the startup content cache (checksum and MessagePack snapshot framing).
 crc32fast = "1.5"
 rmp-serde = "1.3"
+# WB-24: the homebrew pack file (`.borealis-pack.zip`); the same crate and features `borealis-bundle` writes bundles with.
+zip = { version = "9", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
 tempfile = "3"
-zip = { version = "9", default-features = false, features = ["deflate"] }
 # tests/app_updater.rs: a mock Tauri app with the updater plugin, against a local feed signed by a key the test makes.
 tauri = { version = "2", features = ["test"] }
 minisign = { version = "0.10", default-features = false }

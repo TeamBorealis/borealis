@@ -209,12 +209,17 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
         &["levels", "casting_time", "swap_on"],
     ),
     k("attack_bonus", ATTACK, true, &["weapon", "value"]),
-    ku(
+    // `id`: the aura's name, the note's label ("Aura of protection: ...") and what `aura_immunity.aura` names
+    k(
         "aura",
         NOTES,
         true,
-        &["radius_feet", "radius_by_level", "bonus_saving_throws"],
-        &[("id", "a name other rules (`aura_immunity.aura`) refer to")],
+        &[
+            "radius_feet",
+            "radius_by_level",
+            "bonus_saving_throws",
+            "id",
+        ],
     ),
     k("aura_immunity", NOTES, true, &["aura", "conditions"]),
     k(
@@ -306,12 +311,13 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
         &[("reaction", IMPLIED)],
     ),
     k("damage_reduction_all_types", COMBAT, true, &[]),
+    // `dice`: the dice when `levels` gives none (`breath::scaling_rows`; the note reads `levels` only)
     ku(
         "damage_scaling",
         NOTES,
         true,
-        &["name", "levels", "type_from"],
-        &[("dice", IMPLIED), ("scale", IMPLIED)],
+        &["name", "levels", "type_from", "dice"],
+        &[("scale", IMPLIED)],
     ),
     k(
         "death_save_rules",
@@ -401,10 +407,11 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
             "resource_cost",
             "level",
             "requirements",
+            // the casting ability (`custom_rules::grant_spell` -> `granted_casting::ability_of`)
+            "ability",
         ],
         &[
             ("counts_against_prepared", IMPLIED),
-            ("ability", GAP),
             ("target", TABLE_TIME),
             ("auto_succeed_save", TABLE_TIME),
             ("max_roll", TABLE_TIME),

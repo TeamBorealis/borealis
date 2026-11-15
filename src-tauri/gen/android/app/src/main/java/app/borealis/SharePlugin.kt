@@ -3,6 +3,7 @@ package app.borealis
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.ClipData
+import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -59,7 +60,7 @@ class SharePlugin(private val activity: Activity) : Plugin(activity) {
       }
       activity.runOnUiThread {
         try {
-          activity.startActivity(Intent.createChooser(send, args.title))
+          activity.startActivity(chooser(send, args.title))
           invoke.resolve()
         } catch (e: Exception) {
           invoke.reject(e.message ?: "The share sheet could not open.")
@@ -93,7 +94,7 @@ class SharePlugin(private val activity: Activity) : Plugin(activity) {
       }
       activity.runOnUiThread {
         try {
-          activity.startActivity(Intent.createChooser(send, args.title))
+          activity.startActivity(chooser(send, args.title))
           invoke.resolve()
         } catch (e: Exception) {
           invoke.reject(e.message ?: "The share sheet could not open.")
@@ -187,6 +188,15 @@ class SharePlugin(private val activity: Activity) : Plugin(activity) {
   fun takeOpenedFiles(invoke: Invoke) {
     invoke.resolve(JSObject().put("files", OpenedFiles.take()))
   }
+
+  /**
+   * The system share sheet without Borealis itself (H5wn8): Borealis does not read files from its own provider
+   * (`OpenedUriRules`), so offering it there would share into nothing.
+   */
+  private fun chooser(send: Intent, title: String): Intent =
+    Intent.createChooser(send, title).apply {
+      putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, arrayOf(ComponentName(activity, MainActivity::class.java)))
+    }
 
   companion object {
     private const val SHARE_DIR = "share"

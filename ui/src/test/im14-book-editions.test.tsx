@@ -21,7 +21,8 @@ describe("IM14 Sources page", () => {
     const set = vi.spyOn(api, "setSourceEdition");
     renderApp("/content/sources", { api });
     const grid = await screen.findByRole("grid", { name: "Sources" });
-    await user.click(within(grid).getByText("Sample Expansion", { selector: ".nm" }));
+    // the grid shows before its rows are read (a loaded machine: B-177)
+    await user.click(await within(grid).findByText("Sample Expansion", { selector: ".nm" }));
     const edition = await screen.findByRole("combobox", { name: "Rules edition of this book" });
     expect((edition as HTMLSelectElement).value).toBe("dnd2024");
     expect(screen.getByText(/Found in the book: its .D&D 5\.5e. mark, or its name or description\./)).toBeTruthy();
@@ -36,7 +37,7 @@ describe("IM14 Sources page", () => {
     const user = userEvent.setup();
     renderApp("/content/sources", { api: mock() });
     const grid = await screen.findByRole("grid", { name: "Sources" });
-    await user.click(within(grid).getByText("Sample Reference 5.1", { selector: ".nm" }));
+    await user.click(await within(grid).findByText("Sample Reference 5.1", { selector: ".nm" }));
     await screen.findByText(/Rules edition: 2014/);
     expect(screen.queryByRole("combobox", { name: "Rules edition of this book" })).toBeNull();
   });

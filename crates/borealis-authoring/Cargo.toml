@@ -1,0 +1,25 @@
+[package]
+name = "borealis-authoring"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+description = "Deterministic content authoring for the homebrew creator: ids, spellcasting tables, engine checks, balance baselines (no AI)"
+
+[lints]
+workspace = true
+
+# No AI dependency, ever (spec 15.1, G7): `cargo tree -p borealis-authoring` must not list borealis-ai.
+[dependencies]
+borealis-content.workspace = true
+borealis-engine.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+# Tests only (spec 18.2): random forms (proptest, MIT OR Apache-2.0), and the local regression corpora converted the
+# way the app converts them (the Aurora migrator and the 5etools importer; deterministic, no AI either).
+[dev-dependencies]
+borealis-import-5etools = { path = "../borealis-import-5etools" }
+borealis-migrate.workspace = true
+proptest = { version = "1.12.0", default-features = false, features = ["std"] }

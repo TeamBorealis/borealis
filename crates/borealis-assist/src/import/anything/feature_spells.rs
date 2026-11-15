@@ -167,7 +167,7 @@ pub(crate) fn resolve(
     }
     let mut ids: HashMap<String, String> = store
         .by_type("Spell")
-        .map(|s| &s.element)
+        .map(|s| s.element.as_ref())
         .filter(|e| in_edition(e, edition))
         .map(|e| (key(&e.name), e.id.clone()))
         .collect();
