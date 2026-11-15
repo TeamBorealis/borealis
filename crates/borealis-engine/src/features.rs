@@ -145,9 +145,13 @@ impl Evaluation<'_> {
             match part {
                 TemplatePart::Text(t) => out.push_str(t),
                 TemplatePart::Placeholder(ph) => {
+                    // Aurora's ReplaceDoubleBrackets: a statistic group first, then an inline
+                    // value (`<stat inline="true" value="Fire"/>`, GitHub #52).
                     let key = ph.stat_key();
                     if self.stats.exists(&key) {
                         out.push_str(&self.stats.sum(&key).to_string());
+                    } else if let Some(text) = crate::breath::inline_text(&self.graph, &key) {
+                        out.push_str(&text);
                     } else {
                         match ph.syntax {
                             PlaceholderSyntax::Braces => {
