@@ -55,7 +55,8 @@ describe("sources tri-state", () => {
 
   it("offers the playtest and compendium actions and no bulk buttons", async () => {
     renderApp("/content/sources");
-    expect(await screen.findByRole("button", { name: "Restrict all playtest material" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Restrict playtest content" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Restrict third-party content" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "View selected source in compendium" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Allow all listed sources" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Restore every source" })).toBeNull();

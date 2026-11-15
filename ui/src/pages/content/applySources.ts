@@ -1,8 +1,9 @@
 import { createElement } from "react";
-import type { Api, CharacterSnapshot } from "../../api/contract";
+import type { Api, CharacterSnapshot, ContentSource } from "../../api/contract";
 import { useConfirm } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
+import { withToggles, type SourceToggles } from "./sourceFilters";
 
 /**
  * Commit a per-character source restriction (null = every source): preview what would be removed, confirm, then apply.
@@ -55,10 +56,21 @@ export function defaultRestriction(saved: readonly string[] | null, installed: r
   return kept.length === known.size ? null : kept;
 }
 
-/** A new character starts on the saved default sources (Aurora's "apply default restrictions on new character"). */
+/**
+ * The sources a new character (or the Sources page with none loaded) starts on: the saved default exactly as saved, or,
+ * with nothing saved, every source less the playtest and third-party books the Sources page toggles restrict. The
+ * toggles never apply over a saved default: it already holds the user's choice, and books the user checked again (their
+ * own homebrew, say) must stay checked.
+ */
+export function startingSources(saved: readonly string[] | null, sources: readonly ContentSource[], toggles: Partial<SourceToggles>): string[] | null {
+  return saved ? defaultRestriction(saved, sources.map((s) => s.id)) : withToggles(null, sources, toggles);
+}
+
+/** A new character starts on {@link startingSources} (Aurora's "apply default restrictions on new character"). */
 export async function applyDefaultSources(api: Api, snap: CharacterSnapshot): Promise<CharacterSnapshot> {
   const saved = loadDefaultSources();
-  if (!saved) return snap;
-  const enabled = defaultRestriction(saved, (await api.listSources()).map((s) => s.id));
+  const toggles = await api.getSettings().catch(() => null);
+  if (!saved && !toggles?.restrictPlaytest && !toggles?.restrictThirdParty) return snap;
+  const enabled = startingSources(saved, await api.listSources(), toggles ?? {});
   return enabled ? api.setSourceRestrictions({ characterId: snap.id, enabledSources: enabled }) : snap;
 }

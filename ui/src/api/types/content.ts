@@ -124,6 +124,8 @@ export interface ContentSource {
   elementCount: number;
   description: string;
   playtest: boolean;
+  /** Its Source element sets `third-party` (playtest books are only `playtest`; homebrew is never third-party). */
+  thirdParty: boolean;
   /** The source is flagged incomplete (work in progress). */
   incomplete?: boolean;
   /** The source's own extra note; empty or absent when it has none. */
