@@ -200,11 +200,15 @@ pub struct Graph<'u> {
     pub(crate) restricted: SourceRestriction,
     pub(crate) equip: EquipState,
     pub(crate) version: u64,
+    /// Bumped when a node with a spellcasting block is added or removed: the class spell lists ([`SpellDynamics`])
+    /// read only those nodes, so they stay valid while other nodes come and go (a rebuild replays every stored pick,
+    /// each adding a node).
+    pub(crate) spell_version: u64,
     /// Set when any requirement read a statistic group.
     pub stat_used: std::cell::Cell<bool>,
     pub(crate) slot_cache: RefCell<SlotCache>,
-    /// The class spell lists per spellcasting name at the current `version`, shared by every spell select of one
-    /// option listing ([`SpellDynamics`]): a large library offers thousands of spells to each of a caster's dozens
+    /// The class spell lists per spellcasting name at the current `spell_version`, shared by every spell select of
+    /// the graph ([`SpellDynamics`]): a large library offers thousands of spells to each of a caster's dozens
     /// of spell slots, and each list's expressions were matched again for every slot.
     pub(crate) spell_lists: RefCell<SpellListCache>,
     /// Which candidates each select rule lets through at the current `version`, by (version, owner, rule index)
@@ -292,6 +296,7 @@ impl<'u> Graph<'u> {
             restricted: SourceRestriction::excluding(state.restricted_sources.iter().cloned()),
             equip: inputs.equip,
             version: 0,
+            spell_version: 0,
             stat_used: std::cell::Cell::new(false),
             slot_cache: RefCell::new(HashMap::new()),
             spell_lists: RefCell::new(HashMap::new()),
@@ -519,6 +524,7 @@ impl<'u> Graph<'u> {
         self.names.add(&crate::eval::feature_name_key(&e.el.name));
         self.spell_blocks += usize::from(e.el.spellcasting.is_some());
         self.version += 1;
+        self.spell_version += u64::from(e.el.spellcasting.is_some());
         if matches!(e.el.ty.as_str(), "Class" | "Multiclass") {
             self.refresh_class_levels();
         }
@@ -540,6 +546,7 @@ impl<'u> Graph<'u> {
             let el = &self.nodes[n].e.el;
             self.names.remove(&crate::eval::feature_name_key(&el.name));
             self.spell_blocks -= usize::from(el.spellcasting.is_some());
+            self.spell_version += u64::from(el.spellcasting.is_some());
             touched_class |= matches!(self.nodes[n].e.el.ty.as_str(), "Class" | "Multiclass");
             stack.extend(self.nodes[n].children.clone());
         }
@@ -1702,6 +1709,8 @@ pub(crate) struct ClassSpellLists {
 thread_local! {
     /// How often a candidate was matched against class spell list expressions (the cost [`ClassSpellLists`] bounds).
     pub(crate) static LIST_MATCHES: Cell<usize> = const { Cell::new(0) };
+    /// How often the class spell lists were read from the graph's spellcasting blocks.
+    pub(crate) static LIST_COLLECTS: Cell<usize> = const { Cell::new(0) };
 }
 
 impl ClassSpellLists {
@@ -1776,23 +1785,25 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
     }
 
     /// The lists of every live block serving `class` (a block of that name, or an `extend`
-    /// block for it or for all names), shared with every other select of the graph at its
-    /// current version.
+    /// block for it or for all names), shared with every other select of the graph while no
+    /// node with a spellcasting block comes or goes.
     fn lists(&self, class: &str) -> &ClassSpellLists {
         self.lists.get_or_init(|| {
-            let key = (self.graph.version, class.to_string());
+            let key = (self.graph.spell_version, class.to_string());
             if let Some(hit) = self.graph.spell_lists.borrow().get(&key) {
                 return Rc::clone(hit);
             }
             let lists = Rc::new(self.collect_lists(class));
             let mut cache = self.graph.spell_lists.borrow_mut();
-            cache.retain(|k, _| k.0 == self.graph.version);
+            cache.retain(|k, _| k.0 == self.graph.spell_version);
             cache.insert(key, Rc::clone(&lists));
             lists
         })
     }
 
     fn collect_lists(&self, class: &str) -> ClassSpellLists {
+        #[cfg(test)]
+        LIST_COLLECTS.with(|c| c.set(c.get() + 1));
         let mut out = ClassSpellLists {
             ids: HashSet::new(),
             exprs: Vec::new(),

@@ -396,6 +396,55 @@ mod tests {
         assert_eq!(g.option_cache.borrow().len(), listed.len());
     }
 
+    /// A rebuild of the graph replays every stored pick, each adding a node; a spell pick's check reads the class
+    /// spell lists, which only nodes with a spellcasting block change. They are read once per such change, not once
+    /// per replayed spell (item IzDlk: the creator's level sweep of a class rebuilds a caster hundreds of times).
+    #[test]
+    fn a_rebuild_reads_the_class_spell_lists_once_per_spellcasting_change() {
+        let e = engine();
+        let mut state = wizard(&e, 9);
+        // the Wizard picks a spell in every open spell slot
+        loop {
+            let snap = e.derive(&state);
+            let taken: std::collections::HashSet<&str> = snap
+                .slots
+                .iter()
+                .filter_map(|s| s.chosen.as_ref().map(|c| c.id.as_str()))
+                .collect();
+            let open = snap.slots.iter().find_map(|s| {
+                (s.ty == "Spell" && s.chosen.is_none())
+                    .then(|| s.options.iter().find(|o| !taken.contains(o.id.as_str())))
+                    .flatten()
+                    .map(|o| (s.key.clone(), o.id.clone()))
+            });
+            let Some((key, id)) = open else { break };
+            state = commands::select(&e, &state, &key, Choice::Element(id))
+                .expect("a listed spell")
+                .state;
+        }
+        let picked = state
+            .selections
+            .iter()
+            .filter(|s| {
+                e.universe(Ruleset::Dnd2014)
+                    .get(match &s.choice {
+                        Choice::Element(id) => id,
+                        Choice::ListItem(_) => "",
+                    })
+                    .is_some_and(|u| u.el.ty == "Spell")
+            })
+            .count();
+        assert!(picked >= 20, "{picked} spells picked");
+        crate::graph::LIST_COLLECTS.with(|c| c.set(0));
+        let ev = Evaluation::run(e.universe(Ruleset::Dnd2014), &state, e.settings(), false);
+        let collects = crate::graph::LIST_COLLECTS.with(std::cell::Cell::get);
+        let blocks = ev.graph.spell_infos().len();
+        assert!(
+            collects <= 4 * blocks.max(1),
+            "the class spell lists were read {collects} times for {picked} spells and {blocks} spellcasting blocks"
+        );
+    }
+
     /// The option list prepares the spell token context once per slot; it must offer exactly
     /// what the per-candidate check (`choice_allowed`, a fresh context each time) allows.
     #[test]
