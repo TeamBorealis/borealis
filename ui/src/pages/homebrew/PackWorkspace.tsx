@@ -20,7 +20,7 @@ import { useCreatorKeys } from "./keymap";
 import { ADD_BLOCK_EVENT } from "./blocks/BlockList";
 import { type CopyChoice, NewElementFlyout, creatableKinds } from "./NewElementFlyout";
 import { rememberPack } from "./packs";
-import { countProblems, fieldDomId, fieldKeyOf, problemsLine, tabOf } from "./problems";
+import { countProblems, creatorStatus, fieldDomId, fieldKeyOf, tabOf } from "./problems";
 import { useDraft } from "./useDraft";
 import { findForm } from "./class/children";
 import { useMessageBox } from "./useMessageBox";
@@ -30,6 +30,12 @@ import "./expert.css";
 
 /** `content-reloaded` reasons of a pack changed from outside this page: a device receive, an imported pack file. */
 const PACK_CHANGED = new Set(["device-sync", "homebrew-pack-imported"]);
+
+/** The save confirmation on the status line (HC18) and the form it belongs to; undefined until it first shows. */
+interface SavedNote {
+  readonly text: string;
+  readonly form?: HomebrewForm | null;
+}
 
 const timeOf = (iso: string): string => {
   const d = new Date(iso);
@@ -143,12 +149,22 @@ export function PackWorkspace() {
       edition: editionOf(draft.form) }
     : null;
 
-  // Status line (spec 8.3): "2 problems" while an element is open; "Checking..." while the engine checks run.
+  // Status line (spec 8.3): "2 problems" while an element is open; "Checking..." while the engine checks run. After a save
+  // (HC18) it keeps "Saved 'X' to Pack" and adds the count, until the form on screen changes (an edit, another element).
+  const [saved, setSaved] = useState<SavedNote | null>(null);
+  useEffect(() => {
+    if (!saved) return;
+    // The note belongs to the form on screen when it first shows: the element reopened after the save.
+    if (saved.form === undefined) setSaved({ text: saved.text, form: draft.form });
+    else if (saved.form !== draft.form) setSaved(null);
+  }, [saved, draft.form]);
   const counted = countProblems(draft.problems);
   const hasForm = draft.form !== null;
   useEffect(() => {
-    if (hasForm) setStatus(draft.checking ? "Checking..." : problemsLine(counted));
-  }, [hasForm, draft.checking, counted.errors, counted.warnings]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!hasForm) return;
+    const line = creatorStatus(saved?.text ?? null, draft.checking, counted);
+    setStatus(line.message, line.detail);
+  }, [hasForm, saved?.text, draft.checking, counted.errors, counted.warnings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const show = async (view: HomebrewDraftView) => {
     setTryItOpen(false);
@@ -316,7 +332,7 @@ export function PackWorkspace() {
       packs.reload();
       setWritten((n) => n + 1);
       haptic("save");
-      setStatus(`Saved '${name}' to ${result.pack.name}.`);
+      setSaved({ text: `Saved '${name}' to ${result.pack.name}` });
     } catch (e) {
       setStatus(errorMessage(e));
     }

@@ -53,7 +53,7 @@ describe('hc-wb11 homebrew spell form (web mock)', { tags: ['homebrew'] }, () =>
     // Save: in the list, counted in CATEGORIES.
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Ember Lance')).toBeVisible();
-    expectEqual('status after save', "Saved 'Ember Lance' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after save', "Saved 'Ember Lance' to Ember Isles", await statusMsg(ctx));
     await waitFor(ctx, (_: null) => /Spells \(1\)/.test(document.querySelector('[aria-label="Element kinds"]')?.textContent ?? ''), null, 'Spells (1)');
 
     // Pickable: a second spell's "Gives a spell" picker offers it at level 2 with its school and components.

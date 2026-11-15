@@ -5,6 +5,9 @@ import { MockApi } from "../api/mock";
 import { matchCreatorKey, CREATOR_KEYMAP, type KeyLike } from "../pages/homebrew/keymap";
 import { suggestCode } from "../pages/homebrew/NewPackFlyout";
 import { renderApp, seededId } from "./utils";
+// The workspace is a lazy route (App.tsx): loading it here, at collect time, keeps the cold transform of the creator's
+// modules out of the first test's 10 s wait (under load, at ~50, it ran out on the first element button).
+import "../pages/homebrew/PackWorkspace";
 
 // Homebrew WB-09: START > HOMEBREW on the mock (`creatorEnabled` on): pack list, NEW PACK, the workspace (CATEGORIES,
 // element grid, editor, live description), the sub-tab band, PROBLEMS, undo/redo and the creator's keyboard map (spec
@@ -240,10 +243,24 @@ describe("WB-09 HOMEBREW pack list and workspace", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /Problems \(0\)/ })).toBeTruthy());
 
     // Save: the element is in the list, counted in CATEGORIES, and the status line says so.
+    const reopens = vi.spyOn(api, "homebrewOpenDraft");
+    const checks = vi.spyOn(api, "homebrewCheckDraft");
     await user.click(within(editor()).getByRole("button", { name: "Save" }));
     expect(await screen.findByRole("button", { name: "Ember Bolt" })).toBeTruthy();
     expect(screen.getByRole("navigation", { name: "Element kinds" }).textContent).toContain("Spells (1)");
-    expect(screen.getByRole("contentinfo", { name: "Status" }).textContent).toContain("Saved 'Ember Bolt' to Ember Isles.");
+    const statusLine = () => within(screen.getByRole("contentinfo", { name: "Status" })).getByRole("status").textContent;
+    expect(statusLine()).toBe("Saved 'Ember Bolt' to Ember Isles");
+    // HC18 (I2rZs): the check after the save, however late it answers, leaves the confirmation (no problems: no suffix).
+    // It is the first check called after Save reopened the element (under load it may already have run by now).
+    const checkAfterSave = (): Promise<unknown> | undefined => {
+      const reopened = reopens.mock.invocationCallOrder.at(-1) ?? Infinity;
+      const i = checks.mock.invocationCallOrder.findIndex((order) => order > reopened);
+      return i < 0 ? undefined : checks.mock.results[i]!.value as Promise<unknown>;
+    };
+    await waitFor(() => expect(checkAfterSave()).toBeDefined());
+    await checkAfterSave();
+    await waitFor(() => expect(screen.getByRole("button", { name: /Problems \(0\)/ })).toBeTruthy());
+    expect(statusLine()).toBe("Saved 'Ember Bolt' to Ember Isles");
     // The history survives the save: the undone edit can still be redone.
     expect((within(editor()).getByRole("button", { name: "Redo" }) as HTMLButtonElement).disabled).toBe(false);
   });

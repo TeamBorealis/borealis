@@ -72,7 +72,7 @@ describe('hc-wb13 homebrew feat form (web mock)', { tags: ['homebrew'] }, () => 
     // Save: in the list, counted in CATEGORIES.
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Ember Heart')).toBeVisible();
-    expectEqual('status after save', "Saved 'Ember Heart' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after save', "Saved 'Ember Heart' to Ember Isles", await statusMsg(ctx));
     await waitFor(ctx, (_: null) => /Feats \(1\)/.test(document.querySelector('[aria-label="Element kinds"]')?.textContent ?? ''), null, 'Feats (1)');
 
     // Pickable: a second feat's "Gives a feat" picker offers it, with its prerequisite.

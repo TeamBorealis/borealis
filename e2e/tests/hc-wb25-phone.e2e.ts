@@ -157,7 +157,7 @@ describe('hc-wb25 homebrew creator on a phone (web mock)', { tags: ['homebrew'] 
     await expect(ctx.screen.getByRole('listitem', /Advantage on a roll \(Saving throws/)).toBeVisible();
     await autosaved(ctx);
     await pinned(ctx, 'Save').click();
-    await waitFor(ctx, (_: null) => /Saved 'Ember Lance' to Ember Isles\./.test(document.querySelector('.aur-status')?.textContent ?? ''), null, 'the spell saved');
+    await waitFor(ctx, (_: null) => /Saved 'Ember Lance' to Ember Isles/.test(document.querySelector('.aur-status')?.textContent ?? ''), null, 'the spell saved');
 
     // Try it: the full-height sheet with the test character
     await pinned(ctx, 'Try it').click();
@@ -172,7 +172,7 @@ describe('hc-wb25 homebrew creator on a phone (web mock)', { tags: ['homebrew'] 
     await ctx.browser.locator('#hb-f-damage-input').fill('1d6');
     await autosaved(ctx);
     await pinned(ctx, 'Save').click();
-    await waitFor(ctx, (_: null) => /Saved 'Sickle Sword' to Ember Isles\./.test(document.querySelector('.aur-status')?.textContent ?? ''), null, 'the weapon saved');
+    await waitFor(ctx, (_: null) => /Saved 'Sickle Sword' to Ember Isles/.test(document.querySelector('.aur-status')?.textContent ?? ''), null, 'the weapon saved');
 
     // Export pack (Share on a phone: the first tap makes the file, the second shares it)
     await ctx.screen.getByRole('button', /^Back to/).tap();

@@ -78,7 +78,7 @@ describe('hc-wb17 homebrew spellcasting section (web mock)', { tags: ['homebrew'
 
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Warden')).toBeVisible();
-    expectEqual('status after save', "Saved 'Warden' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after save', "Saved 'Warden' to Ember Isles", await statusMsg(ctx));
 
     // Reopened: the section is there with its custom table.
     await ctx.screen.getByRole('tab', 'SPELLCASTING').tap();

@@ -66,7 +66,7 @@ describe('hc-wb15 homebrew species forms (web mock)', { tags: ['homebrew'] }, ()
 
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Emberkin')).toBeVisible();
-    expectEqual('status after save', "Saved 'Emberkin' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after save', "Saved 'Emberkin' to Ember Isles", await statusMsg(ctx));
     await kindCount(ctx, /Species \(1\)/, 'Species (1)');
 
     // A 2014 race, then a subrace of it: the parent race is required, and the subrace has no size of its own.

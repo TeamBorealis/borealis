@@ -70,7 +70,7 @@ describe('hc-next-skills the skill blocks offer homebrew skills (web mock)', { t
     await autosaved(ctx);
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', "Brewer's Knack")).toBeVisible();
-    expectEqual('status after the feat', "Saved 'Brewer's Knack' to Old World.", await statusMsg(ctx));
+    expectEqual('status after the feat', "Saved 'Brewer's Knack' to Old World", await statusMsg(ctx));
 
     // opened again: the block still names Alchemy, and its dialog has it picked
     await ctx.screen.getByRole('button', /^Skills \(1\)/).tap();

@@ -51,7 +51,7 @@ describe('hc-wb19 homebrew small types (web mock)', { tags: ['homebrew'] }, () =
     await autosaved(ctx);
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Old Tongue')).toBeVisible();
-    expectEqual('status after the language', "Saved 'Old Tongue' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after the language', "Saved 'Old Tongue' to Ember Isles", await statusMsg(ctx));
     await kindCount(ctx, /Languages \(1\)/, 'Languages (1)');
 
     // A deity: its alignment, domains and symbol each say what they need.
@@ -69,7 +69,7 @@ describe('hc-wb19 homebrew small types (web mock)', { tags: ['homebrew'] }, () =
     await autosaved(ctx);
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Asha')).toBeVisible();
-    expectEqual('status after the deity', "Saved 'Asha' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after the deity', "Saved 'Asha' to Ember Isles", await statusMsg(ctx));
     await kindCount(ctx, /Deities \(1\)/, 'Deities (1)');
     await kindCount(ctx, /Languages \(1\)/, 'Languages (1) still');
   });

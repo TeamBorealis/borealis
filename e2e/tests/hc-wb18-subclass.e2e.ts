@@ -76,7 +76,7 @@ describe('hc-wb18 homebrew subclass form (web mock)', { tags: ['homebrew'] }, ()
     // Save: in the list, counted in CATEGORIES; reopened with the feature on its level.
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Ember Guard')).toBeVisible();
-    expectEqual('status after save', "Saved 'Ember Guard' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after save', "Saved 'Ember Guard' to Ember Isles", await statusMsg(ctx));
     await waitFor(ctx, (_: null) => /Subclasses \(1\)/.test(document.querySelector('[aria-label="Element kinds"]')?.textContent ?? ''), null, 'Subclasses (1)');
     await waitFeature(ctx, 3, 'Ember Ward');
   });

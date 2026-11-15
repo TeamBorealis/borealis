@@ -75,7 +75,7 @@ describe('hc-wb16 homebrew class form (web mock)', { tags: ['homebrew'] }, () =>
     // Save: in the list, counted in CATEGORIES.
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Gloom Knight')).toBeVisible();
-    expectEqual('status after save', "Saved 'Gloom Knight' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after save', "Saved 'Gloom Knight' to Ember Isles", await statusMsg(ctx));
     await waitFor(ctx, (_: null) => /Classes \(1\)/.test(document.querySelector('[aria-label="Element kinds"]')?.textContent ?? ''), null, 'Classes (1)');
 
     // After the save the class is opened again from the pack: the feature is on its level with its rule.

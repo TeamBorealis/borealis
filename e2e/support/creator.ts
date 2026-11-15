@@ -77,7 +77,7 @@ export async function save(ctx: Ctx, name: string, pack: string): Promise<void> 
   await autosaved(ctx);
   await pressKey(ctx, 'Control+s');
   await expect(ctx.screen.getByRole('button', name).first()).toBeVisible();
-  expectEqual('status after save', `Saved '${name}' to ${pack}.`, await statusMsg(ctx));
+  expectEqual('status after save', `Saved '${name}' to ${pack}`, await statusMsg(ctx));
 }
 
 /** Scrolls an element into the middle of its scroller and waits until it holds still (hit-tested clicks test its centre). */

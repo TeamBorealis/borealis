@@ -55,7 +55,7 @@ describe('hc-wb22 homebrew copies (web mock)', { tags: ['homebrew'] }, () => {
     await autosaved(ctx);
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Emberball')).toBeVisible();
-    expectEqual('status after save', "Saved 'Emberball' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after save', "Saved 'Emberball' to Ember Isles", await statusMsg(ctx));
     await kindCount(ctx, /Spells \(1\)/, 'Spells (1)');
 
     // New from copy...: the SRD Wizard (not the sample content's), deep: its features inside, its subclass saved with it.

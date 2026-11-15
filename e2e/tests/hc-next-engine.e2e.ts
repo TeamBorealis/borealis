@@ -42,7 +42,7 @@ describe('hc-next-engine homebrew skills and switched conditions (web mock)', { 
     await autosaved(ctx);
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Alchemy')).toBeVisible();
-    expectEqual('status after the skill', "Saved 'Alchemy' to Old World.", await statusMsg(ctx));
+    expectEqual('status after the skill', "Saved 'Alchemy' to Old World", await statusMsg(ctx));
   });
 
   test('the Conditions card switches Prone on and shows its text', async (ctx) => {

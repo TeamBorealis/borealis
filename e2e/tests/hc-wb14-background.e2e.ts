@@ -80,7 +80,7 @@ describe('hc-wb14 homebrew background form (web mock)', { tags: ['homebrew'] }, 
     // Save: in the list, counted in CATEGORIES; it opens again with its choices.
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Ember Warden')).toBeVisible();
-    expectEqual('status after save', "Saved 'Ember Warden' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after save', "Saved 'Ember Warden' to Ember Isles", await statusMsg(ctx));
     await waitFor(ctx, (_: null) => /Backgrounds \(1\)/.test(document.querySelector('[aria-label="Element kinds"]')?.textContent ?? ''), null, 'Backgrounds (1)');
     await ctx.screen.getByRole('button', 'Ember Warden').tap();
     await waitValue(ctx, NAME, 'Ember Warden');

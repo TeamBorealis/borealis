@@ -4,7 +4,7 @@ import { Portrait } from "../Portrait";
 import { Icon } from "../Icon";
 import { MetroProgressBar } from "../controls/Controls";
 import { ToolTip } from "../controls/Controls";
-import { useStatusMessage, setStatus } from "../../state/status";
+import { useStatusLine, setStatus } from "../../state/status";
 import { MAIN_TABS, activeTab, startSubnav } from "./sections";
 import { LINKS, openLink } from "../../lib/links";
 import { useApi } from "../../state/ApiContext";
@@ -219,7 +219,7 @@ function useCompleteMoment(pathname: string): { shown: boolean; dismiss: () => v
 export function StatusBar({ compact, busy }: { compact?: boolean; busy?: boolean }) {
   const { snapshot, flow, setFlow, hasNext, goNext } = useShellActions();
   const { savedByUser } = useCharacter();
-  const message = useStatusMessage();
+  const { message, detail } = useStatusLine();
   const phone = usePhone();
   // B-139: on a phone the bar is a thin line on the footer's top edge (out of the flex row, so the wrapping message keeps its
   // width) and waits BUSY_SHOW_DELAY_MS. Desktop, at any width, keeps Aurora's inline 150 px bar at once (U7).
@@ -233,10 +233,12 @@ export function StatusBar({ compact, busy }: { compact?: boolean; busy?: boolean
   const moment = useCompleteMoment(pathname);
   const complete = phoneLine && moment.shown;
   const offer = (to: string) => { moment.dismiss(); nav(to); };
-  const folded = useStatusFold(text, hasNext || working || complete, phone);
+  const folded = useStatusFold(text + detail, hasNext || working || complete, phone);
   return (
     <footer className="aur-status" aria-label="Status" data-collapsed={phone ? String(folded) : undefined} data-pending={phone ? String(hasNext) : undefined}>
-      <span className="status-msg" role="status">{text}</span>
+      {/* HC18: the message and its detail are separate nodes and the region reads what changed (aria-atomic false), so a
+          detail added later ("· 2 problems" after "Saved 'X' to Pack") is announced alone, not the whole line again. */}
+      <span className="status-msg" role="status" aria-atomic="false"><span>{text}</span>{detail && <span>{detail}</span>}</span>
       {working && (phoneLine ? <MetroProgressBar label="Working" className="aur-status-busyline" /> : <MetroProgressBar label="Working" width={150} />)}
       <span className="spacer" />
       {!compact && (

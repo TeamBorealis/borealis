@@ -1,4 +1,5 @@
 import type { HomebrewFieldSpec, HomebrewKindDescriptor, HomebrewProblem, HomebrewProblemCounts } from "../../api/contract";
+import type { StatusLine } from "../../state/status";
 
 /** The spellcasting section's field keys (`borealis-authoring::form::codec::caster_cx::SECTION_FIELDS`). */
 export const SECTION_FIELDS: readonly string[] = [
@@ -37,6 +38,16 @@ export function countProblems(problems: readonly HomebrewProblem[]): HomebrewPro
 export function problemsLine(c: HomebrewProblemCounts): string {
   const n = c.errors + c.warnings;
   return n === 0 ? "No problems" : `${n} ${n === 1 ? "problem" : "problems"}`;
+}
+
+/**
+ * The creator's status line while an element is open (spec 8.3, HC18): the problems line, or "Checking..." while the engine
+ * checks run. Just after a save it is the confirmation, then the count when there are problems ("Saved 'X' to Pack" +
+ * " · 2 problems"): a check that answers later adds its count and never replaces the confirmation.
+ */
+export function creatorStatus(saved: string | null, checking: boolean, c: HomebrewProblemCounts): StatusLine {
+  if (saved === null) return { message: checking ? "Checking..." : problemsLine(c), detail: "" };
+  return { message: saved, detail: c.errors + c.warnings === 0 ? "" : ` · ${problemsLine(c)}` };
 }
 
 /** The worst severity among a field's problems, for its label colour (8.3). */

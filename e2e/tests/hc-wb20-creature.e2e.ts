@@ -84,7 +84,7 @@ describe('hc-wb20 homebrew creature form (web mock)', { tags: ['homebrew'] }, ()
     // Save: in the list, counted in CATEGORIES.
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Cinder Boar')).toBeVisible();
-    expectEqual('status after save', "Saved 'Cinder Boar' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after save', "Saved 'Cinder Boar' to Ember Isles", await statusMsg(ctx));
     await waitFor(ctx, (_: null) => /Creatures \(1\)/.test(document.querySelector('[aria-label="Element kinds"]')?.textContent ?? ''), null, 'Creatures (1)');
   });
 });

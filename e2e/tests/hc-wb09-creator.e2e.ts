@@ -68,7 +68,7 @@ describe('hc-wb09 homebrew creator shell (web mock)', { tags: ['homebrew'] }, ()
     await pressKey(ctx, 'Control+s');
     await expect(ctx.screen.getByRole('button', 'Ember Lance')).toBeVisible();
     await waitFor(ctx, (_: null) => /Spells \(1\)/.test(document.querySelector('[aria-label="Element kinds"]')?.textContent ?? ''), null, 'Spells (1)');
-    expectEqual('status after save', "Saved 'Ember Lance' to Ember Isles.", await statusMsg(ctx));
+    expectEqual('status after save', "Saved 'Ember Lance' to Ember Isles", await statusMsg(ctx));
 
     // The live description pane shows the element as the builder would.
     await expect(ctx.screen.getByRole('complementary', 'Description').getByRole('heading', 'Ember Lance')).toBeVisible();
