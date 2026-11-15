@@ -111,7 +111,14 @@ export function useClassSpellRows(cls: ClassSpellcasting, onPick: (id: string) =
     const from = row.spell;
     const set = (spellId: string, prepared: boolean) =>
       mutate((api, characterId) => api.setSpellPrepared({ characterId, classSlotId: cls.classSlotId, spellId, prepared }));
-    if (await set(from.id, false) && await set(to.id, true)) setStatus(`${cls.className}: ${to.name} (${to.sourceName}) is prepared.`);
+    if (!(await set(from.id, false))) return;
+    if (await set(to.id, true)) {
+      setStatus(`${cls.className}: ${to.name} (${to.sourceName}) is prepared.`);
+      return;
+    }
+    // the other copy couldn't be prepared: keep the one the character had
+    await set(from.id, true);
+    setStatus(`${cls.className}: ${to.name} (${to.sourceName}) couldn't be prepared; ${from.name} (${from.sourceName}) stays prepared.`);
   };
 
   const versionHeader = versionColumn ? <th scope="col" className="sp-ver"><span className="sr-only">Versions</span></th> : null;
