@@ -70,6 +70,9 @@ mod features;
 mod retrain;
 pub mod text;
 
+#[cfg(test)]
+mod engine_reuse_tests;
+
 pub use adapter::{
     Adaptation, EditionAdapter, PassThroughAdapter, StandardAdapter, FLEXIBLE_INCREASE_NAME,
     INCREASE_NOT_APPLIED,

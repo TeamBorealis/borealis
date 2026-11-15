@@ -45,6 +45,7 @@ fn run(root: &Element, children: &[Element]) -> Vec<Problem> {
         written: None,
         cx: &cx,
         loaded: None,
+        loaded_engine: None,
     })
 }
 

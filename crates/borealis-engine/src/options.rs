@@ -238,7 +238,7 @@ impl<'u> Graph<'u> {
         let hidden: Vec<&UElem> = self
             .uni
             .select_candidates(&rule.ty, self.allow_cross_edition)
-            .filter(|c| matches!(c.req, Cond::Invalid) && seen.insert(c.el.id.as_str()))
+            .filter(|c| matches!(*c.req, Cond::Invalid) && seen.insert(c.el.id.as_str()))
             .filter(|c| {
                 self.choice_allowed_relaxed(owner, slot.rule, c, false, &dyns, false, relax)
             })

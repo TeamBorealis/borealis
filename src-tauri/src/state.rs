@@ -302,8 +302,11 @@ impl ContentHub {
             .clone()
             .build_reusing(previous.map(|h| h.store.as_ref()));
         timer.step("build", &format!("{} elements", store.len()));
-        let engine = Engine::with_settings(&store, settings.engine_settings());
-        timer.step("engine", "");
+        let engine = engine_over(&store, settings, previous.map(|h| &h.engine));
+        timer.step(
+            "engine",
+            &format!("{} prepared elements taken over", reused_elements(&engine)),
+        );
         timer.total(&format!(
             "{} elements, {} files",
             store.len(),
@@ -336,7 +339,21 @@ impl ContentHub {
         load_warnings: Vec<String>,
         settings: &AppSettings,
     ) -> Self {
-        let engine = Engine::with_settings(&store, settings.engine_settings());
+        Self::from_built_over(builder, store, load_warnings, settings, None)
+    }
+
+    /// [`ContentHub::from_built`] over the hub it replaces (still alive): the engine takes over the prepared elements
+    /// of `previous`'s engine whose store element `store` shares (a creator save, New pack; IzDfk). The engine is the
+    /// one a build from scratch makes.
+    #[must_use]
+    pub fn from_built_over(
+        builder: ContentStoreBuilder,
+        store: ContentStore,
+        load_warnings: Vec<String>,
+        settings: &AppSettings,
+        previous: Option<&ContentHub>,
+    ) -> Self {
+        let engine = engine_over(&store, settings, previous.map(|h| &h.engine));
         Self {
             store: Arc::new(store),
             engine,
@@ -373,13 +390,31 @@ impl ContentHub {
     pub fn with_settings(&self, settings: &AppSettings) -> Self {
         Self {
             store: Arc::clone(&self.store),
-            engine: Engine::with_settings(&self.store, settings.engine_settings()),
+            engine: engine_over(&self.store, settings, Some(&self.engine)),
             builder: Arc::clone(&self.builder),
             load_warnings: self.load_warnings.clone(),
             derived: DeriveCache::default(),
             cache_write: Mutex::new(None),
         }
     }
+}
+
+/// The engine for `store`, over `previous` (an engine of a store that is still alive) when there is one.
+fn engine_over(store: &ContentStore, settings: &AppSettings, previous: Option<&Engine>) -> Engine {
+    match previous {
+        Some(previous) => {
+            Engine::with_settings_reusing(store, settings.engine_settings(), previous)
+        }
+        None => Engine::with_settings(store, settings.engine_settings()),
+    }
+}
+
+/// Prepared elements an engine took over from the one it was built over, in both universes.
+pub(crate) fn reused_elements(engine: &Engine) -> usize {
+    [Ruleset::Dnd2014, Ruleset::Dnd2024]
+        .iter()
+        .map(|r| engine.universe(*r).reused_elements())
+        .sum()
 }
 
 fn folders(packs: &[(String, PathBuf)]) -> Vec<PathBuf> {

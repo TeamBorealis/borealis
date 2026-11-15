@@ -252,7 +252,7 @@ fn hub_with(
         .builder_with_pack(parsed.clone())
         .unwrap_or_else(|| hub.builder.as_ref().clone().add_parsed_pack(parsed));
     let store = builder.clone().build_reusing(Some(&hub.store));
-    ContentHub::from_built(builder, store, Vec::new(), settings)
+    ContentHub::from_built_over(builder, store, Vec::new(), settings, Some(hub))
 }
 
 /// A class whose multiclass section has the id another loaded class's section has (a copy keeps it) gets one of its

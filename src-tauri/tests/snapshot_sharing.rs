@@ -117,6 +117,40 @@ fn new_pack_shares_every_loaded_element_with_the_snapshot_it_replaces() {
     assert_eq!(shared(&before, &after), before.store.len());
 }
 
+/// Prepared elements the hub's engine took over from the engine of the hub it replaced, and its elements, in both
+/// universes.
+fn taken_over(hub: &ContentHub) -> (usize, usize) {
+    [Ruleset::Dnd2014, Ruleset::Dnd2024]
+        .iter()
+        .map(|r| {
+            let u = hub.engine.universe(*r);
+            (u.reused_elements(), u.len())
+        })
+        .fold((0, 0), |(a, b), (c, d)| (a + c, b + d))
+}
+
+/// IzDfk: a save and New pack prepare again only what changed; the engine's other prepared elements are taken over
+/// from the engine it replaces (`borealis-engine` proves the engine is the one a build from scratch makes).
+#[test]
+fn a_save_and_new_pack_prepare_again_only_what_changed() {
+    let (_data, state) = app();
+    assert_eq!(
+        taken_over(&state.hub().unwrap()).0,
+        0,
+        "a start builds from scratch"
+    );
+    let pack = new_pack(&state);
+    let (reused, len) = taken_over(&state.hub().unwrap());
+    assert!(
+        reused * 4 > len * 3,
+        "New pack: {reused} of {len} taken over"
+    );
+    save_a_spell(&state, &pack, "Ember Lance");
+    let (reused, len) = taken_over(&state.hub().unwrap());
+    assert!(reused * 4 > len * 3, "a save: {reused} of {len} taken over");
+    assert!(reused < len);
+}
+
 #[test]
 fn the_engine_shares_the_store_elements_it_uses_as_they_are() {
     let (_data, state) = app();

@@ -123,6 +123,7 @@ impl AppState {
             written: written.as_deref(),
             cx: &cx,
             loaded: Some(&hub.store),
+            loaded_engine: Some(&hub.engine),
         })
         .into_iter()
         .map(|p| wire_problem(p, &saved))

@@ -23,7 +23,7 @@ use borealis_content::file::{ContentFile, PackOrigin};
 use borealis_content::validate::validate_elements;
 use borealis_content::{ContentStore, ContentStoreBuilder, Element, Rule, Ruleset, Severity};
 use borealis_engine::eval::{supports_match, NoDynamics};
-use borealis_engine::Engine;
+use borealis_engine::{Engine, EngineSettings};
 use std::collections::HashSet;
 
 /// What the engine checks look at.
@@ -43,6 +43,9 @@ pub struct DeepInput<'a> {
     pub cx: &'a FormContext<'a>,
     /// The loaded store, when `base` is its builder: the check's store shares its unchanged elements (item Isq-Y).
     pub loaded: Option<&'a ContentStore>,
+    /// The loaded content's engine, when `loaded` is given: the check's engine takes over its prepared elements that
+    /// the check's store shares (IzDfk).
+    pub loaded_engine: Option<&'a Engine>,
 }
 
 /// Types a test character takes (the others are only derived).
@@ -87,7 +90,12 @@ pub fn deep_problems(input: &DeepInput<'_>) -> Vec<Problem> {
     {
         return Vec::new();
     }
-    let engine = Engine::new(&store);
+    let engine = match input.loaded_engine {
+        Some(previous) => {
+            Engine::with_settings_reusing(&store, EngineSettings::default(), previous)
+        }
+        None => Engine::new(&store),
+    };
     let names = NameBook::new(input.form, &elements, &store);
     let pairs = pairs(input.form, &elements);
     let targets = sweep_targets(&elements, &store, input.ruleset);

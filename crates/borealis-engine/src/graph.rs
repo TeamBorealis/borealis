@@ -1055,7 +1055,8 @@ impl<'u> Graph<'u> {
                 let Some(target) = self.uni.get(&g.id) else {
                     continue;
                 };
-                if matches!(target.req, Cond::None) || out.iter().any(|t| t.el.id == target.el.id) {
+                if matches!(*target.req, Cond::None) || out.iter().any(|t| t.el.id == target.el.id)
+                {
                     continue;
                 }
                 let applied = n.children.iter().any(|c| {
@@ -1434,7 +1435,7 @@ impl<'u> Graph<'u> {
         // HR3: an ignored feat's requirements and prerequisites are skipped (an unreadable
         // requirement is a content problem, not a prerequisite: it still never holds, C1)
         if ignored == Some(PrereqKind::Feat) {
-            return !matches!(cand.req, Cond::Invalid);
+            return !matches!(*cand.req, Cond::Invalid);
         }
         if ignored.is_none() && !self.prereq_holds(cand) {
             return false;

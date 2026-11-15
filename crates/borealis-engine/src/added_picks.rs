@@ -150,7 +150,7 @@ impl<'u> Graph<'u> {
         target: &UElem,
         lists: Option<(&[crate::spells::ListTerm<'_>], u32)>,
     ) -> bool {
-        if matches!(target.req, Cond::Invalid) || !self.prereq_holds(target) {
+        if matches!(*target.req, Cond::Invalid) || !self.prereq_holds(target) {
             return false;
         }
         if !crate::eval::requirement_holds(&target.req, &self.env()) {
@@ -237,7 +237,7 @@ pub(crate) fn options(
                 .restricted
                 .is_restricted_element(&t.el.source, &t.el.ty)
         })
-        .filter(|t| !matches!(t.req, Cond::Invalid) && !graph.has_added_target(t, cast))
+        .filter(|t| !matches!(*t.req, Cond::Invalid) && !graph.has_added_target(t, cast))
         .filter_map(|t| {
             let qualifies = graph.added_pick_qualifies_on(t, lists);
             (qualifies || ignore).then(|| option(t, kind, qualifies))

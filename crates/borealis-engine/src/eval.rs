@@ -907,10 +907,10 @@ mod tests {
         );
         let _ = &mut u;
         let ue = crate::universe::UElem {
-            supports: e.supports.clone(),
+            supports: std::sync::Arc::new(e.supports.clone()),
             el: std::sync::Arc::new(e),
-            rules: vec![],
-            req: Cond::None,
+            rules: std::sync::Arc::new(vec![]),
+            req: std::sync::Arc::new(Cond::None),
             copied_rules: 0,
             derived: false,
             edition: crate::universe::EditionStatus::Native,
@@ -925,6 +925,8 @@ mod tests {
             skill_proficiency: None,
             legacy_accepted: false,
             user_edition_book: None,
+            src: None,
+            touched: false,
         };
         let m =
             |s: &str| supports_match(&SupportsExpr::parse(s).unwrap().unwrap(), &ue, &NoDynamics);

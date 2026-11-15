@@ -190,12 +190,13 @@ pub struct UElem {
     /// The element (store element or derived). An element the engine uses as the store holds it is the store's own
     /// allocation (shared, not copied); one it changes (an adapted or normalised copy, a patched class) is its own.
     pub el: Arc<Element>,
-    /// Parsed rules.
-    pub rules: Vec<URule>,
+    /// Parsed rules (shared with the universe an engine built over this one takes the element over into, IzDfk;
+    /// `Arc::make_mut` to change them).
+    pub rules: Arc<Vec<URule>>,
     /// Element-level requirements.
-    pub req: Cond<RequirementsExpr>,
+    pub req: Arc<Cond<RequirementsExpr>>,
     /// Effective supports tags (explicit + implicit + support names).
-    pub supports: Vec<String>,
+    pub supports: Arc<Vec<String>>,
     /// Number of leading rules copied from a class into a Multiclass element (their owner
     /// exclusion is disabled).
     pub copied_rules: usize,
@@ -234,6 +235,12 @@ pub struct UElem {
     /// character that already holds it keeps it whatever the edition; new picks follow the
     /// edition (R4).
     pub user_edition_book: Option<String>,
+    /// The store element it was prepared from (`None` for one the engine generates). An engine built over a previous
+    /// one takes a prepared element over when the new store holds this same allocation (IzDfk).
+    pub(crate) src: Option<Arc<Element>>,
+    /// A universe-wide pass changed it after it was prepared (an origin increase, appended or legacy subclass tags,
+    /// a gated grant): it is prepared again rather than taken over.
+    pub(crate) touched: bool,
 }
 
 impl UElem {
@@ -274,12 +281,13 @@ impl UElem {
         let owner_name = el.name.clone();
         let toggle_effects = crate::play_rules::toggle_stat_effects(&el);
         let skill_proficiency = crate::content_skills::proficiency_stat(&el);
-        let rules = el
-            .rules
-            .iter()
-            .map(|r| parse_rule(r, &el.id, &owner_name))
-            .collect();
-        let req = Cond::from_parse(el.parse_requirements(), |e| e);
+        let rules = Arc::new(
+            el.rules
+                .iter()
+                .map(|r| parse_rule(r, &el.id, &owner_name))
+                .collect(),
+        );
+        let req = Arc::new(Cond::from_parse(el.parse_requirements(), |e| e));
         let allow_duplicate = el
             .setter_value("allow duplicate")
             .and_then(borealis_content::setter::parse_bool)
@@ -289,7 +297,7 @@ impl UElem {
             el,
             rules,
             req,
-            supports,
+            supports: Arc::new(supports),
             copied_rules,
             derived,
             edition,
@@ -304,6 +312,8 @@ impl UElem {
             skill_proficiency,
             legacy_accepted: false,
             user_edition_book: None,
+            src: None,
+            touched: false,
         }
     }
 
@@ -458,6 +468,11 @@ pub struct Universe {
     equivalent_class: HashMap<String, usize>,
     /// The ids of each equivalence class, in load order.
     equivalent_classes: Vec<Vec<String>>,
+    /// Support element id -> name, which every element's effective tags read: an engine built over this one takes no
+    /// prepared element over when it changed.
+    support_names: HashMap<String, String>,
+    /// How many prepared elements were taken over from the previous universe ([`Universe::with_adapter_reusing`]).
+    reused: usize,
 }
 
 /// The former type an element names (`legacy_alias`, `Race` on a 2024 `Species`) when the
@@ -720,11 +735,34 @@ impl Universe {
         ruleset: Ruleset,
         adapter: &dyn EditionAdapter,
     ) -> Self {
+        Self::with_adapter_reusing(store, ruleset, adapter, None)
+    }
+
+    /// [`Universe::with_adapter`], taking over the prepared elements of `previous` (a universe of the same ruleset
+    /// built with the same adapter, over a store that is still alive) whose store element is one the new store holds
+    /// as the same allocation, that is no class, that no universe-wide pass changed, and with the same user edition
+    /// book; and none at all when a support name changed. Each element is prepared on its own from its store element
+    /// and the support names, so a taken-over element is the one preparing it again would make; the universe-wide
+    /// passes then run over all of them as in a build from scratch (IzDfk: a creator save on a phone with a large
+    /// library spent most of its time preparing every element again).
+    #[must_use]
+    pub(crate) fn with_adapter_reusing(
+        store: &ContentStore,
+        ruleset: Ruleset,
+        adapter: &dyn EditionAdapter,
+        previous: Option<&Universe>,
+    ) -> Self {
         let profile = profile_for(ruleset);
         let support_names: HashMap<&str, &str> = store
             .by_type("Support")
             .map(|s| (s.element.id.as_str(), s.element.name.as_str()))
             .collect();
+        let owned_support_names: HashMap<String, String> = support_names
+            .iter()
+            .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+            .collect();
+        let previous =
+            previous.filter(|p| p.ruleset == ruleset && p.support_names == owned_support_names);
         let mut uni = Self {
             elems: Vec::new(),
             by_id: HashMap::new(),
@@ -739,6 +777,8 @@ impl Universe {
             equivalents: HashMap::new(),
             equivalent_class: HashMap::new(),
             equivalent_classes: Vec::new(),
+            support_names: owned_support_names,
+            reused: 0,
         };
         let eff = |el: &Element| -> Vec<String> {
             let mut s = el.supports.clone();
@@ -756,9 +796,34 @@ impl Universe {
             s
         };
         // each element is prepared on its own (in parallel), then the universe takes them in load order
+        let taken_over = |stored: &StoredElement| -> Option<UElem> {
+            if stored.element.ty == "Class" {
+                return None;
+            }
+            // by id only (no proxy lookup): the universe's own element of that id
+            let previous = previous?;
+            let prev = &previous.elems[*previous.by_id.get(&stored.element.id)?];
+            let same = !prev.derived
+                && !prev.touched
+                && prev.el.ty != "Class"
+                && prev
+                    .src
+                    .as_ref()
+                    .is_some_and(|s| Arc::ptr_eq(s, &stored.element))
+                && prev.user_edition_book == stored.user_edition_book;
+            same.then(|| {
+                let mut u = (*prev).clone();
+                // set again by `mark_superseded` below, as for a prepared one
+                u.superseded = false;
+                u
+            })
+        };
         let prepare = |stored: &&StoredElement| {
             let diagnostics =
                 crate::custom_rules::content_diagnostics(&stored.element, stored.origin);
+            if let Some(u) = taken_over(stored) {
+                return (diagnostics, None, None, u, true);
+            }
             let (mut el, edition) = classify(&stored.element, profile, adapter);
             let mut class = None;
             let mut multi = None;
@@ -785,13 +850,15 @@ impl Universe {
             let mut u = UElem::build_shared(el, 0, false, edition, supports);
             u.legacy_accepted = legacy && u.edition.is_accepted();
             u.user_edition_book.clone_from(&stored.user_edition_book);
-            (diagnostics, class, multi, u)
+            u.src = Some(Arc::clone(&stored.element));
+            (diagnostics, class, multi, u, false)
         };
         let stored: Vec<&StoredElement> = store.iter().collect();
         let prepared: Vec<_> = stored.par_iter().map(prepare).collect();
         let mut classes: Vec<Element> = Vec::new();
-        for (diagnostics, class, multi, u) in prepared {
+        for (diagnostics, class, multi, u, reused) in prepared {
             uni.diagnostics.extend(diagnostics);
+            uni.reused += usize::from(reused);
             classes.extend(class);
             if let Some(m) = multi {
                 uni.push(m);
@@ -1109,9 +1176,10 @@ impl Universe {
                 notes,
             };
             let mut rebuilt =
-                UElem::build(el, u.copied_rules, u.derived, edition, u.supports.clone());
+                UElem::build(el, u.copied_rules, u.derived, edition, u.supports.to_vec());
             rebuilt.legacy_accepted = u.legacy_accepted;
             rebuilt.user_edition_book.clone_from(&u.user_edition_book);
+            rebuilt.touched = true;
             self.elems[i] = rebuilt;
         }
     }
@@ -1133,7 +1201,7 @@ impl Universe {
             if u.el.rules.iter().any(crate::adapter::raises_ability) {
                 return true;
             }
-            for (rule, parsed) in u.el.rules.iter().zip(&u.rules) {
+            for (rule, parsed) in u.el.rules.iter().zip(u.rules.iter()) {
                 match (rule, parsed) {
                     (Rule::Grant(g), _) => stack.extend(
                         self.by_id
@@ -1165,7 +1233,7 @@ impl Universe {
 
     fn note_bad_expressions(&mut self, u: &UElem) {
         let mut bad = Vec::new();
-        if matches!(u.req, Cond::Invalid) {
+        if matches!(*u.req, Cond::Invalid) {
             bad.push("requirements".to_string());
         }
         for (i, r) in u.rules.iter().enumerate() {
@@ -1283,6 +1351,39 @@ impl Universe {
     /// Iterate all elements.
     pub fn iter(&self) -> impl Iterator<Item = &UElem> {
         self.elems.iter()
+    }
+
+    /// The universe as text, maps sorted, for comparing two builds (the reused count left out).
+    #[cfg(test)]
+    pub(crate) fn canonical(&self) -> String {
+        fn sorted<V: std::fmt::Debug + Ord>(m: &HashMap<String, V>) -> String {
+            let mut v: Vec<_> = m.iter().collect();
+            v.sort();
+            format!("{v:?}")
+        }
+        format!(
+            "{:?}\n{:?}\n{}\n{}\n{:?}\n{:?}\n{:?}\n{:?}\n{:?}\n{}\n{}\n{:?}\n{}",
+            self.elems,
+            self.diagnostics,
+            sorted(&self.by_id),
+            sorted(&self.by_type),
+            self.ruleset,
+            self.tables,
+            self.creation_roots,
+            self.exhaustion,
+            self.skills,
+            sorted(&self.equivalents),
+            sorted(&self.equivalent_class),
+            self.equivalent_classes,
+            sorted(&self.support_names),
+        )
+    }
+
+    /// How many prepared elements were taken over from the universe this one was built over (0 for a build from
+    /// scratch).
+    #[must_use]
+    pub fn reused_elements(&self) -> usize {
+        self.reused
     }
 
     /// Number of elements.

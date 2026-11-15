@@ -42,6 +42,7 @@ fn srd_2024_classes_and_subclasses_check_clean() {
             written: None,
             cx: &cx,
             loaded: None,
+            loaded_engine: None,
         }) {
             assert!(!p.message.contains("ID_"), "{p:?}");
             if p.severity != ProblemSeverity::Info

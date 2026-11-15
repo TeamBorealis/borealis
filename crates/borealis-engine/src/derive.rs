@@ -1009,7 +1009,7 @@ fn met_content_problems(
             Rule::Grant(g) => graph.uni.get(&g.id),
             _ => None,
         })
-        .filter(|t| matches!(t.req, crate::universe::Cond::Invalid))
+        .filter(|t| matches!(*t.req, crate::universe::Cond::Invalid))
         .map(|t| t.el.id.as_str());
     let met: std::collections::HashSet<&str> = slots
         .iter()

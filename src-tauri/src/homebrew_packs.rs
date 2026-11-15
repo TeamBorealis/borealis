@@ -296,9 +296,20 @@ impl AppState {
         let prefs = self.content_prefs();
         if fast {
             let settings = self.settings()?;
-            let next_hub =
-                ContentHub::from_built(builder, store, hub.load_warnings.clone(), &settings);
-            timer.step("engine", "");
+            let next_hub = ContentHub::from_built_over(
+                builder,
+                store,
+                hub.load_warnings.clone(),
+                &settings,
+                Some(&hub),
+            );
+            timer.step(
+                "engine",
+                &format!(
+                    "{} prepared elements taken over",
+                    crate::state::reused_elements(&next_hub.engine)
+                ),
+            );
             self.set_hub(next_hub)?;
             timer.step("swap", "");
             if let Err(e) = self.recheck_missing_content() {
@@ -402,7 +413,13 @@ impl AppState {
         let store = builder.clone().build_reusing(Some(&hub.store));
         timer.step("build", &format!("{} elements", store.len()));
         let settings = self.settings()?;
-        let next = ContentHub::from_built(builder, store, hub.load_warnings.clone(), &settings);
+        let next = ContentHub::from_built_over(
+            builder,
+            store,
+            hub.load_warnings.clone(),
+            &settings,
+            Some(&hub),
+        );
         drop(hub);
         timer.step("engine", "");
         prefs.save(&self.paths.prefs_file())?;
