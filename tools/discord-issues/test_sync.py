@@ -194,6 +194,37 @@ class ReleaseWindowTest(unittest.TestCase):
         self.assertEqual([i["number"] for i in got], [1])
 
 
+class ShippedInTest(unittest.TestCase):
+    RELEASES = [
+        {"tag_name": "v1.4.1", "draft": False, "prerelease": False, "published_at": "2026-11-19T18:00:00Z",
+         "html_url": "u141", "body": "- Fix (#35) again, see also #36 and (#3)."},
+        {"tag_name": "v1.5.0", "draft": True, "prerelease": False, "published_at": None, "html_url": "d",
+         "body": "(#40)"},
+        {"tag_name": "v1.4.0", "draft": False, "prerelease": False, "published_at": "2026-11-12T18:01:27Z",
+         "html_url": "u140", "body": "- **Add** (#35).\n- Split levels (#34).\n- credits (#345)"},
+        {"tag_name": "models-x", "draft": False, "prerelease": True, "published_at": "2026-11-13T00:00:00Z",
+         "html_url": "m", "body": "(#50)"},
+    ]
+
+    def test_earliest_stable_release_naming_the_issue_wins(self):
+        got = bridge.shipped_in(self.RELEASES)
+        self.assertEqual(got[35], ("v1.4.0", "u140"))
+        self.assertEqual(got[34], ("v1.4.0", "u140"))
+        self.assertEqual(got[345], ("v1.4.0", "u140"))
+        self.assertEqual(got[3], ("v1.4.1", "u141"))
+
+    def test_only_parenthesised_references_count(self):
+        self.assertNotIn(36, bridge.shipped_in(self.RELEASES))
+
+    def test_drafts_and_prereleases_ship_nothing(self):
+        got = bridge.shipped_in(self.RELEASES)
+        self.assertNotIn(40, got)
+        self.assertNotIn(50, got)
+
+    def test_missing_body_is_fine(self):
+        self.assertEqual(bridge.shipped_in([{"tag_name": "v1", "published_at": "2026-01-01T00:00:00Z"}]), {})
+
+
 class FakeBridge(sync.Bridge):
     """Bridge with canned API answers; records every non-GET call."""
 
@@ -293,6 +324,60 @@ class ReportBackTest(unittest.TestCase):
         calls = len(fake.calls)
         quiet(fake.report_releases, {"77": closed_issue("completed")}, "2026-10-29T00:00:00Z")
         self.assertEqual(len(fake.calls), calls)
+
+    RELEASES_140 = [
+        {"tag_name": "v1.4.1", "draft": False, "prerelease": False, "published_at": "2026-11-19T18:00:00Z",
+         "html_url": "https://github.com/o/r/releases/tag/v1.4.1", "body": "Other fixes (#12)."},
+        {"tag_name": "v1.4.0", "draft": False, "prerelease": False, "published_at": "2026-11-12T18:01:27Z",
+         "html_url": "https://github.com/o/r/releases/tag/v1.4.0", "body": "- **Add buttons** (#9)."},
+        {"tag_name": "v1.3.0", "draft": False, "prerelease": False, "published_at": "2026-11-05T18:00:00Z",
+         "html_url": "u130", "body": ""},
+    ]
+
+    def idea_routes(self):
+        routes = self.routes([])
+        routes[("GET", "/channels/77")] = {"id": "77", "parent_id": bridge.IDEA_FORUM, "applied_tags": ["B"],
+                                          "owner_id": "4242", "thread_metadata": {"archived": False}}
+        routes[("GET", "/repos/o/r/releases")] = self.RELEASES_140
+        routes[("POST", "/repos/o/r/issues/9/comments")] = {}
+        routes[("PATCH", "/repos/o/r/issues/9")] = {}
+        return routes
+
+    def test_open_issue_named_in_release_notes_is_closed_and_announced(self):
+        fake = FakeBridge(False, self.idea_routes())
+        issue = {"number": 9, "state": "open", "state_reason": None, "closed_at": None,
+                 "html_url": "https://github.com/o/r/issues/9", "body": bridge.marker("77")}
+        quiet(fake.report_releases, {"77": issue}, "2026-11-10T00:00:00Z")
+        gh = [c for c in fake.calls if c[0] == "github"]
+        self.assertEqual(gh[0][1:3], ("POST", "/repos/o/r/issues/9/comments"))
+        self.assertIn("Released in v1.4.0", gh[0][3]["body"])
+        self.assertEqual(gh[1][1:4], ("PATCH", "/repos/o/r/issues/9", {"state": "closed", "state_reason": "completed"}))
+        dc = [c for c in fake.calls if c[0] == "discord"]
+        self.assertEqual(dc[0][3], {"applied_tags": ["B", "DN"]})
+        self.assertTrue(dc[1][3]["content"].startswith("🚀 Released in v1.4.0: https://github.com/o/r/releases/tag/v1.4.0"))
+        self.assertEqual([c for c in dc if c[1] == "POST" and "v1.4.1" in c[3]["content"]], [])
+
+    def test_issue_closed_after_its_release_is_not_credited_to_the_next(self):
+        fake = FakeBridge(False, self.idea_routes())
+        issue = closed_issue("completed", "2026-11-15T08:00:00Z")
+        quiet(fake.report_releases, {"77": issue}, "2026-11-10T00:00:00Z")
+        posts = [c[3]["content"] for c in fake.calls if c[0] == "discord" and c[1] == "POST"]
+        self.assertEqual(len(posts), 1)
+        self.assertTrue(posts[0].startswith("🚀 Released in v1.4.0"))
+        self.assertEqual([c for c in fake.calls if c[0] == "github"], [])
+
+    def test_closing_a_shipped_issue_says_nothing_about_the_next_release(self):
+        fake = FakeBridge(False, self.idea_routes())
+        shipped = bridge.shipped_in(self.RELEASES_140)
+        quiet(fake.report_closed, {"77": closed_issue("completed", "2026-11-15T08:00:00Z")}, "2026-11-10T00:00:00Z",
+              shipped)
+        self.assertEqual(fake.calls, [])
+
+    def test_shipped_issue_closed_as_not_planned_is_left_alone(self):
+        fake = FakeBridge(False, self.idea_routes())
+        issue = closed_issue("not_planned", "2026-11-11T00:00:00Z")
+        quiet(fake.report_releases, {"77": issue}, "2026-11-10T00:00:00Z")
+        self.assertEqual(fake.calls, [])
 
     def test_one_failure_does_not_stop_the_rest(self):
         routes = self.routes([])

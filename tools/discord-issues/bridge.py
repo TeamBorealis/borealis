@@ -279,6 +279,27 @@ def release_window(releases, tag):
     return (max(earlier) if earlier else ""), end
 
 
+_SHIPPED_REF = re.compile(r"\(#(\d+)\)")
+
+
+def shipped_in(releases):
+    """Issue number -> (tag, url) of the earliest published stable release whose notes name it as "(#N)".
+
+    Release notes are the record of what shipped: an issue they name shipped in that release, even when no
+    commit closed it."""
+    stable = [r for r in releases if not r.get("draft") and not r.get("prerelease") and r.get("published_at")]
+    out = {}
+    for release in sorted(stable, key=lambda r: r["published_at"]):
+        for number in _SHIPPED_REF.findall(release.get("body") or ""):
+            out.setdefault(int(number), (release["tag_name"], release.get("html_url", "")))
+    return out
+
+
+def released_note(tag, url):
+    """The GitHub comment left when an issue the release notes name is closed as shipped."""
+    return f"Released in {tag}: {url}"
+
+
 def released_issues(issues, start, end):
     """Bridged issues closed as completed inside (start, end]."""
     return [

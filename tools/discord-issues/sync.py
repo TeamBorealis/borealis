@@ -7,7 +7,9 @@ Each run, idempotently (no state file; the issue body's leading `<!-- discord-th
   2. bridged issues without a credit line ("**Reported by** <poster name> on Discord") get one;
   3. bridged issues closed in the last RECONCILE_DAYS get the Fixed/Done/Not planned tag and one reply;
   4. releases published in the last RECONCILE_DAYS get one "Released in vX.Y.Z" reply on the posts whose issues
-     were closed as completed since the previous release.
+     were closed as completed since the previous release, and on the posts whose issues the release notes name as
+     "(#N)": an issue still open is closed as completed (the notes are the record of what shipped), and an issue
+     an earlier release named is never credited to a later one or told "it ships in the next release".
 Fixed/done/released replies thank the poster by mention (only they are pinged). Release-notes credits: credits.py.
 A reply is never repeated: the bot's own messages in the thread are checked first. Post text is untrusted data.
 
@@ -388,9 +390,14 @@ class Bridge:
 
     # --- steps 2 and 3: report back -------------------------------------------------------------------------
 
-    def report_closed(self, issues, since):
+    def report_closed(self, issues, since, shipped=None):
+        """Tag and answer posts whose issues closed lately. Issues a release already shipped are left to
+        report_releases, so the post never hears "it ships in the next release" about a released change."""
+        shipped = shipped or {}
         for thread_id, issue in issues.items():
             if issue["state"] != "closed" or not issue.get("closed_at") or issue["closed_at"] < since:
+                continue
+            if issue.get("state_reason") == "completed" and issue["number"] in shipped:
                 continue
             try:
                 thread = self.thread(thread_id)
@@ -414,29 +421,60 @@ class Bridge:
             except Exception as err:
                 self.fail(f"issue #{issue['number']} (thread {thread_id})", type(err).__name__)
 
-    def report_releases(self, issues, since):
-        releases = self.github("GET", f"/repos/{self.repo}/releases?per_page=50")
+    def report_releases(self, issues, since, releases=None):
+        """One "Released in" reply per post for each release published lately.
+
+        A release covers the issues its notes name as "(#N)" (an open one is closed as completed first, with a
+        comment) and the issues closed as completed since the previous release, except those an earlier release
+        already named."""
+        if releases is None:
+            releases = self.github("GET", f"/repos/{self.repo}/releases?per_page=50")
+        shipped = bridge.shipped_in(releases)
         for release in releases:
             if not release.get("published_at") or release["published_at"] < since:
                 continue
             window = bridge.release_window(releases, release["tag_name"])
             if window is None:
                 continue
-            for issue in bridge.released_issues(issues.values(), *window):
-                thread_id = bridge.thread_of(issue["body"])
-                try:
-                    thread = self.thread(thread_id)
-                    poster_id = thread.get("owner_id")
-                    kind = bridge.FORUMS[thread["parent_id"]]["kind"]
-                    text = bridge.release_message(release["tag_name"], release["html_url"], kind, poster_id)
-                    if self.reply_once(thread_id, text, mention=_mention(text, poster_id)):
-                        print(f"release {release['tag_name']} -> thread {thread_id} (issue #{issue['number']})")
-                except ApiError as err:
-                    if err.status == 404:
-                        continue
-                    self.fail(f"release {release['tag_name']} issue #{issue['number']}", err)
-                except Exception as err:
-                    self.fail(f"release {release['tag_name']} issue #{issue['number']}", type(err).__name__)
+            tag = release["tag_name"]
+            covered = {i["number"]: i for i in bridge.released_issues(issues.values(), *window)
+                       if shipped.get(i["number"], (tag,))[0] == tag}
+            for issue in issues.values():
+                if shipped.get(issue["number"], (None,))[0] == tag and (
+                        issue["state"] == "open" or issue.get("state_reason") == "completed"):
+                    covered[issue["number"]] = issue
+            for number in sorted(covered):
+                self.announce_release(covered[number], release)
+
+    def announce_release(self, issue, release):
+        thread_id = bridge.thread_of(issue["body"])
+        tag = release["tag_name"]
+        try:
+            thread = self.thread(thread_id)
+            poster_id = thread.get("owner_id")
+            kind = bridge.FORUMS[thread["parent_id"]]["kind"]
+            text = bridge.release_message(tag, release["html_url"], kind, poster_id)
+            if text in self.bot_messages(thread_id):
+                return
+            tags = None
+            if issue["state"] == "open":
+                path = f"/repos/{self.repo}/issues/{issue['number']}"
+                note = {"body": bridge.released_note(tag, release["html_url"])}
+                self.write(f"comment on issue #{issue['number']}",
+                           lambda: self.github("POST", f"{path}/comments", note))
+                self.write(f"close issue #{issue['number']} as completed",
+                           lambda: self.github("PATCH", path, {"state": "closed", "state_reason": "completed"}))
+                add, remove, _ = bridge.close_plan(kind, "completed", issue["html_url"])
+                tags = bridge.with_status_tag(thread.get("applied_tags"), self.forum_tags[thread["parent_id"]],
+                                              add, remove)
+            if self.reply_once(thread_id, text, tags, _mention(text, poster_id)):
+                print(f"release {tag} -> thread {thread_id} (issue #{issue['number']})")
+        except ApiError as err:
+            if err.status == 404:
+                return
+            self.fail(f"release {tag} issue #{issue['number']}", err)
+        except Exception as err:
+            self.fail(f"release {tag} issue #{issue['number']}", type(err).__name__)
 
     # --- credits on issues bridged before the credit line existed ------------------------------------------
 
@@ -468,8 +506,9 @@ class Bridge:
         self.import_posts(issues)
         self.credit_issues(issues)
         since = (datetime.now(timezone.utc) - timedelta(days=RECONCILE_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        self.report_closed(issues, since)
-        self.report_releases(issues, since)
+        releases = self.github("GET", f"/repos/{self.repo}/releases?per_page=50")
+        self.report_closed(issues, since, bridge.shipped_in(releases))
+        self.report_releases(issues, since, releases)
         if self.failures:
             print(f"{len(self.failures)} failure(s): {', '.join(self.failures)}")
             return 1
