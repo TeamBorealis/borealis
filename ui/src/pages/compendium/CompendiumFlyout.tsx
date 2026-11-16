@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import type { ElementDetail, ElementSummary, Ruleset, SearchIndexStatus } from "../../api/contract";
 import { Alert, Button, ComboBox, EditionSuffix, Expander, SafeHtml, SearchInput } from "../../components";
+import { CheckBox } from "../../components/controls";
 import { Flyout } from "../../components/controls/Flyout";
 import { TabControl } from "../../components/controls/TabControl";
 import { useShell } from "../../components/shell/ShellContext";
@@ -37,7 +38,7 @@ function CopyChoice({ e }: { e: ElementDetail }) {
   const { preferred, setAlways } = usePreferredCopies();
   const editions = copyEditions(e.rulesets);
   const copies = useAsync(async () => {
-    const page = await api.searchCompendium({ query: { query: e.name, limit: COPY_LIMIT, offset: 0 } });
+    const page = await api.searchCompendium({ query: { query: e.name, types: [e.type], ruleset: "any", limit: COPY_LIMIT, offset: 0 } });
     const key = groupKey(e);
     return page.items.filter((o) => o.id !== e.id && groupKey(o) === key && copyEditions(o.rulesets).some((r) => editions.includes(r)));
   }, [api, e.id, e.name, e.type, editions.join()]);
@@ -49,8 +50,8 @@ function CopyChoice({ e }: { e: ElementDetail }) {
       <h4>Copies</h4>
       <p className="v4-desc-src">Also in: {[...new Set(others.map((o) => o.sourceName))].join(", ")}</p>
       <label className="v4-copy-always">
-        <input type="checkbox" checked={always} onChange={(ev) => void setAlways(e, editions, ev.currentTarget.checked)} />
-        <span>Always use this copy</span>
+        <CheckBox checked={always} onChange={(ev) => void setAlways(e, editions, ev.currentTarget.checked)} />
+        <span>Always use the {e.sourceName} copy</span>
       </label>
     </>
   );

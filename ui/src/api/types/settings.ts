@@ -120,6 +120,10 @@ export interface AppSettings {
    */
   preferredCopies: Record<string, string>;
 }
+/** A saveSettings patch: like the settings, but a preferredCopies value may be 
+ull, which removes that entry. */
+export type SettingsPatch = Omit<Partial<AppSettings>, "preferredCopies"> & { preferredCopies?: Record<string, string | null> };
+
 
 /** Settings > DATA FILES folders (display only; paths never go back to the backend). */
 export interface DataDirs {

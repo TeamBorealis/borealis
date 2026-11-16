@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../AppProviders";
-import type { ElementDetail, ElementSummary, Page, SelectionSlot, SlotOption, SlotOptionBase, SlotOptionsArgs } from "../api/contract";
+import type { CompendiumQuery, ElementDetail, ElementSummary, Page, SelectionSlot, SlotOption, SlotOptionBase, SlotOptionsArgs } from "../api/contract";
 import { MockApi } from "../api/mock";
 import { copyKey, pickShown, visibleRows, buildRows, NO_FILTER } from "../lib/versions";
 import { PickerGroup } from "../pages/builder/PickerGroup";
@@ -86,7 +86,7 @@ describe("the versions menu", () => {
     await user.click(screen.getByRole("button", { name: "3 versions of Fireball" }));
     await user.click(within(await screen.findByRole("listbox")).getByRole("option", { name: "SRD 5.2.1" }));
     await user.click(screen.getByRole("button", { name: "3 versions of Fireball" }));
-    const always = screen.getByRole("checkbox", { name: "Always use this copy" }) as HTMLInputElement;
+    const always = screen.getByRole("checkbox", { name: "Always use the SRD 5.2.1 copy" }) as HTMLInputElement;
     expect(always.checked).toBe(false);
     await user.click(always);
     await waitFor(() => expect(save).toHaveBeenCalledWith({ patch: { preferredCopies: { [KEY_2024]: "fb-srd" } } }));
@@ -105,7 +105,7 @@ describe("the versions menu", () => {
     expect(await shownSource()).toBe("SRD 5.2.1");
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "3 versions of Fireball" }));
-    await user.click(screen.getByRole("checkbox", { name: "Always use this copy" }));
+    await user.click(screen.getByRole("checkbox", { name: "Always use the SRD 5.2.1 copy" }));
     await waitFor(async () => expect((await api.getSettings()).preferredCopies).toEqual({ "feat:dnd2024:alert": "alert-srd" }));
     expect(await shownSource()).toBe("Table Homebrew");
   });
@@ -129,10 +129,11 @@ describe("the compendium entry", () => {
   // only the fields the entry reads
   const detail = (v: V) => ({ ...summary(v), descriptionHtml: "<p>A bright streak.</p>", facts: [], grants: [] }) as unknown as ElementDetail;
 
+  const searches: CompendiumQuery[] = [];
   function renderEntry(api: MockApi, id: string) {
     const all = [FB_HOME, FB_SRD, FB_OLD, ver("fb-ball", "SRD 5.2.1", ["dnd2024"], { name: "Delayed Blast Fireball" })];
     api.getElement = async ({ elementId }) => detail(all.find((v) => v.id === elementId)!);
-    api.searchCompendium = async () => ({ total: all.length, items: all.map(summary) });
+    api.searchCompendium = async (args) => { searches.push(args.query); return { total: all.length, items: all.map(summary) }; };
     render(
       <AppProviders api={api}>
         <MemoryRouter>
@@ -147,9 +148,11 @@ describe("the compendium entry", () => {
     renderEntry(api, "fb-srd");
     const pane = await screen.findByRole("complementary", { name: "Element description" });
     expect(await within(pane).findByText("Also in: Table Homebrew")).toBeTruthy();
-    await userEvent.setup().click(within(pane).getByRole("checkbox", { name: "Always use this copy" }));
+    // The copies are looked up by the entry's type and in every ruleset, so a common name's copies are not lost past the first hits.
+    expect(searches.find((q) => q.query === "Fireball")).toMatchObject({ types: ["spell"], ruleset: "any" });
+    await userEvent.setup().click(within(pane).getByRole("checkbox", { name: "Always use the SRD 5.2.1 copy" }));
     await waitFor(async () => expect((await api.getSettings()).preferredCopies).toEqual({ [KEY_2024]: "fb-srd" }));
-    expect((within(pane).getByRole("checkbox", { name: "Always use this copy" }) as HTMLInputElement).checked).toBe(true);
+    expect((within(pane).getByRole("checkbox", { name: "Always use the SRD 5.2.1 copy" }) as HTMLInputElement).checked).toBe(true);
   });
 
   it("an entry no other copy shares the name of offers no choice", async () => {
@@ -158,6 +161,6 @@ describe("the compendium entry", () => {
     const pane = await screen.findByRole("complementary", { name: "Element description" });
     await within(pane).findByText("A bright streak.");
     await new Promise((r) => setTimeout(r, 20));
-    expect(within(pane).queryByRole("checkbox", { name: "Always use this copy" })).toBeNull();
+    expect(within(pane).queryByRole("checkbox", { name: "Always use the SRD 5.2.1 copy" })).toBeNull();
   });
 });

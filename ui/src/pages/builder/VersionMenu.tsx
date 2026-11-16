@@ -1,6 +1,7 @@
 import { forwardRef, type KeyboardEvent, type MouseEvent, useEffect, useId, useRef, useState } from "react";
 import type { Ruleset } from "../../api/contract";
 import { Flyout, Icon } from "../../components";
+import { CheckBox } from "../../components/controls";
 import { usePhone } from "../../lib/phone";
 import { menuSections, preferredOf, type VersionLike } from "../../lib/versions";
 import { usePreferredCopies } from "../../state/preferredCopies";
@@ -45,10 +46,11 @@ const optionLabel = (v: VersionLike, chosen: boolean, always: boolean): string =
  */
 function AlwaysUse({ shown, charEd, always }: { shown: VersionLike; charEd: Ruleset; always: boolean }) {
   const { setAlways } = usePreferredCopies();
+  const label = `Always use the ${shown.sourceName ?? shown.name} copy`;
   return (
     <label className="vm-always" title="Show this copy first wherever this name has several copies">
-      <input type="checkbox" checked={always} onChange={(e) => void setAlways(shown, [charEd], e.currentTarget.checked)} />
-      <span>Always use this copy</span>
+      <CheckBox checked={always} onChange={(e) => void setAlways(shown, [charEd], e.currentTarget.checked)} />
+      <span>{label}</span>
     </label>
   );
 }

@@ -75,4 +75,27 @@ describe('b55 version rows', { tags: ['b55'] }, () => {
     await waitFor(ctx, (css: string) => !!document.querySelector(css), MENU, 'filtered menu');
     expect(await rowsText(ctx, `${MENU} .vm-src`)).toEqual(['Sample Expansion', 'Sample Reference 5.1']);
   });
+
+  test('Always use this copy: the box names the shown copy, and a new picker then starts on it', async (ctx) => {
+    await newCharacter(ctx);
+    await clickCss(ctx, `${SPECIES} .pick-seg-btn:nth-child(1)`); // Edition: All
+    await waitFor(ctx, (css: string) => !!document.querySelector(css), DB_VERSIONS, 'three versions');
+    // Show the 2014 copy through the menu, then open the menu again: the box names the copy the row shows.
+    await clickCss(ctx, DB_VERSIONS);
+    await waitFor(ctx, (css: string) => !!document.querySelector(css), MENU, 'version menu');
+    await clickCss(ctx, option('Sample Reference 5.1'));
+    await waitFor(ctx, (css: string) => !document.querySelector(css), MENU, 'menu closed');
+    await clickCss(ctx, DB_VERSIONS);
+    await waitFor(ctx, (css: string) => !!document.querySelector(css), MENU, 'version menu again');
+    await clickByText(ctx, '.vm-always span', 'Always use the Sample Reference 5.1 copy');
+    await waitFor(ctx, (css: string) => !!document.querySelector(css), option('Sample Reference 5.1, always used'), 'always used mark');
+    expect(await ctx.browser.evaluate((css: string) => (document.querySelector(css) as HTMLInputElement | null)?.checked ?? false, '.vm-always input')).toBe(true);
+    // A new picker (another tab and back) starts on that copy.
+    await ctx.browser.evaluate((_: null) => { location.hash = '#/builder/class'; return true; }, null);
+    await waitFor(ctx, (_: null) => location.hash === '#/builder/class', null, 'route /builder/class');
+    await ctx.browser.evaluate((_: null) => { location.hash = '#/builder/race'; return true; }, null);
+    await waitFor(ctx, (css: string) => !!document.querySelector(css), DB_ROW, 'Dragonborn row again');
+    await clickCss(ctx, `${SPECIES} .pick-seg-btn:nth-child(1)`);
+    expectEqual('shown copy', 'Sample Reference 5.1 (2014)', await sourceOf(ctx));
+  });
 });

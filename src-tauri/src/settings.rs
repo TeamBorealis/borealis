@@ -378,11 +378,15 @@ impl AppSettings {
             return Err(ApiError::invalid("The portrait size must be 125 to 175."));
         }
         let bad_text = |s: &str| s.is_empty() || s.len() > MAX_COPY_TEXT;
-        if self.preferred_copies.len() > MAX_PREFERRED_COPIES
-            || self
-                .preferred_copies
-                .iter()
-                .any(|(k, id)| bad_text(k) || bad_text(id))
+        if self.preferred_copies.len() > MAX_PREFERRED_COPIES {
+            return Err(ApiError::invalid(format!(
+                "Too many \"Always use this copy\" choices ({MAX_PREFERRED_COPIES} is the limit). Clear some, then save again."
+            )));
+        }
+        if self
+            .preferred_copies
+            .iter()
+            .any(|(k, id)| bad_text(k) || bad_text(id))
         {
             return Err(ApiError::invalid(
                 "Unknown \"Always use this copy\" choice.",
@@ -650,6 +654,19 @@ mod default_tests {
         assert_eq!(loaded.ai_available, available);
         assert_eq!(loaded.ai.enabled, available);
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn too_many_always_use_this_copy_choices_say_what_is_wrong() {
+        let mut s = AppSettings::default();
+        s.preferred_copies = (0..=MAX_PREFERRED_COPIES)
+            .map(|i| (format!("spell:dnd2024:name{i}"), "ID".to_string()))
+            .collect();
+        let msg = s.validate().unwrap_err().to_string();
+        assert!(msg.contains("Too many") && msg.contains("20000"), "{msg}");
+        s.preferred_copies.clear();
+        s.preferred_copies.insert(String::new(), "ID".into());
+        assert!(s.validate().unwrap_err().to_string().contains("Unknown"));
     }
 
     #[test]

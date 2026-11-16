@@ -4,7 +4,7 @@ import type {
   AiHostStatus,
   LinkDevice,
   LinkSelection,
-  AppSettings, Attack, CharacterSnapshot, CharacterSummary, ExportResult, ImportReport, ItemSummary, MissingContentItem, Page, RecheckReport, RestrictionPreview, CompatibilityReport,
+  AppSettings, SettingsPatch, Attack, CharacterSnapshot, CharacterSummary, ExportResult, ImportReport, ItemSummary, MissingContentItem, Page, RecheckReport, RestrictionPreview, CompatibilityReport,
   AiSetupProviderId, ImportFileInput, OpenedFile, PickPurpose, RulesetProfile, SheetOptions, SheetPaper, SheetPreview, SheetShare, StatTrace, Unsubscribe,
 } from "../types";
 import { MockAi } from "./ai";
@@ -741,7 +741,7 @@ export class MockApi implements Api {
   /* ---------- settings ---------- */
 
   async getSettings() { await this.tick(); return this.settings; }
-  async saveSettings({ patch }: { patch: Partial<AppSettings> }) {
+  async saveSettings({ patch }: { patch: SettingsPatch }) {
     await this.tick();
     const override = patch.ai?.overridePath;
     if (override !== undefined && override !== null && override !== this.settings.ai.overridePath) {
