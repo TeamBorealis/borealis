@@ -700,7 +700,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-authoring"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "borealis-content",
  "borealis-engine",
