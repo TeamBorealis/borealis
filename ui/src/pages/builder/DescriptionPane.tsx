@@ -2,7 +2,7 @@ import { createContext, Fragment, type ReactNode, useCallback, useContext, useEf
 import { mdiImage } from "@mdi/js";
 import { Alert, Icon, SafeHtml } from "../../components";
 import { useShell } from "../../components/shell/ShellContext";
-import type { Api, ElementDetail } from "../../api/contract";
+import type { Api, ElementDetail, Ruleset } from "../../api/contract";
 import { useApi } from "../../state/ApiContext";
 import { useAsync } from "../../state/useAsync";
 import { DescriptionGrants } from "./DescriptionGrants";
@@ -132,6 +132,16 @@ export function DescriptionPane({ elementId, fallback, copyable = false }: { ele
   return <>{detailPane(d, openCompendium, copy)}{copier.dialog}</>;
 }
 
+/**
+ * The SOURCE line: the book and, for an element of one edition, its year ("SRD 5.2.1 (2024)"). A book name that already
+ * ends with that year (a 5etools import's "Player's Handbook (2024)") is not given it twice.
+ */
+export function sourceLabel(sourceName: string, rulesets: readonly Ruleset[]): string {
+  if (rulesets.length !== 1) return sourceName;
+  const year = ` (${rulesets[0] === "dnd2024" ? "2024" : "2014"})`;
+  return sourceName.endsWith(year) ? sourceName : `${sourceName}${year}`;
+}
+
 /** One element in the pane, exactly as the builder shows it (also the homebrew creator's live preview, spec 13.2). */
 export function ElementDetailView({ d }: { d: ElementDetail }) {
   const { openCompendium } = useShell();
@@ -153,7 +163,7 @@ function detailPane(d: ElementDetail, openCompendium: ReturnType<typeof useShell
       )}
       <DescriptionGrants grants={d.grants} />
       <h3 className="desc-h desc-src-h">Source</h3>
-      <p className="desc-line"><button type="button" className="desc-source" onClick={() => openCompendium({ query: d.name, source: d.source })}>{d.sourceName}{d.rulesets.length === 1 ? ` (${d.rulesets[0] === "dnd2024" ? "2024" : "2014"})` : ""}</button></p>
+      <p className="desc-line"><button type="button" className="desc-source" onClick={() => openCompendium({ query: d.name, source: d.source })}>{sourceLabel(d.sourceName, d.rulesets)}</button></p>
     </PaneShell>
   );
 }
