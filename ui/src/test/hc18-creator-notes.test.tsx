@@ -183,6 +183,24 @@ describe("HC18 creator messages stay until the form changes", () => {
     await expectKeptThenCounted(checks, "Starting equipment added.");
   });
 
+  it("Save right after a kept message: the save message replaces it (device suite flow 3, found on iOS)", async () => {
+    // The path of device flow 3 ("Starting equipment added.", then Save). On the simulator the kept message's clearing ran
+    // after the save had written its message and took it away; jsdom does not order the effects that way, so that race is
+    // pinned in hc18-settle-note.test.ts.
+    const user = userEvent.setup();
+    await newElement(user, /^Spell A spell/, "Ember Bolt");
+    await user.selectOptions(screen.getByRole("combobox", { name: /^School/ }), "Evocation");
+    await user.click(within(editor()).getByRole("tab", { name: "RULES" }));
+    await user.click(within(editor()).getByRole("button", { name: "Add rule" }));
+    await user.click(within(await screen.findByRole("dialog", { name: "Add a rule" })).getByRole("button", { name: "Advantage on a roll" }));
+    await user.click(within(await screen.findByRole("dialog", { name: "New rule: Advantage on a roll" })).getByRole("button", { name: "OK" }));
+    await waitFor(() => expect(line().textContent).toMatch(/^Rule added\./));
+
+    await user.click(within(editor()).getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(line().textContent).toMatch(/^Saved 'Ember Bolt' to Ember Isles/));
+  });
+
   it("a creature's ACTIONS: Action added stays, then takes the count", async () => {
     const user = userEvent.setup();
     const { checks } = await newElement(user, /^Creature A stat block/, "Cinder Boar");

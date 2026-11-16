@@ -24,7 +24,7 @@ import { countProblems, creatorStatus, fieldDomId, fieldKeyOf, tabOf } from "./p
 import { useDraft } from "./useDraft";
 import { findForm } from "./class/children";
 import { useMessageBox } from "./useMessageBox";
-import { noteStatus, onStatusNote, type StatusNote } from "./statusNote";
+import { noteStatus, onStatusNote, settleNote, type ShownNote } from "./statusNote";
 import "../builder/builder.css";
 import "./homebrew.css";
 import "./expert.css";
@@ -32,10 +32,6 @@ import "./expert.css";
 /** `content-reloaded` reasons of a pack changed from outside this page: a device receive, an imported pack file. */
 const PACK_CHANGED = new Set(["device-sync", "homebrew-pack-imported"]);
 
-/** A creator message on the status line (HC18) and the form it belongs to; undefined until it first shows. */
-interface ShownNote extends StatusNote {
-  readonly form?: HomebrewForm | null;
-}
 
 const timeOf = (iso: string): string => {
   const d = new Date(iso);
@@ -156,18 +152,12 @@ export function PackWorkspace() {
   useEffect(() => onStatusNote(setNote), []);
   useEffect(() => {
     if (!note) return;
-    if (note.form !== undefined) {
-      if (note.form !== draft.form) setNote(null);
-      return;
-    }
     // The note belongs to the form on screen when it first shows (the element reopened after a save, the rule just added);
-    // with no element open the message is the whole line.
-    if (draft.form) {
-      setNote({ ...note, form: draft.form });
-      return;
-    }
-    setStatus(note.text);
-    setNote(null);
+    // with no element open the message is the whole line. The change applies only to the note this effect saw: a newer
+    // message written meanwhile is kept (settleNote).
+    if (note.form === undefined && !draft.form) setStatus(note.text);
+    const form = draft.form;
+    setNote((current) => settleNote(current, note, form));
   }, [note, draft.form]);
   const counted = countProblems(draft.problems);
   const hasForm = draft.form !== null;

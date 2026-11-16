@@ -1,3 +1,4 @@
+import type { HomebrewForm } from "../../api/contract";
 import { setStatus } from "../../state/status";
 
 /**
@@ -9,6 +10,24 @@ import { setStatus } from "../../state/status";
 export interface StatusNote {
   readonly text: string;
   readonly count: boolean;
+}
+
+/** A creator message on the status line and the form it belongs to; `form` is undefined until it first shows. */
+export interface ShownNote extends StatusNote {
+  readonly form?: HomebrewForm | null;
+}
+
+/**
+ * What the kept note becomes, decided by an effect that read `seen` while `form` is on screen. `current` is the note now:
+ * when a newer message was written after the effect read `seen` (Save right after "Starting equipment added.": the old
+ * note's clearing ran once the saved element reopened, after the save had written its message), it is kept. Otherwise the
+ * note seen is bound to the form on screen when it first shows, kept while that form is on screen, and dropped once another
+ * form is; with no element open it leaves the note (the workspace writes it as the plain line).
+ */
+export function settleNote(current: ShownNote | null, seen: ShownNote, form: HomebrewForm | null): ShownNote | null {
+  if (current !== seen) return current;
+  if (seen.form !== undefined) return seen.form === form ? seen : null;
+  return form ? { ...seen, form } : null;
 }
 
 type Listener = (note: StatusNote) => void;
