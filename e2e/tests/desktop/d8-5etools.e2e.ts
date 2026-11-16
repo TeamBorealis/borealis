@@ -107,7 +107,9 @@ desktopSuite('d8', '5etools import: scan, notice, import report, imported class 
   await screen.getByRole('button', 'Level up Fighter').tap();
   await settle(800);
   await screen.getByRole('button', 'Level up Fighter').tap();
-  await expect(screen.getByText(/YOUR CHARACTER IS LEVEL 3/i).first()).toBeVisible(SLOW);
+  // the flyout's "YOUR CHARACTER IS LEVEL" and "3" are two texts on macOS 26 (one on macOS 27); the status line's
+  // "Your character is now level 3." is one text on both
+  await expect(screen.getByText(/YOUR CHARACTER IS (NOW )?LEVEL 3/i).first()).toBeVisible(SLOW);
   await noError();
   for (let attempt = 0; attempt < 4; attempt += 1) {
     await screen.getByText('Class', { exact: true }).first().tap();

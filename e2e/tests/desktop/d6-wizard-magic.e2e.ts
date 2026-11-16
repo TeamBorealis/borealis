@@ -30,7 +30,8 @@ desktopSuite('d6', 'New 2024 Wizard: Sage description, cantrip pick, spellbook s
   await screen.getByRole('cell', /^Cantrip \(Wizard 1\) \(1 of 3\)/).tap();
   await expect(screen.getByText('No spells to show.')).toBeHidden(SLOW);
   await screen.getByRole('button', 'Acid Splash').first().doubleTap();
-  await expect(screen.getByText('CANTRIPS:1/3')).toBeVisible(SLOW);
+  // macOS 27 joins the band's label and count into one text ("CANTRIPS:1/3"); macOS 26 lists them as two ("CANTRIPS:", "1/3")
+  await expect(screen.getByText(/^(CANTRIPS:\s*)?1\/3$/).first()).toBeVisible(SLOW);
   await screen.getByRole('table', 'Selection slots').swipe({ direction: 'up' });
   await settle();
   await screen.getByRole('cell', /^Spellbook \(Wizard 1\) \(1 of 6\)/).tap();
