@@ -880,6 +880,7 @@ dependencies = [
  "borealis-character",
  "borealis-content",
  "borealis-engine",
+ "borealis-migrate",
  "image",
  "lopdf",
  "miniz_oxide 0.9.1",

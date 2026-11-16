@@ -25,5 +25,6 @@ unicode-bidi = "0.3.18"
 
 
 [dev-dependencies]
+borealis-migrate.workspace = true
 lopdf = { version = "0.45", default-features = false }
 serde_json.workspace = true
