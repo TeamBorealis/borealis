@@ -7,6 +7,8 @@ import { useApi } from "../../state/ApiContext";
 import { useAsync } from "../../state/useAsync";
 import { DescriptionGrants } from "./DescriptionGrants";
 import { useCopyToHomebrew } from "../homebrew/CopyToHomebrew";
+import { DescriptionLinks } from "./DescriptionLinks";
+import { useSettings } from "../../state/SettingsContext";
 
 /** Read-aloud via the platform speech engine; absent engines simply disable the button. */
 function useReadAloud() {
@@ -113,6 +115,7 @@ export function DescriptionPane({ elementId, fallback, copyable = false }: { ele
   const api = useApi();
   const { openCompendium } = useShell();
   const copier = useCopyToHomebrew();
+  const { settings } = useSettings();
   const el = useAsync(() => (elementId ? api.getElement({ elementId }) : Promise.resolve(null)), [api, elementId]);
   useEffect(() => { if (el.data) lastShown.set(api, el.data); }, [api, el.data]);
   if (!elementId) return <>{fallback}</>;
@@ -129,7 +132,7 @@ export function DescriptionPane({ elementId, fallback, copyable = false }: { ele
       </button>
     )
     : null;
-  return <>{detailPane(d, openCompendium, copy)}{copier.dialog}</>;
+  return <>{detailPane(d, openCompendium, copy, settings.linkedElements)}{copier.dialog}</>;
 }
 
 /**
@@ -148,7 +151,7 @@ export function ElementDetailView({ d }: { d: ElementDetail }) {
   return detailPane(d, openCompendium);
 }
 
-function detailPane(d: ElementDetail, openCompendium: ReturnType<typeof useShell>["openCompendium"], commands?: ReactNode): ReactNode {
+function detailPane(d: ElementDetail, openCompendium: ReturnType<typeof useShell>["openCompendium"], commands?: ReactNode, linkedElements = false): ReactNode {
   const dupIntro = repeatsBody(d.shortDescription, d.descriptionHtml);
   const facts = d.facts.filter((f) => !HOST_FACTS.includes(f.label));
   const plain = `${d.name}. ${d.shortDescription} ${d.descriptionHtml.replace(/<[^>]+>/g, " ")}`;
@@ -162,6 +165,7 @@ function detailPane(d: ElementDetail, openCompendium: ReturnType<typeof useShell
         </div>
       )}
       <DescriptionGrants grants={d.grants} />
+      {linkedElements && <DescriptionLinks links={d.links ?? []} />}
       <h3 className="desc-h desc-src-h">Source</h3>
       <p className="desc-line"><button type="button" className="desc-source" onClick={() => openCompendium({ query: d.name, source: d.source })}>{sourceLabel(d.sourceName, d.rulesets)}</button></p>
     </PaneShell>

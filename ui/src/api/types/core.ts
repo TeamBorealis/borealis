@@ -123,6 +123,18 @@ export interface ElementDetail extends ElementSummary {
   facts: ElementFact[];
   /** What choosing this element grants, in level order (A6). */
   grants: ElementGrant[];
+  /** The other elements it grants, offers, creates or names, with their own text (rules first, then the description). */
+  links: ElementLink[];
+}
+
+/** One linked element of a description: an element the described one grants, offers, creates, applies or names by id. */
+export interface ElementLink extends ElementSummary {
+  /** Its content type as the content names it ("Magic Item", "Condition"). */
+  contentType: string;
+  /** How it is linked: a grant rule, a select's named ids, another rule naming it, or an id in the description markup. */
+  via: "grant" | "select" | "rule" | "description";
+  /** Already sanitised by the backend; the UI sanitises again defensively. */
+  descriptionHtml: string;
 }
 
 /** One line of a description's Grants list. */

@@ -206,6 +206,25 @@ pub struct ElementDetail {
     pub facts: Vec<ElementFact>,
     /// What choosing the element grants, in level order.
     pub grants: Vec<ElementGrant>,
+    /// The other elements it grants, offers, creates or names, with their own text, for the
+    /// description pane's linked cards (rules first, then the description's markup).
+    pub links: Vec<ElementLink>,
+}
+
+/// One linked element of a description: an element the described one grants, offers, creates,
+/// applies or names by id.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ElementLink {
+    #[serde(flatten)]
+    /// The linked element's list row.
+    pub summary: ElementSummary,
+    /// Its content type as the content names it ("Magic Item", "Condition").
+    pub content_type: String,
+    /// How it is linked: `grant`, `select`, `rule` or `description`.
+    pub via: String,
+    /// Its sanitised description (a creature's stat block included).
+    pub description_html: String,
 }
 
 /// One line of a description's Grants list.

@@ -3761,6 +3761,12 @@
       "k": "prim"
      }
     },
+    "linkedElements": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "mobile": {
      "opt": false,
      "t": {
@@ -6227,6 +6233,16 @@
       "k": "prim"
      }
     },
+    "links": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ElementLink"
+      }
+     }
+    },
     "name": {
      "opt": false,
      "t": {
@@ -6339,6 +6355,122 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    }
+   }
+  },
+  "ElementLink": {
+   "k": "object",
+   "props": {
+    "armor": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "ArmorFacts"
+     }
+    },
+    "contentType": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "descriptionHtml": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prerequisites": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "rulesets": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "school": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "shortDescription": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "spell": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "SpellFacts"
+     }
+    },
+    "tags": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "via": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "weapon": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "WeaponFacts"
      }
     }
    }

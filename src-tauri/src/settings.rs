@@ -168,6 +168,10 @@ pub struct AppSettings {
     pub show_import_notice: bool,
     /// "Check for new versions of Borealis": at startup, ask GitHub for the latest version number (default on).
     pub check_app_updates: bool,
+    /// Builder description pane "Linked Elements": below an element's text, the cards of the elements it grants,
+    /// offers, creates or names (an item an option creates, a spell it grants), with their text (default off:
+    /// the reference app shows the element's own text only).
+    pub linked_elements: bool,
     /// Local search (local-search-spec.md section 9).
     pub search: SearchSettings,
     /// HC3: the homebrew creator is shown (START > HOMEBREW and its entry points). Read-only for the UI: the build's
@@ -292,6 +296,7 @@ impl Default for AppSettings {
             portrait_size: 150,
             show_import_notice: true,
             check_app_updates: true,
+            linked_elements: false,
             search: SearchSettings::default(),
             creator_enabled: CREATOR_ENABLED,
         }

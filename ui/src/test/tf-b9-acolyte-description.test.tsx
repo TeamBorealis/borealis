@@ -17,7 +17,7 @@ const SHORT = "Ability Scores: Intelligence, Wisdom, Charisma Feat: Sample Feat 
 
 const detail = (shortDescription: string): ElementDetail => ({
   id: "bg-sample", name: "Sample Background", type: "background", source: "SRD 5.2.1", sourceName: "SRD 5.2.1", shortDescription,
-  prerequisites: null, rulesets: ["dnd2024"], descriptionHtml: BODY, facts: [], grants: [],
+  prerequisites: null, rulesets: ["dnd2024"], descriptionHtml: BODY, facts: [], grants: [], links: [],
 } as unknown as ElementDetail);
 
 function renderPane(d: ElementDetail) {

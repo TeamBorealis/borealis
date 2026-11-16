@@ -593,7 +593,7 @@ export class MockHomebrew {
     return {
       id, name: text("name") || "Unnamed", type: PREVIEW_TYPES[form.kind] ?? "option", source: own.pack.sourceIds[0] ?? own.pack.id,
       sourceName: own.pack.name, shortDescription: "", prerequisites: featPrerequisite(form, this.nameOf), rulesets: own.pack.rulesets,
-      descriptionHtml: description, facts: form.kind === "creature" ? creatureFacts(form) : k ? facts : [], grants: [],
+      descriptionHtml: description, facts: form.kind === "creature" ? creatureFacts(form) : k ? facts : [], grants: [], links: [],
     };
   }
 
