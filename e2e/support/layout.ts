@@ -34,8 +34,30 @@ export async function edgesOf(ctx: LayoutCtx, css: string, n = 0): Promise<Edges
   return toEdges(b);
 }
 
-/** Edges of the first match once it has stopped moving (flyouts slide in). */
+const ANIMATIONS_MAX_MS = 3000;
+const ANIMATIONS_POLL_MS = 50;
+
+/**
+ * Waits until the page's finite animations have finished (a flyout's 180 ms slide-in). At background priority
+ * the browser can hold a slide-in at its first frame for longer than settledBox's samples, so a box that looks
+ * still can still be 24 px off.
+ */
+async function animationsFinished(ctx: LayoutCtx): Promise<void> {
+  const deadline = Date.now() + ANIMATIONS_MAX_MS;
+  for (;;) {
+    const running = await ctx.browser.evaluate(() => document.getAnimations().filter((a) => {
+      const end = a.effect?.getComputedTiming().endTime;
+      return a.playState === 'running' && typeof end === 'number' && Number.isFinite(end);
+    }).length, undefined);
+    if (running === 0) return;
+    if (Date.now() > deadline) throw new Error(`animationsFinished: ${running} animation(s) still running after 3s`);
+    await new Promise((r) => setTimeout(r, ANIMATIONS_POLL_MS));
+  }
+}
+
+/** Edges of the first match once its animations are over and it has stopped moving (flyouts slide in). */
 export async function settledEdgesOf(ctx: LayoutCtx, css: string): Promise<Edges> {
+  await animationsFinished(ctx);
   const loc = ctx.browser.locator(css) as { first(): LocatorLike };
   return toEdges(await settledBox(loc.first()));
 }
