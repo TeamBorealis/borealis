@@ -42,6 +42,20 @@ const KEYBOARD_AWAY_MS = 800;
 /** iOS: tries of one XCTest press, and the pause between them. */
 /** How long a timed-out iOS press may still take to land. */
 const LATE_PRESS_WAIT_MS = 10_000;
+/** iOS: the hold of the zero-distance pan that touches a target that is not a text field. */
+const IOS_TAP_HOLD_MS = 60;
+
+/**
+ * The agent-device command of one iOS touch at a point (rounded to whole points). A text field gets a press: the runner
+ * then knows the field it focused for later typing. Anything else gets a zero-distance pan, the same touch down and up
+ * at the point without the press's text-input probe: before every press the runner asks XCTest for every text input on
+ * screen (three queries each), and each query snapshots the whole tree (I8pYk: on a 55,636-element library with Try it
+ * open, 95 inputs and a 12,373-node page made a press land 80 s later, past the runner's 30 s watchdog).
+ */
+export function iosTouchArgs(x, y, textEntry) {
+  const at = [String(Math.round(x)), String(Math.round(y))];
+  return textEntry ? ['press', ...at] : ['gesture', 'pan', ...at, '0', '0', String(IOS_TAP_HOLD_MS)];
+}
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const env = { ...process.env, DEVELOPER_DIR };
@@ -54,6 +68,9 @@ const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { env, maxBuffer: 
 const HELPERS_SOURCE = `(() => {
   if (window.__dv?.version === '__VERSION__') return true;
   const visible = (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  // a field that takes typed text (the iOS touch on it is a press, see iosTouchArgs)
+  const NOT_TYPED = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image', 'hidden']);
+  const textEntry = (e) => e instanceof HTMLTextAreaElement || e.isContentEditable || (e instanceof HTMLInputElement && !NOT_TYPED.has(e.type));
   const describe = (e) => !(e instanceof Element) ? String(e) : e.tagName.toLowerCase() + (e.id ? '#' + e.id : '')
     + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\\s+/).slice(0, 2).join('.') : '');
   // every touch the page receives, so a touch that never reached its target can be told apart (IDpjU); a newer driver
@@ -123,7 +140,7 @@ const HELPERS_SOURCE = `(() => {
       const h = document.elementFromPoint(x, y);
       // the soft keyboard is up and the target is not the focused field's own control
       const kb = document.documentElement.classList.contains('kb-open') && !e.contains(document.activeElement) && !document.activeElement?.contains(e);
-      return { x, y, hit: !!h && (h === e || e.contains(h)), kb, settled: this.statusSettled() };
+      return { x, y, hit: !!h && (h === e || e.contains(h)), kb, settled: this.statusSettled(), text: textEntry(e) };
     },
     reveal(sel, text) {
       const e = this.q(sel, text); if (!e) return false;
@@ -273,13 +290,13 @@ async function ios(evidence) {
     /** After the app was killed: the XCTest session still follows the old process, so it is closed (connect opens anew). */
     endSession() { try { ad('close'); } catch { /* no session */ } },
     /**
-     * One XCTest press. Under load it can time out on the runner's watchdog and still land later, so it is never simply
+     * One XCTest touch (a pan, or a press on a text field: iosTouchArgs). Under load it can time out on the runner's watchdog and still land later, so it is never simply
      * sent again here: it answers false and the tap looks at the page (and waits longer) before touching again. A runner
      * that timed out twice in a row is started afresh (the app keeps running).
      */
-    async touch(x, y) {
+    async touch(x, y, textEntry = false) {
       try {
-        ad('press', String(Math.round(x)), String(Math.round(y)));
+        ad(...iosTouchArgs(x, y, textEntry));
         pressTimeouts = 0;
         return true;
       } catch (e) {
@@ -339,11 +356,11 @@ export async function device(platform, evidence) {
         r = null;
         continue;
       }
-      if (r && next && next.hit && Math.abs(next.x - r.x) < 1 && Math.abs(next.y - r.y) < 1) return { x: next.x, y: next.y, aimed: true };
+      if (r && next && next.hit && Math.abs(next.x - r.x) < 1 && Math.abs(next.y - r.y) < 1) return { x: next.x, y: next.y, aimed: true, text: next.text };
       r = next ?? r;
     }
     if (!r) throw new Error(`${sel} ${text ?? ''} went away before the tap`);
-    return { x: r.x, y: r.y, aimed: false };
+    return { x: r.x, y: r.y, aimed: false, text: r.text };
   };
   const t = {
     ...d,
@@ -367,13 +384,13 @@ export async function device(platform, evidence) {
       for (let attempt = 1; ; attempt += 1) {
         // aimed afresh before every touch: the target can move after it was measured (IDpjU: the pinned row moved when
         // the phone status line folded after a save, and every retry went to the old point)
-        const { x, y, aimed } = await aim(sel, text);
+        const { x, y, aimed, text: textEntry } = await aim(sel, text);
         if (!aimed) t.stats.unaimed += 1;
         // reached = a click or pointer up inside the target (a select opens its sheet on the click, which can then cover it;
         // a press the iOS runner delivers late can land after the node was re-rendered)
         const since = await ev(`(() => { window.__dv.armed = window.__dv.q(${arg(sel)}, ${arg(text)}); return window.__dv.now(); })()`);
         const touchedAt = Date.now();
-        const sent = await d.touch(x, y);
+        const sent = await d.touch(x, y, textEntry);
         const touchMs = Date.now() - touchedAt;
         // a press that timed out may still land: give it longer before the target is aimed and touched again
         if (!sent) t.stats.pressTimeouts += 1;
