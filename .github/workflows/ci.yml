@@ -550,7 +550,7 @@ jobs:
         run: |
           DEVELOPER_DIR="$(xcode-select -p)"
           export DEVELOPER_DIR
-          npm run e2e:macos
+          npm run e2e:macos -- --video=retain-on-failure
       - name: Upload logs, traces and screenshots
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
