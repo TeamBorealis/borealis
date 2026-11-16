@@ -11,6 +11,12 @@ import { addRule, LOAD_MS, NAME, newElement, newPack, trialLevel, waitPackList, 
 
 const PACK = 'Ember Isles';
 const PHONE = { width: 390, height: 844 } as const;
+/**
+ * The desktop sweeps check every kind form on every sub-tab (the three tests took 83 s together at the 1.5.0 merge) and
+ * reach the default 120 s test budget at background priority (RL18 runs every local test that way; one sweep ran out
+ * with 196 ms left).
+ */
+const SWEEP = { timeout: 300_000 } as const;
 
 /** The kinds whose forms are checked on every sub-tab: the card in New element and the name given. */
 const KINDS: readonly [RegExp, string][] = [
@@ -42,7 +48,7 @@ async function checkTabs(ctx: Ctx, axe: AxeReport, kind: string): Promise<void> 
 }
 
 describe('hc-axe homebrew creator accessibility (axe-core, web mock)', { tags: ['homebrew'] }, () => {
-  test('desktop: the pack list, New pack, the workspace and every kind form on every sub-tab', async (ctx) => {
+  test('desktop: the pack list, New pack, the workspace and every kind form on every sub-tab', SWEEP, async (ctx) => {
     const axe = new AxeReport();
     await bootToHome(ctx, '/?creator=1#/homebrew');
     await waitPackList(ctx);
@@ -66,7 +72,7 @@ describe('hc-axe homebrew creator accessibility (axe-core, web mock)', { tags: [
     if (screens < KINDS.length * 4) throw new Error(`only ${screens} screens checked`);
   });
 
-  test('desktop: the dialogs and flows (Add rule, a block, a picker, Try it, export, import preview)', async (ctx) => {
+  test('desktop: the dialogs and flows (Add rule, a block, a picker, Try it, export, import preview)', SWEEP, async (ctx) => {
     const axe = new AxeReport();
     await bootToHome(ctx, '/?creator=1#/homebrew');
     await newPack(ctx, PACK);
