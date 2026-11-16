@@ -144,12 +144,13 @@ impl Engine {
         opts: EvaluateOptions,
     ) -> CharacterSnapshot {
         let uni = self.universe(state.ruleset);
-        let snap = Evaluation::run(uni, state, &self.settings, opts.provenance).snapshot(
+        let mut snap = Evaluation::run(uni, state, &self.settings, opts.provenance).snapshot(
             state,
             &self.settings,
             include_options,
             opts.provenance,
         );
+        crate::infusion_items::annotate(uni, state, &mut snap);
         if include_options && !opts.provenance {
             crate::invariants::after_derive(self, state, &snap);
         }
@@ -164,7 +165,8 @@ impl Engine {
         state: &CharacterState,
     ) -> CharacterSnapshot {
         let include_options = self.settings.include_options;
-        let snap = ev.snapshot(state, &self.settings, include_options, false);
+        let mut snap = ev.snapshot(state, &self.settings, include_options, false);
+        crate::infusion_items::annotate(self.universe(state.ruleset), state, &mut snap);
         if include_options {
             crate::invariants::after_derive(self, state, &snap);
         }

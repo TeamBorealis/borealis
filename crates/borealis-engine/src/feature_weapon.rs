@@ -33,7 +33,7 @@ fn is_feature_type(ty: &str) -> bool {
 }
 
 /// Plain lower-case text: tags removed, typographic apostrophes and whitespace normalised.
-fn plain(html: &str) -> String {
+pub(crate) fn plain(html: &str) -> String {
     let mut out = String::with_capacity(html.len());
     let mut in_tag = false;
     for c in html.chars() {
@@ -247,9 +247,72 @@ pub fn source_feature(el: &Element) -> Option<&str> {
     el.setter_value(FEATURE_SETTER)
 }
 
+/// The parts a text splits an item into for infusions: the `:` list after "as separate items"
+/// ("that armor now counts as separate items for your infusions: armor, boots, helmet, and the
+/// armor's special weapon" gives `armor`, `boots`, `helmet`, `special weapon`).
+#[must_use]
+pub fn parts_in(text: &str) -> Vec<String> {
+    let Some(i) = text.find("as separate items") else {
+        return Vec::new();
+    };
+    let rest = &text[i..];
+    let Some(colon) = rest.find(':') else {
+        return Vec::new();
+    };
+    let list = &rest[colon + 1..];
+    let list = &list[..list.find('.').unwrap_or(list.len())];
+    list.split(',')
+        .flat_map(|p| p.split(" and "))
+        .map(|p| {
+            let p = p.trim().trim_start_matches("and ").trim();
+            let p = p.strip_prefix("the ").unwrap_or(p);
+            let p = p.split_once("'s ").map_or(p, |(_, tail)| tail);
+            p.trim().to_string()
+        })
+        .filter(|p| !p.is_empty() && p.len() <= 40)
+        .collect()
+}
+
+/// The element's text makes a feature's weapon an item of its own for infusions: it splits an
+/// item into separate items, one of them a weapon.
+#[must_use]
+pub fn makes_weapon_an_item(el: &Element) -> bool {
+    el.ty != "Magic Item"
+        && parts_in(&feature_text(el))
+            .iter()
+            .any(|p| p.split_whitespace().any(|w| w == "weapon"))
+}
+
+/// Can the derived feature weapon `weapon` be the base of a magic weapon for a character holding
+/// the elements `held` (ids)? A weapon that is not derived always can; a feature's weapon only
+/// while the character has that feature and a feature that makes the weapon an item of its own
+/// ([`makes_weapon_an_item`]): before that it is part of the character's gear, not an item.
+#[must_use]
+pub fn infusable(uni: &crate::universe::Universe, held: &[&str], weapon: &Element) -> bool {
+    let Some(feature) = source_feature(weapon) else {
+        return true;
+    };
+    held.contains(&feature)
+        && held
+            .iter()
+            .filter_map(|id| uni.get(id))
+            .any(|e| makes_weapon_an_item(&e.el))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_the_parts_list() {
+        assert_eq!(
+            parts_in(
+                "that shell now counts as separate items for your infusions: shell, boots,                  visor, and the shell's built-in weapon. each holds one."
+            ),
+            ["shell", "boots", "visor", "built-in weapon"]
+        );
+        assert!(parts_in("it counts as separate items.").is_empty());
+    }
 
     fn feature(text: &str) -> Element {
         Element {
