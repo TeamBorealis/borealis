@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { MockApi } from "../api/mock";
 import type { CharacterSnapshot, SpellEntry } from "../api/contract";
 import { classesScope, EMPTY_FILTER } from "../pages/spells/SpellFilter";
-import { classRowCount, classSpellRows } from "../pages/spells/classSpellRows";
+import { classRowCount, classSpellRows, fixedReason } from "../pages/spells/classSpellRows";
 import { renderApp, seededId } from "./utils";
 
 /**
@@ -49,6 +49,12 @@ describe("the rows of a class list", () => {
     const two = [SHIELD, { ...FB_SRD, prepared: true }, { ...FB_HOME, prepared: true }, FB_OLD];
     expect(ids(classSpellRows(two, "dnd2024", {}, {}))).toEqual(["shield-srd", "fb-srd", "fb-home"]);
     expect(classRowCount(two)).toBe(3);
+  });
+
+  it("says why a copy can't be switched: slot, grant, or added in the builder", () => {
+    expect(fixedReason({ ...FB_HOME, slotId: "s1" })).toBe("Switch it in its spell slot");
+    expect(fixedReason({ ...FB_HOME, grantedFrom: "Feature" })).toBe("Granted as the shown copy");
+    expect(fixedReason({ ...FB_HOME, added: true })).toBe("Added as the shown copy");
   });
 
   it("the filter bar counts rows", () => {
@@ -111,7 +117,7 @@ describe("the Magic page's class list", () => {
     await user.click(within(await screen.findByRole("listbox")).getByRole("option", { name: "SRD 5.2.1" }));
     expect(fireballRow(table).querySelector(".sp-src")!.textContent).toBe("SRD 5.2.1");
     await user.click(within(table).getByRole("button", { name: "3 versions of Fireball" }));
-    await user.click(screen.getByRole("checkbox", { name: "Always use this copy" }));
+    await user.click(screen.getByRole("checkbox", { name: "Always use the SRD 5.2.1 copy" }));
     await waitFor(async () => expect((await api.getSettings()).preferredCopies).toEqual({ [KEY_2024]: "fb-srd" }));
     expect(api.calls).toEqual([]);
   });

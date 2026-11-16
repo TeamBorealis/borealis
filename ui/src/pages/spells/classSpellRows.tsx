@@ -13,7 +13,10 @@ import { VersionButton, VersionMenu } from "../builder/VersionMenu";
  * row, whose versions menu holds them.
  */
 
-/** A class list spell as a version of its name's row. */
+/**
+ * A class list spell as a version of its name's row. Note source holds the source's *name* here (the class list entries
+ * carry no source id); the pickers' versions hold the id. The row grouping and the menu only compare it, so both work alike.
+ */
 export const spellVersion = (s: SpellEntry): VersionLike => ({
   id: s.id, name: s.name, type: "spell", source: s.sourceName, sourceName: s.sourceName, rulesets: s.rulesets, bundled: s.bundled,
   level: s.level, school: s.school,
@@ -30,7 +33,8 @@ export const isHeld = (s: SpellEntry): boolean =>
 const isSwappable = (s: SpellEntry): boolean => s.prepared && !s.alwaysPrepared && s.level > 0 && s.slotId === null && !s.added && !s.grantedFrom;
 
 /** Why a held row can't switch to another copy here: its slot or its grant decides the copy. */
-const fixedReason = (s: SpellEntry): string => (s.slotId !== null ? "Switch it in its spell slot" : "Granted as the shown copy");
+export const fixedReason = (s: SpellEntry): string =>
+  s.slotId !== null ? "Switch it in its spell slot" : s.grantedFrom ? "Granted as the shown copy" : "Added as the shown copy";
 
 export interface ClassSpellRow {
   key: string;
