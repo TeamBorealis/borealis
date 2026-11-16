@@ -49,6 +49,11 @@ try {
       break;
     }
   }
+} catch (e) {
+  // the install, launch or content read failed before any step ran: the run fails (it printed PASS before)
+  failed = true;
+  result.error = String(e?.message ?? e);
+  console.log(`FAIL setup: ${result.error}`);
 } finally {
   const over = result.saves.filter((s) => s.ms >= PHONE_SAVE_BUDGET_MS);
   result.taps = { taps: d.stats.taps, missed: d.stats.misses.length, unaimed: d.stats.unaimed, statusWaits: d.stats.statusWaits, pressTimeouts: d.stats.pressTimeouts, misses: d.stats.misses };

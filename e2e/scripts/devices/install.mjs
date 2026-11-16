@@ -13,6 +13,11 @@ const LIBRARY_FILES = ['library', 'content-prefs.json'];
 const TAR_MAX_BYTES = 4 * 1024 ** 3;
 /** A first launch makes the data folder the settings file goes into. */
 const FIRST_LAUNCH_MS = 8_000;
+/**
+ * The app shell shows once the content is loaded. A first launch on a large library has no content cache: 55,636
+ * elements took 47 s on the 4 GB emulator at background priority (RL18), past the default wait.
+ */
+const APP_SHELL_WAIT_MS = 180_000;
 /** adb streams a debug APK of over 1.5 GB for minutes. */
 const ADB_INSTALL_TIMEOUT_MS = 10 * 60_000;
 
@@ -77,7 +82,7 @@ export async function launch(d) {
   else d.simctl('launch', d.udid, BUNDLE);
   await sleep(FIRST_LAUNCH_MS / 2);
   await d.connect();
-  await d.waitFor(`document.querySelector('.aur-window')`, 'the app shell');
+  await d.waitFor(`document.querySelector('.aur-window')`, 'the app shell', APP_SHELL_WAIT_MS);
 }
 
 /** Kills the app as the system does (no chance to save), mid-edit. */
