@@ -126,7 +126,9 @@ desktopSuite('d8', '5etools import: scan, notice, import report, imported class 
     await tapInView(ctx, champion, { double: true });
   } catch { /* already selected */ }
   await expect(screen.getByRole('button', /^Clear Champion/)).toBeVisible(SLOW);
-  await expect(screen.getByText(/^Source\. Player's Handbook/).first()).toBeVisible(SLOW);
+  // the description pane's SOURCE line names the imported book once (it read "Player's Handbook (2024) (2024)"); the
+  // "Source." fact line this used to read left the pane on 2026-11-09 (8a92aa40)
+  await expect(screen.getByRole('button', /^Player's Handbook \(2024\)$/).first()).toBeVisible(SLOW);
   await noError();
 
   // Notice returns after resetting it in Settings > Data files.
