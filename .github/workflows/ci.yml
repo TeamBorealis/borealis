@@ -17,6 +17,10 @@ on:
         description: "Run only the Linux / Windows desktop bundle jobs (installed-bundle and old-CPU smokes, B-49)"
         type: boolean
         default: false
+      only_macos_window:
+        description: "Run only the macOS real-window tests (macos-window, RL18), not the other jobs"
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -32,7 +36,7 @@ env:
 jobs:
   test:
     name: build+test (${{ matrix.os }})
-    if: ${{ !inputs.only_embed && !inputs.only_bundle }}
+    if: ${{ !inputs.only_embed && !inputs.only_bundle && !inputs.only_macos_window }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -117,7 +121,7 @@ jobs:
 
   audit:
     name: dependency audit
-    if: ${{ !inputs.only_embed && !inputs.only_bundle }}
+    if: ${{ !inputs.only_embed && !inputs.only_bundle && !inputs.only_macos_window }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -142,7 +146,7 @@ jobs:
   # the release build's crate, features, profile and NDK (build/ci/mobile-check.sh), with warnings denied.
   mobile-check:
     name: mobile compile check (${{ matrix.platform }})
-    if: ${{ !inputs.only_embed && !inputs.only_bundle }}
+    if: ${{ !inputs.only_embed && !inputs.only_bundle && !inputs.only_macos_window }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
@@ -192,7 +196,7 @@ jobs:
   desktop-bundle:
     name: desktop bundle (${{ matrix.os }})
     needs: test
-    if: ${{ !cancelled() && !inputs.only_embed && (inputs.only_bundle || needs.test.result == 'success') }}
+    if: ${{ !cancelled() && !inputs.only_embed && !inputs.only_macos_window && (inputs.only_bundle || needs.test.result == 'success') }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -463,7 +467,7 @@ jobs:
 
   macos:
     name: macOS build+test+bundle (manual)
-    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed && !inputs.only_bundle
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed && !inputs.only_bundle && !inputs.only_macos_window
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -496,9 +500,72 @@ jobs:
           path: target/debug/bundle/dmg/*.dmg
           if-no-files-found: error
 
+  macos-window:
+    # RL18: the real-window desktop suite (e2e/tests/desktop, `npm run e2e:macos`) runs here, never on a developer's Mac
+    # (it takes the focus and swaps the user's Borealis data). The release .app is built fresh from this commit; the
+    # engine keeps its backup/restore of the app's data folders (the runner has none). d9 needs a 5etools folder and
+    # CI has none (IM6: 5etools is never stored on CI), so it skips as it does locally; d10 (live index URL) and d11
+    # (opt-in model download) stay skipped. Logs, traces and screenshots are uploaded (bundled content only).
+    name: macOS real-window tests (manual)
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed && !inputs.only_bundle
+    runs-on: macos-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.99.1  # = rust-toolchain.toml
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+          shared-key: macos-window
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            ui/package-lock.json
+            e2e/package-lock.json
+      - run: npm ci
+        working-directory: ui
+      - run: npm ci
+        working-directory: e2e
+      - name: Build the release app bundle
+        run: npm run tauri -- build --bundles app --ci
+      - name: Bundle identity
+        run: |
+          echo "HEAD $(git rev-parse HEAD)"
+          shasum -a 256 target/release/bundle/macos/Borealis.app/Contents/MacOS/*
+      - name: macOS privacy grants of the runner
+        # The engine refuses to start without Accessibility and Screen Recording for the process chain; print what
+        # the runner grants so a refusal is explained in the log.
+        run: |
+          swiftc -O -o "$RUNNER_TEMP/tcc-probe" e2e/engines/macos/native/tcc-probe.swift
+          "$RUNNER_TEMP/tcc-probe"
+          ps -o pid,ppid,comm -p $$ -p $PPID || true
+      - name: Desktop suite (real window)
+        working-directory: e2e
+        env:
+          E2E_TELEMETRY_DISABLED: "1"
+        run: |
+          DEVELOPER_DIR="$(xcode-select -p)"
+          export DEVELOPER_DIR
+          npm run e2e:macos
+      - name: Upload logs, traces and screenshots
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-window-e2e
+          path: |
+            e2e/.e2e/logs
+            e2e/.e2e/results
+            e2e/.e2e/report.json
+          if-no-files-found: warn
+          retention-days: 14
+
   ios:
     name: iOS build (manual, experimental)
-    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed && !inputs.only_bundle
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed && !inputs.only_bundle && !inputs.only_macos_window
     runs-on: macos-latest
     continue-on-error: true
     steps:
@@ -520,7 +587,7 @@ jobs:
 
   android:
     name: Android build (manual, experimental)
-    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed && !inputs.only_bundle
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed && !inputs.only_bundle && !inputs.only_macos_window
     runs-on: ubuntu-24.04
     continue-on-error: true
     steps:
@@ -570,7 +637,7 @@ jobs:
     # the app's pinned sources (build/fetch-embed-model.sh), is cached, and is never committed or uploaded; the
     # uploaded record holds labels and numbers only.
     name: embedding model x86_64 (${{ matrix.os }}, manual)
-    if: github.event_name == 'workflow_dispatch' && !inputs.only_bundle
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_bundle && !inputs.only_macos_window
     runs-on: ${{ matrix.os }}
     timeout-minutes: 300
     strategy:
