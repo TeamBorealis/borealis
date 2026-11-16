@@ -519,6 +519,7 @@ jobs:
         with:
           workspaces: ". -> target"
           shared-key: macos-window
+          cache-on-failure: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -536,6 +537,20 @@ jobs:
         run: |
           echo "HEAD $(git rev-parse HEAD)"
           shasum -a 256 target/release/bundle/macos/Borealis.app/Contents/MacOS/*
+      - name: A display that fits the app's 1200 x 800 window
+        # The suites are written for the window's own size (tauri.macos.conf.json); the runner's default 1024 x 768 screen
+        # shrinks it, and a tap on a row below the fold is lost (d6, d8, d12 on the first runs).
+        run: |
+          system_profiler SPDisplaysDataType | grep -iE "resolution|display type|main display" || true
+          brew install jakehilborn/jakehilborn/displayplacer >/dev/null 2>&1 || brew install displayplacer >/dev/null 2>&1 || true
+          if command -v displayplacer >/dev/null; then
+            displayplacer list | grep -E "Persistent screen id|Resolution|mode [0-9]+:" | head -40 || true
+            id=$(displayplacer list | sed -n 's/^Persistent screen id: //p' | head -1)
+            mode=$(displayplacer list | grep -E "mode [0-9]+: res:" | sed -E 's/.*res:([0-9]+)x([0-9]+).*/\1 \2/' \
+              | awk '$1 >= 1280 && $2 >= 900 { print $1 * $2, $1 "x" $2 }' | sort -n | head -1 | cut -d' ' -f2)
+            if [ -n "$id" ] && [ -n "$mode" ]; then displayplacer "id:$id res:$mode scaling:off origin:(0,0) degree:0" || true; fi
+          fi
+          system_profiler SPDisplaysDataType | grep -iE "resolution" || true
       - name: macOS privacy grants of the runner
         # The engine refuses to start without Accessibility and Screen Recording for the process chain; print what
         # the runner grants so a refusal is explained in the log.
