@@ -404,7 +404,10 @@ fn source_flags(src: Option<&borealis_content::Element>) -> SourceFlags {
     let playtest = flag(&["playtest", "beta"]);
     SourceFlags {
         playtest,
-        third_party: !playtest && !flag(&["homebrew"]) && !flag(&["official"]) && flag(&["third-party"]),
+        third_party: !playtest
+            && !flag(&["homebrew"])
+            && !flag(&["official"])
+            && flag(&["third-party"]),
         incomplete: flag(&["incomplete", "wip"]),
         info: src
             .setter_value("information")
