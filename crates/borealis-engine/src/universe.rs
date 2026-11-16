@@ -925,6 +925,26 @@ impl Universe {
         &self.creation_roots
     }
 
+    /// Add the derived Weapon element of every feature whose text says it counts as a weapon
+    /// ([`crate::feature_weapon`], [`crate::EngineSettings::feature_weapons`]).
+    pub(crate) fn add_feature_weapons(&mut self) {
+        let derived: Vec<(Element, EditionStatus, Vec<String>)> = self
+            .elems
+            .iter()
+            .filter_map(|u| {
+                let w = crate::feature_weapon::derive(&u.el)?;
+                (!self.by_id.contains_key(&w.id)).then(|| {
+                    let mut supports = w.supports.clone();
+                    supports.extend(implicit_supports(&w));
+                    (w, u.edition.clone(), supports)
+                })
+            })
+            .collect();
+        for (el, edition, supports) in derived {
+            self.push(UElem::build(el, 0, true, edition, supports));
+        }
+    }
+
     /// Elements that an element authored for this universe's ruleset replaces one to one
     /// (`maps_to` kind `equivalent`) are hidden from new picks. That includes an element for Both
     /// editions (IM17, `any`), as a bundled core language is replaced by its 2024 version: a 2024

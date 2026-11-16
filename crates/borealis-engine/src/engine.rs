@@ -77,7 +77,7 @@ impl Engine {
         // PF1 (B-235): the two universes are independent, so they are built side by side.
         let [first, second] = all_profiles().map(|p| p.ruleset());
         let before = |r: Ruleset| previous.map(|e| e.universe(r));
-        let universes = std::thread::scope(|scope| {
+        let mut universes = std::thread::scope(|scope| {
             let other = scope
                 .spawn(|| Universe::with_adapter_reusing(store, second, adapter, before(second)));
             let one = Universe::with_adapter_reusing(store, first, adapter, before(first));
@@ -86,6 +86,11 @@ impl Engine {
                 .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
             [one, two]
         });
+        if settings.feature_weapons {
+            for u in &mut universes {
+                u.add_feature_weapons();
+            }
+        }
         Self {
             settings,
             universes,

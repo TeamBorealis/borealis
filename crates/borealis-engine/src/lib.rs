@@ -18,6 +18,7 @@ pub mod content_skills;
 pub mod custom_rules;
 pub mod diag;
 pub mod engine;
+pub mod feature_weapon;
 pub mod eval;
 pub mod gear;
 pub mod granted_casting;
