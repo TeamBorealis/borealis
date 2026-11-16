@@ -390,7 +390,7 @@ struct SourceFlags {
 }
 
 /// Reads `playtest`/`beta`, `third-party`, `incomplete`/`wip` and `information` from a book's `Source` element
-/// (none: no flags). Third-party is the book's own `third-party` setter, as Aurora reads it; playtest material
+/// (none: no flags). Third-party is the book's own `third-party` setter (unless it also sets `official`), as Aurora reads it; playtest material
 /// counts only as playtest, and homebrew (`homebrew`) stays its own kind, never third-party.
 fn source_flags(src: Option<&borealis_content::Element>) -> SourceFlags {
     let Some(src) = src else {
@@ -404,7 +404,7 @@ fn source_flags(src: Option<&borealis_content::Element>) -> SourceFlags {
     let playtest = flag(&["playtest", "beta"]);
     SourceFlags {
         playtest,
-        third_party: !playtest && !flag(&["homebrew"]) && flag(&["third-party"]),
+        third_party: !playtest && !flag(&["homebrew"]) && !flag(&["official"]) && flag(&["third-party"]),
         incomplete: flag(&["incomplete", "wip"]),
         info: src
             .setter_value("information")
@@ -476,8 +476,14 @@ mod source_flag_tests {
     }
 
     #[test]
+    fn an_official_book_is_not_third_party() {
+        let both = source(&[("official", "true"), ("third-party", "true")]);
+        assert!(!source_flags(Some(&both)).third_party);
+    }
+
+    #[test]
     fn playtest_material_is_not_also_third_party() {
-        // A 5etools UA import sets `third-party` and `playtest`; it is restricted as playtest.
+        // A 5etools playtest import sets `third-party` and `playtest`; it is restricted as playtest.
         let ua = source(&[("third-party", "true"), ("playtest", "true")]);
         let f = source_flags(Some(&ua));
         assert!(f.playtest && !f.third_party);

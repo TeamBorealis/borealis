@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent } from "react";
 import type { ContentSource } from "../../api/contract";
-import { RowDetail, SearchInput } from "../../components";
+import { RowDetail, SearchInput, useToast } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
-import { useAsync } from "../../state/useAsync";
+import { errorMessage, useAsync } from "../../state/useAsync";
 import { useShell } from "../../components/shell/ShellContext";
-import { mdiAlertCircleOutline, mdiBookSearch, mdiContentSave, mdiFlask, mdiFolderOpen, mdiInformationOutline, mdiPuzzleOutline } from "@mdi/js";
+import { mdiAlertCircleOutline, mdiBookSearch, mdiContentSave, mdiFlask, mdiFolderOpen, mdiInformationOutline } from "@mdi/js";
 import { CheckBox, triState } from "../../components/controls";
 import { PaneShell } from "../builder/DescriptionPane";
 import "../builder/builder.css";
@@ -26,6 +26,7 @@ export function SourcesPage() {
   const applyRestrictions = useApplySourceRestrictions();
   const { openCompendium } = useShell();
   const { settings, update } = useSettings();
+  const toast = useToast();
   const { restrictPlaytest, restrictThirdParty } = settings;
   const sources = useAsync(() => api.listSources(), [api]);
   const packs = useAsync(() => api.listPacks(), [api]);
@@ -56,34 +57,47 @@ export function SourcesPage() {
     setDraft(normalise(cur));
   };
   const toggle = (s: ContentSource) => setMany([s.id], !allowed.has(s.id));
-  /** Restrict (or allow again) every book of a kind, remember the choice, and apply it to the loaded character. */
-  const toggleKind = (kind: SourceKind) => {
-    const on = !settings[KIND_SETTING[kind]];
-    void update({ [KIND_SETTING[kind]]: on }).catch(() => undefined);
-    const cur = new Set(allowed);
-    for (const id of idsOfKind(all, kind)) { if (on) cur.delete(id); else cur.add(id); }
+  /**
+   * The remembered "Restrict ... content" switches. With a character loaded the change starts from the character's
+   * current sources and is saved only once the apply went through (Cancel leaves everything as it was); with none, it
+   * changes the page's list. Switching one on also takes that kind's books out of the saved default, once.
+   */
+  const toggleKind = async (kind: SourceKind, on: boolean) => {
+    const ids = idsOfKind(all, kind);
+    const cur = new Set(snapshot ? (saved ?? all.map((s) => s.id)) : allowed);
+    for (const id of ids) { if (on) cur.delete(id); else cur.add(id); }
     const next = normalise(cur);
-    setDraft(next);
-    if (snapshot) void applyRestrictions(next);
+    if (snapshot) {
+      try { if (!(await applyRestrictions(next))) return; } catch (e) { toast.push(errorMessage(e), "error"); return; }
+    } else setDraft(next);
+    try {
+      await update({ [KIND_SETTING[kind]]: on });
+      if (on && stored) {
+        const trimmed = stored.filter((id) => !ids.includes(id));
+        saveDefaultSources(trimmed);
+        setStored(trimmed);
+      }
+    } catch (e) {
+      toast.push(`Could not save the setting: ${errorMessage(e)}`, "error");
+    }
   };
-  const kindButton = (kind: SourceKind, icon: string) => {
+  const kindSwitch = (kind: SourceKind) => {
     const on = settings[KIND_SETTING[kind]];
     const total = idsOfKind(all, kind).length;
     const label = KIND_LABEL[kind];
     const name = `Restrict ${label} content`;
-    const tip = on
-      ? `${name} is on: ${label} sources start unchecked. Click to allow them again.`
-      : total === 0 ? `${name}: no ${label} sources are installed`
-        : `${name}: uncheck the ${total} ${label} source${total === 1 ? "" : "s"}${snapshot ? " on this character" : ""} and on new characters`;
+    const tip = total === 0 && !on ? `${name}: no ${label} sources are installed`
+      : `${name}: unchecks the ${total} ${label} source${total === 1 ? "" : "s"}${snapshot ? " on this character" : ""}, on new characters and in the saved default. Turning it off checks every ${label} source again, including any you unchecked by hand.`;
     return (
-      <button type="button" className={`v4-grid-cmd v4-grid-toggle${on ? " on" : ""}`} aria-label={name} aria-pressed={on} title={tip}
-        disabled={!on && total === 0} onClick={() => toggleKind(kind)}><Svg d={icon} /></button>
+      <label className="v4-restrict-switch" title={tip}>
+        <CheckBox checked={on} disabled={!on && total === 0} onChange={(e) => void toggleKind(kind, e.target.checked)} />
+        {name}
+      </label>
     );
   };
   const notes = (["playtest", "thirdParty"] as const)
     .filter((k) => settings[KIND_SETTING[k]])
-    .map((k) => restrictedNote(restrictedCount(all, k, allowed), k));
-  const sel = all.find((s) => s.id === described) ?? null;
+    .map((k) => restrictedNote(restrictedCount(all, k, allowed), k));  const sel = all.find((s) => s.id === described) ?? null;
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [anchor, setAnchor] = useState<string | null>(null);
   const order = useMemo(() => {
@@ -151,10 +165,11 @@ export function SourcesPage() {
           <button type="button" className="v4-grid-cmd" aria-label="Save as default" title="Save the allowed sources as the default" onClick={() => { saveDefaultSources([...allowed]); setStored([...allowed]); }}><Svg d={mdiContentSave} /></button>
           <button type="button" className="v4-grid-cmd" aria-label="Load default" title="Load the saved default sources" disabled={!stored} onClick={() => setDraft(startingSources(stored, all, {}))}><Svg d={mdiFolderOpen} /></button>
           <button type="button" className="v4-apply" disabled={!snapshot || !dirty} title={snapshot ? "Restrict the loaded character to the allowed sources" : "Load a character first"} onClick={() => void applyRestrictions(draft)}>Apply to character</button>
-          {kindButton("playtest", mdiFlask)}
-          {kindButton("thirdParty", mdiPuzzleOutline)}
+          <button type="button" className="v4-grid-cmd" aria-label="Restrict all playtest material" title="Restrict all playtest material" onClick={() => setMany(all.filter((a) => a.playtest).map((a) => a.id), false)}><Svg d={mdiFlask} /></button>
           <button type="button" className="v4-grid-cmd" aria-label="View selected source in compendium" title="View selected source in compendium" disabled={!sel} onClick={() => sel && openCompendium({ source: sel.id })}><Svg d={mdiBookSearch} /></button>
         </span>
+        {kindSwitch("playtest")}
+        {kindSwitch("thirdParty")}
         <span className="v4-restrict-note" role="status" aria-label="Restricted sources">{notes.join(" · ")}</span>
       </div>
       <div className="v4-grid" role="grid" aria-label="Sources" aria-multiselectable="true" tabIndex={0} onKeyDown={onGridKey} aria-rowcount={rows.length + 1}>

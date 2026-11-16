@@ -53,18 +53,18 @@ describe("Sources page restrict toggles", () => {
     const api = withFlags(new MockApi({ rng: () => 0.5 }));
     const books = await flagged(api);
     renderApp("/content/sources", { api });
-    const btn = await screen.findByRole("button", { name: "Restrict playtest content" });
+    const btn = await screen.findByRole("checkbox", { name: "Restrict playtest content" });
     const grid = await screen.findByRole("grid", { name: "Sources" });
     const box = () => within(grid).getByRole("checkbox", { name: `Allow ${books[0]!.name}` }) as HTMLInputElement;
     await waitFor(() => expect(box().checked).toBe(true));
-    expect(btn.getAttribute("aria-pressed")).toBe("false");
+    expect((btn as HTMLInputElement).checked).toBe(false);
     await user.click(btn);
-    await waitFor(() => expect(btn.getAttribute("aria-pressed")).toBe("true"));
+    await waitFor(() => expect((btn as HTMLInputElement).checked).toBe(true));
     expect(box().checked).toBe(false);
     expect(screen.getByRole("status", { name: "Restricted sources" }).textContent).toBe("1 playtest source restricted");
     expect((await api.getSettings()).restrictPlaytest).toBe(true);
     await user.click(btn);
-    await waitFor(() => expect(btn.getAttribute("aria-pressed")).toBe("false"));
+    await waitFor(() => expect((btn as HTMLInputElement).checked).toBe(false));
     expect(box().checked).toBe(true);
     expect((await api.getSettings()).restrictPlaytest).toBe(false);
   });
@@ -75,7 +75,7 @@ describe("Sources page restrict toggles", () => {
     const books = await flagged(api);
     const id = await seededId(api, "Brannoc");
     renderApp("/content/sources", { api, openCharacterId: id });
-    await user.click(await screen.findByRole("button", { name: "Restrict third-party content" }));
+    await user.click(await screen.findByRole("checkbox", { name: "Restrict third-party content" }));
     const apply = await screen.findByRole("button", { name: "Apply" }, { timeout: 500 }).catch(() => null);
     if (apply) await user.click(apply);
     await waitFor(async () => {
@@ -89,9 +89,9 @@ describe("Sources page restrict toggles", () => {
 
   it("disables a toggle when no book of its kind is installed", async () => {
     renderApp("/content/sources");
-    const btn = await screen.findByRole("button", { name: "Restrict third-party content" });
-    expect((btn as HTMLButtonElement).disabled).toBe(true);
-    expect(btn.title).toMatch(/no third-party sources are installed/);
+    const btn = await screen.findByRole("checkbox", { name: "Restrict third-party content" });
+    expect((btn as HTMLInputElement).disabled).toBe(true);
+    expect(btn.closest("label")!.title).toMatch(/no third-party sources are installed/);
   });
 });
 
@@ -146,9 +146,9 @@ describe("saved default sources with the toggles on", () => {
     renderApp("/content/sources", { api });
     const grid = await screen.findByRole("grid", { name: "Sources" });
     const box = (b: ContentSource) => within(grid).getByRole("checkbox", { name: `Allow ${b.name}` }) as HTMLInputElement;
-    await user.click(await screen.findByRole("button", { name: "Restrict third-party content" }));
+    await user.click(await screen.findByRole("checkbox", { name: "Restrict third-party content" }));
     await waitFor(() => expect(box(own).checked).toBe(false));
-    await user.click(screen.getByRole("button", { name: "Restrict playtest content" }));
+    await user.click(screen.getByRole("checkbox", { name: "Restrict playtest content" }));
     await waitFor(() => expect(box(books[0]!).checked).toBe(false));
 
     // Filter the list down to the user's book, check it again and save.
@@ -172,5 +172,59 @@ describe("saved default sources with the toggles on", () => {
     const id = await seededId(api, "Brannoc");
     const snap = await applyDefaultSources(api, await api.getSnapshot({ characterId: id }));
     expect([...(snap.sourceRestrictions ?? [])].sort()).toEqual(expected);
+  });
+});
+
+describe("switches and the saved default", () => {
+  beforeEach(() => { vi.stubGlobal("localStorage", memoryStorage()); });
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it("a default saved first loses that kind's books when the switch is turned on, and a book checked again later wins", async () => {
+    const user = userEvent.setup();
+    const api = withFlags(new MockApi({ rng: () => 0.5 }));
+    const books = await flagged(api);
+    renderApp("/content/sources", { api });
+    const grid = await screen.findByRole("grid", { name: "Sources" });
+    const box = (b: ContentSource) => within(grid).getByRole("checkbox", { name: `Allow ${b.name}` }) as HTMLInputElement;
+    await waitFor(() => expect(box(books[0]!).checked).toBe(true));
+    // Save the default with every book checked, then switch playtest on.
+    await user.click(screen.getByRole("button", { name: "Save as default" }));
+    expect(loadDefaultSources()).toContain(books[0]!.id);
+    await user.click(screen.getByRole("checkbox", { name: "Restrict playtest content" }));
+    await waitFor(() => expect(box(books[0]!).checked).toBe(false));
+    await waitFor(() => expect(loadDefaultSources()).not.toContain(books[0]!.id));
+    expect(loadDefaultSources()).toContain(books[1]!.id);
+    // A new character starts without the playtest book, matching the page.
+    const id = await seededId(api, "Brannoc");
+    const snap = await applyDefaultSources(api, await api.getSnapshot({ characterId: id }));
+    expect(snap.sourceRestrictions).not.toContain(books[0]!.id);
+  });
+
+  it("the one-time playtest flask leaves the remembered switch alone", async () => {
+    const user = userEvent.setup();
+    const api = withFlags(new MockApi({ rng: () => 0.5 }));
+    const books = await flagged(api);
+    renderApp("/content/sources", { api });
+    const grid = await screen.findByRole("grid", { name: "Sources" });
+    const box = within(grid).getByRole("checkbox", { name: `Allow ${books[0]!.name}` }) as HTMLInputElement;
+    await user.click(await screen.findByRole("button", { name: "Restrict all playtest material" }));
+    await waitFor(() => expect(box.checked).toBe(false));
+    expect((await api.getSettings()).restrictPlaytest).toBe(false);
+  });
+
+  it("with a character loaded, Cancel on the confirm leaves the switch and the character unchanged", async () => {
+    const user = userEvent.setup();
+    const api = withFlags(new MockApi({ rng: () => 0.5 }));
+    const books = await flagged(api);
+    const id = await seededId(api, "Brannoc");
+    api.previewSourceRestrictions = async () => ({ affected: [{ slotId: "s", element: "Some pick" }] } as never);
+    renderApp("/content/sources", { api, openCharacterId: id });
+    const sw = await screen.findByRole("checkbox", { name: "Restrict playtest content" });
+    await user.click(sw);
+    await user.click(await screen.findByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect((sw as HTMLInputElement).checked).toBe(false));
+    expect((await api.getSettings()).restrictPlaytest).toBe(false);
+    expect((await api.getSnapshot({ characterId: id })).sourceRestrictions).toBeNull();
+    expect(books.length).toBeGreaterThan(1);
   });
 });
