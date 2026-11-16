@@ -33,6 +33,12 @@ function ReplacedCell({ slot }: { slot: SelectionSlot }) {
 }
 
 /**
+ * A slot's name with its place in a several-pick rule, as one string: one text node, so the table cell's accessible name
+ * is all of it in every WebKit (macOS 26 named the cell by its first text node only).
+ */
+const slotName = (s: SelectionSlot): string => (s.of > 1 ? `${s.title} (${s.ordinal} of ${s.of})` : s.title);
+
+/**
  * Selection-slots table of the SPELLCASTING tab: chosen marker, slot name, selected spell, gained on level, replaced, source.
  * Highlighting a filled slot whose rule allows swapping shows "Replace spell": the old pick is cleared and recorded as replaced,
  * and the slot reopens for a new pick at the current level.
@@ -77,7 +83,7 @@ export function SlotsTable({ slots, classes, onPick, picked, current, onCurrent 
               <tr key={s.id} aria-selected={s.id === current} onClick={() => onCurrent(s.id)}
                 className={s.id === current || (s.chosen && picked === s.chosen.id) ? "sel" : ""}>
                 <td className="sp-ck">{s.chosen && <span className="sp-mark"><Glyph name="tick" label="Chosen" /></span>}</td>
-                <td className="sp-slot-title">{s.title}{s.of > 1 ? ` (${s.ordinal} of ${s.of})` : ""}<RowDetail parts={[`Gained on level ${s.gainedOnLevel}`, s.replaced.at(-1) && `Replaced ${s.replaced.at(-1)!.name}`, sourceOf(s, classes)]} /></td>
+                <td className="sp-slot-title">{slotName(s)}<RowDetail parts={[`Gained on level ${s.gainedOnLevel}`, s.replaced.at(-1) && `Replaced ${s.replaced.at(-1)!.name}`, sourceOf(s, classes)]} /></td>
                 <td>{s.chosen ? <button type="button" className="ap-name" onClick={() => onPick(s.chosen!.id)}>{s.chosen.name}</button> : <span className="sp-open">not selected{s.required ? "" : " (optional)"}</span>}</td>
                 <td className="al-c">{s.gainedOnLevel}</td>
                 <ReplacedCell slot={s} />
