@@ -212,7 +212,7 @@ fn group_of(ty: &str) -> FeatureGroup {
     }
 }
 
-fn section_rank(g: FeatureGroup) -> u8 {
+pub(crate) fn section_rank(g: FeatureGroup) -> u8 {
     match g {
         FeatureGroup::Class | FeatureGroup::Subclass => 0,
         FeatureGroup::Species => 1,
@@ -223,7 +223,7 @@ fn section_rank(g: FeatureGroup) -> u8 {
 }
 
 /// Index of the class a feature belongs to, by its granting element name.
-fn class_index(classes: &[ClassSnapshot], granted_by: Option<&str>) -> usize {
+pub(crate) fn class_index(classes: &[ClassSnapshot], granted_by: Option<&str>) -> usize {
     let Some(g) = granted_by else { return 0 };
     classes
         .iter()
