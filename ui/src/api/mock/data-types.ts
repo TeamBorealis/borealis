@@ -60,6 +60,11 @@ export interface ItemDef {
   charges?: ChargeDice;
   /** +N ammunition: added to the attack and damage of a carried weapon that fires it (engine `ammunition` kind). */
   ammoBonus?: number;
+  /**
+   * A cantrip the item teaches while equipped, its grant naming no casting ability: the engine lists it in a block named
+   * after the item with an empty ability, no save DC and no attack bonus (`item_spells`, GitHub #68).
+   */
+  teaches?: string;
   armor?: { base: number; dexCap: number | null; shield?: boolean; strength?: number; stealth?: boolean };
   weapon?: { damage: string; mastery?: string; properties: string; range?: string; martial?: boolean };
   bonusAc?: number;

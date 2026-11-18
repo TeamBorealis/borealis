@@ -1,5 +1,5 @@
 import type { AbilityState, AddedPick, ClassSpellcasting, SpellEntry, SpellcastingState } from "../types";
-import { SPELLS, getClass, getElement, getSpell, titleCase } from "./content";
+import { SPELLS, getClass, getElement, getItem, getSpell, titleCase } from "./content";
 import { spellFacts } from "./facts";
 import { classIdOf } from "./slots";
 import { SLOT_TABLE, cantripsAt, casterMaxSpellLevel } from "./spell-tables";
@@ -74,5 +74,24 @@ export function deriveSpellcasting(c: MockCharacter, ab: AbilityState, added: Ad
     });
   }
   const row = (SLOT_TABLE[Math.min(20, casterLevel)] ?? []).map((total, i) => ({ level: i + 1, total }));
-  return { classes, slots: row, multiclassSlots: classes.length >= 2 ? row : null };
+  const classCount = classes.length;
+  return { classes: [...classes, ...itemBlocks(c)], slots: row, multiclassSlots: classCount >= 2 ? row : null };
+}
+
+/**
+ * The engine's item blocks (`item_spells`): an equipped item that teaches a cantrip and names no casting ability gets a
+ * block named after it, with an empty ability and no save DC, attack bonus or slots (GitHub #68 shape).
+ */
+function itemBlocks(c: MockCharacter): ClassSpellcasting[] {
+  const out: ClassSpellcasting[] = [];
+  for (const inv of c.items) {
+    const teaches = inv.equipped ? getItem(inv.itemId)?.teaches : undefined;
+    if (!teaches || !getSpell(teaches) || out.some((b) => b.className === inv.name)) continue;
+    const spells = [entry(teaches, { origin: "item", prepared: true, alwaysPrepared: true, ready: true })];
+    out.push({
+      classSlotId: `caster-${inv.itemId}`, className: inv.name, ability: "", saveDc: 0, attackBonus: 0, attackRoll: 0, model: "known",
+      cantripsMax: 1, cantripsKnown: 1, preparedMax: 0, preparedCount: 0, maxSpellLevel: 0, pact: null, spells,
+    });
+  }
+  return out;
 }

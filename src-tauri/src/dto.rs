@@ -555,6 +555,9 @@ pub struct SpellEntry {
 pub struct ClassSpellcasting {
     pub class_slot_id: String,
     pub class_name: String,
+    /// Ability key (`int`), or empty for a block with no casting ability (an item's spells whose
+    /// grant names none, Other Spells): its save DC and attack bonus are 0 and the UI shows them
+    /// blank (#68).
     pub ability: String,
     pub save_dc: i32,
     pub attack_bonus: i32,
