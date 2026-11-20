@@ -3755,6 +3755,12 @@
       "k": "prim"
      }
     },
+    "featureWeapons": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "highContrast": {
      "opt": false,
      "t": {
