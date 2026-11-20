@@ -95,6 +95,11 @@ fn entry<'a>(find: &Find<'a>, rule: &Rule) -> Option<Entry<'a>> {
     }
 }
 
+/// The Grants list shows `el`'s text under its name when it is granted (a trait, feature or feat).
+pub(crate) fn has_grant_text(el: &Element) -> bool {
+    !text_of(el).trim().is_empty()
+}
+
 /// The sanitised text of a granted trait, feature or feat; empty for other grants.
 fn text_of(el: &Element) -> String {
     if TEXT_TYPES.contains(&ui_type(&el.ty)) {

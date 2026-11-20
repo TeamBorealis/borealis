@@ -52,7 +52,7 @@ fn an_option_described_by_a_reference_shows_the_referenced_text() {
     let (_d, app) = app();
     install(&app);
     let gold = app.get_element(GOLD).expect("Gold");
-    let html = gold.description_html;
+    let html = &gold.description_html;
     assert!(
         html.contains("<h5>TEST ANCESTRY</h5>"),
         "the referenced element's name heads the text: {html}"
@@ -60,5 +60,13 @@ fn an_option_described_by_a_reference_shows_the_referenced_text() {
     assert!(
         html.contains("You descend from a test dragon. Gold dragons breathe fire."),
         "the referenced element's description follows: {html}"
+    );
+    assert!(
+        gold.links.iter().all(|l| l.summary.id != ANCESTRY),
+        "the injected element is not also a linked card: {:?}",
+        gold.links
+            .iter()
+            .map(|l| (&l.summary.id, &l.via))
+            .collect::<Vec<_>>()
     );
 }

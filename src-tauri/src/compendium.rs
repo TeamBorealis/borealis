@@ -245,6 +245,7 @@ pub(crate) fn element_detail_with(
         description_html: html,
         facts: facts(store, el),
         grants: crate::element_grants::grants_with(store, own, el),
+        links: crate::element_links::links(store, el),
     }
 }
 
@@ -252,12 +253,24 @@ pub(crate) fn element_detail_with(
 /// referenced elements' text as Aurora's description panel shows them (GitHub #53), looked up in
 /// `own` before the hub; a monster's stat block sections follow it.
 fn description_html(hub: &ContentHub, own: &[Element], el: &Element) -> String {
-    let source = |id: &str| {
-        own.iter()
-            .find(|o| o.id == id)
-            .or_else(|| hub.element(id))
-            .map(|r| (r.name.clone(), r.description.clone()))
-    };
+    injected_description_html(el, |id| {
+        own.iter().find(|o| o.id == id).or_else(|| hub.element(id))
+    })
+}
+
+/// [`description_html`] for an element of `store` (the description pane's linked elements):
+/// references are injected from the store.
+pub(crate) fn store_description_html(store: &ContentStore, el: &Element) -> String {
+    injected_description_html(el, |id| store.element(id))
+}
+
+/// The sanitised description of `el` with its references injected from `lookup`, then a
+/// monster's stat block sections.
+fn injected_description_html<'a>(
+    el: &Element,
+    lookup: impl Fn(&str) -> Option<&'a Element>,
+) -> String {
+    let source = |id: &str| lookup(id).map(|r| (r.name.clone(), r.description.clone()));
     let mut html = sanitize_html(&borealis_engine::inject::inject_references(
         &el.description,
         &source,
