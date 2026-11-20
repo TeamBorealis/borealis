@@ -10,6 +10,7 @@ import { useApi } from "../../state/ApiContext";
 import { useAsync, type AsyncState } from "../../state/useAsync";
 import { useCharacter } from "../../state/CharacterContext";
 import { useEditionFilter } from "../../state/editionFilter";
+import { usePreferredCopies } from "../../state/preferredCopies";
 import { usePickerUiState } from "./pickerState";
 
 /** Upper bound on pages for one list (a host that never reports its end cannot loop forever). */
@@ -74,7 +75,8 @@ function useStablePage(page: Page<SlotOption> | null): Page<SlotOption> | null {
 }
 
 /**
- * Loads a slot's options (all pages) and applies the B-55 row model: grouping, filters, shown versions.
+ * Loads a slot's options (all pages) and applies the B-55 row model: grouping, filters, shown versions (with the copies the
+ * user always uses, #51).
  *
  * GitHub #7: the list reloads after every change to the character (`revision`), not only when its own pick changes, since a
  * pick elsewhere can add, remove or disable its options (a skill-tree node unlocking its child, a skill taken by a sibling
@@ -100,7 +102,8 @@ export function usePickerRows(characterId: string, slot: SelectionSlot, enabled:
   const { edition: sharedEdition, setEdition } = shared;
   const own = useMemo(() => ({ ...ui.filter, edition: sharedEdition }), [ui.filter, sharedEdition]);
   const filter = useMemo(() => effectiveFilter(own, editions), [own, editions]);
-  const visible = useMemo(() => visibleRows(rows, filter, charEd, chosenId, ui.menuPicks), [rows, filter, charEd, chosenId, ui.menuPicks]);
+  const { preferred } = usePreferredCopies();
+  const visible = useMemo(() => visibleRows(rows, filter, charEd, chosenId, ui.menuPicks, preferred), [rows, filter, charEd, chosenId, ui.menuPicks, preferred]);
   const setFilter = useCallback((next: PickerFilter) => {
     if (next.edition !== sharedEdition) setEdition(next.edition);
     update((s) => ({ ...s, filter: next }));

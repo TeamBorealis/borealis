@@ -7,6 +7,7 @@ import { Glyph } from "../equipment/Glyph";
 import { arrowNav } from "./rowNav";
 import { ComponentCells, Mark, componentText, levelText, useSourceText } from "./SpellGrid";
 import { RowDetail } from "../../components/RowDetail";
+import { useClassSpellRows } from "./classSpellRows";
 import "../equipment/equipment.css";
 
 const isLocked = (s: SpellEntry) => s.level === 0 || s.alwaysPrepared;
@@ -33,6 +34,7 @@ export function ClassSpellGrid({ cls, picked, onPick }: { cls: ClassSpellcasting
   const sourceText = useSourceText();
   const canPrepare = cls.preparedMax > 0;
   const current = cls.spells.find((s) => s.id === picked);
+  const { rows, columns, versionHeader, versionCell, versionMenu } = useClassSpellRows(cls, onPick);
 
   const toggle = async (s: SpellEntry) => {
     onPick(s.id);
@@ -70,23 +72,26 @@ export function ClassSpellGrid({ cls, picked, onPick }: { cls: ClassSpellcasting
               <th scope="col" className="sp-vsm al-c">Somatic</th>
               <th scope="col" className="sp-vsm al-c">Material</th>
               <th scope="col" className="sp-src">Source</th>
+              {versionHeader}
             </tr>
           </thead>
           <tbody>
-            {cls.spells.length === 0 && <tr className="ap-empty-row"><td colSpan={7}>No spells to show.</td></tr>}
-            {cls.spells.map((s) => (
-              <tr key={`${s.id}:${s.slotId ?? ""}`} data-spell-id={s.id} className={picked === s.id ? "sel" : ""} onMouseDown={() => onPick(s.id)}
+            {rows.length === 0 && <tr className="ap-empty-row"><td colSpan={7 + columns}>No spells to show.</td></tr>}
+            {rows.map((row) => { const s = row.spell; return (
+              <tr key={row.key} data-spell-id={s.id} className={row.copies.some((c) => c.id === picked) ? "sel" : ""} onMouseDown={() => onPick(s.id)}
                 onDoubleClick={() => void toggle(s)} onKeyDown={(e) => onKey(e, s)}>
                 <td className="sp-ck"><Mark on={isKnown(s)} label={isLocked(s) ? "Always prepared" : "Prepared"} /></td>
                 <td className="sp-name"><button type="button" className="ap-name" onClick={() => onPick(s.id)}>{s.name}</button>{s.added && <AddedMark />}<RowDetail parts={[levelText(s), componentText(s.casting), sourceText(s)]} /></td>
                 <td className="sp-lvl">{levelText(s)}</td>
                 <ComponentCells casting={s.casting} />
                 <td className="sp-src">{sourceText(s)}</td>
+                {versionCell(row)}
               </tr>
-            ))}
+            ); })}
           </tbody>
         </table>
       </div>
+      {versionMenu}
     </>
   );
 }

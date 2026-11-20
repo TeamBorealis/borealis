@@ -6,6 +6,7 @@ import { Glyph } from "../equipment/Glyph";
 import { PickerFilterBar } from "../builder/PickerFilterBar";
 import { usePickerRows, useSwitchVersion } from "../builder/usePickerRows";
 import { VersionButton, VersionMenu } from "../builder/VersionMenu";
+import { usePreferredCopies } from "../../state/preferredCopies";
 import { arrowNav } from "./rowNav";
 import { EMPTY_FILTER, type FilterScope, narrowRows, spellFacts, type SpellFilterState } from "./SpellFilter";
 import { ComponentCells, componentText } from "./SpellGrid";
@@ -43,7 +44,8 @@ export function SlotOptionsGrid({ characterId, label, slot, picked, onPick, onCh
   const picker = usePickerRows(characterId, slot, !slot.locked);
   const switchVersion = useSwitchVersion();
   const { options, rows, charEd } = picker;
-  const visible = useMemo(() => narrowRows(picker.visible, spellFilter, charEd), [picker.visible, spellFilter, charEd]);
+  const { preferred } = usePreferredCopies();
+  const visible = useMemo(() => narrowRows(picker.visible, spellFilter, charEd, preferred), [picker.visible, spellFilter, charEd, preferred]);
   const versionColumn = visible.some((r) => r.versions.length > 1);
   const pool = useMemo(() => rows.flatMap((r) => r.all.map(spellFacts)), [rows]);
   useEffect(() => onScope?.(slot.id, { pool, shown: visible.length, total: rows.length }), [onScope, slot.id, pool, visible.length, rows.length]);

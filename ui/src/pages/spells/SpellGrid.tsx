@@ -7,6 +7,7 @@ import { useCharacter } from "../../state/CharacterContext";
 import { useAsync } from "../../state/useAsync";
 import { Glyph } from "../equipment/Glyph";
 import { arrowNav } from "./rowNav";
+import { useClassSpellRows } from "./classSpellRows";
 import "../equipment/equipment.css";
 
 const ORIGIN_SOURCE: Record<Exclude<SpellEntry["origin"], "race">, string> = { class: "", feat: "Feat", item: "Item" };
@@ -46,6 +47,7 @@ export function ComponentCells({ casting }: { casting: SpellFacts | null }) {
 export function SpellGrid({ cls, picked, onPick }: { cls: ClassSpellcasting; picked: string | null; onPick: (id: string) => void }) {
   const { mutate } = useCharacter();
   const sourceText = useSourceText();
+  const { rows, columns, versionHeader, versionCell, versionMenu } = useClassSpellRows(cls, onPick);
   return (
     <div className="ap-scroll sp-main">
       <table className="ap-grid eq-grid sp-grid" aria-label={`${cls.className} spells`}>
@@ -58,14 +60,16 @@ export function SpellGrid({ cls, picked, onPick }: { cls: ClassSpellcasting; pic
             <th scope="col" className="sp-vsm al-c">Somatic</th>
             <th scope="col" className="sp-vsm al-c">Material</th>
             <th scope="col" className="sp-src">Source</th>
+            {versionHeader}
           </tr>
         </thead>
         <tbody>
-          {cls.spells.length === 0 && <tr className="ap-empty-row"><td colSpan={7}>No spells to show.</td></tr>}
-          {cls.spells.map((s) => {
+          {rows.length === 0 && <tr className="ap-empty-row"><td colSpan={7 + columns}>No spells to show.</td></tr>}
+          {rows.map((row) => {
+            const s = row.spell;
             const locked = s.level === 0 || s.alwaysPrepared;
             return (
-              <tr key={`${s.id}:${s.slotId ?? ""}`} data-spell-id={s.id} className={picked === s.id ? "sel" : ""} onMouseDown={() => onPick(s.id)} onKeyDown={(e) => arrowNav(e, onPick)}>
+              <tr key={row.key} data-spell-id={s.id} className={row.copies.some((c) => c.id === picked) ? "sel" : ""} onMouseDown={() => onPick(s.id)} onKeyDown={(e) => arrowNav(e, onPick)}>
                 <td className="sp-ck">
                   <input type="checkbox" className="ap-check" aria-label={`Prepare ${s.name}`} checked={locked ? true : s.prepared} disabled={locked}
                     title={locked ? (s.level === 0 ? "Cantrips are always prepared" : "Always prepared") : undefined}
@@ -75,11 +79,13 @@ export function SpellGrid({ cls, picked, onPick }: { cls: ClassSpellcasting; pic
                 <td className="sp-lvl">{levelText(s)}</td>
                 <ComponentCells casting={s.casting} />
                 <td className="sp-src">{sourceText(s)}</td>
+                {versionCell(row)}
               </tr>
             );
           })}
         </tbody>
       </table>
+      {versionMenu}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import type { AppSettings } from "../api/contract";
+import type { AppSettings, SettingsPatch } from "../api/contract";
 import { DEFAULT_SETTINGS } from "../api/mock/default-settings";
 import { applyAccent } from "../lib/accent";
 import { isPhone, resolveThemeAttr, systemPrefersLight, usePhone } from "../lib/phone";
@@ -10,7 +10,7 @@ interface SettingsCtx {
   settings: AppSettings;
   /** False until the first `getSettings` answer arrived (the defaults are shown until then). */
   loaded: boolean;
-  update: (patch: Partial<AppSettings>) => Promise<void>;
+  update: (patch: SettingsPatch) => Promise<void>;
   /** Adopt settings returned by another command (e.g. `setAiOverride`). */
   replace: (settings: AppSettings) => void;
 }
@@ -72,7 +72,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const phone = usePhone();
   useEffect(() => applyTheme(settings), [settings, phone]);
   useSystemThemeFollow(settings, phone);
-  const update = useCallback(async (patch: Partial<AppSettings>) => {
+  const update = useCallback(async (patch: SettingsPatch) => {
     setSettings(await api.saveSettings({ patch }));
   }, [api]);
   const value = useMemo(() => ({ settings, loaded, update, replace: setSettings }), [settings, loaded, update]);
