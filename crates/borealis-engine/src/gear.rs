@@ -76,9 +76,15 @@ pub fn inventory_snapshot(
                 .at(e.el.id.clone()),
             );
         }
-        let name = it.alt_name.clone().unwrap_or_else(|| match adorner {
-            Some(a) => crate::item_name::adorned_name(e, a),
-            None => e.el.name.clone(),
+        let name = it.alt_name.clone().unwrap_or_else(|| {
+            crate::item_name::with_infusion(
+                uni,
+                it,
+                match adorner {
+                    Some(a) => crate::item_name::adorned_name(e, a),
+                    None => e.el.name.clone(),
+                },
+            )
         });
         items.push(ItemSnapshot {
             uid: it.uid.clone(),
@@ -103,6 +109,10 @@ pub fn inventory_snapshot(
                 .into_iter()
                 .map(element_ref)
                 .collect(),
+            infusion: crate::infusion_items::layer_of(uni, it).map(element_ref),
+            part: it.part.clone(),
+            infusion_linked: it.infusion_link.is_some() || it.infusion_layer_link.is_some(),
+            part_options: Vec::new(),
         });
     }
     let size = graph
@@ -127,6 +137,8 @@ pub fn inventory_snapshot(
         attuned: attuned_total,
         attunement_limit: limit,
         coin_order: Coin::ALL.to_vec(),
+        infusion_prompts: Vec::new(),
+        infusions: None,
     }
 }
 
@@ -239,8 +251,12 @@ pub fn attacks_with(
             _ => own_ability,
         });
         let loaded = crate::ammo::loaded(uni, state, e);
-        let enh = weapon_enhancement(&e.el, adorner.map(|a| a.el.as_ref()))
-            + loaded.as_ref().map_or(0, |l| l.enhancement);
+        let layer = crate::infusion_items::layer_of(uni, it);
+        let enh = weapon_enhancement(&e.el, adorner.map(|a| a.el.as_ref())).max(
+            layer
+                .and_then(|i| crate::ammo::enhancement_of(&i.el))
+                .unwrap_or(0),
+        ) + loaded.as_ref().map_or(0, |l| l.enhancement);
         let proficient = pact.is_some()
             || crate::item_prof::weapon_proficient(graph, e)
             || crate::item_prof::self_proficient(graph, &it.uid, e, adorner);

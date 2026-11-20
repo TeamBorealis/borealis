@@ -520,6 +520,47 @@ pub struct ItemSnapshot {
     /// (what "Override requirements" would apply).
     #[serde(default)]
     pub withheld_grants: Vec<ElementRef>,
+    /// The infusion layered on the line on top of its adorner.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub infusion: Option<ElementRef>,
+    /// The part of an item split into parts the line's infusion sits on.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub part: Option<String>,
+    /// The line is (or carries) an infusion pick's item.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub infusion_linked: bool,
+    /// The free parts this line's infusion may sit on ([`crate::infusion_items::legal_parts`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub part_options: Vec<String>,
+}
+
+/// The character's infusions in use against their maximum, and the parts one item splits into.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InfusionsSnapshot {
+    /// Lines that are (or carry) an infusion pick's item.
+    pub used: u32,
+    /// `item infusions:max`.
+    pub max: i32,
+    /// Parts one item counts as for infusions (each holds one).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parts: Vec<String>,
+    /// Name of the feature that splits it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parts_from: Option<String>,
+    /// What that feature adds to the maximum: usable only on parts.
+    #[serde(default)]
+    pub parts_bonus: i32,
+}
+
+/// A line an armor infusion can be layered on (the armor part of an item split into parts).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InfusionTarget {
+    /// Inventory uid.
+    pub uid: String,
+    /// The line's name.
+    pub name: String,
+    /// The part it becomes.
+    pub part: String,
 }
 
 fn default_true() -> bool {
@@ -545,6 +586,33 @@ pub struct InventorySnapshot {
     pub attunement_limit: u32,
     /// Coin denominations (for display order).
     pub coin_order: Vec<Coin>,
+    /// Picks whose magic item needs a base the user has not chosen yet
+    /// ([`crate::infusion_items`]): "Choose the item for ...".
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub infusion_prompts: Vec<InfusionPrompt>,
+    /// Infusions in use, when the character has the `item infusions:max` statistic.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub infusions: Option<InfusionsSnapshot>,
+}
+
+/// A pick whose magic item waits for its base ([`crate::infusion_items::prompts`]).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InfusionPrompt {
+    /// Link id of the pick (pass it when adding the item).
+    pub link: String,
+    /// The picked element.
+    pub infusion_id: String,
+    /// Its name.
+    pub infusion: String,
+    /// The magic items it can make; each lists its legal bases.
+    pub items: Vec<String>,
+    /// Lines it can be layered on instead (an armor part), when the character has parts.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub targets: Vec<InfusionTarget>,
+    /// Lines the character already owns holding one of the items (`part` empty): the user may
+    /// choose one of them instead of a new copy ([`crate::infusion_items::adopt`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub owned: Vec<InfusionTarget>,
 }
 
 /// An attack line derived from an equipped weapon.

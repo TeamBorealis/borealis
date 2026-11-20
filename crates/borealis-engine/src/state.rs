@@ -215,6 +215,28 @@ pub struct InventoryItem {
     /// Absent (false) on every other line, and in files written before it.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub added_pick: bool,
+    /// The pick (an artificer's infusion) whose magic item this line is
+    /// ([`crate::infusion_items::link_of`]): removing the pick removes this one copy. Absent on
+    /// every other line and in older files (a pick then adopts a matching line on load).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub infusion_link: Option<String>,
+    /// The linked line is the character's own (chosen for the pick, or added by hand before the
+    /// link existed), not a copy the pick added: when the pick goes it is unlinked and kept as
+    /// it is, and the pick's level never rewrites its magic item.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub infusion_adopted: bool,
+    /// An infusion's magic item layered on the line on top of its own adorner: armor a feature
+    /// turned into its special armor, infused on its armor part ([`crate::infusion_items`]).
+    /// Its rules apply like an adorner's; a weapon takes the higher enhancement.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub infusion: Option<String>,
+    /// The pick whose item [`Self::infusion`] is: removing the pick removes the layer only.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub infusion_layer_link: Option<String>,
+    /// The part of an item split into parts for infusions (`boots`) the line's infusion sits on;
+    /// each part holds one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub part: Option<String>,
 }
 
 fn yes() -> bool {
@@ -247,6 +269,11 @@ impl InventoryItem {
             rolled_max: BTreeMap::new(),
             override_requirements: false,
             added_pick: false,
+            infusion_link: None,
+            infusion_adopted: false,
+            infusion: None,
+            infusion_layer_link: None,
+            part: None,
         }
     }
 }

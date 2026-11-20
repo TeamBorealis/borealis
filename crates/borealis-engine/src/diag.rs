@@ -38,6 +38,10 @@ pub mod code {
     pub const ATTUNEMENT_OVER_LIMIT: &str = "attunement.over_limit";
     /// An attuned item whose attunement restriction the character does not meet.
     pub const ATTUNEMENT_RESTRICTED: &str = "attunement.restricted";
+    /// More infusion items than `item infusions:max`, or than the parts allow.
+    pub const INFUSIONS_OVER_LIMIT: &str = "infusions.over_limit";
+    /// Two infusions on one part of an item split into parts.
+    pub const INFUSIONS_PART_TAKEN: &str = "infusions.part_taken";
     pub const EVAL_NOT_CONVERGED: &str = "eval.not_converged";
     pub const MULTICLASS_NO_SLOT_TABLE: &str = "multiclass.no_slot_table";
 }

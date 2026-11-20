@@ -87,6 +87,10 @@ fn grow(
             show_card: false,
             override_requirements: false,
             withheld_grants: Vec::new(),
+            infusion: None,
+            part: None,
+            infusion_linked: false,
+            part_options: Vec::new(),
         });
         names.push(name);
     }

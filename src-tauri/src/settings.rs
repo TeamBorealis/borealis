@@ -168,6 +168,9 @@ pub struct AppSettings {
     pub show_import_notice: bool,
     /// "Check for new versions of Borealis": at startup, ask GitHub for the latest version number (default on).
     pub check_app_updates: bool,
+    /// Rules tab "Features that count as a weapon" ([`EngineSettings::feature_weapons`]): a feature whose text says it
+    /// "counts as a simple ranged weapon" gets a weapon of its own (default off: the reference app has none).
+    pub feature_weapons: bool,
     /// Local search (local-search-spec.md section 9).
     pub search: SearchSettings,
     /// HC3: the homebrew creator is shown (START > HOMEBREW and its entry points). Read-only for the UI: the build's
@@ -292,6 +295,7 @@ impl Default for AppSettings {
             portrait_size: 150,
             show_import_notice: true,
             check_app_updates: true,
+            feature_weapons: false,
             search: SearchSettings::default(),
             creator_enabled: CREATOR_ENABLED,
         }
@@ -377,6 +381,7 @@ impl AppSettings {
             point_buy_budget: Some(self.point_buy_budget),
             min_base_score: self.ability_min_base,
             max_base_score: self.ability_max_base,
+            feature_weapons: self.feature_weapons,
             ..EngineSettings::default()
         }
     }
