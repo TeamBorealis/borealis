@@ -94,7 +94,8 @@ pub fn needs_base(uni: &Universe, e: &UElem) -> bool {
     base_kind(e).is_some() && implied_base(uni, e).is_none()
 }
 
-/// Whether `base` is one of the bases the magic weapon or armor `adorner` can be applied to:
+/// Whether `base` is one of the bases the magic weapon or armor `adorner` can be applied to (never
+/// a base that is magic itself, [`is_magic`]):
 /// a base of its kind matching its `weapon` / `armor` setter (a supports expression of group
 /// ids and names, `(ID_..._MEDIUM||ID_..._HEAVY),!Hide`, or a `|` list of names). No setter
 /// allows every base of that kind.
@@ -103,7 +104,7 @@ pub fn can_adorn(adorner: &UElem, base: &UElem) -> bool {
     let Some((base_ty, setter)) = base_kind(adorner) else {
         return false;
     };
-    if base.el.ty != base_ty {
+    if base.el.ty != base_ty || is_magic(&base.el) {
         return false;
     }
     let Some(v) = adorner
@@ -150,6 +151,18 @@ pub fn resolve<'u>(
         });
     };
     Some((item, uni.get(adorner)))
+}
+
+/// A weapon or armor element that is magic on its own: a rarity other than mundane, or an
+/// enhancement bonus. A magic item is made only from a nonmagical base, so such an element is
+/// never a base ([`can_adorn`]).
+#[must_use]
+pub fn is_magic(el: &borealis_content::Element) -> bool {
+    let rare = el.setter_value("rarity").is_some_and(|r| {
+        let r = r.trim().to_lowercase();
+        !r.is_empty() && r != "mundane" && r != "none"
+    });
+    rare || crate::ammo::enhancement_of(el).is_some_and(|e| e > 0)
 }
 
 /// [`item_facts`] of what the element is used as: an item with an implied base is equipped
