@@ -205,10 +205,15 @@ impl AppState {
     pub fn list_sources(&self) -> ApiResult<Vec<ContentSource>> {
         let hub = self.hub()?;
         let chosen = self.content_prefs().source_editions();
-        let names: BTreeMap<String, String> = self
-            .installed_packs()
-            .into_iter()
-            .map(|p| (p.manifest.id, p.manifest.name))
+        let installed = self.installed_packs();
+        let names: BTreeMap<String, String> = installed
+            .iter()
+            .map(|p| (p.manifest.id.clone(), p.manifest.name.clone()))
+            .collect();
+        let homebrew_packs: BTreeSet<&str> = installed
+            .iter()
+            .filter(|p| kind_of(p).0 == PackKind::Homebrew)
+            .map(|p| p.manifest.id.as_str())
             .collect();
         // A book's `Source` element names the book but usually belongs to the `Core` (Aurora) or `Internal`
         // (5etools import) source, so it is found by name, not among the book's own elements.
@@ -241,7 +246,11 @@ impl AppState {
             let description = descriptor
                 .map(|e| plain_text(&e.description))
                 .unwrap_or_default();
-            let flags = source_flags(descriptor);
+            let mut flags = source_flags(descriptor);
+            // The user's homebrew pack is homebrew, whatever its Source element says.
+            if homebrew_packs.contains(pack_id.as_str()) {
+                flags.third_party = false;
+            }
             let (edition, imported) =
                 crate::book_editions::loaded_edition(elements.iter().copied());
             out.push(ContentSource {
@@ -252,6 +261,7 @@ impl AppState {
                 element_count: elements.len(),
                 description,
                 playtest: flags.playtest,
+                third_party: flags.third_party,
                 incomplete: flags.incomplete,
                 info: flags.info,
                 edition,
@@ -374,11 +384,14 @@ impl AppState {
 #[derive(Debug, Default, PartialEq, Eq)]
 struct SourceFlags {
     playtest: bool,
+    third_party: bool,
     incomplete: bool,
     info: String,
 }
 
-/// Reads `playtest`/`beta`, `incomplete`/`wip` and `information` from a book's `Source` element (none: no flags).
+/// Reads `playtest`/`beta`, `third-party`, `incomplete`/`wip` and `information` from a book's `Source` element
+/// (none: no flags). Third-party is the book's own `third-party` setter (unless it also sets `official`), as Aurora reads it; playtest material
+/// counts only as playtest, and homebrew (`homebrew`) stays its own kind, never third-party.
 fn source_flags(src: Option<&borealis_content::Element>) -> SourceFlags {
     let Some(src) = src else {
         return SourceFlags::default();
@@ -388,8 +401,13 @@ fn source_flags(src: Option<&borealis_content::Element>) -> SourceFlags {
             .iter()
             .any(|n| src.setter(n).and_then(|s| s.as_bool()) == Some(true))
     };
+    let playtest = flag(&["playtest", "beta"]);
     SourceFlags {
-        playtest: flag(&["playtest", "beta"]),
+        playtest,
+        third_party: !playtest
+            && !flag(&["homebrew"])
+            && !flag(&["official"])
+            && flag(&["third-party"]),
         incomplete: flag(&["incomplete", "wip"]),
         info: src
             .setter_value("information")
@@ -427,6 +445,7 @@ mod source_flag_tests {
             source_flags(Some(&e)),
             SourceFlags {
                 playtest: true,
+                third_party: false,
                 incomplete: true,
                 info: "Draft.".into()
             }
@@ -438,5 +457,38 @@ mod source_flag_tests {
         let e = source(&[("incomplete", "false")]);
         assert_eq!(source_flags(Some(&e)), SourceFlags::default());
         assert_eq!(source_flags(None), SourceFlags::default());
+    }
+
+    #[test]
+    fn third_party_is_the_source_element_setter() {
+        let marked = source(&[("third-party", "true")]);
+        assert!(source_flags(Some(&marked)).third_party);
+        // Not setting `official` does not make a book third-party.
+        let unmarked = source(&[("author", "Someone")]);
+        assert!(!source_flags(Some(&unmarked)).third_party);
+        let declined = source(&[("third-party", "false")]);
+        assert!(!source_flags(Some(&declined)).third_party);
+    }
+
+    #[test]
+    fn homebrew_is_its_own_kind_not_third_party() {
+        let plain = source(&[("homebrew", "true")]);
+        assert!(!source_flags(Some(&plain)).third_party);
+        let marked = source(&[("homebrew", "true"), ("third-party", "true")]);
+        assert!(!source_flags(Some(&marked)).third_party);
+    }
+
+    #[test]
+    fn an_official_book_is_not_third_party() {
+        let both = source(&[("official", "true"), ("third-party", "true")]);
+        assert!(!source_flags(Some(&both)).third_party);
+    }
+
+    #[test]
+    fn playtest_material_is_not_also_third_party() {
+        // A 5etools playtest import sets `third-party` and `playtest`; it is restricted as playtest.
+        let ua = source(&[("third-party", "true"), ("playtest", "true")]);
+        let f = source_flags(Some(&ua));
+        assert!(f.playtest && !f.third_party);
     }
 }
