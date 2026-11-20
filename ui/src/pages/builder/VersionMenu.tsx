@@ -1,8 +1,10 @@
 import { forwardRef, type KeyboardEvent, type MouseEvent, useEffect, useId, useRef, useState } from "react";
 import type { Ruleset } from "../../api/contract";
 import { Flyout, Icon } from "../../components";
+import { CheckBox } from "../../components/controls";
 import { usePhone } from "../../lib/phone";
-import { menuSections, type VersionLike } from "../../lib/versions";
+import { menuSections, preferredOf, type VersionLike } from "../../lib/versions";
+import { usePreferredCopies } from "../../state/preferredCopies";
 import { Popover } from "./Popover";
 
 /** Accessible name of a row's version button. */
@@ -35,12 +37,29 @@ interface ListProps {
 /** A13 / TV2: the phone sheet adds each version's short description under its source, so the versions can be compared. */
 interface VersionListProps extends ListProps { withSummary: boolean }
 
-const optionLabel = (v: VersionLike, chosen: boolean): string =>
-  [v.sourceName ?? v.name, chosen ? "chosen" : "", v.disabledReason ?? ""].filter(Boolean).join(", ");
+const optionLabel = (v: VersionLike, chosen: boolean, always: boolean): string =>
+  [v.sourceName ?? v.name, chosen ? "chosen" : "", always ? "always used" : "", v.disabledReason ?? ""].filter(Boolean).join(", ");
+
+/**
+ * GitHub #51: "Always use this copy" for the shown version, remembered per name and edition in the app settings: the
+ * pickers then show that copy first wherever the name has several. Only the default changes; nothing chosen is switched.
+ */
+function AlwaysUse({ shown, charEd, always }: { shown: VersionLike; charEd: Ruleset; always: boolean }) {
+  const { setAlways } = usePreferredCopies();
+  const label = `Always use the ${shown.sourceName ?? shown.name} copy`;
+  return (
+    <label className="vm-always" title="Show this copy first wherever this name has several copies">
+      <CheckBox checked={always} onChange={(e) => void setAlways(shown, [charEd], e.currentTarget.checked)} />
+      <span>{label}</span>
+    </label>
+  );
+}
 
 /** The menu body: a listbox with one group per edition (sec. 1.4). Up/Down move, Enter or Space picks. */
 function VersionList({ rowName, versions, charEd, shownId, chosenId, onPick, withSummary }: VersionListProps) {
   const sections = menuSections(versions, charEd);
+  const alwaysId = preferredOf(versions, charEd, usePreferredCopies().preferred)?.id ?? null;
+  const shown = versions.find((v) => v.id === shownId);
   const flat = sections.flatMap((s) => s.versions);
   const [active, setActive] = useState(() => Math.max(0, flat.findIndex((v) => v.id === shownId)));
   const ref = useRef<HTMLDivElement>(null);
@@ -55,6 +74,7 @@ function VersionList({ rowName, versions, charEd, shownId, chosenId, onPick, wit
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const v = flat[active]; if (v) pick(v); }
   };
   return (
+    <>
     <div ref={ref} role="listbox" tabIndex={0} className="vm-list" aria-label={`Versions of ${rowName}`}
       aria-activedescendant={flat.length ? optId(active) : undefined} onKeyDown={onKey}>
       {sections.map((s) => (
@@ -63,14 +83,16 @@ function VersionList({ rowName, versions, charEd, shownId, chosenId, onPick, wit
           {s.versions.map((v) => {
             const idx = flat.indexOf(v);
             const chosen = v.id === chosenId;
+            const always = v.id === alwaysId;
             const summary = withSummary ? v.shortDescription?.trim() : "";
             return (
               <div key={v.id} id={optId(idx)} role="option" aria-selected={v.id === shownId} aria-disabled={v.disabledReason ? true : undefined}
-                aria-label={optionLabel(v, chosen)} aria-describedby={summary ? `${optId(idx)}-d` : undefined} className={`vm-opt ${idx === active ? "active" : ""} ${v.disabledReason ? "disabled" : ""}`}
+                aria-label={optionLabel(v, chosen, always)} aria-describedby={summary ? `${optId(idx)}-d` : undefined} className={`vm-opt ${idx === active ? "active" : ""} ${v.disabledReason ? "disabled" : ""}`}
                 onMouseEnter={() => setActive(idx)} onClick={() => pick(v)}>
                 <span className="vm-tick" aria-hidden="true">{v.id === shownId && <Icon name="check" />}</span>
                 <span className="vm-src" aria-hidden="true">{v.sourceName ?? v.name}</span>
                 {chosen && <span className="vm-sub" aria-hidden="true">chosen</span>}
+                {always && <span className="vm-sub" aria-hidden="true">always used</span>}
                 {v.disabledReason && <span className="vm-reason" aria-hidden="true">{v.disabledReason}</span>}
                 {summary && <span id={`${optId(idx)}-d`} className="vm-desc">{summary}</span>}
               </div>
@@ -79,6 +101,8 @@ function VersionList({ rowName, versions, charEd, shownId, chosenId, onPick, wit
         </div>
       ))}
     </div>
+    {shown && <AlwaysUse shown={shown} charEd={charEd} always={shown.id === alwaysId} />}
+    </>
   );
 }
 
