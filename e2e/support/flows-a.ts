@@ -122,6 +122,9 @@ export function boxOf(ctx: Ctx, css: string, n = 0): Promise<{ x: number; y: num
 
 /** Click the sub-tab whose text is `name` (case-insensitive exact), with a real pointer. */
 export async function clickSubTab(ctx: Ctx, name: string): Promise<void> {
+  // a route change (location.hash) lands before the new page renders its tabs: wait for the tab first
+  await waitFor(ctx, (name: string) => Array.from(document.querySelectorAll('[role=tab]'))
+    .some((t) => (t.textContent ?? '').trim().toLowerCase() === name.toLowerCase()), name, `sub-tab "${name}"`);
   const idx = await ctx.browser.evaluate((name: string) => {
     const tabs = Array.from(document.querySelectorAll('[role=tab]'));
     return tabs.findIndex((t) => (t.textContent ?? '').trim().toLowerCase() === name.toLowerCase());
