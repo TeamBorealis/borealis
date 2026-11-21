@@ -169,7 +169,11 @@ const fn ku(
 
 const NORMALIZE: &str = "custom_rules::normalize";
 const NOTES: &str = "notes_d (note text)";
-const NOTES_GENERIC: &str = "notes_d (fields shown verbatim)";
+/// Kinds `notes_d` once showed field by field. It now writes a plain sentence for the ones to remember at the table
+/// and no note for bookkeeping (`notes_d::BOOKKEEPING`, GitHub #70); their readers take a single value wherever a
+/// list is expected, so the homebrew check accepts either (`borealis_authoring::blocks::fit`).
+pub const NOTES_LENIENT: &str =
+    "notes_d (sentence or bookkeeping; a list field also takes one value)";
 const COMBAT: &str = "combat";
 const ATTACK: &str = "attack_rules";
 const PLAY: &str = "play_rules";
@@ -204,7 +208,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
     ),
     k(
         "at_will_spells",
-        NOTES_GENERIC,
+        NOTES_LENIENT,
         true,
         &["levels", "casting_time", "swap_on"],
     ),
@@ -251,7 +255,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
     ),
     k(
         "cantrip_swap",
-        NOTES_GENERIC,
+        NOTES_LENIENT,
         true,
         &["spell_list", "swap_on", "replaces"],
     ),
@@ -375,7 +379,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
     ),
     k(
         "free_cast_choice",
-        NOTES_GENERIC,
+        NOTES_LENIENT,
         true,
         &[
             "spell_level",
@@ -458,7 +462,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
     ),
     k(
         "pact_weapon",
-        NOTES_GENERIC,
+        NOTES_LENIENT,
         true,
         &[
             "action",
@@ -471,7 +475,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
     k("prepared_spell_change", SPELLS, false, &["when", "count"]),
     k(
         "proficiency_filter",
-        NOTES_GENERIC,
+        NOTES_LENIENT,
         true,
         &["name", "weapon_category", "properties_any"],
     ),
@@ -481,7 +485,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
         true,
         &["condition", "amount", "timing"],
     ),
-    k("replace_on_level", NOTES_GENERIC, true, &["scope", "count"]),
+    k("replace_on_level", NOTES_LENIENT, true, &["scope", "count"]),
     ku(
         "resource",
         PLAY,
@@ -612,7 +616,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
     ),
     k(
         "spell_cast_alt_cost",
-        NOTES_GENERIC,
+        NOTES_LENIENT,
         true,
         &["spell", "cost", "no_material"],
     ),
@@ -631,7 +635,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
     ),
     k(
         "spell_replace_on_level",
-        NOTES_GENERIC,
+        NOTES_LENIENT,
         true,
         &["scope", "same_level"],
     ),

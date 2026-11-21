@@ -125,7 +125,7 @@ export function buildPlay(c: MockCharacter, sc: SpellcastingState, conMod = 0, h
       resistances: ["bludgeoning", "piercing", "slashing"].map((name) => ({ name, source: "Rage", active: raging, whileToggle: "rage" })),
       immunities: [], vulnerabilities: [], conditionImmunities: [],
     },
-    senses: [{ name: "darkvision", range: 60, source: "Mock species" }], advantages: [{ roll: "saving throw", text: "Advantage against being charmed.", source: "Mock species", active: true }],
+    senses: [{ name: "darkvision", range: 60, source: "Mock species" }], advantages: [{ roll: "saving_throw", text: "Advantage against being charmed.", source: "Mock species", active: true }],
     initiativeAdvantage: false, notes: [{ kind: "note", text: "Mock note.", source: "Mock class" }], carry: null,
     wildShape: buildWildShape(c),
     equipmentPackages: [{

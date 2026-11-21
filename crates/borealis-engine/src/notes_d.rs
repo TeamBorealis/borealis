@@ -1,6 +1,13 @@
 //! Surfaced rules of engine slice D (auras, Cunning Strike, Channel Divinity options, cantrip
 //! riders, free casts, slot recovery, ...). Each live custom rule becomes one [`RuleNote`] whose
 //! text carries the numbers the engine can compute (level scaling, ability modifiers).
+//!
+//! The notes are the Play tab's Situational list, so every note is a plain sentence (GitHub #70).
+//! Rules that are bookkeeping rather than something to remember at the table give no note: a
+//! re-pick on a level or a rest ([`BOOKKEEPING`]: the picks stay editable in the builder), a weapon
+//! proficiency filter (`item_prof` applies it to the weapons) and a pact weapon (`pact_weapon`
+//! bonds it on the Gear tab). Their feature's own text still tells the player. A free cast of a
+//! chosen spell (`spell_free_cast`) is a tracked use (`spell_rules`), not a note.
 
 use crate::combat::RuleNote;
 use crate::graph::Graph;
@@ -28,11 +35,20 @@ pub const KINDS: &[&str] = &[
     "cantrip_rider",
     "cantrip_swap",
     "free_cast_choice",
-    "spell_free_cast",
     "spell_cast_alt_cost",
     "slot_recovery",
     "at_will_spells",
     "spell_replace_on_level",
+];
+
+/// Kinds of [`KINDS`] that give no note: when a pick may be changed, which weapons count as
+/// proficient, and the pact weapon bond are bookkeeping, not Situational text.
+pub const BOOKKEEPING: &[&str] = &[
+    "replace_on_level",
+    "spell_replace_on_level",
+    "cantrip_swap",
+    "proficiency_filter",
+    "pact_weapon",
 ];
 
 struct Cx<'a, 'u> {
@@ -208,17 +224,111 @@ fn slot_recovery(l: &Live<'_>, cx: &Cx<'_, '_>) -> String {
     )
 }
 
-fn generic(l: &Live<'_>) -> String {
-    let rest: Vec<String> =
+/// `"a"` or `"an"` before `word`.
+fn article(word: &str) -> &'static str {
+    if word.starts_with(['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U']) {
+        "an"
+    } else {
+        "a"
+    }
+}
+
+/// `one`, `two` or `n` joined as `a, b or c`.
+fn or_list(items: &[String]) -> String {
+    match items {
+        [] => String::new(),
+        [one] => one.clone(),
+        [rest @ .., last] => format!("{} or {last}", rest.join(", ")),
+    }
+}
+
+/// How often: `once`, `twice`, `3 times`.
+fn times(n: u64) -> String {
+    match n {
+        1 => "once".to_string(),
+        2 => "twice".to_string(),
+        n => format!("{n} times"),
+    }
+}
+
+/// A rest token as words: `short_rest` -> `short rest`.
+fn words(token: &str) -> String {
+    token.replace('_', " ")
+}
+
+/// Spell Mastery: chosen spells of some levels cast at will.
+fn at_will_spells(l: &Live<'_>) -> String {
+    let levels: Vec<String> = match l.c.fields.get("levels") {
+        Some(Value::Array(a)) => a.iter().filter_map(Value::as_u64).collect(),
+        Some(v) => v.as_u64().into_iter().collect(),
+        None => Vec::new(),
+    }
+    .iter()
+    .map(|lv| format!("level {lv}"))
+    .collect();
+    let levels = match levels.as_slice() {
+        [] => String::new(),
+        [one] => format!("{one} "),
+        [rest @ .., last] => format!("{} and {last} ", rest.join(", ")),
+    };
+    let time = l.str("casting_time").map_or(String::new(), |t| {
+        let t = words(t);
+        format!(" (casting time: {} {t})", article(&t))
+    });
+    format!("Cast your chosen {levels}spells{time} at their lowest level without a spell slot")
+}
+
+/// Signature Spells, Natural Recovery: chosen spells cast without a slot a number of times.
+fn free_cast_choice(l: &Live<'_>) -> String {
+    let count = l.c.fields.get("count").and_then(Value::as_u64).unwrap_or(1);
+    let level =
         l.c.fields
-            .iter()
-            .filter(|(k, _)| !matches!(k.as_str(), "level" | "requirements"))
-            .map(|(k, v)| {
-                let t = v.as_str().map_or_else(|| v.to_string(), str::to_string);
-                format!("{}: {t}", k.replace('_', " "))
-            })
-            .collect();
-    format!("{}: {}", l.el.name, rest.join("; "))
+            .get("spell_level")
+            .and_then(Value::as_u64)
+            .map_or(String::new(), |n| format!("level {n} "));
+    let from = l
+        .str("from_feature")
+        .map_or(String::new(), |f| format!(" from {f}"));
+    let uses =
+        l.c.fields
+            .get("uses_each")
+            .or_else(|| l.c.fields.get("uses"))
+            .and_then(Value::as_u64)
+            .unwrap_or(1);
+    let what = if count == 1 {
+        format!("one chosen {level}spell{from}")
+    } else {
+        format!("each of {count} chosen {level}spells{from}")
+    };
+    let rests: Vec<String> = l.list("recharge").iter().map(|r| words(r)).collect();
+    let regain = if rests.is_empty() {
+        String::new()
+    } else {
+        format!("; regained on {} {}", article(&rests[0]), or_list(&rests))
+    };
+    format!("Cast {what} {} without a spell slot{regain}", times(uses))
+}
+
+/// Wild Companion: a spell cast with another cost.
+fn spell_cast_alt_cost(l: &Live<'_>, cx: &Cx<'_, '_>) -> String {
+    // an id not loaded reads as its words ("ID_X_SPELL_FIND_FAMILIAR" -> "find familiar")
+    let spell = crate::rule_terms::term(cx.graph.uni, s(l, "spell"), "SPELL_");
+    let costs: Vec<String> = l
+        .list("cost")
+        .iter()
+        .map(|c| format!("{} {c}", article(c)))
+        .collect();
+    let by = if costs.is_empty() {
+        String::new()
+    } else {
+        format!(" by expending {}", or_list(&costs))
+    };
+    let material = if l.c.fields.get("no_material").and_then(Value::as_bool) == Some(true) {
+        ", without Material components"
+    } else {
+        ""
+    };
+    format!("Cast {spell}{by}{material}")
 }
 
 fn text(l: &Live<'_>, cx: &Cx<'_, '_>) -> Option<String> {
@@ -290,7 +400,10 @@ fn text(l: &Live<'_>, cx: &Cx<'_, '_>) -> Option<String> {
             s(l, "effect")
         ),
         "slot_recovery" => slot_recovery(l, cx),
-        _ => generic(l),
+        "at_will_spells" => at_will_spells(l),
+        "free_cast_choice" => free_cast_choice(l),
+        "spell_cast_alt_cost" => spell_cast_alt_cost(l, cx),
+        _ => return None,
     })
 }
 
@@ -306,6 +419,9 @@ pub fn notes(graph: &Graph<'_>, stats: &StatSet, mods: &[i32; 6]) -> Vec<RuleNot
     };
     let mut out: Vec<RuleNote> = Vec::new();
     for l in live_rules(graph, KINDS) {
+        if BOOKKEEPING.contains(&l.c.kind.as_str()) {
+            continue;
+        }
         let Some(text) = text(&l, &cx) else { continue };
         let note = RuleNote {
             kind: l.c.kind.clone(),

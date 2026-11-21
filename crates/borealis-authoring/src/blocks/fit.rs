@@ -3,7 +3,7 @@
 //! preserved bucket unchanged.
 
 use super::{block, BlockField, BlockSpec, Control};
-use borealis_content::rule_kinds::spec;
+use borealis_content::rule_kinds::{spec, NOTES_LENIENT};
 use borealis_content::rules::{GrantRule, StatRule};
 use serde_json::{Map, Value};
 
@@ -16,10 +16,10 @@ const ABILITIES: [&str; 6] = [
     "charisma",
 ];
 
-/// The reader of these kinds shows every field verbatim (`notes_d` "fields shown verbatim"): a single value where the
-/// block writes a list reads the same.
-fn shown_verbatim(kind: &str) -> bool {
-    spec(kind).is_some_and(|s| s.reader.contains("verbatim"))
+/// The reader of these kinds (`rule_kinds::NOTES_LENIENT`) reads a single value where the block writes a list the
+/// same way.
+fn list_takes_one_value(kind: &str) -> bool {
+    spec(kind).is_some_and(|s| s.reader == NOTES_LENIENT)
 }
 
 fn int_in(v: &Value, min: i32, max: i32) -> bool {
@@ -220,7 +220,7 @@ pub fn misfits_with(
     fields: &Map<String, Value>,
     skills: &[String],
 ) -> Vec<String> {
-    let verbatim = shown_verbatim(block.kind);
+    let lenient = list_takes_one_value(block.kind);
     fields
         .iter()
         .filter(|(k, v)| {
@@ -229,7 +229,7 @@ pub fn misfits_with(
                 "requirements" if block.only_if => v.is_string(),
                 _ => block.field(k).is_some_and(|f| {
                     value_fits_with(&f.control, v, skills)
-                        || (verbatim
+                        || (lenient
                             && v.is_string()
                             && matches!(f.control, Control::Chips { .. } | Control::Numbers { .. })
                             && value_fits_with(
