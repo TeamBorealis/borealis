@@ -1,6 +1,9 @@
 /* BUILD tab: two-pane page (11* / 5*), classic builder pickers, description pane, ability spinners, level-up block. */
-.bp { display: block; min-width: 0; --bp-split: #1a1c1d; --bp-desc-bg: #131313; --bp-box: #1e2325; --bp-rule: #252d31; --bp-sel: #283136; }
-:root[data-theme="light"] .bp, :root[data-contrast="high"] .bp { --bp-split: var(--highlight); --bp-desc-bg: var(--description-bg); --bp-box: var(--light-2); --bp-rule: var(--light-2); --bp-sel: var(--highlight); }
+.bp { display: block; min-width: 0; }
+/* The Build picker's colours; the creator's reference picker dialog (.hb-picker) draws the same rows outside .bp. */
+.bp, .hb-picker { --bp-split: #1a1c1d; --bp-desc-bg: #131313; --bp-box: #1e2325; --bp-rule: #252d31; --bp-sel: #283136; }
+:root[data-theme="light"] .bp, :root[data-contrast="high"] .bp,
+:root[data-theme="light"] .hb-picker, :root[data-contrast="high"] .hb-picker { --bp-split: var(--highlight); --bp-desc-bg: var(--description-bg); --bp-box: var(--light-2); --bp-rule: var(--light-2); --bp-sel: var(--highlight); }
 .bp-left { padding: 12px 14px 24px; min-width: 0; }
 :root { --desc-head: #c1c1c1; }
 :root[data-theme="light"], :root[data-contrast="high"] { --desc-head: var(--text); }

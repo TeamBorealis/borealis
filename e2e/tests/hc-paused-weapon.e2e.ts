@@ -6,7 +6,7 @@ import { textOf, waitFor, type Ctx } from '../support/flows-a.js';
 // The two paused 1.5.0 creator items, checked on a weapon in the web mock (`?creator=1`):
 // 1. desktop 1355x847: the element's title band and the Undo / Try it / Save row stay on screen while the form scrolls;
 // 2. the weapon's Properties picker (multi-select): desktop rows carry the Magic grid's check box (spec 5.1), the picks are
-//    not listed again under the list, and the description pane describes the property; on a phone (390x844) a checked
+//    not listed again under the list, the described row is highlighted and the description pane describes the property; on a phone (390x844) a checked
 //    row's mark is drawn checked (its ::after carries the check mask), with the element's name in the sticky head.
 // Deterministic: no model.
 
@@ -79,6 +79,12 @@ describe('hc-paused creator weapon: fixed editor head and multi-select pickers (
       missing: (document.querySelector('.hb-picker-desc')?.textContent ?? '').includes('does not exist'),
     }), null);
     expectEqual('two checked rows, no footer list, the row described', JSON.stringify({ checked: ['Finesse', 'Light'], footer: 0, missing: false }), String(state));
+    // The described row has the Build picker's highlight; a checked row that is not described has none.
+    const bg = (row: string) => ctx.browser.evaluate((r: string) =>
+      getComputedStyle(document.querySelector(`.hb-pick-list .pick-row[data-row="${r}"] button.pick-main`)!).backgroundColor, row);
+    const [described, checked, plain] = [String(await bg('Finesse')), String(await bg('Light')), String(await bg('Heavy'))];
+    expectEqual('described row highlighted', 'true', String(described !== plain));
+    expectEqual('a checked row is not highlighted', plain, checked);
     await ctx.screen.getByRole('button', 'OK').tap();
     await expect(ctx.screen.getByRole('dialog', /^Choose/)).toBeHidden();
     const names = await ctx.browser.evaluate((_: null) => [...document.querySelectorAll('[data-field="properties"] .hb-ref-name')].map((n) => n.textContent).join(','), null);

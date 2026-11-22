@@ -67,6 +67,15 @@ describe("multi-select reference picker on desktop", () => {
   });
 });
 
+describe("the reference picker's row colours", () => {
+  it("the dialog has the Build picker's colours, so the described row is highlighted (--bp-sel was only set on .bp)", () => {
+    const rules = parseRules(readCss("pages/builder/builder.css"));
+    const dark = rules.filter((r) => r.selectors.includes(".hb-picker") && r.atRules.length === 0).map((r) => r.body).join(";");
+    for (const v of ["--bp-sel", "--bp-box", "--bp-rule"]) expect(dark, v).toMatch(new RegExp(`${v}:`));
+    expect(rules.some((r) => r.selectors.includes(':root[data-theme="light"] .hb-picker') && /--bp-sel:/.test(r.body))).toBe(true);
+  });
+});
+
 describe("multi-select reference picker on phones", () => {
   it("draws a checked mark checked: the phone rule keys on the attribute the mark carries", async () => {
     // Arrange
