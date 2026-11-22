@@ -53,9 +53,9 @@ function onKeyNav(e: KeyboardEvent<HTMLButtonElement>): void {
 
 /**
  * The reference picker dialog (spec 5.1, 13.5): the Build picker's expander band, focus bar, filter bar (search, Edition,
- * Source) and rows (NAME, italic summary, prerequisites, SOURCE), the chosen line with its X, and the description pane on
- * the right. Spells get the Magic grid and filter bar (13.7); `multiple` pickers keep a check per row. Double-click,
- * Enter or Choose picks. On phones it is a bottom sheet with Choose under the description (spec 16, O2 B).
+ * Source) and rows (NAME, italic summary, prerequisites, SOURCE), the chosen line, and the description pane on the right.
+ * Spells get the Magic grid and filter bar (13.7); `multiple` pickers keep a check box per row instead of the chosen line.
+ * Double-click, Enter or Choose picks. On phones it is a bottom sheet with Choose under the description (spec 16, O2 B).
  */
 export function ReferencePicker({ title, target, chosen, onChoose, onClose, filters }: ReferencePickerProps) {
   const api = useApi();
@@ -103,7 +103,6 @@ export function ReferencePicker({ title, target, chosen, onChoose, onClose, filt
       <Button variant="primary" disabled={!multiple && !described} onClick={done}>{multiple ? "OK" : "Choose"}</Button>
     </>
   );
-  const chosenLine = multiple ? picked.filter((p) => named(p).name) : [];
 
   const list = isSpellTarget(target) ? (
     <SpellPickerGrid rows={(data.data?.items ?? [])} total={data.data?.total ?? 0} text={filter.text} onText={(text) => setFilter({ ...filter, text })}
@@ -128,13 +127,14 @@ export function ReferencePicker({ title, target, chosen, onChoose, onClose, filt
           ))}
         </ul>
       </Expander>
-      {(multiple ? chosenLine.length > 0 : chosen.length > 0) && (
+      {/* The Build picker's chosen line (13.5) is a single choice's: a multi-select picker shows its picks by the rows'
+          check boxes (spec 5.1, the Magic grid), so they are not listed a second time under the list. */}
+      {!multiple && chosen.length > 0 && (
         <div className="pick-footer">
-          {(multiple ? chosenLine : picked.slice(0, 1)).map((p) => (
+          {picked.slice(0, 1).map((p) => (
             <div key={p.id} className="pick-chosen">
               <Icon name="check-box" />
               <span className="pick-chosen-name">{named(p).name || "Chosen"}</span>
-              {multiple && <button type="button" className="pick-x" aria-label={`Clear ${named(p).name}`} onClick={() => setPicked((cur) => cur.filter((x) => x.id !== p.id))}><Icon name="x" /></button>}
             </div>
           ))}
         </div>

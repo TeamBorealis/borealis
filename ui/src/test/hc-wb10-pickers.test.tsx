@@ -72,14 +72,15 @@ describe("WB-10 reference picker (spec 5.1, 13.5)", () => {
     expect(screen.getByRole("button", { name: "Pick again: What it gives" })).toBeTruthy();
   });
 
-  it("several picks keep a check per row, list the chosen with X, and OK returns them all", async () => {
+  it("several picks keep a check box per row (spec 5.1), a pick clears with its box, and OK returns them all", async () => {
     const user = userEvent.setup();
     const onValue = await refField([], { types: ["Language"], multiple: true });
     await user.click(screen.getByRole("button", { name: "Pick: What it gives" }));
     const list = await screen.findByRole("list", { name: "What it gives options" });
     await user.dblClick(await within(list).findByRole("button", { name: /^Dwarvish/ }));
     await user.dblClick(within(list).getByRole("button", { name: /^Elvish/ }));
-    await user.click(screen.getByRole("button", { name: "Clear Dwarvish" }));
+    expect((within(list).getByRole("checkbox", { name: "Choose Dwarvish" }) as HTMLInputElement).checked).toBe(true);
+    await user.click(within(list).getByRole("checkbox", { name: "Choose Dwarvish" }));
     await user.dblClick(within(list).getByRole("button", { name: /^Giant/ }));
     await user.click(screen.getByRole("button", { name: "OK" }));
     expect(onValue.mock.lastCall![0].map((r: HomebrewRef) => r.name)).toEqual(["Elvish", "Giant"]);

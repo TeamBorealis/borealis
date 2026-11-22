@@ -109,6 +109,10 @@ p.desc-grant-lvl { margin: 0 0 2px; font-style: italic; }
 .pick-ver { flex: none; width: 35px; box-sizing: border-box; padding-right: 4px; display: flex; align-items: center; justify-content: flex-end; min-height: var(--pick-row, 21px); }
 @media (hover: hover) and (pointer: fine) { .pick-row:hover > .pick-ver { background: var(--accent-20); } }
 .pick-row.hl > .pick-ver, .pick-row.selected > .pick-ver { background: var(--bp-sel); }
+/* Multi-select pickers (the creator, spec 5.1): the Magic grid's 24 px check column leads the row. */
+.pick-ck { flex: none; width: 24px; display: grid; place-items: center; min-height: var(--pick-row, 21px); }
+@media (hover: hover) and (pointer: fine) { .pick-row:hover > .pick-ck { background: var(--accent-20); } }
+.pick-row.hl > .pick-ck { background: var(--bp-sel); }
 .pick-src-name.has-versions { cursor: pointer; }
 @media (hover: hover) and (pointer: fine) { .pick-src-name.has-versions:hover { text-decoration: underline; } }
 .pick-fempty .pick-fclear { font-style: normal; }
