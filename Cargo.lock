@@ -586,7 +586,7 @@ dependencies = [
 
 [[package]]
 name = "borealis"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "base64 0.22.1",
  "block2",
@@ -646,7 +646,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-ai"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "axum",
  "base64 0.23.1",
@@ -674,7 +674,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-android-assets"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "jni 0.21.1",
  "ndk-context",
@@ -682,7 +682,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-assist"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "borealis-ai",
  "borealis-authoring",
@@ -700,7 +700,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-authoring"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "borealis-content",
  "borealis-engine",
@@ -713,7 +713,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-bundle"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "borealis-link",
  "serde",
@@ -726,7 +726,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-character"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "borealis-content",
  "borealis-engine",
@@ -740,7 +740,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-content"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "jsonschema",
  "rayon",
@@ -755,7 +755,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-embed"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "dispatch2",
  "llama-cpp-2",
@@ -774,7 +774,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-engine"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "borealis-content",
  "borealis-migrate",
@@ -788,7 +788,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-import-5etools"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "borealis-content",
  "borealis-engine",
@@ -802,7 +802,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-link"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "android-native-keyring-store",
  "apple-native-keyring-store",
@@ -830,7 +830,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-mcp"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "borealis-ai",
  "borealis-content",
@@ -843,7 +843,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-migrate"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "borealis-content",
  "borealis-engine",
@@ -857,7 +857,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-search"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "borealis-ai",
  "borealis-content",
@@ -875,7 +875,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-sheet"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "borealis-character",
  "borealis-content",
@@ -896,7 +896,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-transfer"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "borealis-bundle",
  "borealis-link",
@@ -911,7 +911,7 @@ dependencies = [
 
 [[package]]
 name = "borealis-updater-check"
-version = "1.4.1"
+version = "1.5.0"
 dependencies = [
  "base64 0.22.1",
  "minisign",
