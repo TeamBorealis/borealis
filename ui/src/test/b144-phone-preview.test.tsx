@@ -134,9 +134,16 @@ describe("B-144 tablet and desktop", () => {
     const labels = [...button.querySelectorAll(".sh-lbl > span")];
     expect(labels.map((l) => l.textContent)).toEqual(["Generate Preview", "Generating..."]);
     expect(labels[1]?.getAttribute("aria-hidden")).toBe("true");
+    // The render is held until the label is read: with a fixed latency a loaded machine finished it before the check.
+    const render = api.renderSheet.bind(api);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    vi.spyOn(api, "renderSheet").mockImplementation(async (req) => { await held; return render(req); });
     await user.click(button);
     expect(screen.getByRole("button", { name: "Generating..." })).toBe(button);
     expect([...button.querySelectorAll(".sh-lbl > span")].map((l) => l.getAttribute("aria-hidden"))).toEqual(["true", null]);
+    release();
+    await screen.findByRole("button", { name: "Generate Preview" });
     const css = parseRules(readFileSync(resolve(__dirname, "../pages/sheet/sheet.css"), "utf8"));
     expect(css.find((r) => r.selectors.includes(".sh-lbl"))?.body).toMatch(/display:\s*inline-grid/);
     expect(css.find((r) => r.selectors.includes(".sh-lbl > span"))?.body).toMatch(/grid-area:\s*1\s*\/\s*1/);
