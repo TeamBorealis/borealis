@@ -69,7 +69,16 @@ export function PickerRow({ row, listSlot, showDescription, versionColumn, highl
   const level = levelText(v);
   const phone = usePhone();
   return (
-    <li className={`pick-row ${sel ? "selected" : ""} ${highlighted ? "hl" : ""} ${marks.converted ? "is-converted" : ""}`} data-row={row.name}>
+    // a multi-select row shows it is chosen by its check box (spec 5.1, the Magic grid), not the described row's highlight
+    <li className={`pick-row ${sel && !multiple ? "selected" : ""} ${sel && multiple ? "checked" : ""} ${highlighted ? "hl" : ""} ${marks.converted ? "is-converted" : ""}`} data-row={row.name}>
+      {/* Desktop multi-select (spec 5.1: "Multi-select pickers show check boxes (Magic grid)"): the Magic grid's leading
+          check box picks and clears the row; a click on the name still only describes it. Phones use the trailing mark. */}
+      {multiple && !phone && (
+        <span className="pick-ck">
+          <input type="checkbox" className="ap-check" aria-label={`Choose ${row.name}`} checked={sel} disabled={disabled} title={v.disabledReason}
+            onChange={() => onChoose()} />
+        </span>
+      )}
       <button type="button" className="pick-main" aria-pressed={sel} aria-disabled={disabled || undefined} title={v.disabledReason}
         aria-label={rowLabel(row, mastery)}
         onClick={(e) => {

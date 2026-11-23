@@ -266,7 +266,7 @@ export const ITEMS: ItemDef[] = [
   { id: "dungeoneers-pack", category: "Equipment Packs", costCp: 1200, weight: 10, pack: ["backpack", "rope", "torch", "rations"], description: "Includes a backpack, a crowbar, a hammer, 10 pitons, 10 torches, a tinderbox, 10 days of rations, and a waterskin." },
   { id: "ring-of-protection", category: "Magic Items", costCp: 0, weight: 0, attune: true, bonusAc: 1, description: "+1 to AC and saving throws." },
   { id: "cloak-of-protection", category: "Magic Items", costCp: 0, weight: 1, attune: true, bonusAc: 1, description: "+1 to AC and saving throws." },
-  { id: "amulet-of-vigor", category: "Magic Items", costCp: 0, weight: 1, attune: true, description: "Warm to the touch; steadies the heart." },
+  { id: "amulet-of-vigor", category: "Magic Items", costCp: 0, weight: 1, attune: true, teaches: "light", description: "Warm to the touch; steadies the heart. While you wear it, you know the Light cantrip." },
   { id: "wand-of-sparks", category: "Magic Items", costCp: 0, weight: 1, attune: true, description: "Crackling wand with 7 charges." },
   { id: "staff-of-healing", category: "Staffs", costCp: 0, weight: 4, attune: true, attuneBy: { text: "by a bard, cleric, or druid", classes: ["bard", "cleric", "druid"] }, description: "Spend its charges to restore hit points." },
   { id: "boots-of-speed", category: "Wondrous Items", costCp: 0, weight: 1, attune: true, speedToggle: 2, description: "Click the heels together to double your walking speed." },

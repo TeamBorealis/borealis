@@ -22,3 +22,4 @@ export * from "./PrereqMark";
 export * from "./RowDetail";
 export * from "./AddedMark";
 export * from "./GuideLink";
+export * from "./ErrorBoundary";

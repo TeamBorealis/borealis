@@ -129,6 +129,8 @@ export interface PlayEquipmentPackage {
 export interface PlayFeature {
   id: string;
   name: string;
+  /** #62: the sheet's alternate name, printed on the sheet instead of the name ("Wisdom" under its feat's name). */
+  sheetName?: string;
   ty: string;
   source: string;
   level: number;

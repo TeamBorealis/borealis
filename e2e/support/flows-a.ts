@@ -120,8 +120,16 @@ export function boxOf(ctx: Ctx, css: string, n = 0): Promise<{ x: number; y: num
   }, { css, n });
 }
 
-/** Click the sub-tab whose text is `name` (case-insensitive exact), with a real pointer. */
+const SUB_TAB_WAIT_MS = 10_000;
+
+/**
+ * Click the sub-tab whose text is `name` (case-insensitive exact), with a real pointer. Waits for the tab to render:
+ * a route change (location.hash) lands before the new page renders its tabs, and at background priority a page's tab
+ * strip can arrive after its "Loaded" status.
+ */
 export async function clickSubTab(ctx: Ctx, name: string): Promise<void> {
+  await waitFor(ctx, (name: string) => Array.from(document.querySelectorAll('[role=tab]'))
+    .some((t) => (t.textContent ?? '').trim().toLowerCase() === name.toLowerCase()), name, `sub-tab "${name}"`, SUB_TAB_WAIT_MS);
   const idx = await ctx.browser.evaluate((name: string) => {
     const tabs = Array.from(document.querySelectorAll('[role=tab]'));
     return tabs.findIndex((t) => (t.textContent ?? '').trim().toLowerCase() === name.toLowerCase());

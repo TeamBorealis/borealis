@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import type { ClassSpellcasting, PactSlotRow, SelectionSlot, SpellSlotRow } from "../../api/contract";
-import { TabPanel, Tabs, signed } from "../../components";
+import { ErrorBoundary, TabPanel, Tabs, signed } from "../../components";
 import { RequireCharacter } from "../../components/RequireCharacter";
 import { ABILITY_LABEL } from "../../lib/format";
 import { useCharacter } from "../../state/CharacterContext";
@@ -41,8 +41,12 @@ function SlotTiles({ rows, pact }: { rows: SpellSlotRow[]; pact?: PactSlotRow | 
   );
 }
 
+/** `INT` for a block's ability; blank for a block without one (#68: an item's spells when the content names none). */
+const abilityShort = (c: ClassSpellcasting): string => (c.ability ? ABILITY_LABEL[c.ability]?.slice(0, 3).toUpperCase() ?? "" : "");
+
+/** A block without a casting ability has no attack modifier or save DC: they show blank, as on the sheet, not a made-up 0. */
 const classStats = (c: ClassSpellcasting): [string, string | number][] => [
-  ["Ability:", ABILITY_LABEL[c.ability].slice(0, 3).toUpperCase()], ["Attack modifier:", signed(c.attackBonus)], ["Save DC:", c.saveDc],
+  ["Ability:", abilityShort(c)], ["Attack modifier:", c.ability ? signed(c.attackBonus) : ""], ["Save DC:", c.ability ? c.saveDc : ""],
   ["Cantrips:", `${c.cantripsKnown}/${c.cantripsMax}`], ["Prepared:", `${c.preparedCount}/${c.preparedMax}`],
 ];
 
@@ -89,7 +93,11 @@ function ClassMagic({ cls, picked, onPick }: { cls: ClassSpellcasting; picked: s
   const { snapshot } = useCharacter();
   if (!snapshot) return null;
   const rows = snapshot.spellcasting.multiclassSlots ?? snapshot.spellcasting.slots;
-  return <ClassBlock cls={cls} slotRows={rows} focused picked={picked} onPick={onPick} catalogue={<ClassSpellGrid cls={cls} picked={picked} onPick={onPick} />} />;
+  return (
+    <ErrorBoundary label={`${cls.className} spellcasting`} resetKey={snapshot}>
+      <ClassBlock cls={cls} slotRows={rows} focused picked={picked} onPick={onPick} catalogue={<ClassSpellGrid cls={cls} picked={picked} onPick={onPick} />} />
+    </ErrorBoundary>
+  );
 }
 
 interface OverviewProps {
@@ -126,9 +134,15 @@ function Overview({ picked, onPick, filter, onFilter, current, onCurrent }: Over
   return (
     <>
       {(sc.classes.length > 0 || hot) && <SpellFilterBar scope={scope} filter={filter} onChange={onFilter} />}
-      {sc.classes.map((c) => <ClassBlock key={c.classSlotId} cls={c} catalogue={catalogue(c)} shownCls={hot ? c : filterClass(c, filter)} slotRows={rows} full focused={c.classSlotId === focusedId} picked={picked} onPick={onPick} />)}
-      {hot && ownLabel && <SourceBlock label={ownLabel}>{grid(hot, ownLabel)}</SourceBlock>}
-      <SlotsTable slots={slots} classes={sc.classes} picked={picked} onPick={onPick} current={current} onCurrent={onCurrent} />
+      {sc.classes.map((c) => (
+        <ErrorBoundary key={c.classSlotId} label={`${c.className} spellcasting`} resetKey={snapshot}>
+          <ClassBlock cls={c} catalogue={catalogue(c)} shownCls={hot ? c : filterClass(c, filter)} slotRows={rows} full focused={c.classSlotId === focusedId} picked={picked} onPick={onPick} />
+        </ErrorBoundary>
+      ))}
+      {hot && ownLabel && <ErrorBoundary label={`${ownLabel} spellcasting`} resetKey={snapshot}><SourceBlock label={ownLabel}>{grid(hot, ownLabel)}</SourceBlock></ErrorBoundary>}
+      <ErrorBoundary label="The selection slots" resetKey={snapshot}>
+        <SlotsTable slots={slots} classes={sc.classes} picked={picked} onPick={onPick} current={current} onCurrent={onCurrent} />
+      </ErrorBoundary>
     </>
   );
 }
@@ -161,7 +175,7 @@ function MagicBody() {
       <Tabs inBand tabs={tabs} active={cur ? cur.classSlotId : OVERVIEW} onChange={(id) => { setActive(id); if (!filter.pinned) setFilter(EMPTY_FILTER); }} label="Magic sections" idPrefix="magic" />
       <h1 className="sr-only">Magic</h1>
       <TabPanel active={cur ? cur.classSlotId : OVERVIEW} idPrefix="magic">
-        <TwoPane left={<div className="sp-page">{body}</div>} descEmpty={!picked} descId={picked} />
+        <TwoPane left={<div className="sp-page"><ErrorBoundary label="This Magic section" resetKey={snapshot}>{body}</ErrorBoundary></div>} descEmpty={!picked} descId={picked} />
       </TabPanel>
     </>
   );

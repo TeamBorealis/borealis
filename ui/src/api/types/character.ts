@@ -294,7 +294,11 @@ export interface ClassSpellcasting {
    */
   classSlotId: string;
   className: string;
-  ability: AbilityKey;
+  /**
+   * The block's casting ability; empty when it has none (an item's spells the content names no ability for, #68). Such a
+   * block has no real save DC or attack bonus: they are 0 and are shown blank.
+   */
+  ability: AbilityKey | "";
   saveDc: number;
   attackBonus: number;
   /** What a spell attack roll adds: the attack bonus with every D20 Test modifier (2024 Exhaustion). */

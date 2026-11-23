@@ -147,6 +147,7 @@ describe('w1 create', { tags: ['w1'] }, () => {
     await clickByText(ctx, '.flyout button', CREATE);
     await waitFor(ctx, (_: null) => location.hash === '#/builder/race', null, 'route /builder/race');
     await clickSubTab(ctx, 'Ability Scores');
+    await waitFor(ctx, (_: null) => document.querySelectorAll('.abil-base').length === 6, null, 'the six ability score rows');
     const bases = await browser.evaluate((_: null) => Array.from(document.querySelectorAll('.abil-base')).map((e) => e.textContent), null);
     expect(bases).toEqual(['15', '14', '13', '12', '10', '8']);
   });

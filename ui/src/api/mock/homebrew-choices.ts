@@ -10,10 +10,10 @@ import { SKILL_NAME_PICKER, skillKey } from "./homebrew-skills";
 //   (`blocks::fit::is_skill`, `skills`: the loaded skills' statistic keys);
 // - a variant of a kind the field doesn't have;
 // - the parts of groups, rows, variants and map values, by the part's label; a toggle's effects, by their block's label.
-// The readers that show fields verbatim (`rule_kinds` "notes_d (fields shown verbatim)") take a single choice where the
-// block writes a list (`blocks::fit::misfits_with`), at a block's own fields only.
+// The readers of `rule_kinds::NOTES_LENIENT` take a single choice where the block writes a list
+// (`blocks::fit::misfits_with`), at a block's own fields only.
 
-/** The rule kinds whose reader shows every field verbatim (`borealis_content::rule_kinds`, `NOTES_GENERIC`). */
+/** The rule kinds whose reader takes one value for a list (`borealis_content::rule_kinds`, `NOTES_LENIENT`). */
 const VERBATIM_KINDS: readonly string[] = [
   "at_will_spells", "cantrip_swap", "free_cast_choice", "pact_weapon", "proficiency_filter", "replace_on_level", "spell_cast_alt_cost",
   "spell_replace_on_level",

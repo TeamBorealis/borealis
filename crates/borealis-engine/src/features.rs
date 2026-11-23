@@ -7,7 +7,7 @@ use crate::provenance::StatTrace;
 use crate::snapshot::FeatureDetail;
 use crate::text::sanitize_html;
 use borealis_content::expr::{PlaceholderSyntax, TemplatePart};
-use borealis_content::Rule;
+use borealis_content::{Element, Rule};
 
 /// Element types listed as character features.
 const FEATURE_TYPES: &[&str] = &[
@@ -17,6 +17,11 @@ const FEATURE_TYPES: &[&str] = &[
     "Background Feature",
     "Feat",
 ];
+
+/// A feat's own part (the ability score or spell list it lets the player choose). Listed, as
+/// Aurora's sheet lists it, only when the sheet shows it: a hidden one is a recorded choice
+/// (GitHub #62).
+const FEAT_FEATURE: &str = "Feat Feature";
 
 impl Evaluation<'_> {
     /// The provenance trace of one statistic from this evaluation (needs `trace`).
@@ -31,20 +36,25 @@ impl Evaluation<'_> {
         for id in self.graph.preorder() {
             let node = &self.graph.nodes[id];
             let el = &node.e.el;
-            if !FEATURE_TYPES.contains(&el.ty.as_str()) {
+            if !is_feature(el) {
                 continue;
             }
             let summary = self.sheet_text(id);
-            let displayed = el.sheet.as_ref().is_none_or(|s| s.is_displayed());
+            let displayed = shown_on_sheet(el) || (el.ty == "Feat" && !self.stood_in_for(id));
+            let sheet_name = sheet_name(el);
             if displayed {
                 if let Some(t) = &summary {
-                    lines.push(format!("{}: {t}", el.name));
+                    lines.push(format!(
+                        "{}: {t}",
+                        sheet_name.as_deref().unwrap_or(&el.name)
+                    ));
                 }
             }
             let level = self.granted_level(id);
             let detail = FeatureDetail {
                 id: el.id.clone(),
                 name: el.name.clone(),
+                sheet_name,
                 ty: el.ty.clone(),
                 source: el.source.clone(),
                 level,
@@ -68,6 +78,24 @@ impl Evaluation<'_> {
             out.extend(again);
         }
         (out, lines.join("\n"))
+    }
+
+    /// GitHub #62: a part of a feat the sheet shows (its chosen option, printed under the
+    /// feat's name) stands in for a feat that hides itself. Without one the feat is listed
+    /// itself, so every feat the character has is on the sheet.
+    fn stood_in_for(&self, id: NodeId) -> bool {
+        let mut stack = self.graph.nodes[id].children.clone();
+        while let Some(n) = stack.pop() {
+            let node = &self.graph.nodes[n];
+            if !node.alive {
+                continue;
+            }
+            if is_feature(&node.e.el) && shown_on_sheet(&node.e.el) {
+                return true;
+            }
+            stack.extend(node.children.iter().copied());
+        }
+        false
     }
 
     /// Later levels at which a feature opens another feat select (a 2024 class's one Ability
@@ -177,4 +205,24 @@ impl Evaluation<'_> {
         }
         out
     }
+}
+
+/// The content shows the element in the sheet's feature list (`<sheet display>`, default true).
+fn shown_on_sheet(el: &Element) -> bool {
+    el.sheet.as_ref().is_none_or(|s| s.is_displayed())
+}
+
+/// The element is listed as a character feature.
+fn is_feature(el: &Element) -> bool {
+    FEATURE_TYPES.contains(&el.ty.as_str()) || (el.ty == FEAT_FEATURE && shown_on_sheet(el))
+}
+
+/// The sheet's alternate name (`<sheet alt>`), which Aurora's sheet prints instead of the name.
+fn sheet_name(el: &Element) -> Option<String> {
+    el.sheet
+        .as_ref()
+        .and_then(|s| s.alt.as_deref())
+        .map(str::trim)
+        .filter(|a| !a.is_empty())
+        .map(str::to_string)
 }

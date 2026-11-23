@@ -100,6 +100,40 @@ describe('w3 magic', { tags: ['w3'] }, () => {
     expectEqual('prepare status via cell selection', 'Wizard: Detect Magic is prepared.', await waitStatus(ctx, (s) => s.includes('prepared')));
   });
 
+  // GitHub #68: a spellcasting block without a casting ability (an equipped item that teaches a cantrip and names no
+  // ability; in 1.4.0 also a feat's spell picks) blanked the whole Magic page, and it stayed blank on every return.
+  test('a block without a casting ability keeps the Magic page, on every return', async (ctx) => {
+    const ITEM = 'Amulet Of Vigor';
+    const blockStats = (name: string) => ctx.browser.evaluate((n: string) => {
+      const block = document.querySelector(`section[aria-label="${n} spellcasting"]`);
+      return block ? (block.querySelector('.ap-stats')?.textContent ?? '').replace(/\s+/g, ' ').trim() : 'missing';
+    }, name);
+    await loadSeraphine(ctx);
+    await clickMainTab(ctx, 'Equipment');
+    await waitFor(ctx, (_: null) => location.hash.startsWith('#/equipment') && document.querySelectorAll('.eq-grid tbody tr').length > 0, null, 'equipment catalogue');
+    await clickByText(ctx, 'button', 'Magic Items (');
+    await waitFor(ctx, (n: string) => Array.from(document.querySelectorAll('.eq-grid tbody tr')).some((r) => (r.textContent ?? '').includes(n)), ITEM, 'magic item rows');
+    await clickCellInRow(ctx, '.eq-grid tbody tr', ITEM, 'td:nth-child(2)');
+    await clickByText(ctx, 'button.eq-cmd-btn', 'Add');
+    await waitStatus(ctx, (s) => s.startsWith('You have added'));
+    await waitFor(ctx, (n: string) => !!document.querySelector(`button[aria-label="Equip ${n}"]`), ITEM, 'item in inventory');
+    await clickCss(ctx, `button[aria-label="Equip ${ITEM}"]`);
+    await waitFor(ctx, (n: string) => !!document.querySelector(`button[aria-label="Unequip ${n}"]`), ITEM, 'equipped');
+    for (let visit = 0; visit < 2; visit++) {
+      await clickMainTab(ctx, 'Magic');
+      await waitFor(ctx, (n: string) => !!document.querySelector(`section[aria-label="${n} spellcasting"]`), ITEM, 'item block on Magic');
+      expect(await blockStats('Wizard')).toContain('Ability:INT');
+      // no ability: blank ability, attack modifier and save DC, never a made-up +0 / 0
+      expectEqual('item block stats', 'Ability:Attack modifier:Save DC:Cantrips:1/1Prepared:0/0', (await blockStats(ITEM)).replace(/ /g, ''));
+      expect(await count(ctx, "table[aria-label='Selection slots'] tbody tr")).toBeGreaterThan(0);
+      await clickSubTab(ctx, ITEM.toUpperCase());
+      await waitFor(ctx, (n: string) => !!document.querySelector(`section[aria-label="${n} spellcasting"]`) && !document.querySelector('section[aria-label="Wizard spellcasting"]'), ITEM, 'item tab');
+      await clickSubTab(ctx, 'Spellcasting');
+      await clickMainTab(ctx, 'Equipment');
+      await waitFor(ctx, (_: null) => location.hash.startsWith('#/equipment'), null, 'left Magic');
+    }
+  });
+
   test('slot options grid: a real click on a non-name cell highlights the row', async (ctx) => {
     await openMagic(ctx);
     await clickCellInRow(ctx, SLOT_ROWS, 'Magic Missile', 'td:nth-child(3)');

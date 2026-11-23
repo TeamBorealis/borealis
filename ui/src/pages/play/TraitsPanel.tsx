@@ -52,6 +52,23 @@ export function SensesCard({ play }: { play: PlayState }) {
   );
 }
 
+/** Plain labels of the host's roll kinds (`AdvantageEntry.roll`); GitHub #70. */
+const ROLL_LABELS: Record<string, string> = {
+  initiative: "Initiative",
+  ability_check: "Ability checks",
+  saving_throw: "Saving throws",
+  spell_attack: "Spell attacks",
+  death_save: "Death saves",
+};
+
+/** The label of a roll kind: a known kind's label, else its words ("attack_roll" reads "Attack roll"). */
+function rollLabel(roll: string): string {
+  const known = ROLL_LABELS[roll];
+  if (known) return known;
+  const words = roll.replace(/_/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export function SituationalCard({ play }: { play: PlayState }) {
   if (!play.advantages.length && !play.notes.length && !play.initiativeAdvantage) return null;
   return (
@@ -60,7 +77,7 @@ export function SituationalCard({ play }: { play: PlayState }) {
         {play.initiativeAdvantage && <li className="v5-row static"><span className="grow"><strong>Initiative</strong> Advantage on initiative rolls.</span><Tag tone="ok">Advantage</Tag></li>}
         {play.advantages.map((a, i) => (
           <li key={i} className="v5-row static">
-            <span className="grow"><strong>{a.roll}</strong> {a.text}<span className="v5-note" style={{ display: "block" }}>{a.source}{a.whileToggle && !a.active ? ` · while ${a.whileToggle}` : ""}</span></span>
+            <span className="grow"><strong>{rollLabel(a.roll)}</strong> {a.text}<span className="v5-note" style={{ display: "block" }}>{a.source}{a.whileToggle && !a.active ? ` · while ${a.whileToggle}` : ""}</span></span>
             <Tag tone={a.active ? "ok" : ""}>{a.active ? "Now" : "Conditional"}</Tag>
           </li>
         ))}

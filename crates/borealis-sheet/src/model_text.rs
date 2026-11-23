@@ -281,7 +281,7 @@ pub(crate) fn features(snap: &CharacterSnapshot) -> Vec<FeatureData> {
     }
     let mut out: Vec<Keyed> = Vec::new();
     for (idx, f) in snap.features.iter().enumerate() {
-        let name = display_name(&f.name);
+        let name = display_name(f.sheet_name.as_deref().unwrap_or(&f.name));
         let lower = name.to_lowercase();
         if !f.displayed
             || HIDDEN_FEATURES.contains(&lower.as_str())

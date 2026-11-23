@@ -1,9 +1,10 @@
 import type {
   BookRuleset, CompendiumFacets, FiveToolsImportReport, FiveToolsImportRequest, FiveToolsScan, FiveToolsSource, CompendiumQuery, ContentIndex, ContentPack, ContentProgress, ContentSource, ElementDetail, ElementLink, ElementSummary,
-  ImportPackRequest, ImportPackResult, ItemCategory, ItemQuery, ItemSummary, MigrationIssue, MigrationReport, Page, Ruleset, UpdateIndexesResult,
+  HomebrewPickerRow, ImportPackRequest, ImportPackResult, ItemCategory, ItemQuery, ItemSummary, MigrationIssue, MigrationReport, Page, Ruleset, UpdateIndexesResult,
 } from "../types";
 import { issue, scanElements, xmlIssues } from "./import-issues";
 import { CLASSES, ELEMENTS, ITEMS, getElement } from "./content";
+import { CORE_PICKER_ROWS } from "./homebrew-core-rows";
 import { isProxyId, itemCategoryList, matchesItemSearch, proxyRows, type ProxyRow } from "./item-categories";
 import type { MockElement } from "./data-types";
 import { apiError } from "./errors";
@@ -22,6 +23,12 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const stripHtml = (s: string): string => s.replace(/<[^>]+>/g, "");
+
+/** A core picker row as the backend describes its core element: an "option" with its name and type as its text. */
+const coreDetail = (r: HomebrewPickerRow): ElementDetail => ({
+  id: r.id, name: r.name, type: "option", source: "core", sourceName: r.sourceName, shortDescription: r.summary, prerequisites: null,
+  rulesets: r.edition ? [r.edition] : [], descriptionHtml: `<p>${r.name} (${r.type}).</p>`, facts: [], grants: [], links: [],
+});
 
 /**
  * The conversion report of one index the mock update downloaded (the real one is per converted pack, named by the index
@@ -79,6 +86,10 @@ export class ContentService {
     const proxy = target && this.proxies().find((p) => p.id === id);
     if (target && proxy) return { ...this.proxySummary(proxy), descriptionHtml: `<p>${PROXY_HINT}</p>${target.description}`, facts: [], grants: [{ name: target.name, level: 1, descriptionHtml: "" }], links: [] };
     const e = this.all().find((x) => x.id === id) ?? getElement(id);
+    // The core rows the creator's item fields pick (weapon properties, masteries, ...) are elements of the app's core pack,
+    // which the backend describes; the mock has them as picker rows only.
+    const core = e ? undefined : CORE_PICKER_ROWS.find((r) => r.id === id);
+    if (core) return coreDetail(core);
     // Like the real backend: list-rule entries (personality traits, ...) are text choices, not elements.
     if (!e || e.type === "list") throw apiError("not_found", "That element does not exist.");
     return { ...this.summary(e), descriptionHtml: e.description, facts: e.facts, grants: e.grants, links: this.links(e) };

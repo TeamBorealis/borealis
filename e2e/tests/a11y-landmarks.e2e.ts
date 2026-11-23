@@ -20,18 +20,41 @@ function labels(ctx: Ctx, css: string): Promise<string[]> {
     .map((e) => (e.querySelector('.label')?.textContent ?? e.textContent ?? '').trim()), css);
 }
 
-/** Click the visible `css` element labelled `label` (as {@link labels} reads it), then let the page settle. */
-async function open(ctx: Ctx, css: string, label: string): Promise<void> {
+/** How long a tab may take to be drawn and to take the selection after a click (a loaded machine is slow). */
+const FIND_MS = 5000;
+
+/** Index of the visible `css` element labelled `label`, brought into view; -1 when none is drawn. */
+function find(ctx: Ctx, css: string, label: string): Promise<number> {
   // a phone's tab strip scrolls sideways: the tab is brought into view first
-  const idx = await ctx.browser.evaluate(({ css, label }) => {
+  return ctx.browser.evaluate(({ css, label }) => {
     const all = Array.from(document.querySelectorAll<HTMLElement>(css));
     const i = all.findIndex((e) => e.offsetParent !== null && !e.closest('[role=dialog]')
       && (e.querySelector('.label')?.textContent ?? e.textContent ?? '').trim() === label);
     all[i]?.scrollIntoView({ block: 'nearest', inline: 'center' });
     return i;
   }, { css, label });
+}
+
+/**
+ * Click the visible `css` element labelled `label` (as {@link labels} reads it), then let the page settle. The element is
+ * looked for until it is drawn (a page that just opened, the More page after a sheet closed), and a tab (`tab`) is waited
+ * on until it is the selected one, so the sub-tabs read next are its own and not the last tab's.
+ */
+async function open(ctx: Ctx, css: string, label: string, tab = true): Promise<void> {
+  const end = Date.now() + FIND_MS;
+  let idx = await find(ctx, css, label);
+  while (idx < 0 && Date.now() < end) {
+    await new Promise((r) => setTimeout(r, 100));
+    idx = await find(ctx, css, label);
+  }
   if (idx < 0) throw new Error(`no ${css} "${label}"`);
   await clickNth(ctx, css, idx);
+  if (tab) {
+    await waitFor(ctx, ({ css, label }: { css: string; label: string }) => Array.from(document.querySelectorAll<HTMLElement>(css)).some((e) =>
+      e.offsetParent !== null && (e.querySelector('.label')?.textContent ?? e.textContent ?? '').trim() === label
+      && (e.getAttribute('aria-current') === 'page' || e.getAttribute('aria-selected') === 'true' || e.getAttribute('data-selected') === 'true')),
+    { css, label }, `${label} selected`, FIND_MS);
+  }
   await waitFor(ctx, (_: null) => document.readyState === 'complete', null, `${label} shown`);
 }
 
@@ -79,7 +102,7 @@ describe('landmarks and headings outside the creator (axe, web mock)', { tags: [
     // the More page's destinations
     await open(ctx, 'nav.aur-bottombar a.bb-item', 'More');
     for (const dest of await labels(ctx, '[aria-label="More destinations"] a')) {
-      await open(ctx, '[aria-label="More destinations"] a', dest);
+      await open(ctx, '[aria-label="More destinations"] a', dest, false);
       await axe.check(ctx, `phone More > ${dest}`);
       // a destination that opens as a sheet (the Compendium) closes with Escape
       await ctx.browser.keyboard.press('Escape');

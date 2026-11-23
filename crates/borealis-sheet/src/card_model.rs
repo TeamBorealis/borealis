@@ -290,7 +290,7 @@ fn feature_cards(snap: &CharacterSnapshot) -> Vec<Card> {
                 && !borealis_engine::ids::is_generated_with_class(&f.id)
         })
         .map(|f| Card {
-            title: f.name.clone(),
+            title: f.sheet_name.clone().unwrap_or_else(|| f.name.clone()),
             subtitle: f.ty.clone(),
             body: plain(&f.description),
             left_footer: f.granted_by.clone().unwrap_or_default(),

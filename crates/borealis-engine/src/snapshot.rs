@@ -271,6 +271,10 @@ pub struct FeatureDetail {
     pub id: String,
     /// Display name.
     pub name: String,
+    /// The sheet's alternate name (`<sheet alt>`), printed on the sheet instead of the name as
+    /// Aurora prints it: a feat's chosen option ("Wisdom") under its feat's name (GitHub #62).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sheet_name: Option<String>,
     /// Element type (`Class Feature`, `Racial Trait`, `Feat`, ...).
     pub ty: String,
     /// Content source name.
@@ -285,7 +289,8 @@ pub struct FeatureDetail {
     /// Sheet text for the current level, placeholders resolved from the statistics.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sheet_summary: Option<String>,
-    /// Shown in the sheet's feature list (`sheet display`, default true).
+    /// Shown in the sheet's feature list (`sheet display`, default true). A feat the content
+    /// hides is shown all the same unless a shown part of it stands in for it (GitHub #62).
     pub displayed: bool,
     /// HR3 (GitHub #24): a picked feat whose prerequisites are not met, taken under the
     /// "Ignore feat prerequisites" house rule.
