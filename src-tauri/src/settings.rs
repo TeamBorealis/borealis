@@ -658,10 +658,12 @@ mod default_tests {
 
     #[test]
     fn too_many_always_use_this_copy_choices_say_what_is_wrong() {
-        let mut s = AppSettings::default();
-        s.preferred_copies = (0..=MAX_PREFERRED_COPIES)
-            .map(|i| (format!("spell:dnd2024:name{i}"), "ID".to_string()))
-            .collect();
+        let mut s = AppSettings {
+            preferred_copies: (0..=MAX_PREFERRED_COPIES)
+                .map(|i| (format!("spell:dnd2024:name{i}"), "ID".to_string()))
+                .collect(),
+            ..AppSettings::default()
+        };
         let msg = s.validate().unwrap_err().to_string();
         assert!(msg.contains("Too many") && msg.contains("20000"), "{msg}");
         s.preferred_copies.clear();
