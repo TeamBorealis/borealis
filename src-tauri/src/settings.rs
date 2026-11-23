@@ -171,6 +171,9 @@ pub struct AppSettings {
     /// Rules tab "Features that count as a weapon" ([`EngineSettings::feature_weapons`]): a feature whose text says it
     /// "counts as a simple ranged weapon" gets a weapon of its own (default off: the reference app has none).
     pub feature_weapons: bool,
+    /// Rules tab "Infusion items" ([`EngineSettings::infusion_items`]): the magic item of an infusion pick stays in the
+    /// inventory with the pick (default off: the reference app does not do it).
+    pub infusion_items: bool,
     /// Local search (local-search-spec.md section 9).
     pub search: SearchSettings,
     /// HC3: the homebrew creator is shown (START > HOMEBREW and its entry points). Read-only for the UI: the build's
@@ -296,6 +299,7 @@ impl Default for AppSettings {
             show_import_notice: true,
             check_app_updates: true,
             feature_weapons: false,
+            infusion_items: false,
             search: SearchSettings::default(),
             creator_enabled: CREATOR_ENABLED,
         }
@@ -382,6 +386,7 @@ impl AppSettings {
             min_base_score: self.ability_min_base,
             max_base_score: self.ability_max_base,
             feature_weapons: self.feature_weapons,
+            infusion_items: self.infusion_items,
             ..EngineSettings::default()
         }
     }

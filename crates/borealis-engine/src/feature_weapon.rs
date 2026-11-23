@@ -3,7 +3,7 @@
 //! Some features say in their text that a part of the character "counts as a simple ranged
 //! weapon" (a launcher built into armor, a natural weapon), with its damage and range, but carry
 //! no Weapon element: the weapon cannot be wielded, listed in the attacks table or used as the
-//! base of a magic weapon (a `+1 Weapon` an artificer infuses). Aurora has no such element
+//! base of a magic weapon (a `+1 Weapon` a tinker infuses). Aurora has no such element
 //! either. With the setting on, the universe gets one derived Weapon element per such feature,
 //! read from the feature's own text:
 //!
@@ -256,7 +256,9 @@ pub fn parts_in(text: &str) -> Vec<String> {
         return Vec::new();
     };
     let rest = &text[i..];
-    let Some(colon) = rest.find(':') else {
+    // the list opens in the same sentence: a ":" of a later one is not it
+    let sentence = rest.find(['.', '!', '?']).unwrap_or(rest.len());
+    let Some(colon) = rest[..sentence].find(':') else {
         return Vec::new();
     };
     let list = &rest[colon + 1..];
@@ -312,6 +314,11 @@ mod tests {
             ["shell", "boots", "visor", "built-in weapon"]
         );
         assert!(parts_in("it counts as separate items.").is_empty());
+        // a ":" of a later sentence is not the list
+        assert!(
+            parts_in("it counts as separate items for your infusions. note: boots, helmet.")
+                .is_empty()
+        );
     }
 
     fn feature(text: &str) -> Element {

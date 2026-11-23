@@ -1,10 +1,13 @@
-//! The magic item an infusion pick makes, kept in the inventory with the pick.
+﻿//! The magic item an infusion pick makes, kept in the inventory with the pick.
 //!
-//! A picked feature (an artificer's infusion, a Class Feature chosen in a select) makes a magic
+//! Opt-in ([`crate::EngineSettings::infusion_items`], off by default): with the setting off none of
+//! this runs, and a character with infusion picks loads, replays and saves as it always did.
+//!
+//! A picked feature (a tinker's infusion, a Class Feature chosen in a select) makes a magic
 //! item, found in the content, in this order:
 //!
 //! 1. a Magic Item of the same name that marks itself as an infusion (its `keywords` or `rarity`
-//!    name one): "Boots of the Winding Path", or "Radiant Weapon" on a chosen weapon;
+//!    name one): "Striding Boots", or "Glowing Weapon" on a chosen weapon;
 //! 2. else, when the pick's current sheet text says it makes an item "into a +N weapon" (or armor,
 //!    or shield), the content's generic `+N` item of that kind (`{{parent}} +{{enhancement}}`, no
 //!    attunement, needs a base): `Weapon, +2` from the level the text says +2;
@@ -25,7 +28,11 @@
 //!   is only unlinked when the pick goes, kept as it is and never upgraded;
 //! - a line the pick added, whose pick is no longer selected, loses one copy (that line); a pick whose content is
 //!   missing keeps its line;
-//! - a `+N` line follows the pick's level (`+1` becomes `+2`).
+//! - a `+N` line follows the pick's level (`+1` becomes `+2`);
+//! - a line the user deletes stays deleted: its link is kept in
+//!   [`crate::state::Inventory::infusion_declined`] until the pick goes, and no copy is added again.
+//!
+//! Nothing is read for a character with no `item infusions:max` and no linked line.
 //!
 //! Loading twice changes nothing more: lines are matched by link id, never by name.
 //!
@@ -118,25 +125,54 @@ fn part_kind(label: &str) -> PartKind {
     }
 }
 
-/// A worn item fits a part: boots go on the feet, a helmet on the head, by the item's slot or,
-/// when the content gives no body slot (`misc`, none), by its own name ("... Boots ..."); a slot
-/// for another body part never fits. Any other part takes any worn item.
-fn slot_fits(e: &UElem, label: &str) -> bool {
-    let slot = lower(e.el.setter_value("slot"));
-    let name = e.el.name.to_lowercase();
-    let l = label.to_lowercase();
-    let (body, word) = if l.contains("boot") {
-        ("feet", "boot")
-    } else if l.contains("helm") {
-        ("head", "helm")
-    } else {
-        return true;
-    };
-    if slot == body {
+/// The words of a name or a part's label, lowercase and singular ("Boots" gives `boot`).
+fn words(s: &str) -> Vec<String> {
+    s.to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| w.len() >= 3 && !["the", "and", "for"].contains(w))
+        .map(|w| match w.strip_suffix('s') {
+            Some(one) if w.len() > 3 => one.to_string(),
+            _ => w.to_string(),
+        })
+        .collect()
+}
+
+/// One word names the other, or a longer form of it (`helm`, `helmet`).
+fn same_word(a: &str, b: &str) -> bool {
+    a == b || (a.len().min(b.len()) >= 4 && (a.starts_with(b) || b.starts_with(a)))
+}
+
+/// `name` has a word of `label` (as [`words`]).
+fn names_part(name: &str, label: &[String]) -> bool {
+    words(name)
+        .iter()
+        .any(|n| label.iter().any(|l| same_word(n, l)))
+}
+
+/// A slot that names no body part.
+fn generic_slot(slot: &str) -> bool {
+    slot.is_empty() || slot == "misc" || slot == "wondrous"
+}
+
+/// A worn item fits a part: by the item's slot, or, when the content gives no body slot (`misc`,
+/// none), by its own name ("... Boots ..."); a slot for another body part never fits. The body
+/// slots of a part are read from the content: those of the magic items named for it (`feet` for
+/// "boots", `head` for "helmet"). A part no item is named for takes any worn item.
+fn slot_fits(uni: &Universe, e: &UElem, label: &str) -> bool {
+    let label = words(label);
+    let slot = lower(e.el.setter_value("slot")).trim().to_string();
+    let mut body: Vec<String> = uni
+        .by_type("Magic Item")
+        .filter(|m| names_part(&m.el.name, &label))
+        .map(|m| lower(m.el.setter_value("slot")).trim().to_string())
+        .filter(|s| !generic_slot(s))
+        .collect();
+    body.sort();
+    body.dedup();
+    if body.is_empty() || body.contains(&slot) {
         return true;
     }
-    let generic = slot.is_empty() || slot == "misc" || slot == "wondrous";
-    generic && name.contains(word)
+    generic_slot(&slot) && names_part(&e.el.name, &label)
 }
 
 /// Does line `it` fit part `label`?
@@ -159,7 +195,7 @@ fn fits(uni: &Universe, it: &InventoryItem, label: &str) -> bool {
                 && !base.el.setter_value("type").is_some_and(|t| {
                     ["weapon", "armor"].contains(&t.trim().to_lowercase().as_str())
                 })
-                && slot_fits(base, label)
+                && slot_fits(uni, base, label)
         }
     }
 }
@@ -285,19 +321,46 @@ fn named_item<'u>(uni: &'u Universe, pick: &UElem) -> Option<&'u UElem> {
         .min_by_key(|m| (m.edition.is_foreign(), m.el.id.clone()))
 }
 
-/// Rule 2: "into a +N weapon|armor|shield" in the pick's current sheet text.
-fn enhancement_in(text: &str) -> Option<(&'static str, i32)> {
+/// Rule 2: every "into a +N weapon|armor|shield" in the pick's current sheet text.
+fn enhancement_in(text: &str) -> Vec<(&'static str, i32)> {
+    const AT: &str = "into a +";
     let t = text.to_lowercase();
-    let i = t.find("into a +")? + "into a +".len();
-    let digits: String = t[i..].chars().take_while(char::is_ascii_digit).collect();
-    let n: i32 = digits.parse().ok()?;
-    let word = t[i + digits.len()..].split_whitespace().next()?;
-    let kind = match word.trim_matches(|c: char| !c.is_alphabetic()) {
-        "weapon" => "Weapon",
-        "armor" | "shield" => "Armor",
-        _ => return None,
-    };
-    Some((kind, n))
+    let mut out = Vec::new();
+    for (i, _) in t.match_indices(AT) {
+        let rest = &t[i + AT.len()..];
+        let digits: String = rest.chars().take_while(char::is_ascii_digit).collect();
+        let Ok(n) = digits.parse::<i32>() else {
+            continue;
+        };
+        let word = rest[digits.len()..].split_whitespace().next();
+        let kind = match word.map(|w| w.trim_matches(|c: char| !c.is_alphabetic())) {
+            Some("weapon") => "Weapon",
+            Some("armor" | "shield") => "Armor",
+            _ => continue,
+        };
+        if !out.contains(&(kind, n)) {
+            out.push((kind, n));
+        }
+    }
+    out
+}
+
+/// A `name-format` that only adds the enhancement to the parent's name (`{{parent}} +{{enhancement}}`,
+/// `+{{enhancement}} {{parent}}`): the content's generic `+N` item, not one with a name of its own.
+fn is_generic_format(format: &str) -> bool {
+    let has = |a: &str, b: &str| format.contains(a) || format.contains(b);
+    if !has("{{parent}}", "$(parent)") || !has("{{enhancement}}", "$(enhancement)") {
+        return false;
+    }
+    let rest = [
+        "{{parent}}",
+        "$(parent)",
+        "{{enhancement}}",
+        "$(enhancement)",
+    ]
+    .iter()
+    .fold(format.to_string(), |f, p| f.replace(p, ""));
+    !rest.chars().any(char::is_alphanumeric)
 }
 
 /// The content's generic `+N` magic items of base type `kind`.
@@ -310,7 +373,7 @@ fn generic_items(uni: &Universe, kind: &str, n: i32) -> Vec<String> {
                 && crate::ammo::enhancement_of(&m.el) == Some(n)
                 && m.el
                     .setter_value("name-format")
-                    .is_some_and(|f| f.trim() == "{{parent}} +{{enhancement}}")
+                    .is_some_and(is_generic_format)
                 && !crate::inventory::item_facts(m).requires_attunement
                 && needs_base(uni, m)
         })
@@ -342,8 +405,10 @@ pub fn plans(uni: &Universe, state: &CharacterState, snap: &CharacterSnapshot) -
                     items: vec![item.el.id.clone()],
                 });
             }
-            let (kind, n) = enhancement_in(feature.sheet_summary.as_deref().unwrap_or(""))?;
-            let items = generic_items(uni, kind, n);
+            let items: Vec<String> = enhancement_in(feature.sheet_summary.as_deref().unwrap_or(""))
+                .into_iter()
+                .flat_map(|(kind, n)| generic_items(uni, kind, n))
+                .collect();
             (!items.is_empty()).then(|| Plan {
                 link,
                 infusion_id: id.clone(),
@@ -448,6 +513,16 @@ pub fn prompts(
     state: &CharacterState,
     snap: &CharacterSnapshot,
 ) -> Vec<InfusionPrompt> {
+    prompts_with(uni, state, snap, parts(snap).as_ref())
+}
+
+/// [`prompts`] with the character's `parts` already read.
+fn prompts_with(
+    uni: &Universe,
+    state: &CharacterState,
+    snap: &CharacterSnapshot,
+    pts: Option<&Parts>,
+) -> Vec<InfusionPrompt> {
     plans(uni, state, snap)
         .into_iter()
         .filter(|p| p.needs_base)
@@ -460,7 +535,7 @@ pub fn prompts(
         })
         .map(|p| InfusionPrompt {
             owned: owned(uni, state, &p),
-            targets: parts(snap).map_or_else(Vec::new, |pt| targets(uni, state, &pt, &p.items)),
+            targets: pts.map_or_else(Vec::new, |pt| targets(uni, state, pt, &p.items)),
             link: p.link,
             infusion_id: p.infusion_id,
             infusion: p.infusion,
@@ -510,6 +585,9 @@ pub fn place(engine: &Engine, state: &CharacterState, uid: &str) -> CharacterSta
 /// Put a new infusion line on the first free part that fits it, when the character has parts.
 #[must_use]
 pub fn take_part(engine: &Engine, state: CharacterState, uid: &str) -> CharacterState {
+    if !engine.settings().infusion_items {
+        return state;
+    }
     let uni = engine.universe(state.ruleset);
     let snap = engine.derive_with(&state, false);
     let Some(parts) = parts(&snap) else {
@@ -583,6 +661,9 @@ pub fn set_part(
     uid: &str,
     part: Option<&str>,
 ) -> Result<CharacterState, String> {
+    if !engine.settings().infusion_items {
+        return Err("Infusion items are off in the settings.".into());
+    }
     let mut next = state.clone();
     let line = next
         .inventory
@@ -612,6 +693,9 @@ pub fn set_part(
 /// Keep each pick's item line with it (see the module docs). `None` when nothing changes.
 #[must_use]
 pub fn reconcile(engine: &Engine, state: &CharacterState, mode: Mode) -> Option<CharacterState> {
+    if !engine.settings().infusion_items {
+        return None;
+    }
     let has_link = state.inventory.items.iter().any(linked);
     let uni = engine.universe(state.ruleset);
     // cheap test first: no linked line and no pick that can make an item
@@ -622,17 +706,23 @@ pub fn reconcile(engine: &Engine, state: &CharacterState, mode: Mode) -> Option<
                     .sheet
                     .iter()
                     .flat_map(|s| &s.descriptions)
-                    .any(|d| enhancement_in(&d.text).is_some())
+                    .any(|d| !enhancement_in(&d.text).is_empty())
         }),
         Choice::ListItem(_) => false,
     });
-    if !has_link && !any_pick {
+    if !has_link && !any_pick && state.inventory.infusion_declined.is_empty() {
         return None;
     }
     let mut next = state.clone();
     let mut changed = false;
     // a line whose pick is no longer selected loses one copy (missing content keeps it)
     let selected: HashSet<String> = state.selections.iter().filter_map(link_of).collect();
+    // a deleted line is only remembered while its pick stays
+    let declined = next.inventory.infusion_declined.len();
+    next.inventory
+        .infusion_declined
+        .retain(|l| selected.contains(l));
+    changed |= next.inventory.infusion_declined.len() != declined;
     // a link whose pick or slot id was renamed moves to the renamed link: same line, same state
     let used: HashSet<String> = state
         .inventory
@@ -690,6 +780,10 @@ pub fn reconcile(engine: &Engine, state: &CharacterState, mode: Mode) -> Option<
         return changed.then_some(next);
     }
     let snap = engine.derive_with(&next, false);
+    // no infusion maximum and no linked line: nothing to keep
+    if !snap.stats.contains_key(MAX_STAT) && !next.inventory.items.iter().any(linked) {
+        return changed.then_some(next);
+    }
     for plan in plans(uni, &next, &snap) {
         if let Some(i) = next
             .inventory
@@ -765,6 +859,10 @@ pub fn reconcile(engine: &Engine, state: &CharacterState, mode: Mode) -> Option<
         let Some(item) = plan.items.first() else {
             continue;
         };
+        // the user deleted this pick's line: it stays deleted
+        if next.inventory.infusion_declined.contains(&plan.link) {
+            continue;
+        }
         if let Ok(out) = commands::add_item(engine, &next, item, 1) {
             next = out.state;
             if let Some(line) = next.inventory.items.last_mut() {
@@ -780,8 +878,13 @@ pub fn reconcile(engine: &Engine, state: &CharacterState, mode: Mode) -> Option<
 
 /// Fill [`InventorySnapshot::infusion_prompts`] of a fresh snapshot.
 pub(crate) fn annotate(uni: &Universe, state: &CharacterState, snap: &mut CharacterSnapshot) {
-    snap.inventory.infusion_prompts = prompts(uni, state, snap);
+    // nothing to say without an infusion maximum or a linked line
+    let max = snap.stats.get(MAX_STAT).map(|s| s.value);
+    if max.is_none() && !state.inventory.items.iter().any(linked) {
+        return;
+    }
     let pts = parts(snap);
+    snap.inventory.infusion_prompts = prompts_with(uni, state, snap, pts.as_ref());
     if let Some(pts) = &pts {
         for line in &mut snap.inventory.items {
             if state
@@ -794,7 +897,7 @@ pub(crate) fn annotate(uni: &Universe, state: &CharacterState, snap: &mut Charac
             }
         }
     }
-    let Some(max) = snap.stats.get(MAX_STAT).map(|s| s.value) else {
+    let Some(max) = max else {
         return;
     };
     let lines: Vec<&InventoryItem> = state.inventory.items.iter().filter(|i| linked(i)).collect();
@@ -842,21 +945,39 @@ pub(crate) fn annotate(uni: &Universe, state: &CharacterState, snap: &mut Charac
 
 #[cfg(test)]
 mod tests {
-    use super::enhancement_in;
+    use super::{enhancement_in, is_generic_format};
 
     #[test]
     fn reads_the_plus_n_rule() {
         assert_eq!(
             enhancement_in("You can infuse a simple or martial weapon into a +2 weapon."),
-            Some(("Weapon", 2))
+            [("Weapon", 2)]
         );
         assert_eq!(
             enhancement_in(
                 "You can infuse a suit of armor or a shield into a +1 armor or a +1 shield."
             ),
-            Some(("Armor", 1))
+            [("Armor", 1)]
         );
-        assert_eq!(enhancement_in("You can infuse a rod into a +1 rod."), None);
-        assert_eq!(enhancement_in("A +1 bonus to attack rolls."), None);
+        assert!(enhancement_in("You can infuse a rod into a +1 rod.").is_empty());
+        assert!(enhancement_in("A +1 bonus to attack rolls.").is_empty());
+        // a later "into a +N" is read too, whatever comes first
+        assert_eq!(
+            enhancement_in("Turn a rod into a +1 rod, or a weapon into a +2 weapon."),
+            [("Weapon", 2)]
+        );
+        assert_eq!(
+            enhancement_in("Turn a weapon into a +1 weapon, or armor into a +2 armor."),
+            [("Weapon", 1), ("Armor", 2)]
+        );
+    }
+
+    #[test]
+    fn the_generic_item_is_any_name_format_that_only_adds_the_bonus() {
+        assert!(is_generic_format("{{parent}} +{{enhancement}}"));
+        assert!(is_generic_format("+{{enhancement}} {{parent}}"));
+        assert!(is_generic_format("$(parent), +$(enhancement)"));
+        assert!(!is_generic_format("Glowing {{parent}} +{{enhancement}}"));
+        assert!(!is_generic_format("{{parent}}"));
     }
 }

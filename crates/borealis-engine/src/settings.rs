@@ -23,6 +23,10 @@ pub struct EngineSettings {
     /// weapon" ([`crate::feature_weapon`]), so it can be wielded and, once a feature makes it an
     /// item of its own, be the base of a magic weapon. Off by default (Aurora has no such elements).
     pub feature_weapons: bool,
+    /// Keep the magic item of an infusion pick in the inventory ([`crate::infusion_items`]): its
+    /// summary and warnings, and the reconcile that adds, links and removes the lines. Off by
+    /// default: characters with infusion picks then load, replay and save as they always did.
+    pub infusion_items: bool,
 }
 
 impl Default for EngineSettings {
@@ -36,6 +40,7 @@ impl Default for EngineSettings {
             default_average_hp: true,
             include_options: true,
             feature_weapons: false,
+            infusion_items: false,
         }
     }
 }

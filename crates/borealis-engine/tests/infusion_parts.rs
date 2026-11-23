@@ -1,8 +1,8 @@
 //! Infusions on the parts of an item a feature splits into parts (`infusion_items`).
 //!
 //! Made-up content: a rig grants "Tinkering" (`item infusions:max` +2), "Plating Parts" (the
-//! plating "counts as separate items for your infusions: armor, boots, helmet, and the plating's
-//! special weapon", +2 more) and "Spark Cannon" (a feature that counts as a simple ranged
+//! plating "counts as separate items for your infusions: armor, boots, helmet, mantle, and the
+//! plating's special weapon", +2 more) and "Spark Cannon" (a feature that counts as a simple ranged
 //! weapon), and offers infusion picks: "Keen Edge" (+1 weapon), "Hardened Plating" (+1 armor)
 //! and "Striding Boots" (a worn infusion item for the feet). "Plating" is a nonmagical magic
 //! item that turns armor into the special armor.
@@ -22,6 +22,8 @@ const CANNON: &str = "ID_T_FEATURE_SPARK_CANNON";
 const KEEN: &str = "ID_T_FEATURE_KEEN_EDGE";
 const HARDENED: &str = "ID_T_FEATURE_HARDENED_PLATING";
 const BOOTS: &str = "ID_T_FEATURE_STRIDING_BOOTS";
+const MANTLE: &str = "ID_T_FEATURE_DAWN_MANTLE";
+const MANTLE_ITEM: &str = "ID_T_MAGIC_ITEM_DAWN_MANTLE";
 const BOOTS_ITEM: &str = "ID_T_MAGIC_ITEM_STRIDING_BOOTS";
 const PLATING: &str = "ID_T_MAGIC_ITEM_PLATING";
 const WEAPON_1: &str = "ID_WOTC_DMG_MAGIC_ITEM_WEAPON_1";
@@ -49,7 +51,7 @@ fn engine() -> Engine {
          "rules": [{"kind": "stat", "name": "item infusions:max", "value": "2"}]},
         {"id": "ID_T_FEATURE_PLATING_PARTS", "name": "Plating Parts", "type": "Class Feature", "source": "Test",
          "sheet": {"descriptions": [{"text": "Your plating now counts as separate items for your infusions: \
-            armor, boots, helmet, and the plating's special weapon."}]},
+            armor, boots, helmet, mantle, and the plating's special weapon."}]},
          "rules": [{"kind": "stat", "name": "item infusions:max", "value": "2"}]},
         {"id": CANNON, "name": "Spark Cannon", "type": "Class Feature", "source": "Test",
          "sheet": {"descriptions": [{"text": "A node counts as a simple ranged weapon, with a normal range \
@@ -57,9 +59,15 @@ fn engine() -> Engine {
         pick_feature(KEEN, "Keen Edge", "You can infuse a simple or martial weapon into a +1 weapon."),
         pick_feature(HARDENED, "Hardened Plating", "You can infuse a suit of armor into a +1 armor."),
         pick_feature(BOOTS, "Striding Boots", "A pair of boots becomes Striding Boots."),
+        pick_feature(MANTLE, "Dawn Mantle", "A cloak becomes a Dawn Mantle."),
+        {"id": MANTLE_ITEM, "name": "Dawn Mantle", "type": "Magic Item", "source": "Test",
+         "setters": [{"name": "category", "value": "Wondrous Items"}, {"name": "slot", "value": "misc"},
+            {"name": "keywords", "value": "tinker infusion"}]},
+        {"id": "ID_T_MAGIC_ITEM_MANTLE_OF_EASE", "name": "Mantle of Ease", "type": "Magic Item", "source": "Test",
+         "setters": [{"name": "category", "value": "Wondrous Items"}, {"name": "slot", "value": "shoulders"}]},
         {"id": BOOTS_ITEM, "name": "Striding Boots", "type": "Magic Item", "source": "Test",
          "setters": [{"name": "category", "value": "Wondrous Items"}, {"name": "slot", "value": "misc"},
-            {"name": "keywords", "value": "artificer infusion"}]},
+            {"name": "keywords", "value": "tinker infusion"}]},
         {"id": PLATING, "name": "Plating", "type": "Magic Item", "source": "Test",
          "setters": [{"name": "category", "value": "Magic Armor"}, {"name": "slot", "value": "body"},
             {"name": "type", "value": "Armor"},
@@ -77,6 +85,7 @@ fn engine() -> Engine {
         &store,
         EngineSettings {
             feature_weapons: true,
+            infusion_items: true,
             ..EngineSettings::default()
         },
     )
@@ -144,7 +153,10 @@ fn parts_each_take_one_legal_infusion_and_the_extra_slots_go_on_parts() {
     let ac = e.derive(&s).armor_class;
     let inf = e.derive(&s).inventory.infusions.expect("summary");
     assert_eq!((inf.used, inf.max, inf.parts_bonus), (0, 4, 2));
-    assert_eq!(inf.parts, ["armor", "boots", "helmet", "special weapon"]);
+    assert_eq!(
+        inf.parts,
+        ["armor", "boots", "helmet", "mantle", "special weapon"]
+    );
 
     // an armor infusion is layered on the special armor, as its armor part
     let s = pick(&e, &s, 0, HARDENED);
@@ -272,4 +284,38 @@ fn on_load_a_hand_layered_armor_infusion_is_adopted() {
     assert!(line(&s, &armor).infusion_layer_link.is_some());
     assert!(reconcile(&e, &s, Mode::Load).is_none());
     assert!(e.derive(&s).inventory.infusion_prompts.is_empty());
+}
+
+#[test]
+fn a_part_takes_the_items_the_content_names_for_it() {
+    let e = engine();
+    let (s, _) = tinker(&e);
+    // no code knows "mantle": the content's "Mantle of Ease" (shoulders) names the part's slot,
+    // so a worn item with no body slot fits it by its own name
+    let s = pick(&e, &s, 0, MANTLE);
+    let s = pick(&e, &s, 1, BOOTS);
+    let mantle = s
+        .inventory
+        .items
+        .iter()
+        .find(|i| i.item == MANTLE_ITEM)
+        .unwrap();
+    assert_eq!(mantle.part.as_deref(), Some("mantle"));
+    let boots = s
+        .inventory
+        .items
+        .iter()
+        .find(|i| i.item == BOOTS_ITEM)
+        .unwrap();
+    assert_eq!(boots.part.as_deref(), Some("boots"));
+    let boots = boots.uid.clone();
+    let freed = infusion_items::set_part(&e, &s, &boots, None).unwrap();
+    assert!(
+        infusion_items::set_part(&e, &freed, &boots, Some("mantle")).is_err(),
+        "taken, and boots are not a mantle"
+    );
+    let mantle = mantle.uid.clone();
+    let freed = infusion_items::set_part(&e, &s, &mantle, None).unwrap();
+    assert!(infusion_items::set_part(&e, &freed, &boots, Some("mantle")).is_err());
+    assert!(infusion_items::set_part(&e, &freed, &mantle, Some("boots")).is_err());
 }

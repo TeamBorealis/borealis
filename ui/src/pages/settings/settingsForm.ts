@@ -11,7 +11,7 @@ export const FORM_FIELDS: readonly (keyof AppSettings)[] = [
   "playerName", "abilityMethod", "rowHeight", "selectionFlow", "skillsPanelExpanded", "savingThrowsExpanded", "confirmRemoveLevel",
   "theme", "accentColor", "portraitSize", "autoContentUpdate", "showImportNotice", "abilityCapEnabled", "confirmEquipWeaponNotInAttacks",
   // Borealis tabs: RULES, SAVING, DISPLAY, UPDATES.
-  "defaultRuleset", "pointBuyBudget", "abilityMinBase", "abilityMaxBase", "autosave", "highContrast", "density", "checkAppUpdates", "featureWeapons",
+  "defaultRuleset", "pointBuyBudget", "abilityMinBase", "abilityMaxBase", "autosave", "highContrast", "density", "checkAppUpdates", "featureWeapons", "infusionItems",
 ];
 export const SHEET_FORM_FIELDS: readonly (keyof AppSettings["sheet"])[] = [
   "formFillable", "theme", "edition", "styleFormatting", "swapAbilityPositions", "includeNonPreparedSpells", "cards", "cardsNewPage",

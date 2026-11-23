@@ -150,7 +150,9 @@ impl Engine {
             include_options,
             opts.provenance,
         );
-        crate::infusion_items::annotate(uni, state, &mut snap);
+        if self.settings.infusion_items {
+            crate::infusion_items::annotate(uni, state, &mut snap);
+        }
         if include_options && !opts.provenance {
             crate::invariants::after_derive(self, state, &snap);
         }
@@ -166,7 +168,9 @@ impl Engine {
     ) -> CharacterSnapshot {
         let include_options = self.settings.include_options;
         let mut snap = ev.snapshot(state, &self.settings, include_options, false);
-        crate::infusion_items::annotate(self.universe(state.ruleset), state, &mut snap);
+        if self.settings.infusion_items {
+            crate::infusion_items::annotate(self.universe(state.ruleset), state, &mut snap);
+        }
         if include_options {
             crate::invariants::after_derive(self, state, &snap);
         }

@@ -215,7 +215,7 @@ pub struct InventoryItem {
     /// Absent (false) on every other line, and in files written before it.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub added_pick: bool,
-    /// The pick (an artificer's infusion) whose magic item this line is
+    /// The pick (a tinker's infusion) whose magic item this line is
     /// ([`crate::infusion_items::link_of`]): removing the pick removes this one copy. Absent on
     /// every other line and in older files (a pick then adopts a matching line on load).
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -316,6 +316,10 @@ pub struct Inventory {
     /// finesse weapons, and so on).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub attack_abilities: BTreeMap<String, String>,
+    /// Links of infusion picks whose line the user deleted by hand
+    /// ([`crate::infusion_items::reconcile`] does not add it again while the pick stays).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub infusion_declined: Vec<String>,
 }
 
 /// Mutable play-time state: resource uses, toggles, exhaustion, Heroic Inspiration, spell slot

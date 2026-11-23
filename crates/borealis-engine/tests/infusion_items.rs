@@ -6,9 +6,10 @@
 
 use borealis_content::{ContentFile, ContentStoreBuilder, PackOrigin, Ruleset};
 use borealis_engine::commands::{self, slot_key};
+use borealis_engine::diag::code;
 use borealis_engine::infusion_items::{reconcile, Mode};
 use borealis_engine::state::{CharacterState, Choice, SlotKey};
-use borealis_engine::Engine;
+use borealis_engine::{Engine, EngineSettings};
 use serde_json::json;
 use std::path::Path;
 
@@ -29,12 +30,17 @@ fn feature(id: &str, name: &str, text: &str) -> serde_json::Value {
 }
 
 fn engine() -> Engine {
+    build(true)
+}
+
+fn build(infusion_items: bool) -> Engine {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
     let file: ContentFile = serde_json::from_value(json!({
     "format": "borealis-content/1", "ruleset": "dnd2014", "elements": [
         {"id": RIG, "name": "Tinker Rig", "type": "Magic Item", "source": "Test",
          "setters": [{"name": "category", "value": "Wondrous Items"}, {"name": "slot", "value": "neck"}],
-         "rules": [{"kind": "select", "type": "Class Feature", "name": "Tinker Infusion",
+         "rules": [{"kind": "stat", "name": "item infusions:max", "value": "3"},
+            {"kind": "select", "type": "Class Feature", "name": "Tinker Infusion",
             "supports": "Tinker Infusion", "number": 3}]},
         feature(BOOTS, "Striding Boots", "A pair of boots becomes Striding Boots."),
         feature(BOOTS_TOO, "Striding Boots", "A pair of boots becomes Striding Boots."),
@@ -42,11 +48,11 @@ fn engine() -> Engine {
         feature(KEEN, "Keen Edge", "You can infuse a simple or martial weapon into a +1 weapon."),
         {"id": BOOTS_ITEM, "name": "Striding Boots", "type": "Magic Item", "source": "Test",
          "setters": [{"name": "category", "value": "Wondrous Items"}, {"name": "slot", "value": "feet"},
-            {"name": "keywords", "value": "artificer infusion"}]},
+            {"name": "keywords", "value": "tinker infusion"}]},
         {"id": GLOWING_ITEM, "name": "Glowing Weapon", "type": "Magic Item", "source": "Test",
          "setters": [{"name": "category", "value": "Magic Weapons"},
             {"name": "type", "value": "Weapon", "attributes": {"addition": "simple or martial weapon"}},
-            {"name": "rarity", "value": "Artificer Infusion"}, {"name": "enhancement", "value": "1"},
+            {"name": "rarity", "value": "Tinker Infusion"}, {"name": "enhancement", "value": "1"},
             {"name": "weapon", "value": "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE||ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE"},
             {"name": "name-format", "value": "Glowing {{parent}} +{{enhancement}}"}]}
     ]}))
@@ -57,7 +63,13 @@ fn engine() -> Engine {
         .expect("bundled packs")
         .add_file("tinker.json", PackOrigin::Custom, file)
         .build();
-    Engine::new(&store)
+    Engine::with_settings(
+        &store,
+        EngineSettings {
+            infusion_items,
+            ..EngineSettings::default()
+        },
+    )
 }
 
 /// A level 1 fighter wearing the rig.
@@ -395,4 +407,73 @@ fn chosen_loot_is_unlinked_and_kept_unchanged_when_the_pick_goes() {
             "amount {amount}: uid, adorner, notes, equip and count unchanged"
         );
     }
+}
+
+#[test]
+fn with_the_setting_off_picks_load_replay_and_save_as_before() {
+    let off = build(false);
+    let on = engine();
+    let mut s = tinker(&off);
+    for (n, id) in [(0, BOOTS), (1, KEEN), (2, GLOWING)] {
+        let key = infusion_slot(&off, &s, n);
+        s = commands::select(&off, &s, &key, Choice::Element(id.into()))
+            .unwrap()
+            .state;
+    }
+    // a hand-added copy of a pick's item, and four lines over the maximum of three
+    for _ in 0..4 {
+        s = commands::add_item(&off, &s, BOOTS_ITEM, 1).unwrap().state;
+        s.inventory.items.last_mut().unwrap().infusion_link = Some("old".into());
+    }
+    let before = s.clone();
+    for mode in [Mode::Load, Mode::Change] {
+        assert!(reconcile(&off, &s, mode).is_none(), "{mode:?}");
+    }
+    let snap = off.derive(&s);
+    assert!(snap.inventory.infusions.is_none());
+    assert!(snap.inventory.infusion_prompts.is_empty());
+    assert!(snap
+        .diagnostics
+        .iter()
+        .all(|d| d.code != code::INFUSIONS_OVER_LIMIT));
+    let uid = s.inventory.items.last().unwrap().uid.clone();
+    assert!(borealis_engine::infusion_items::set_part(&off, &s, &uid, Some("boots")).is_err());
+    assert_eq!(
+        borealis_engine::infusion_items::take_part(&off, s.clone(), &uid),
+        s
+    );
+    // the file saves and loads as it was
+    let text = serde_json::to_string(&s).unwrap();
+    assert_eq!(
+        serde_json::from_str::<CharacterState>(&text).unwrap(),
+        before
+    );
+    // the same character with the setting on is read
+    let snap = on.derive(&s);
+    assert!(snap.inventory.infusions.is_some());
+    assert!(snap
+        .diagnostics
+        .iter()
+        .any(|d| d.code == code::INFUSIONS_OVER_LIMIT));
+    assert!(reconcile(&on, &s, Mode::Load).is_some());
+}
+
+#[test]
+fn a_deleted_infusion_item_is_not_added_again_until_the_pick_is_made_again() {
+    let e = engine();
+    let s = pick(&e, &tinker(&e), 0, BOOTS);
+    let uid = copies(&s, BOOTS_ITEM)[0].uid.clone();
+    let s = commands::remove_item(&e, &s, &uid).unwrap().state;
+    assert!(copies(&s, BOOTS_ITEM).is_empty());
+    assert_eq!(s.inventory.infusion_declined.len(), 1);
+    for mode in [Mode::Change, Mode::Load] {
+        assert!(reconcile(&e, &s, mode).is_none(), "{mode:?}");
+    }
+    // unpicking forgets it, and picking again gives the item again
+    let key = infusion_slot(&e, &s, 0);
+    let s = commands::clear(&e, &s, &key).unwrap().state;
+    let s = reconcile(&e, &s, Mode::Change).expect("forgets the deleted line");
+    assert!(s.inventory.infusion_declined.is_empty());
+    let s = pick(&e, &s, 0, BOOTS);
+    assert_eq!(copies(&s, BOOTS_ITEM).len(), 1);
 }
