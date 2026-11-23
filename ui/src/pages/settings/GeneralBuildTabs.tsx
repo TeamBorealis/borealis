@@ -41,7 +41,6 @@ export function GeneralTab({ form, set }: Props) {
       <ComboBox id={rows} value={form.rowHeight} options={ROW_HEIGHTS} onChange={(v) => set({ rowHeight: v as RowHeight })} />
       <Help>Reduce the height of the rows to fit more content on your screen.</Help>
       <DescCheck spaced title="Selection Flow" description="Automatically navigate to the next available selection. Alternatively, toggle this behaviour from the status bar." checked={form.selectionFlow} onChange={(v) => set({ selectionFlow: v })} />
-      <DescCheck title="Linked Elements" description="Below a selection's description, show the items, spells, conditions, companions and other elements it grants, creates or names." checked={form.linkedElements} onChange={(v) => set({ linkedElements: v })} />
       <SectionTitle>CHARACTER INFORMATION PANEL</SectionTitle>
       <SectionDesc>Click the character portrait at the top of the main window to open the character information panel.</SectionDesc>
       <DescCheck title="Skills Panel Expanded" description="Expand by default when the application loads." checked={form.skillsPanelExpanded} onChange={(v) => set({ skillsPanelExpanded: v })} />

@@ -116,7 +116,7 @@ export function DescriptionPane({ elementId, fallback, copyable = false }: { ele
   const { openCompendium } = useShell();
   const copier = useCopyToHomebrew();
   const { settings } = useSettings();
-  const el = useAsync(() => (elementId ? api.getElement({ elementId }) : Promise.resolve(null)), [api, elementId]);
+  const el = useAsync(() => (elementId ? api.getElement({ elementId }) : Promise.resolve(null)), [api, elementId, settings.linkedElements]);
   useEffect(() => { if (el.data) lastShown.set(api, el.data); }, [api, el.data]);
   if (!elementId) return <>{fallback}</>;
   if (el.error) return <PaneShell title="Description" imageIcon={false}><Alert tone="danger">{el.error}</Alert></PaneShell>;

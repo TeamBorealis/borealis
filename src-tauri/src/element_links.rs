@@ -36,7 +36,7 @@ pub(crate) enum Via {
     Grant,
     /// Any other rule that names the element (`grant_spell`, a condition it applies, ...).
     Rule,
-    /// A `select` rule's default, list or `supports` ids.
+    /// A `select` rule's default (its `supports` list can name dozens of options: not linked).
     Select,
     /// An element id in the description markup.
     Description,
@@ -74,9 +74,6 @@ pub(crate) fn link_ids<'a>(store: &'a ContentStore, el: &Element) -> Vec<(&'a El
             Rule::Grant(g) => add(&g.id, Via::Grant),
             Rule::Select(s) => {
                 if let Some(id) = &s.default_id {
-                    add(id, Via::Select);
-                }
-                for id in s.supports.iter().flat_map(|e| expression_ids(e)) {
                     add(id, Via::Select);
                 }
             }
@@ -139,14 +136,6 @@ fn strings(v: &Value, f: &mut impl FnMut(&str)) {
         Value::Object(o) => o.values().for_each(|x| strings(x, f)),
         _ => {}
     }
-}
-
-/// The id-shaped words of a `supports` expression (`ID_A|ID_B`, `!ID_C`, `(ID_D&ID_E)`). Plain
-/// tags (`Magic Item`, `Common`) come out too; they name no element, so the caller drops them.
-fn expression_ids(expr: &str) -> impl Iterator<Item = &str> {
-    expr.split(['|', '&', ',', '!', '(', ')'])
-        .map(str::trim)
-        .filter(|s| !s.is_empty() && !s.contains(' '))
 }
 
 /// The element ids a description's markup names: `data-element="ID"` (the importers' links) and
@@ -277,12 +266,11 @@ mod tests {
             ids(&s, "ID_SRC"),
             [
                 "ID_SPELL_A:select",
-                "ID_SPELL_B:select",
                 "ID_COND:rule",
                 "ID_BEAST:description",
                 "ID_NOTE:description"
             ],
-            "itself, unknown ids and the injected div/p references are left out"
+            "itself, unknown ids, the select's supports list and the injected div/p references are left out"
         );
     }
 

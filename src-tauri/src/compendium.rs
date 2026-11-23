@@ -175,7 +175,7 @@ impl AppState {
         Ok(Page { total, items })
     }
 
-    /// One element with sanitised description, facts and grants.
+    /// One element with sanitised description, facts and grants (and its linked elements, with the Linked Elements setting on).
     ///
     /// # Errors
     /// `not_found` for an unknown id.
@@ -184,7 +184,12 @@ impl AppState {
         let el = hub
             .element(element_id)
             .ok_or_else(|| ApiError::not_found("That element does not exist."))?;
-        Ok(element_detail(&hub, el))
+        let mut detail = element_detail(&hub, el);
+        // Linked Elements (opt-in): rendering up to MAX_LINKS descriptions is paid only when the setting is on.
+        if self.settings()?.linked_elements {
+            detail.links = crate::element_links::links(&hub.store, el);
+        }
+        Ok(detail)
     }
 
     /// Type and source filters with their counts.
@@ -245,7 +250,7 @@ pub(crate) fn element_detail_with(
         description_html: html,
         facts: facts(store, el),
         grants: crate::element_grants::grants_with(store, own, el),
-        links: crate::element_links::links(store, el),
+        links: Vec::new(),
     }
 }
 

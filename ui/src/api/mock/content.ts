@@ -306,6 +306,7 @@ function mk(): MockElement[] {
     out.push(el(c.id, "class", title(c.id), classText[c.id]!, {
       facts: [{ label: "Hit die", value: `d${c.hitDie}` }, { label: "Saves", value: c.saves.join(", ").toUpperCase() }],
       description: `<p>${classText[c.id]}</p><ul><li>Hit die d${c.hitDie}</li><li>Choose ${c.skillCount} skills</li></ul>`,
+      ...(c.id === "cleric" ? { linkIds: ["cure-wounds"] } : {}),
     }));
     out.push(el(`multi-${c.id}`, "multiclass", title(c.id), classText[c.id]!, {
       prerequisites: `${c.multiclassAbility.map((a) => ABILITY_NAMES[a]).join(" or ")} 13`,

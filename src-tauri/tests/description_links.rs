@@ -60,6 +60,21 @@ fn class_features_and_proficiencies_the_grants_list_shows_are_not_linked_again()
     );
 }
 
+#[test]
+fn with_the_setting_off_no_links_are_built() {
+    let (_d, app) = app();
+    set_linked_elements(&app, false);
+    let pact = app
+        .get_element(PACT_OF_THE_CHAIN)
+        .expect("Pact of the Chain");
+    assert!(pact.links.is_empty(), "{:?}", pact.links);
+    set_linked_elements(&app, true);
+    let pact = app
+        .get_element(PACT_OF_THE_CHAIN)
+        .expect("Pact of the Chain");
+    assert!(!pact.links.is_empty());
+}
+
 fn app() -> (tempfile::TempDir, AppState) {
     borealis_engine::invariants::enable_for_thread();
     let dir = tempfile::tempdir().expect("temp dir");
@@ -67,5 +82,13 @@ fn app() -> (tempfile::TempDir, AppState) {
         content_root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content"),
         data: dir.path().to_path_buf(),
     };
-    (dir, AppState::new(paths).expect("state"))
+    let app = AppState::new(paths).expect("state");
+    set_linked_elements(&app, true);
+    (dir, app)
+}
+
+fn set_linked_elements(app: &AppState, on: bool) {
+    let mut settings = app.settings().expect("settings");
+    settings.linked_elements = on;
+    app.set_settings(settings).expect("set settings");
 }

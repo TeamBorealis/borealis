@@ -18,7 +18,11 @@ fn app() -> (tempfile::TempDir, AppState) {
         content_root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content"),
         data: dir.path().to_path_buf(),
     };
-    (dir, AppState::new(paths).expect("state"))
+    let app = AppState::new(paths).expect("state");
+    let mut settings = app.settings().expect("settings");
+    settings.linked_elements = true;
+    app.set_settings(settings).expect("set settings");
+    (dir, app)
 }
 
 fn install(app: &AppState) {
