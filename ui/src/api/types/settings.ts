@@ -120,8 +120,7 @@ export interface AppSettings {
    */
   preferredCopies: Record<string, string>;
 }
-/** A saveSettings patch: like the settings, but a preferredCopies value may be 
-ull, which removes that entry. */
+/** A saveSettings patch: like the settings, but a preferredCopies value may be null, which removes that entry. */
 export type SettingsPatch = Omit<Partial<AppSettings>, "preferredCopies"> & { preferredCopies?: Record<string, string | null> };
 
 
