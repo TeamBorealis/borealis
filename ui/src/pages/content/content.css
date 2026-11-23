@@ -40,7 +40,7 @@
 .v4-grid-row.sel { background: var(--accent-80); }
 @media (hover: hover) and (pointer: fine) { .v4-grid-row.sel:hover { background: var(--accent-80); } }
 .v4-sources { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 10px 25px 0 50px; }
-.v4-grid-tools { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.v4-grid-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 8px; }
 .v4-grid-tools .search { width: 260px; }
 .v4-grid-tools .search .input { border-color: #424243; }
 .v4-grid-tools .search .input:focus { border-color: #424243; outline: 0; }

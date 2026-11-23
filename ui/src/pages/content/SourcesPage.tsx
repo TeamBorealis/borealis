@@ -60,7 +60,7 @@ export function SourcesPage() {
   /**
    * The remembered "Restrict ... content" switches. With a character loaded the change starts from the character's
    * current sources and is saved only once the apply went through (Cancel leaves everything as it was); with none, it
-   * changes the page's list. Switching one on also takes that kind's books out of the saved default, once.
+   * changes the page's list. Switching one on takes that kind's books out of the saved default; switching it off puts them back.
    */
   const toggleKind = async (kind: SourceKind, on: boolean) => {
     const ids = idsOfKind(all, kind);
@@ -72,10 +72,12 @@ export function SourcesPage() {
     } else setDraft(next);
     try {
       await update({ [KIND_SETTING[kind]]: on });
-      if (on && stored) {
-        const trimmed = stored.filter((id) => !ids.includes(id));
-        saveDefaultSources(trimmed);
-        setStored(trimmed);
+      if (stored) {
+        // The mirror of each other: on takes the kind's books out of the saved default, off puts them back.
+        const rest = stored.filter((id) => !ids.includes(id));
+        const next = on ? rest : [...rest, ...ids];
+        saveDefaultSources(next);
+        setStored(next);
       }
     } catch (e) {
       toast.push(`Could not save the setting: ${errorMessage(e)}`, "error");
@@ -97,7 +99,8 @@ export function SourcesPage() {
   };
   const notes = (["playtest", "thirdParty"] as const)
     .filter((k) => settings[KIND_SETTING[k]])
-    .map((k) => restrictedNote(restrictedCount(all, k, allowed), k));  const sel = all.find((s) => s.id === described) ?? null;
+    .map((k) => restrictedNote(restrictedCount(all, k, allowed), k));
+  const sel = all.find((s) => s.id === described) ?? null;
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [anchor, setAnchor] = useState<string | null>(null);
   const order = useMemo(() => {

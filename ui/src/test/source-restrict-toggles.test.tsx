@@ -200,6 +200,25 @@ describe("switches and the saved default", () => {
     expect(snap.sourceRestrictions).not.toContain(books[0]!.id);
   });
 
+  it("with a default saved, switching on then off puts the kind's books back in the default", async () => {
+    const user = userEvent.setup();
+    const api = withFlags(new MockApi({ rng: () => 0.5 }));
+    const books = await flagged(api);
+    renderApp("/content/sources", { api });
+    const grid = await screen.findByRole("grid", { name: "Sources" });
+    const box = (b: ContentSource) => within(grid).getByRole("checkbox", { name: `Allow ${b.name}` }) as HTMLInputElement;
+    await waitFor(() => expect(box(books[0]!).checked).toBe(true));
+    await user.click(screen.getByRole("button", { name: "Save as default" }));
+    await user.click(screen.getByRole("checkbox", { name: "Restrict playtest content" }));
+    await waitFor(() => expect(loadDefaultSources()).not.toContain(books[0]!.id));
+    await user.click(screen.getByRole("checkbox", { name: "Restrict playtest content" }));
+    await waitFor(() => expect(loadDefaultSources()).toContain(books[0]!.id));
+    await waitFor(() => expect(box(books[0]!).checked).toBe(true));
+    const id = await seededId(api, "Brannoc");
+    const snap = await applyDefaultSources(api, await api.getSnapshot({ characterId: id }));
+    expect(snap.sourceRestrictions ?? [books[0]!.id]).toContain(books[0]!.id);
+  });
+
   it("the one-time playtest flask leaves the remembered switch alone", async () => {
     const user = userEvent.setup();
     const api = withFlags(new MockApi({ rng: () => 0.5 }));
