@@ -86,10 +86,12 @@ class CopiesApi extends MockApi {
 
   /** A copy that can't be prepared (the second call of a switch fails). */
   refuse: string | null = null;
+  /** Copies that refuse every prepare call (the put-back too). */
+  refuseAlso = new Set<string>();
 
   override async setSpellPrepared(a: { characterId: string; classSlotId: string; spellId: string; prepared: boolean }) {
     this.calls.push([a.spellId, a.prepared]);
-    if (a.prepared && a.spellId === this.refuse) throw new Error("The prepared limit is reached.");
+    if (a.prepared && (a.spellId === this.refuse || this.refuseAlso.has(a.spellId))) throw new Error("The prepared limit is reached.");
     if (a.prepared) this.prepared.add(a.spellId);
     else this.prepared.delete(a.spellId);
     return this.getSnapshot({ characterId: a.characterId });
@@ -155,5 +157,19 @@ describe("the Magic page's class list", () => {
     await user.click(within(await screen.findByRole("listbox")).getByRole("option", { name: "SRD 5.2.1" }));
     await waitFor(() => expect(api.calls).toEqual([["fb-home", false], ["fb-srd", true], ["fb-home", true]]));
     expect([...api.prepared]).toEqual(["fb-home"]);
+  });
+
+  it("a switch that can't put the old copy back says so", async () => {
+    const api = new CopiesApi();
+    api.prepared.add("fb-home");
+    api.refuse = "fb-srd";
+    api.refuseAlso.add("fb-home");
+    const table = await openMagic(api);
+    const user = userEvent.setup();
+    await user.click(within(table).getByRole("button", { name: "3 versions of Fireball" }));
+    await user.click(within(await screen.findByRole("listbox")).getByRole("option", { name: "SRD 5.2.1" }));
+    await waitFor(() => expect(api.calls).toEqual([["fb-home", false], ["fb-srd", true], ["fb-home", true]]));
+    const status = await screen.findByText(/couldn't be put back/);
+    expect(status.textContent).not.toMatch(/stays prepared/);
   });
 });

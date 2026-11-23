@@ -72,7 +72,7 @@ describe('w3 magic', { tags: ['w3'] }, () => {
     expect((await textOf(ctx, '.aur-content')).toUpperCase()).not.toContain('KNOWN SPELLS');
     // One row per name (#51): Fireball is listed once, and no name is listed twice, whatever copies are installed.
     await waitFor(ctx, (_: null) => document.querySelectorAll('table.sp-grid tbody tr .ap-name').length > 0, null, 'class spell rows');
-    const names = await rowsText(ctx, ` .ap-name`);
+    const names = await rowsText(ctx, `${CLASS_ROWS} .ap-name`);
     expect(names.filter((n) => n === 'Fireball').length).toBeLessThanOrEqual(1);
     expect(new Set(names).size).toBe(names.length);
     // Highlight Detect Magic by its name, PREPARE with the real pointer.

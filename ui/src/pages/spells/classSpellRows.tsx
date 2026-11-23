@@ -121,8 +121,10 @@ export function useClassSpellRows(cls: ClassSpellcasting, onPick: (id: string) =
       return;
     }
     // the other copy couldn't be prepared: keep the one the character had
-    await set(from.id, true);
-    setStatus(`${cls.className}: ${to.name} (${to.sourceName}) couldn't be prepared; ${from.name} (${from.sourceName}) stays prepared.`);
+    const restored = await set(from.id, true);
+    setStatus(restored
+      ? `${cls.className}: ${to.name} (${to.sourceName}) couldn't be prepared; ${from.name} (${from.sourceName}) stays prepared.`
+      : `${cls.className}: ${to.name} (${to.sourceName}) couldn't be prepared, and ${from.name} (${from.sourceName}) couldn't be put back; it is no longer prepared.`);
   };
 
   const versionHeader = versionColumn ? <th scope="col" className="sp-ver"><span className="sr-only">Versions</span></th> : null;
