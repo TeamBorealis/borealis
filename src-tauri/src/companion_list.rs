@@ -30,9 +30,9 @@ struct EngineStats {
     armor_class: Option<i32>,
     hp: Option<i32>,
     speed: Option<i32>,
-    /// `companion:<ability>:save:proficiency` plus `:misc`, STR to CHA.
+    /// `companion:<ability>:save:proficiency` and/or `:misc`, STR to CHA.
     saves: [Option<i32>; 6],
-    /// `companion:<skill>:proficiency` plus `:misc`, by lower-case skill name.
+    /// `companion:<skill>:proficiency` and/or `:misc`, by lower-case skill name.
     skills: Vec<(String, i32)>,
 }
 
@@ -48,20 +48,34 @@ const ABILITY_STATS: [&str; 6] = [
 impl EngineStats {
     fn read(snap: &Engine) -> Self {
         let get = |name: &str| snap.stats.get(name).map(|s| s.value);
+        // A skill or save counts when a rule sets its proficiency, its misc bonus, or both.
         let with_misc = |base: &str| {
-            get(&format!("{base}:proficiency"))
-                .map(|p| p + get(&format!("{base}:misc")).unwrap_or(0))
+            let (p, m) = (
+                get(&format!("{base}:proficiency")),
+                get(&format!("{base}:misc")),
+            );
+            (p.is_some() || m.is_some()).then(|| p.unwrap_or(0) + m.unwrap_or(0))
         };
-        let skills = snap
+        let mut names: Vec<&str> = snap
             .stats
             .keys()
             .filter_map(|k| {
-                let skill = k.strip_prefix("companion:")?.strip_suffix(":proficiency")?;
-                (!skill.contains(':') && !ABILITY_STATS.contains(&skill))
-                    .then(|| {
-                        with_misc(&format!("companion:{skill}")).map(|v| (skill.to_string(), v))
-                    })
-                    .flatten()
+                let skill = k.strip_prefix("companion:")?;
+                let skill = skill
+                    .strip_suffix(":proficiency")
+                    .or_else(|| skill.strip_suffix(":misc"))?;
+                (!skill.contains(':')
+                    && !ABILITY_STATS.contains(&skill)
+                    && !matches!(skill, "ac" | "hp" | "speed"))
+                .then_some(skill)
+            })
+            .collect();
+        names.sort_unstable();
+        names.dedup();
+        let skills = names
+            .into_iter()
+            .filter_map(|skill| {
+                with_misc(&format!("companion:{skill}")).map(|v| (skill.to_string(), v))
             })
             .collect();
         Self {
