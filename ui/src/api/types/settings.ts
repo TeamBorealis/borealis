@@ -99,8 +99,6 @@ export interface AppSettings {
   autoContentUpdate: boolean;
   /** "Check for new versions of Borealis" (default on): at startup ask GitHub for the latest version number, nothing else. */
   checkAppUpdates: boolean;
-  /** Rules: a feature whose text says it "counts as a simple ranged weapon" gets a weapon of its own (default off). */
-  featureWeapons: boolean;
   rowHeight: RowHeight;
   /** Classic builder "Skills Panel Expanded" (default on). */
   skillsPanelExpanded: boolean;

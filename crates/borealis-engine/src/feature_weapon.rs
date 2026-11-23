@@ -1,11 +1,10 @@
 //! Weapons a feature gives (`EngineSettings::feature_weapons`, off by default).
 //!
 //! Some features say in their text that a part of the character "counts as a simple ranged
-//! weapon" (a launcher built into armor, a natural weapon), with its damage and range, but carry
+//! weapon" (a launcher built into a harness, a natural weapon), with its damage and range, but carry
 //! no Weapon element: the weapon cannot be wielded, listed in the attacks table or used as the
-//! base of a magic weapon (a `+1 Weapon` an artificer infuses). Aurora has no such element
-//! either. With the setting on, the universe gets one derived Weapon element per such feature,
-//! read from the feature's own text:
+//! base of a magic weapon. Aurora has no such element either. With the setting on, the universe
+//! gets one derived Weapon element per such feature, read from the feature's own text:
 //!
 //! - `count(s) as a simple|martial melee|ranged weapon` gives its category tag,
 //! - the first `deals NdM <type> damage` after it gives its damage (a text without one makes none),
@@ -73,9 +72,9 @@ pub struct WeaponText {
     pub class: String,
     /// `melee` or `ranged`.
     pub reach: String,
-    /// Damage dice (`1d6`), empty when the text names none.
+    /// Damage dice (`1d4`), empty when the text names none.
     pub dice: String,
-    /// Damage type (`lightning`), empty when the text names none.
+    /// Damage type (`acid`), empty when the text names none.
     pub damage_type: String,
     /// `N/M` feet, empty when the text names none.
     pub range: String,
@@ -253,8 +252,8 @@ mod tests {
 
     fn feature(text: &str) -> Element {
         Element {
-            id: "ID_TEST_FEATURE_SPARK_CANNON".into(),
-            name: "Spark Cannon".into(),
+            id: "ID_TEST_FEATURE_TIDE_SLING".into(),
+            name: "Tide Sling".into(),
             ty: "Class Feature".into(),
             description: format!("<p>{text}</p>"),
             ..Element::default()
@@ -264,22 +263,16 @@ mod tests {
     #[test]
     fn reads_a_ranged_weapon_with_damage_and_range() {
         let f = feature(
-            "A node on your wrist counts as a simple ranged weapon, with a normal range of \
-             90 feet and a long range of 300 feet, and it deals 1d6 lightning damage on a hit.",
+            "A pipe on your wrist counts as a simple ranged weapon, with a normal range of \
+             30 feet and a long range of 120 feet, and it deals 1d4 acid damage on a hit.",
         );
         let w = read(&f).unwrap();
         assert_eq!((w.class.as_str(), w.reach.as_str()), ("simple", "ranged"));
-        assert_eq!(
-            (w.dice.as_str(), w.damage_type.as_str()),
-            ("1d6", "lightning")
-        );
-        assert_eq!(w.range, "90/300");
+        assert_eq!((w.dice.as_str(), w.damage_type.as_str()), ("1d4", "acid"));
+        assert_eq!(w.range, "30/120");
         let el = derive(&f).unwrap();
         assert_eq!(el.ty, "Weapon");
-        assert_eq!(
-            el.id,
-            "ID_BOREALIS_FEATURE_WEAPON_TEST_FEATURE_SPARK_CANNON"
-        );
+        assert_eq!(el.id, "ID_BOREALIS_FEATURE_WEAPON_TEST_FEATURE_TIDE_SLING");
         assert!(el
             .supports
             .contains(&"ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED".to_string()));
@@ -293,19 +286,19 @@ mod tests {
     #[test]
     fn reads_a_melee_weapon_and_plural_wording() {
         let f = feature(
-            "Your fists each count as a martial melee weapon while empty, and each deals 1d8 \
-             thunder damage on a hit.",
+            "Your hooves each count as a martial melee weapon while empty, and each deals 1d10 \
+             radiant damage on a hit.",
         );
         let w = read(&f).unwrap();
         assert_eq!((w.class.as_str(), w.reach.as_str()), ("martial", "melee"));
-        assert_eq!(w.dice, "1d8");
+        assert_eq!(w.dice, "1d10");
         assert!(w.range.is_empty());
     }
 
     #[test]
     fn two_weapons_in_one_text_make_none() {
         let f = feature(
-            "Pick a model. Fists: they count as a simple melee weapon. Cannon: it counts as a \
+            "Pick a model. Hooves: they count as a simple melee weapon. Sling: it counts as a \
              simple ranged weapon.",
         );
         assert_eq!(read(&f), None);
@@ -328,7 +321,7 @@ mod tests {
     #[test]
     fn sheet_text_wins_over_the_description() {
         let mut f =
-            feature("Long story. It counts as a simple ranged weapon and deals 1d6 fire damage.");
+            feature("Long story. It counts as a simple ranged weapon and deals 1d4 fire damage.");
         assert!(read(&f).is_some(), "the description alone describes one");
         f.sheet = Some(borealis_content::Sheet {
             descriptions: vec![borealis_content::SheetEntry {
