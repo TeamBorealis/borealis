@@ -4,6 +4,8 @@ export interface MockElement extends ElementSummary {
   description: string;
   facts: { label: string; value: string }[];
   grants: ElementGrant[];
+  /** Elements the backend would link (description pane "Linked Elements"). */
+  linkIds?: string[];
 }
 
 export interface RaceDef {

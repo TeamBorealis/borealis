@@ -57,6 +57,13 @@ p.desc-grant-lvl { margin: 0 0 2px; font-style: italic; }
 /* A3: a granted trait's name heads its text, like the trait headings of the element's own description. */
 .desc-grant-h { margin: 10px 0 3px; }
 .desc-later > summary { margin: 4px 0 6px; cursor: pointer; font-weight: 600; color: var(--desc-head); }
+/* Linked Elements: one folding card per element the shown one grants, offers, creates or names. */
+.desc-link { margin: 0 0 6px; border-left: 2px solid var(--highlight); padding-left: 8px; }
+.desc-link > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-height: 24px; cursor: pointer; }
+.desc-link-name { font-weight: 600; color: var(--desc-head); }
+.desc-link-meta { font-style: italic; color: var(--gray-5); }
+.desc-link-body { padding: 4px 0 2px; }
+:root.phone .desc-link > summary { min-height: 44px; align-items: center; }
 @media (max-width: 899px) {
   .bp-right { border-top: 2px solid var(--highlight); }
   .desc-scroll { overflow: visible; padding: 16px 15px 24px 15px; margin-left: 0; }

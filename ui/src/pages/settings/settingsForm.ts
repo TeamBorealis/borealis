@@ -8,7 +8,7 @@ import type { AppSettings } from "../../api/contract";
  */
 export const FORM_FIELDS: readonly (keyof AppSettings)[] = [
   // Classic builder tabs.
-  "playerName", "abilityMethod", "rowHeight", "selectionFlow", "skillsPanelExpanded", "savingThrowsExpanded", "confirmRemoveLevel",
+  "playerName", "abilityMethod", "rowHeight", "selectionFlow", "linkedElements", "skillsPanelExpanded", "savingThrowsExpanded", "confirmRemoveLevel",
   "theme", "accentColor", "portraitSize", "autoContentUpdate", "showImportNotice", "abilityCapEnabled", "confirmEquipWeaponNotInAttacks",
   // Borealis tabs: RULES, SAVING, DISPLAY, UPDATES.
   "defaultRuleset", "pointBuyBudget", "abilityMinBase", "abilityMaxBase", "autosave", "highContrast", "density", "checkAppUpdates",

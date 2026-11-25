@@ -99,6 +99,9 @@ export interface AppSettings {
   autoContentUpdate: boolean;
   /** "Check for new versions of Borealis" (default on): at startup ask GitHub for the latest version number, nothing else. */
   checkAppUpdates: boolean;
+  /** Builder description pane "Linked Elements" (default off): the cards of the elements the shown one grants, offers,
+   * creates or names, below its own text. */
+  linkedElements: boolean;
   rowHeight: RowHeight;
   /** Classic builder "Skills Panel Expanded" (default on). */
   skillsPanelExpanded: boolean;

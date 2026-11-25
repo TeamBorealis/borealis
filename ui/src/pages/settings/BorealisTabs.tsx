@@ -73,11 +73,12 @@ export function DisplayTab({ form, set }: FormProps) {
   const density = useId();
   return (
     <>
-      <TabTitle title="DISPLAY" desc="Contrast and spacing of the application." />
+      <TabTitle title="DISPLAY" desc="Contrast, spacing and the description pane of the application." />
       <DescCheck title="High contrast" description="Stronger borders, text and focus rings." checked={form.highContrast} onChange={(v) => set({ highContrast: v })} />
       <FieldLabel htmlFor={density}>DENSITY</FieldLabel>
       <ComboBox id={density} value={form.density} onChange={(v) => set({ density: v as Density })}
         options={[{ value: "comfortable", label: "Comfortable" }, { value: "compact", label: "Compact" }]} />
+      <DescCheck title="Linked Elements" description="Below a selection's description, show the items, spells, conditions, companions and other elements it grants, creates or names." checked={form.linkedElements} onChange={(v) => set({ linkedElements: v })} />
     </>
   );
 }

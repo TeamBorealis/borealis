@@ -1,5 +1,5 @@
 import type {
-  BookRuleset, CompendiumFacets, FiveToolsImportReport, FiveToolsImportRequest, FiveToolsScan, FiveToolsSource, CompendiumQuery, ContentIndex, ContentPack, ContentProgress, ContentSource, ElementDetail, ElementSummary,
+  BookRuleset, CompendiumFacets, FiveToolsImportReport, FiveToolsImportRequest, FiveToolsScan, FiveToolsSource, CompendiumQuery, ContentIndex, ContentPack, ContentProgress, ContentSource, ElementDetail, ElementLink, ElementSummary,
   HomebrewPickerRow, ImportPackRequest, ImportPackResult, ItemCategory, ItemQuery, ItemSummary, MigrationIssue, MigrationReport, Page, Ruleset, UpdateIndexesResult,
 } from "../types";
 import { issue, scanElements, xmlIssues } from "./import-issues";
@@ -27,7 +27,7 @@ const stripHtml = (s: string): string => s.replace(/<[^>]+>/g, "");
 /** A core picker row as the backend describes its core element: an "option" with its name and type as its text. */
 const coreDetail = (r: HomebrewPickerRow): ElementDetail => ({
   id: r.id, name: r.name, type: "option", source: "core", sourceName: r.sourceName, shortDescription: r.summary, prerequisites: null,
-  rulesets: r.edition ? [r.edition] : [], descriptionHtml: `<p>${r.name} (${r.type}).</p>`, facts: [], grants: [],
+  rulesets: r.edition ? [r.edition] : [], descriptionHtml: `<p>${r.name} (${r.type}).</p>`, facts: [], grants: [], links: [],
 });
 
 /**
@@ -60,7 +60,7 @@ export class ContentService {
   }
 
   private summary(e: MockElement): ElementSummary {
-    const { description: _d, facts: _f, grants: _g, ...rest } = e;
+    const { description: _d, facts: _f, grants: _g, linkIds: _l, ...rest } = e;
     return rest;
   }
 
@@ -84,7 +84,7 @@ export class ContentService {
   element(id: string): ElementDetail {
     const target = this.proxyTarget(id);
     const proxy = target && this.proxies().find((p) => p.id === id);
-    if (target && proxy) return { ...this.proxySummary(proxy), descriptionHtml: `<p>${PROXY_HINT}</p>${target.description}`, facts: [], grants: [{ name: target.name, level: 1, descriptionHtml: "" }] };
+    if (target && proxy) return { ...this.proxySummary(proxy), descriptionHtml: `<p>${PROXY_HINT}</p>${target.description}`, facts: [], grants: [{ name: target.name, level: 1, descriptionHtml: "" }], links: [] };
     const e = this.all().find((x) => x.id === id) ?? getElement(id);
     // The core rows the creator's item fields pick (weapon properties, masteries, ...) are elements of the app's core pack,
     // which the backend describes; the mock has them as picker rows only.
@@ -92,7 +92,15 @@ export class ContentService {
     if (core) return coreDetail(core);
     // Like the real backend: list-rule entries (personality traits, ...) are text choices, not elements.
     if (!e || e.type === "list") throw apiError("not_found", "That element does not exist.");
-    return { ...this.summary(e), descriptionHtml: e.description, facts: e.facts, grants: e.grants };
+    return { ...this.summary(e), descriptionHtml: e.description, facts: e.facts, grants: e.grants, links: this.links(e) };
+  }
+
+  /** Like the backend's linked elements: the mock names them by id (`linkIds`); ids no element has are left out. */
+  private links(e: MockElement): ElementLink[] {
+    return (e.linkIds ?? []).flatMap((id) => {
+      const t = this.all().find((x) => x.id === id);
+      return t ? [{ ...this.summary(t), contentType: t.type, via: "grant" as const, descriptionHtml: t.description }] : [];
+    });
   }
 
   facets(): CompendiumFacets {
