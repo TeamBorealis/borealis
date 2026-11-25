@@ -37,6 +37,7 @@ import type {
   AiTaskRequest,
   OptionDef,
   AppSettings,
+  SettingsPatch,
   AppInstallProgress,
   AppUpdateStatus,
   AppFolder,
@@ -458,7 +459,7 @@ export interface ApiMethods {
   /* Settings */
   getSettings(): Promise<AppSettings>;
   /** `ai.overridePath` can only be resent unchanged or cleared (null) here; see `setAiOverride`. */
-  saveSettings(args: { patch: Partial<AppSettings> }): Promise<AppSettings>;
+  saveSettings(args: { patch: SettingsPatch }): Promise<AppSettings>;
 
   /* Native pickers, opened by the backend; `[]` when cancelled. `startDir` only positions the dialog. */
   pickPath(args: { purpose: PickPurpose; startDir?: string }): Promise<PickedPath[]>;

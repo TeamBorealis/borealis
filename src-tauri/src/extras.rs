@@ -251,6 +251,14 @@ fn caster(
                 source_name: el
                     .map(|e| crate::elements::element_ref(e).source)
                     .unwrap_or_default(),
+                rulesets: match el.and_then(|e| e.ruleset) {
+                    Some(Ruleset::Dnd2014) => vec![Ruleset::Dnd2014],
+                    Some(Ruleset::Dnd2024) => vec![Ruleset::Dnd2024],
+                    _ => vec![Ruleset::Dnd2014, Ruleset::Dnd2024],
+                },
+                bundled: store
+                    .get(&s.id)
+                    .is_some_and(|x| x.origin == borealis_content::PackOrigin::Core),
                 ready: crate::play_rolls::spell_ready(
                     if c.prepare { "prepared" } else { "known" },
                     s,

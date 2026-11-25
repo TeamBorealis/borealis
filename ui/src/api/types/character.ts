@@ -277,6 +277,13 @@ export interface SpellEntry {
   casting: SpellFacts | null;
   /** Source book the spell comes from (empty when unknown). */
   sourceName: string;
+  /**
+   * GitHub #51: the editions the spell was written for (both for an edition-neutral one). With `bundled`, it orders the
+   * copies of one name in the class list's row (B-55 sec. 1.2).
+   */
+  rulesets?: Ruleset[];
+  /** The spell comes from bundled content (the SRD packs). */
+  bundled?: boolean;
   /** Ready to cast now: a known caster's known spell, otherwise a prepared or always-prepared one; cantrips always. */
   ready: boolean;
   /** B3: added to this class in the builder (an extra the DM grants). */

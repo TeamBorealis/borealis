@@ -113,7 +113,16 @@ export interface AppSettings {
   /** HC3: the homebrew creator (START > HOMEBREW and its entry points) is shown. Read-only: the build decides (on from
    * 1.5.0, HC9) and a saved value is ignored (HC11 option C); no settings control (the web mock's `?creator=0` turns it off). */
   creatorEnabled: boolean;
+  /**
+   * GitHub #51 "Always use this copy": the copy of a name the pickers and version rows show by default, element id by
+   * `<type family>:<edition>:<normalized name>` (see `copyKey`). Only the default changes: a stored pick of another copy
+   * replays as it is. In a `saveSettings` patch the map merges into the stored one, and a `null` value removes its entry.
+   */
+  preferredCopies: Record<string, string>;
 }
+/** A saveSettings patch: like the settings, but a preferredCopies value may be null, which removes that entry. */
+export type SettingsPatch = Omit<Partial<AppSettings>, "preferredCopies"> & { preferredCopies?: Record<string, string | null> };
+
 
 /** Settings > DATA FILES folders (display only; paths never go back to the backend). */
 export interface DataDirs {

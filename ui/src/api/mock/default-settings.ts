@@ -14,4 +14,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   skillsPanelExpanded: true, savingThrowsExpanded: false, accentColor: "default", portraitSize: 150, showImportNotice: true, mobile: false, storeBuild: false, aiAvailable: true,
   search: { semantic: false, tierOverride: "auto", indexOnBattery: false, defaultEdition: "character" },
   creatorEnabled: true,
+  preferredCopies: {},
 };

@@ -533,6 +533,12 @@ pub struct SpellEntry {
     pub casting: Option<crate::gear_facts::SpellFacts>,
     /// Name of the source book the spell comes from (empty when unknown).
     pub source_name: String,
+    /// GitHub #51: the editions the spell was written for (both for an edition-neutral one).
+    /// With `bundled`, it orders the copies of one name in the class list's row (B-55 sec. 1.2).
+    pub rulesets: Vec<Ruleset>,
+    /// The spell comes from bundled content (the SRD packs, `PackOrigin::Core`).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub bundled: bool,
     /// Ready to cast now (Play tab): cantrips, a known caster's known spells, otherwise the
     /// prepared and always-prepared ones.
     pub ready: bool,

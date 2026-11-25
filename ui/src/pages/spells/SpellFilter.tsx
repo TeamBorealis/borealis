@@ -1,8 +1,9 @@
 import { useMemo } from "react";
-import type { ClassSpellcasting, Ruleset } from "../../api/contract";
-import { pickShown, type ShownRow, type VersionLike } from "../../lib/versions";
+import type { ClassSpellcasting, Ruleset, SpellEntry } from "../../api/contract";
+import { pickShown, type PreferredCopies, type ShownRow, type VersionLike } from "../../lib/versions";
 import { ComboBox } from "../../components";
 import { Glyph } from "../equipment/Glyph";
+import { classRowCount } from "./classSpellRows";
 
 export interface SpellFilterState {
   pinned: boolean;
@@ -50,13 +51,13 @@ export const spellFacts = (o: VersionLike): SpellFilterFacts => ({
  * GitHub #21: a selection slot's rows narrowed by the spell filter, the way the picker's own filters narrow them (B-55
  * sec. 1.5): a row stays when one of its versions passes (the chosen row always), and shows a version that passes.
  */
-export function narrowRows<V extends VersionLike>(rows: readonly ShownRow<V>[], f: SpellFilterState, charEd: Ruleset): readonly ShownRow<V>[] {
+export function narrowRows<V extends VersionLike>(rows: readonly ShownRow<V>[], f: SpellFilterState, charEd: Ruleset, preferred: PreferredCopies = {}): readonly ShownRow<V>[] {
   if (!isFiltering(f)) return rows;
   return rows.flatMap((r) => {
     const passing = r.versions.filter((v) => matchesSpell(spellFacts(v), f));
     const versions = r.chosen && !passing.includes(r.chosen) ? [...passing, r.chosen] : passing;
     if (versions.length === 0) return [];
-    const shown = versions.includes(r.shown) ? r.shown : pickShown(versions, charEd, r.chosen?.id ?? null, null);
+    const shown = versions.includes(r.shown) ? r.shown : pickShown(versions, charEd, r.chosen?.id ?? null, null, preferred);
     return [{ ...r, versions, shown }];
   });
 }
@@ -79,10 +80,11 @@ export interface FilterScope {
   total: number;
 }
 
-/** The scope of the class grids: every class's spells, narrowed by the filter. */
+/** The scope of the class grids: every class's spells, narrowed by the filter; it counts rows (one per name, #51). */
 export const classesScope = (classes: readonly ClassSpellcasting[], f: SpellFilterState): FilterScope => {
   const pool = classes.flatMap((c) => c.spells);
-  return { pool, shown: pool.filter((s) => matchesSpell(s, f)).length, total: pool.length };
+  const count = (pick: (c: ClassSpellcasting) => readonly SpellEntry[]) => classes.reduce((n, c) => n + classRowCount(pick(c)), 0);
+  return { pool, shown: count((c) => c.spells.filter((s) => matchesSpell(s, f))), total: count((c) => c.spells) };
 };
 
 /** SPELLCASTING tab filter bar: pin, name box, school, level 0-9, ritual, concentration, source, filtered/total badge. */

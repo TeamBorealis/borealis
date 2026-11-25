@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { ItemSummary, Ruleset } from "../../api/contract";
 import { RowDetail } from "../../components/RowDetail";
-import { editionOf, NO_FILTER, visibleRows, groupVersions, type ShownRow } from "../../lib/versions";
+import { editionOf, NO_FILTER, visibleRows, groupVersions, type PreferredCopies, type ShownRow } from "../../lib/versions";
 import { VersionButton } from "../builder/VersionMenu";
 import { ARMOR_COLUMNS, DEFAULT_COLUMNS, columnsFor, type ItemRow } from "./itemColumns";
 
@@ -15,7 +15,8 @@ export function displayRow(i: ItemSummary, charEd: Ruleset): ItemRow {
 }
 
 /** Every item as a row, grouped by name and unfiltered (the base-item list). */
-export const plainRows = (items: readonly ItemSummary[], charEd: Ruleset): ItemListRow[] => visibleRows(groupVersions(items), NO_FILTER, charEd, null, {});
+export const plainRows = (items: readonly ItemSummary[], charEd: Ruleset, preferred: PreferredCopies = {}): ItemListRow[] =>
+  visibleRows(groupVersions(items), NO_FILTER, charEd, null, {}, preferred);
 
 interface Props {
   rows: ItemListRow[];

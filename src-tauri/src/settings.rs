@@ -6,6 +6,7 @@ use borealis_content::Ruleset;
 use borealis_engine::EngineSettings;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::BTreeMap;
 use std::path::Path;
 
 /// Sheet export preferences.
@@ -174,6 +175,11 @@ pub struct AppSettings {
     /// [`CREATOR_ENABLED`] (on from 1.5.0, HC9), pinned like `mobile`, so a stored or patched value is ignored
     /// (HC11 option C). No settings control; the web mock turns it off with `?creator=0`.
     pub creator_enabled: bool,
+    /// GitHub #51 "Always use this copy": per name, the copy the UI's pickers and version rows show by default, element id
+    /// by `<type family>:<edition>:<normalized name>` (the UI's `copyKey`). The UI's default only: the engine never reads
+    /// it, so a stored pick of another copy replays unchanged. In a patch the map merges into the stored one, and a
+    /// `null` value removes its entry.
+    pub preferred_copies: BTreeMap<String, String>,
 }
 
 /// Device tier override for semantic search (S3; keyword search ignores it).
@@ -294,6 +300,7 @@ impl Default for AppSettings {
             check_app_updates: true,
             search: SearchSettings::default(),
             creator_enabled: CREATOR_ENABLED,
+            preferred_copies: BTreeMap::new(),
         }
     }
 }
@@ -316,6 +323,10 @@ pub const ACCENT_COLORS: [&str; 10] = [
 ];
 /// Portrait size slider range (the reference app snaps to 125 / 150 / 175).
 const PORTRAIT_SIZES: std::ops::RangeInclusive<u32> = 125..=175;
+/// Most "always use this copy" choices kept (far more than names with several installed copies).
+const MAX_PREFERRED_COPIES: usize = 20_000;
+/// Longest key or element id of an "always use this copy" choice.
+const MAX_COPY_TEXT: usize = 512;
 
 impl AppSettings {
     /// Pins the platform-owned fields: `mobile` comes from the build target, `store_build` from the
@@ -366,6 +377,21 @@ impl AppSettings {
         if !PORTRAIT_SIZES.contains(&self.portrait_size) {
             return Err(ApiError::invalid("The portrait size must be 125 to 175."));
         }
+        let bad_text = |s: &str| s.is_empty() || s.len() > MAX_COPY_TEXT;
+        if self.preferred_copies.len() > MAX_PREFERRED_COPIES {
+            return Err(ApiError::invalid(format!(
+                "Too many \"Always use this copy\" choices ({MAX_PREFERRED_COPIES} is the limit). Clear some, then save again."
+            )));
+        }
+        if self
+            .preferred_copies
+            .iter()
+            .any(|(k, id)| bad_text(k) || bad_text(id))
+        {
+            return Err(ApiError::invalid(
+                "Unknown \"Always use this copy\" choice.",
+            ));
+        }
         Ok(())
     }
 
@@ -393,6 +419,7 @@ impl AppSettings {
         self.check_dir_patch(patch)?;
         let mut current = serde_json::to_value(self)?;
         merge(&mut current, patch);
+        drop_removed_copies(&mut current);
         let next: Self = serde_json::from_value(current)?;
         next.validate()?;
         Ok(next.normalized())
@@ -436,7 +463,8 @@ impl AppSettings {
 
     /// Factory values for everything the reference app's settings dialog owns (Restore Defaults); the
     /// Borealis-only group (AI, default ruleset, autosave, the Obsidian vault) is kept, and so is every folder
-    /// (documents, secondary content, portrait library): folders are user data (B-226, decision FU1).
+    /// (documents, secondary content, portrait library): folders are user data (B-226, decision FU1). The
+    /// "Always use this copy" choices (#51) are made outside the dialog and are kept too.
     #[must_use]
     pub fn restored_defaults(&self) -> Self {
         Self {
@@ -447,6 +475,7 @@ impl AppSettings {
             secondary_content_dir: self.secondary_content_dir.clone(),
             portrait_library_dir: self.portrait_library_dir.clone(),
             vault_dir: self.vault_dir.clone(),
+            preferred_copies: self.preferred_copies.clone(),
             ..Self::default()
         }
     }
@@ -476,6 +505,13 @@ impl AppSettings {
         std::fs::write(&tmp, text).map_err(|e| ApiError::io("save settings", e))?;
         borealis_character::format::replace_file(&tmp, path)
             .map_err(|e| ApiError::io("save settings", e))
+    }
+}
+
+/// `preferredCopies` entries a patch set to `null` are removed (#51), as in a JSON merge patch.
+fn drop_removed_copies(settings: &mut Value) {
+    if let Some(Value::Object(copies)) = settings.get_mut("preferredCopies") {
+        copies.retain(|_, id| !id.is_null());
     }
 }
 
@@ -617,6 +653,80 @@ mod default_tests {
         let loaded = AppSettings::load(&file);
         assert_eq!(loaded.ai_available, available);
         assert_eq!(loaded.ai.enabled, available);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn too_many_always_use_this_copy_choices_say_what_is_wrong() {
+        let mut s = AppSettings {
+            preferred_copies: (0..=MAX_PREFERRED_COPIES)
+                .map(|i| (format!("spell:dnd2024:name{i}"), "ID".to_string()))
+                .collect(),
+            ..AppSettings::default()
+        };
+        let msg = s.validate().unwrap_err().to_string();
+        assert!(msg.contains("Too many") && msg.contains("20000"), "{msg}");
+        s.preferred_copies.clear();
+        s.preferred_copies.insert(String::new(), "ID".into());
+        assert!(s.validate().unwrap_err().to_string().contains("Unknown"));
+    }
+
+    #[test]
+    fn always_use_this_copy_choices_merge_and_null_removes_one() {
+        let s = AppSettings::default();
+        assert!(s.preferred_copies.is_empty());
+        let set = s
+            .patched(&serde_json::json!({"preferredCopies": {
+                "spell:dnd2024:fireball": "ID_HOMEBREW_SPELL_FIREBALL",
+                "feat:dnd2014:alert": "ID_SRD_FEAT_ALERT",
+            }}))
+            .unwrap();
+        assert_eq!(set.preferred_copies.len(), 2);
+        let next = set
+            .patched(&serde_json::json!({"preferredCopies": {
+                "spell:dnd2024:fireball": null,
+                "spell:dnd2014:fireball": "ID_SRD_SPELL_FIREBALL",
+            }}))
+            .unwrap();
+        let keys: Vec<&str> = next.preferred_copies.keys().map(String::as_str).collect();
+        assert_eq!(keys, ["feat:dnd2014:alert", "spell:dnd2014:fireball"]);
+        assert!(set
+            .patched(&serde_json::json!({"preferredCopies": {"spell:dnd2024:fireball": ""}}))
+            .is_err());
+    }
+
+    #[test]
+    fn always_use_this_copy_choices_load_and_survive_restore_defaults() {
+        let dir = std::env::temp_dir().join(format!("borealis-copies-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("settings.json");
+        std::fs::write(&file, r#"{"playerName":"Old"}"#).unwrap();
+        assert!(
+            AppSettings::load(&file).preferred_copies.is_empty(),
+            "a file from before the field loads with no choices"
+        );
+        std::fs::write(
+            &file,
+            r#"{"preferredCopies":{"spell:dnd2024:fireball":"ID_HOMEBREW_SPELL_FIREBALL"}}"#,
+        )
+        .unwrap();
+        let loaded = AppSettings::load(&file);
+        assert_eq!(
+            loaded
+                .preferred_copies
+                .get("spell:dnd2024:fireball")
+                .map(String::as_str),
+            Some("ID_HOMEBREW_SPELL_FIREBALL")
+        );
+        assert_eq!(
+            loaded.restored_defaults().preferred_copies,
+            loaded.preferred_copies
+        );
+        assert_eq!(
+            loaded.engine_settings(),
+            AppSettings::default().engine_settings(),
+            "the choices are the UI's default only and never reach the engine"
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 
