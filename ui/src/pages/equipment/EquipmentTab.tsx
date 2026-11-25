@@ -9,6 +9,7 @@ import { usePhone } from "../../lib/phone";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useEditionFilter } from "../../state/editionFilter";
+import { usePreferredCopies } from "../../state/preferredCopies";
 import { useAsync, useDebounced } from "../../state/useAsync";
 import { Band, TwoPane } from "../spells/TwoPane";
 import { CoinsDialog } from "./CoinsDialog";
@@ -85,7 +86,8 @@ export function EquipmentTab({ view = "all" }: { view?: GearView }) {
   // A5: the Edition filter applies only to a category holding both editions. A 2024 character's Trade Goods are all 2014
   // items; filtering them to 2024 emptied the list while the category still counted them.
   const editions = useMemo(() => editionsOf(rows), [rows]);
-  const visible = visibleRows(rows, effectiveFilter(filter, editions), charEd, null, menuPicks);
+  const { preferred } = usePreferredCopies();
+  const visible = visibleRows(rows, effectiveFilter(filter, editions), charEd, null, menuPicks, preferred);
   const listSources = useMemo(() => sourcesOf(rows), [rows]);
   const pickedId = pickedItem?.id ?? "";
   // A generic magic weapon or armor is added on a base picked in a second list, as in the classic builder.
@@ -162,7 +164,7 @@ export function EquipmentTab({ view = "all" }: { view?: GearView }) {
         {needsBase && pickedItem && (
           <div className="eq-bases">
             <Band title={`Base item for ${pickedItem.name}`} />
-            <ItemGrid label="Base items" rows={plainRows(baseList, charEd)} category={baseList[0]!.category} charEd={charEd} picked={chosenBase?.id ?? null} onPick={pickBase} onAdd={(b) => { setBase(b); }} />
+            <ItemGrid label="Base items" rows={plainRows(baseList, charEd, preferred)} category={baseList[0]!.category} charEd={charEd} picked={chosenBase?.id ?? null} onPick={pickBase} onAdd={(b) => { setBase(b); }} />
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { ClassSpellcasting, Ruleset } from "../../api/contract";
-import { pickShown, type ShownRow, type VersionLike } from "../../lib/versions";
+import { pickShown, type PreferredCopies, type ShownRow, type VersionLike } from "../../lib/versions";
 import { ComboBox } from "../../components";
 import { Glyph } from "../equipment/Glyph";
 
@@ -50,13 +50,13 @@ export const spellFacts = (o: VersionLike): SpellFilterFacts => ({
  * GitHub #21: a selection slot's rows narrowed by the spell filter, the way the picker's own filters narrow them (B-55
  * sec. 1.5): a row stays when one of its versions passes (the chosen row always), and shows a version that passes.
  */
-export function narrowRows<V extends VersionLike>(rows: readonly ShownRow<V>[], f: SpellFilterState, charEd: Ruleset): readonly ShownRow<V>[] {
+export function narrowRows<V extends VersionLike>(rows: readonly ShownRow<V>[], f: SpellFilterState, charEd: Ruleset, preferred: PreferredCopies = {}): readonly ShownRow<V>[] {
   if (!isFiltering(f)) return rows;
   return rows.flatMap((r) => {
     const passing = r.versions.filter((v) => matchesSpell(spellFacts(v), f));
     const versions = r.chosen && !passing.includes(r.chosen) ? [...passing, r.chosen] : passing;
     if (versions.length === 0) return [];
-    const shown = versions.includes(r.shown) ? r.shown : pickShown(versions, charEd, r.chosen?.id ?? null, null);
+    const shown = versions.includes(r.shown) ? r.shown : pickShown(versions, charEd, r.chosen?.id ?? null, null, preferred);
     return [{ ...r, versions, shown }];
   });
 }

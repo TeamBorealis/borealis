@@ -3791,6 +3791,15 @@
       "k": "prim"
      }
     },
+    "preferredCopies": {
+     "opt": false,
+     "t": {
+      "k": "record",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
     "rowHeight": {
      "opt": false,
      "t": {

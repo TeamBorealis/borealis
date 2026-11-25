@@ -55,3 +55,6 @@
   .v4-desc { padding: 10px 16px 20px; }
   .v4-desc .back { display: inline-flex; margin-bottom: 8px; }
 }
+/* GitHub #51: "Always use this copy" on an entry other installed copies share the name of. */
+.v4-desc .v4-copy-always { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: var(--fs-md); cursor: pointer; }
+.v4-desc .v4-copy-always input { margin: 0; }
