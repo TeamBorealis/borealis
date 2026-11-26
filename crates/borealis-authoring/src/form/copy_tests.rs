@@ -419,3 +419,32 @@ fn a_class_keeps_its_edition_and_other_kinds_are_adapted() {
         assert!(edition_problems(&feature, Ruleset::Dnd2024).is_empty());
     });
 }
+
+#[test]
+fn an_override_form_keeps_every_id_and_name_and_writes_the_originals_back() {
+    let content = knight();
+    with(&content, |cx| {
+        let form = override_form(&content[0], cx);
+        assert_eq!(form.id(), Some("ID_X_CLASS_KNIGHT"));
+        assert_eq!(form.fields["name"], json!("Knight"), "no (copy)");
+        assert!(
+            form.preserved.iter().any(|p| p.key == "renamed_from"),
+            "an override keeps what describes the original"
+        );
+        let children: Vec<Option<&str>> = form.children.iter().map(FormState::id).collect();
+        assert!(
+            children.contains(&Some("ID_X_CLASS_FEATURE_KNIGHT_VIGIL")),
+            "{children:?}"
+        );
+        let written = form_to_elements(&form, cx).expect("writes");
+        assert_eq!(written[0].id, "ID_X_CLASS_KNIGHT");
+        let vigil = written
+            .iter()
+            .find(|e| e.id == "ID_X_CLASS_FEATURE_KNIGHT_VIGIL")
+            .expect("the feature keeps its id");
+        assert!(
+            content[2].equals_with_ruleset(vigil, content[2].ruleset),
+            "an unchanged child writes back as its original"
+        );
+    });
+}

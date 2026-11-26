@@ -1,7 +1,8 @@
 //! `creator.json` (spec 14.3): the creator's own record inside a homebrew pack folder.
 //!
 //! `{format "borealis-creator/1", code, createdWith, elements: {<id>: {kind, createdAt, copiedFrom?, nonSrdText}},
-//! retiredIds}`. It is plain JSON beside `pack.json`: the content loader ignores it, bundles and device sync carry it
+//! retiredIds, overrides?: {<id>: {kind, createdAt, original?, originalDigest, partOf?, nonSrdText}}}` (overrides: HC20,
+//! spec 22.2). It is plain JSON beside `pack.json`: the content loader ignores it, bundles and device sync carry it
 //! (it is part of the pack), and a pack without one (an AI-made pack, a pack edited outside the app) gets one the
 //! first time the creator opens it ([`CreatorFile::adopt`]).
 
@@ -45,6 +46,30 @@ pub struct CreatorElement {
     pub non_srd_text: bool,
 }
 
+/// What the creator knows about one override of the pack (HC20, spec 22.2).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreatorOverride {
+    /// The creator form it opens in.
+    pub kind: String,
+    /// RFC 3339 time of its first save; empty when it was made outside the creator.
+    #[serde(default)]
+    pub created_at: String,
+    /// The element it overrides and its pack (`srd`: bundled SRD content); `None` when made outside the creator.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub original: Option<CopiedFrom>,
+    /// [`super::digest`] of the original as it was loaded when the override was last saved: a different digest now
+    /// means the original changed underneath (its book was imported again, spec 22.6).
+    #[serde(default)]
+    pub original_digest: String,
+    /// For a child override (a feature edited inside its class): the main element of the edit, reverted with it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub part_of: Option<String>,
+    /// It holds text of a non-SRD pack (export leaves it out by default, HC8; the pack is not redistributable).
+    #[serde(default)]
+    pub non_srd_text: bool,
+}
+
 /// `creator.json`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -63,6 +88,9 @@ pub struct CreatorFile {
     /// different element.
     #[serde(default)]
     pub retired_ids: Vec<String>,
+    /// The pack's overrides (HC20), by the id they share with their original.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub overrides: BTreeMap<String, CreatorOverride>,
 }
 
 /// Why a `creator.json` cannot be read.
@@ -95,6 +123,7 @@ impl CreatorFile {
             created_with: app_version.to_string(),
             elements: BTreeMap::new(),
             retired_ids: Vec::new(),
+            overrides: BTreeMap::new(),
         }
     }
 
@@ -144,6 +173,51 @@ impl CreatorFile {
                     non_srd_text: false,
                 });
         }
+        let overridden: BTreeSet<&str> = content.overrides.iter().map(|e| e.id.as_str()).collect();
+        next.overrides
+            .retain(|id, _| overridden.contains(id.as_str()));
+        for e in &content.overrides {
+            next.overrides
+                .entry(e.id.clone())
+                .or_insert_with(|| CreatorOverride {
+                    kind: kind_for_element(e).id.to_string(),
+                    created_at: String::new(),
+                    original: None,
+                    original_digest: String::new(),
+                    part_of: None,
+                    non_srd_text: false,
+                });
+        }
+        next
+    }
+
+    /// The record with an entry for a saved override: its first save time kept, everything else as given.
+    #[must_use]
+    pub fn with_override(&self, id: &str, entry: CreatorOverride) -> Self {
+        let mut next = self.clone();
+        let created_at = next
+            .overrides
+            .get(id)
+            .map(|old| old.created_at.clone())
+            .filter(|t| !t.is_empty())
+            .unwrap_or_else(|| entry.created_at.clone());
+        next.overrides.insert(
+            id.to_string(),
+            CreatorOverride {
+                created_at,
+                ..entry
+            },
+        );
+        next
+    }
+
+    /// The record without these overrides (reverted; their ids are not the pack's, so none is retired).
+    #[must_use]
+    pub fn without_overrides<'a>(&self, ids: impl IntoIterator<Item = &'a str>) -> Self {
+        let mut next = self.clone();
+        for id in ids {
+            next.overrides.remove(id);
+        }
         next
     }
 
@@ -188,5 +262,6 @@ impl CreatorFile {
     #[must_use]
     pub fn has_non_srd_text(&self) -> bool {
         self.elements.values().any(|e| e.non_srd_text)
+            || self.overrides.values().any(|o| o.non_srd_text)
     }
 }

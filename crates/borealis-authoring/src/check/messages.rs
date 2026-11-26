@@ -191,6 +191,9 @@ pub fn issue_message(issue: &Issue, element_type: &str, names: &dyn Lookup) -> S
             "The element this adds to isn't loaded any more (its pack was removed or turned off). Pick it again."
                 .into()
         }
+        IssueCode::OverrideTargetMissing => {
+            "The original isn't loaded (its book is off or removed), so this change has no effect until it is.".into()
+        }
         IssueCode::DuplicateSelectName => {
             "Two choices on this element have the same label. Give one a different label.".into()
         }

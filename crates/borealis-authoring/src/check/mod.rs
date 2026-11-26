@@ -5,6 +5,7 @@
 //! ([`messages`]). The load check, the sweep and the balance report are shared with the import pipeline.
 
 pub mod balance;
+mod clash;
 mod deep;
 mod engine;
 mod fields;
@@ -16,6 +17,7 @@ mod problem;
 pub mod sweep;
 
 pub use balance::{balance_report, BalanceFlag, BalanceReport, Baselines, Severity};
+pub use clash::{id_clash_problems, ID_CLASH, ID_CLASH_MESSAGE};
 pub use deep::{deep_problems, sweep_targets, DeepInput};
 pub use engine::{load_into_engine, take_element, CharacterCheck, EngineCheck};
 pub use fields::is_dice;

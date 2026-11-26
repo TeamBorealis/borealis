@@ -322,3 +322,91 @@ fn rewriting_ids_follows_object_keys_and_leaves_longer_ids_alone() {
         json!({"ID_B": ["ID_B|ID_AB", "x ID_B y", 3], "k": "ID_ABC"})
     );
 }
+
+/// The pack with two overrides: one of an imported (non-SRD) element and one of a bundled SRD element; the SRD
+/// override's rules name the pack's own feature.
+fn with_overrides() -> (ContentFile, CreatorFile) {
+    let (mut content, creator) = pack();
+    content.overrides = vec![
+        element(
+            json!({"id": "ID_GT_SPELL_GLOOM", "name": "Gloom", "type": "Spell", "source": "Imported Book",
+            "description": "<p>The book's words.</p>"}),
+        ),
+        element(
+            json!({"id": "ID_SRD_CLASS_FIGHTER", "name": "Fighter", "type": "Class", "source": "SRD",
+            "description": "<p>SRD words.</p>",
+            "rules": [{"kind": "grant", "type": "Class Feature", "id": "ID_GH_CLASS_FEATURE_WARDEN_WATCH", "level": 2}]}),
+        ),
+    ];
+    let entry = |srd: bool| CreatorOverride {
+        kind: "other".into(),
+        created_at: String::new(),
+        original: Some(CopiedFrom {
+            id: String::new(),
+            pack_id: if srd { "srd-5.1" } else { "imported-book" }.into(),
+            srd,
+        }),
+        original_digest: "d".into(),
+        part_of: None,
+        non_srd_text: !srd,
+    };
+    let creator = creator
+        .with_override("ID_GT_SPELL_GLOOM", entry(false))
+        .with_override("ID_SRD_CLASS_FIGHTER", entry(true));
+    (content, creator)
+}
+
+#[test]
+fn a_non_srd_override_is_counted_and_left_out_whole_and_an_srd_one_stays() {
+    let (content, creator) = with_overrides();
+    assert!(copied_text_ids(&content, &creator).contains(&"ID_GT_SPELL_GLOOM".to_string()));
+    assert!(!copied_text_ids(&content, &creator).contains(&"ID_SRD_CLASS_FIGHTER".to_string()));
+    let (out, changed) = without_copied_text(&content, &creator);
+    assert!(changed.contains(&"ID_GT_SPELL_GLOOM".to_string()));
+    let kept: Vec<&str> = out.overrides.iter().map(|e| e.id.as_str()).collect();
+    assert_eq!(
+        kept,
+        ["ID_SRD_CLASS_FIGHTER"],
+        "the SRD override exports with its text"
+    );
+    assert_eq!(out.overrides[0].description, "<p>SRD words.</p>");
+    assert!(
+        creator.has_non_srd_text(),
+        "the pack is not redistributable"
+    );
+}
+
+#[test]
+fn a_copy_keeps_override_ids_and_points_them_at_its_own_elements() {
+    let (content, creator) = with_overrides();
+    let mut ids = IdGenerator::new("GH2", Vec::<String>::new(), Vec::<String>::new()).unwrap();
+    let copy = pack_copy(
+        &manifest(),
+        &content,
+        &creator,
+        "Gloom Hollow (copy)",
+        &mut ids,
+    )
+    .unwrap();
+    let ids: Vec<&str> = copy
+        .content
+        .overrides
+        .iter()
+        .map(|e| e.id.as_str())
+        .collect();
+    assert_eq!(
+        ids,
+        ["ID_GT_SPELL_GLOOM", "ID_SRD_CLASS_FIGHTER"],
+        "they name other packs' elements"
+    );
+    let fighter = serde_json::to_string(&copy.content.overrides[1]).unwrap();
+    assert!(
+        fighter.contains("ID_GH2_CLASS_FEATURE_WARDEN_WATCH"),
+        "{fighter}"
+    );
+    assert_eq!(
+        copy.content.overrides[1].source, "SRD",
+        "an override stays in its book"
+    );
+    assert!(copy.creator.overrides.contains_key("ID_SRD_CLASS_FIGHTER"));
+}

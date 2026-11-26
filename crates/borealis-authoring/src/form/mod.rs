@@ -55,8 +55,8 @@ pub use codec::{
     SubclassField, TableColumn, WrittenList, FEAT_PARAMETER_PICKER,
 };
 pub use copy::{
-    copy_child, copy_element, edition_problems, repoint, write_copy, Copy, CopyExtras, CopyLink,
-    CopyTag, Written,
+    copy_child, copy_element, edition_problems, override_form, repoint, write_copy, Copy,
+    CopyExtras, CopyLink, CopyTag, Written,
 };
 pub use data_view::{data_json, data_tree, DataKind, DataNode};
 pub use descriptor::descriptors;

@@ -7,6 +7,7 @@
 //!   emptied; a list choice's entries and a creature's stat-block texts become [`LEFT_OUT_TEXT`] (a list needs entries
 //!   to pick from, a stat block needs text to stay valid). The rules, numbers and names stay (a spell's material
 //!   component and a reaction's trigger are rules). The `nonSrdText` mark stays too, so the imported pack is still not redistributable.
+//!   Overrides of non-SRD elements (HC20) are left out whole.
 //! * **Import as a copy** ([`pack_copy`]): the pack gets a new code, id and book name; every element id of the pack is
 //!   given again (`ID_<OLD>_...` becomes `ID_<NEW>_...`; an id of another code, from a move, gets a new creator id),
 //!   so is every other `ID_<OLD>_...` token the pack holds (a class's multiclass node, a deleted element's id), and
@@ -44,8 +45,9 @@ const TEXT_DATA: &[&str] = &[
     "contents_text",
 ];
 
-/// The ids `creator.json` marks as holding text copied from non-SRD packs that still have that text: what the export
-/// dialog counts ("3 elements contain text copied from your imported books").
+/// The ids `creator.json` marks as holding text copied from non-SRD packs that still have that text, and the overrides
+/// of non-SRD elements (HC20: an override is that book's text): what the export dialog counts ("3 elements contain text
+/// copied from your imported books").
 #[must_use]
 pub fn copied_text_ids(content: &ContentFile, creator: &CreatorFile) -> Vec<String> {
     content
@@ -54,10 +56,22 @@ pub fn copied_text_ids(content: &ContentFile, creator: &CreatorFile) -> Vec<Stri
         .filter(|e| creator.elements.get(&e.id).is_some_and(|c| c.non_srd_text))
         .filter(|e| has_text(e))
         .map(|e| e.id.clone())
+        .chain(non_srd_override_ids(content, creator))
         .collect()
 }
 
-/// The content with the copied non-SRD text left out (module docs), and the ids it changed.
+/// The overrides of non-SRD elements (spec 22.7).
+fn non_srd_override_ids(content: &ContentFile, creator: &CreatorFile) -> Vec<String> {
+    content
+        .overrides
+        .iter()
+        .filter(|e| creator.overrides.get(&e.id).is_some_and(|o| o.non_srd_text))
+        .map(|e| e.id.clone())
+        .collect()
+}
+
+/// The content with the copied non-SRD text left out (module docs), and the ids it changed. Overrides of non-SRD
+/// elements are left out whole (spec 22.7): blanked, they would blank the recipient's copy of the book.
 #[must_use]
 pub fn without_copied_text(
     content: &ContentFile,
@@ -68,6 +82,7 @@ pub fn without_copied_text(
     for e in next.elements.iter_mut().filter(|e| ids.contains(&e.id)) {
         *e = blank_text(e);
     }
+    next.overrides.retain(|e| !ids.contains(&e.id));
     let mut changed: Vec<String> = ids.into_iter().collect();
     changed.sort();
     (next, changed)

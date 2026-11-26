@@ -372,6 +372,15 @@ pub fn copy_element(el: &Element, cx: &FormContext<'_>, deep: bool) -> Copy {
     Copy { form, extras }
 }
 
+/// An override of the loaded element `el` (HC20, spec 22.4): its form (key `e`) with its children inside it (a class's
+/// features, a species' traits), every id, name, edition and kept part as loaded: nothing is stripped or renamed, so
+/// the elements it writes keep the originals' ids.
+#[must_use]
+pub fn override_form(el: &Element, cx: &FormContext<'_>) -> FormState {
+    let mut links = Vec::new();
+    group(el, "e", cx, &mut links)
+}
+
 /// A companion as it is saved with `main` (its ids given): a subclass names the copied class and takes the tag and
 /// level the copy's choice offers (spec 4.7).
 fn attach(
