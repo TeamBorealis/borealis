@@ -381,3 +381,37 @@ fn sharing_leaves_the_imported_override_out_and_keeps_the_srd_one() {
     let kept = app.state.homebrew_export_file(&app.pack, false).unwrap();
     assert_eq!(kept.left_out, 0);
 }
+
+#[test]
+fn a_class_override_overrides_only_what_changed() {
+    let app = App::new();
+    let v = app
+        .state
+        .homebrew_new_override(&app.pack, "ID_2024_CLASS_WIZARD")
+        .unwrap();
+    assert!(
+        !v.form.children.is_empty(),
+        "its features are edited inside it"
+    );
+    assert_eq!(problems(&v, "error"), Vec::<String>::new());
+    app.state.homebrew_save_draft(&v.draft_id, &Quiet).unwrap();
+    let ids: Vec<String> = app.read("content.json")["overrides"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|e| e["id"].as_str().map(str::to_string))
+        .collect();
+    assert_eq!(
+        ids,
+        ["ID_2024_CLASS_WIZARD"],
+        "unchanged features are no overrides"
+    );
+    assert!(
+        app.read("content.json")["elements"]
+            .as_array()
+            .unwrap()
+            .len()
+            == 1,
+        "no new element"
+    );
+}
