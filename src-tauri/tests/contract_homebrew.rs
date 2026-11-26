@@ -202,6 +202,13 @@ fn pack_element_and_draft_types_match_the_ts_contract() {
             tags: vec!["Wizard".into()],
             text: "A lance of fire.".into(),
             copied_text: false,
+            override_info: Some(HomebrewOverrideInfo {
+                original_id: "ID_GL_SPELL_EMBER".into(),
+                source_name: "SRD 5.2.1".into(),
+                srd: true,
+                changed: false,
+                missing: false,
+            }),
         },
     );
     check(
@@ -233,6 +240,13 @@ fn pack_element_and_draft_types_match_the_ts_contract() {
             updated_at: "2026-11-10T10:00:00Z".into(),
             base_changed: false,
             saved_with: vec!["Evoker".into()],
+            override_info: Some(HomebrewOverrideInfo {
+                original_id: "ID_GL_SPELL_EMBER".into(),
+                source_name: "SRD 5.2.1".into(),
+                srd: true,
+                changed: false,
+                missing: false,
+            }),
         },
     );
     check(
