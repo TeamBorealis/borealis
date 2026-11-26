@@ -164,6 +164,8 @@ const COMMANDS: &[&str] = &[
     "homebrew_list_elements",
     "homebrew_new_draft",
     "homebrew_open_draft",
+    "homebrew_new_override",
+    "homebrew_revert_override",
     "homebrew_update_draft",
     "homebrew_check_draft",
     "homebrew_save_draft",

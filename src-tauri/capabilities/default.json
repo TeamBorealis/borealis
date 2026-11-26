@@ -166,6 +166,8 @@
     "allow-homebrew-list-elements",
     "allow-homebrew-new-draft",
     "allow-homebrew-open-draft",
+    "allow-homebrew-new-override",
+    "allow-homebrew-revert-override",
     "allow-homebrew-update-draft",
     "allow-homebrew-check-draft",
     "allow-homebrew-save-draft",
