@@ -40,6 +40,17 @@ pub struct StoredElement {
     /// ([`ContentStoreBuilder::with_source_editions`]), not from the content: that book's
     /// [`source_key`] (its own name's key when the element named it by an `alternative` name).
     pub user_edition_book: Option<String>,
+    /// HC20: the element an override replaced (homebrew-creator spec 22.3), `None` for an element that is no override.
+    pub overridden: Option<Overridden>,
+}
+
+/// The original an override replaced: the element as loaded (before appends) and the file it came from.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Overridden {
+    /// The original element as loaded, with its edition.
+    pub element: Arc<Element>,
+    /// The file that defines the original.
+    pub file: Arc<str>,
 }
 
 /// The key a book's edition preference is stored under: its name trimmed, lower-cased, with

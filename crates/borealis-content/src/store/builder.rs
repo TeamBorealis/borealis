@@ -1,4 +1,4 @@
-use super::{apply_append, load_order, ContentStore, LoadedIndex, StoredElement};
+use super::{apply_append, load_order, ContentStore, LoadedIndex, Overridden, StoredElement};
 use crate::element::{Append, Element};
 use crate::error::ContentError;
 use crate::file::{ContentFile, IndexFile, PackFileKind, PackManifest, PackOrigin};
@@ -402,6 +402,8 @@ impl ContentStoreBuilder {
     /// * `ignore: true` files are skipped.
     /// * Core files: a duplicate id keeps the first definition (error diagnostic).
     /// * Custom files: a duplicate id replaces the earlier element, which moves to the end.
+    /// * HC20 `overrides` are applied after every file's elements, in file order: each takes the place of the loaded
+    ///   element of its id (any origin), keeping its position; one whose element is not loaded is dropped (warning).
     /// * `<append>` records are applied last, in file order.
     #[must_use]
     pub fn build(self) -> ContentStore {
@@ -457,6 +459,7 @@ impl ContentStoreBuilder {
         let mut slots: Vec<Option<StoredElement>> = Vec::new();
         let mut position: HashMap<String, usize> = HashMap::new();
         let mut appends: Vec<(Arc<str>, Append)> = Vec::new();
+        let mut overrides: Vec<(Arc<str>, Option<Ruleset>, Arc<ContentFile>)> = Vec::new();
         let mut loaded_files = Vec::new();
 
         for (file_index, pending) in files.into_iter().enumerate() {
@@ -527,9 +530,26 @@ impl ContentStoreBuilder {
                     extended: false,
                     appended_supports: Vec::new(),
                     user_edition_book,
+                    overridden: None,
                 }));
             }
             appends.extend(file.appends.iter().map(|a| (Arc::clone(&name), a.clone())));
+            if !file.overrides.is_empty() {
+                overrides.push((Arc::clone(&name), file.ruleset, Arc::clone(&file)));
+            }
+        }
+
+        for (file, file_ruleset, content) in overrides {
+            for element in &content.overrides {
+                apply_override(
+                    &mut slots,
+                    &position,
+                    &mut diagnostics,
+                    &file,
+                    element.ruleset.or(file_ruleset),
+                    element,
+                );
+            }
         }
 
         for (file, append) in appends {
@@ -614,6 +634,65 @@ impl ContentStoreBuilder {
         }
         self
     }
+}
+
+/// HC20 (homebrew-creator spec 22.3): `element` from `file` takes the place of the loaded element of its id, keeping
+/// that element's position and recording it as the original. An original the user set a book edition for (IM14) gives
+/// the override that edition. A second override of one id replaces the first (info); an override whose element is not
+/// loaded is dropped (warning).
+fn apply_override(
+    slots: &mut [Option<StoredElement>],
+    position: &HashMap<String, usize>,
+    diagnostics: &mut Vec<Issue>,
+    file: &Arc<str>,
+    ruleset: Option<Ruleset>,
+    element: &Element,
+) {
+    let Some(current) = position
+        .get(&element.id)
+        .and_then(|&at| slots[at].as_ref().map(|s| (at, s.clone())))
+    else {
+        diagnostics.push(
+            Issue::warning(
+                IssueCode::OverrideTargetMissing,
+                "override of an element that is not loaded; the override is not loaded either",
+            )
+            .in_file(file.to_string())
+            .at_element(element.id.clone()),
+        );
+        return;
+    };
+    let (at, stored) = current;
+    if stored.overridden.is_some() {
+        diagnostics.push(
+            Issue::info(
+                IssueCode::ElementReplaced,
+                format!("replaced the override from {}", stored.file),
+            )
+            .in_file(file.to_string())
+            .at_element(element.id.clone()),
+        );
+    }
+    let original = stored.overridden.clone().unwrap_or_else(|| Overridden {
+        element: Arc::clone(&stored.element),
+        file: Arc::clone(&stored.file),
+    });
+    let ruleset = match &stored.user_edition_book {
+        Some(_) => original.element.ruleset,
+        None => ruleset,
+    };
+    slots[at] = Some(StoredElement {
+        element: Arc::new(Element {
+            ruleset,
+            ..element.clone()
+        }),
+        file: Arc::clone(file),
+        origin: PackOrigin::Custom,
+        extended: false,
+        appended_supports: Vec::new(),
+        user_edition_book: stored.user_edition_book.clone(),
+        overridden: Some(original),
+    });
 }
 
 /// IM14: the new edition of the elements of books the user set an edition for (see

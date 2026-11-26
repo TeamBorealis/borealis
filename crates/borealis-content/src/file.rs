@@ -99,6 +99,10 @@ pub struct ContentFile {
     /// Extension records applied after all files are loaded.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub appends: Vec<Append>,
+    /// HC20 overrides: complete elements that replace the loaded element of the same id in place, after every file's
+    /// `elements` regardless of load order (homebrew-creator spec 22.3). Written by the creator into homebrew packs.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub overrides: Vec<Element>,
     /// Unknown root attributes and children.
     #[serde(default, skip_serializing_if = "Extra::is_empty")]
     pub extra: Extra,
@@ -122,6 +126,7 @@ impl ContentFile {
             ignore: None,
             elements,
             appends: Vec::new(),
+            overrides: Vec::new(),
             extra: Extra::default(),
         }
     }

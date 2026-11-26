@@ -62,6 +62,8 @@ pub enum IssueCode {
     MulticlassIdSameAsClass,
     /// An `<append>` targets an unknown element.
     AppendTargetMissing,
+    /// An override (HC20) names an element that is not loaded; the override is not loaded either.
+    OverrideTargetMissing,
     /// Two selects of one element share a name.
     DuplicateSelectName,
     /// An element names a source that no Source element defines.

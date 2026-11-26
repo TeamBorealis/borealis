@@ -59,8 +59,9 @@ pub use setter::Setter;
 pub use sheet::{Compendium, Sheet, SheetEntry};
 pub use spellcasting::{Spellcasting, SpellcastingList};
 pub use store::{
-    is_unrestrictable_source, source_key, ContentStore, ContentStoreBuilder, ParsedPack,
-    SnapshotError, SourceRestriction, StoredElement, UNRESTRICTABLE_SOURCES, UNRESTRICTABLE_TYPES,
+    is_unrestrictable_source, source_key, ContentStore, ContentStoreBuilder, Overridden,
+    ParsedPack, SnapshotError, SourceRestriction, StoredElement, UNRESTRICTABLE_SOURCES,
+    UNRESTRICTABLE_TYPES,
 };
 pub use types::{KnownType, TypeCategory};
 pub use version::Version;

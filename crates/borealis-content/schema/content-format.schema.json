@@ -40,6 +40,13 @@
       },
       "description": "Extension records applied after all files are loaded."
     },
+    "overrides": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Element"
+      },
+      "description": "HC20 overrides: complete elements that replace the loaded element of the same id in place, applied after every file's elements regardless of load order and before the appends."
+    },
     "extra": {
       "$ref": "#/$defs/Extra"
     },
