@@ -206,6 +206,9 @@ pub struct ElementDetail {
     pub facts: Vec<ElementFact>,
     /// What choosing the element grants, in level order.
     pub grants: Vec<ElementGrant>,
+    /// HC20: a homebrew pack overrides this element ("Changed by <pack>", spec 22.6).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub changed_by: Option<crate::homebrew_overrides::ElementChangedBy>,
 }
 
 /// One line of a description's Grants list.

@@ -210,6 +210,25 @@ pub struct HomebrewElementSummary {
     pub text: String,
     /// It holds text copied from a non-SRD pack (CS1, HC8): the export dialog counts these.
     pub copied_text: bool,
+    /// HC20: it is an override of another pack's element (spec 22.4, 22.6); left out for the pack's own elements.
+    #[serde(rename = "override", skip_serializing_if = "Option::is_none")]
+    pub override_info: Option<HomebrewOverrideInfo>,
+}
+
+/// An override's original and its state (HC20, spec 22.6): the creator's notice and the element list's note.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomebrewOverrideInfo {
+    /// The id it shares with its original.
+    pub original_id: String,
+    /// The original's book, as the builder shows it.
+    pub source_name: String,
+    /// The original is bundled SRD content.
+    pub srd: bool,
+    /// The original changed since the override was last saved (its book was imported again).
+    pub changed: bool,
+    /// The original is not loaded (its book is off or removed): the override has no effect.
+    pub missing: bool,
 }
 
 /// `homebrew_export_pack` (spec 14.2): the pack file saved (desktop: `path`, none when the dialog was cancelled) or
@@ -294,6 +313,9 @@ pub struct HomebrewDraftView {
     /// left out when there are none.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub saved_with: Vec<String>,
+    /// HC20: the draft is an override (spec 22.4); left out for every other draft.
+    #[serde(rename = "override", skip_serializing_if = "Option::is_none")]
+    pub override_info: Option<HomebrewOverrideInfo>,
 }
 
 /// A draft on this device.

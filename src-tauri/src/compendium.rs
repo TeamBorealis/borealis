@@ -245,6 +245,7 @@ pub(crate) fn element_detail_with(
         description_html: html,
         facts: facts(store, el),
         grants: crate::element_grants::grants_with(store, own, el),
+        changed_by: crate::homebrew_overrides::changed_by(store, &el.id),
     }
 }
 

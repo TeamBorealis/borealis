@@ -279,7 +279,7 @@ seed step carrying the snapshot value.
 | Command | Args (camelCase keys) | Returns |
 |---|---|---|
 | `search_compendium` | `{ query: CompendiumQuery }` | `Page<ElementSummary>` |
-| `get_element` | `{ elementId: string }` | `ElementDetail` |
+| `get_element` | `{ elementId: string }` | `ElementDetail` (`changedBy: { packId, packName }` when a homebrew pack overrides it, HC20) |
 | `compendium_facets` | none | `CompendiumFacets` |
 
 ### Content
@@ -425,12 +425,14 @@ implements packs, elements and drafts in memory (kinds are sample forms).
 | `homebrew_list_elements` | `{ packId }` | `HomebrewElementSummary[]` |
 | `homebrew_new_draft` | `{ packId, kind, copyFrom?, parentId?, parentKey?, deepCopy? }` | `HomebrewDraftView` |
 | `homebrew_open_draft` | `{ packId, elementId?, draftId? }` | `HomebrewDraftView` (resumes the element's edited draft; `draftId` resumes a never-saved element's draft) |
+| `homebrew_new_override` | `{ packId, elementId }` | `HomebrewDraftView` with `override` (HC20, spec 22: the loaded element opened with every id kept; saved to the pack's `overrides` it replaces the original everywhere; `invalid_argument` with a plain sentence for a book element, an element of one of the user's own packs, or one another pack already changes) |
+| `homebrew_revert_override` | `{ packId, elementId }` | `HomebrewDeleteResult` (HC20: the override and the child overrides saved with it are removed, the original returns; `undoId` for the toast's Undo) |
 | `homebrew_update_draft` | `{ draftId, form: HomebrewForm }` | `HomebrewDraftView` (autosaved; preview, problems, generated data) |
 | `homebrew_check_draft` | `{ draftId }` | `HomebrewProblem[]` (engine checks, the 1-20 sweep, choices that offer nothing, balance hints; never errors; runs off the main thread) |
 | `homebrew_save_draft` | `{ draftId }` | `HomebrewSaveResult` (`{ pack, elementIds }`); `invalid_argument` with `details` = the problems when errors exist |
 | `homebrew_discard_draft` | `{ draftId }` | `void` |
 | `homebrew_list_drafts` | none | `HomebrewDraftSummary[]` |
-| `homebrew_delete_elements` | `{ packId, elementIds, confirm }` | `HomebrewDeleteResult` (`{ deleted, usedBy, pack, undoId }`) |
+| `homebrew_delete_elements` | `{ packId, elementIds, confirm }` | `HomebrewDeleteResult` (`{ deleted, usedBy, pack, undoId }`; an override among them is reverted, HC20) |
 | `homebrew_child_use` | `{ draftId, childKey }` | `HomebrewCharacterRef[]`: the local characters that use the saved child `childKey` of the draft or a saved child inside it (asked before it is removed: the save deletes it); a child the draft made, or an unknown key, is used by no one |
 | `homebrew_duplicate_element` | `{ packId, elementId }` | `HomebrewDraftView` |
 | `homebrew_bulk_edit` | `{ packId, elementIds, patch: HomebrewBulkPatch }` (`edition?`, `addTags?`, `removeTags?` together; or `moveToPackId`; or `duplicate: true`) | `HomebrewBulkResult` (`{ pack, elementIds, undoId }`); `invalid_argument` with `details` = the problems when an element can't take the change (nothing changes) |

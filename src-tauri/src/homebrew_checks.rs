@@ -16,7 +16,7 @@ use crate::homebrew_dto::HomebrewProblem;
 use crate::homebrew_packs::CreatorPack;
 use crate::state::{AppState, ContentHub};
 use borealis_authoring::check::{
-    deep_problems, live_problems, DeepInput, LiveInput, PackElement, Problem,
+    deep_problems, id_clash_problems, live_problems, DeepInput, LiveInput, PackElement, Problem,
 };
 use borealis_authoring::form::{
     assign_ids, edition_problems, CatalogBlockCodec, FormContext, FormState,
@@ -69,11 +69,18 @@ impl AppState {
             hidden: &hidden,
             pack: &siblings,
         });
-        // a class keeps its edition; other content of the other edition is adapted (spec 11)
-        out.extend(edition_problems(
-            form,
-            pack_edition(&pack.disk.manifest, &pack.disk.content),
-        ));
+        // a class keeps its edition; other content of the other edition is adapted (spec 11); an override stays
+        // in its original's edition (spec 22.4)
+        if !draft.is_override {
+            out.extend(edition_problems(
+                form,
+                pack_edition(&pack.disk.manifest, &pack.disk.content),
+            ));
+        }
+        // an id of another pack is an accident unless the draft overrides it (spec 22.5)
+        let overridden = Self::hb_override_ids(draft, form);
+        let exempt: HashSet<&str> = overridden.iter().map(String::as_str).collect();
+        out.extend(id_clash_problems(form, &hub.store, pack.id(), &exempt));
         out
     }
 

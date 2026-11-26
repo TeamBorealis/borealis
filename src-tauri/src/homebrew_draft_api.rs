@@ -106,8 +106,15 @@ impl AppState {
 
     /// The saved elements a draft started from, as they are now (`None` for one that is gone).
     fn hb_base<'p>(pack: &'p CreatorPack, ids: &[String]) -> Vec<Option<&'p Element>> {
+        let content = &pack.disk.content;
         ids.iter()
-            .map(|id| pack.disk.content.elements.iter().find(|e| &e.id == id))
+            .map(|id| {
+                content
+                    .elements
+                    .iter()
+                    .chain(&content.overrides)
+                    .find(|e| &e.id == id)
+            })
             .collect()
     }
 
@@ -120,7 +127,11 @@ impl AppState {
     }
 
     /// The view the UI gets: the form without its memo, the live preview, the form's problems, the generated data.
-    fn hb_view(&self, draft: &DraftFile, pack: &CreatorPack) -> ApiResult<HomebrewDraftView> {
+    pub(crate) fn hb_view(
+        &self,
+        draft: &DraftFile,
+        pack: &CreatorPack,
+    ) -> ApiResult<HomebrewDraftView> {
         let hub = self.hub()?;
         let codec = CatalogBlockCodec;
         let cx = Self::hb_context(&hub, &codec);
@@ -149,6 +160,7 @@ impl AppState {
             generated: HomebrewGeneratedView { json, tree },
             updated_at: draft.updated_at.clone(),
             base_changed: Self::hb_base_changed(pack, draft),
+            override_info: Self::hb_override_info(&hub, pack, draft),
             saved_with: draft
                 .copy
                 .companions
@@ -180,6 +192,7 @@ impl AppState {
             copy,
             provisional: Vec::new(),
             created: created_now(),
+            is_override: false,
         }
     }
 
@@ -303,6 +316,17 @@ impl AppState {
         {
             return self.hb_view(&draft, &pack);
         }
+        if pack
+            .disk
+            .content
+            .overrides
+            .iter()
+            .any(|e| e.id == element_id)
+        {
+            let draft = Self::hb_override_draft(&*self.hub()?, &pack, element_id)?;
+            self.hb_drafts.hold(draft.clone())?;
+            return self.hb_view(&draft, &pack);
+        }
         let elements = &pack.disk.content.elements;
         let el = elements
             .iter()
@@ -331,6 +355,7 @@ impl AppState {
             copy: CopyExtras::default(),
             provisional: Vec::new(),
             created: created_now(),
+            is_override: false,
         };
         self.hb_drafts.hold(draft.clone())?;
         self.hb_view(&draft, &pack)
@@ -405,6 +430,9 @@ impl AppState {
         let _guard = self.content_lock()?;
         let mut timer = crate::load_timing::LoadTimer::named("homebrew save draft");
         let draft = self.hb_drafts.get(&self.paths.data, draft_id)?;
+        if draft.is_override {
+            return self.hb_save_override(&draft, sink);
+        }
         let pack = self.hb_pack(&draft.pack_id)?;
         let hub = self.hub()?;
         let codec = CatalogBlockCodec;

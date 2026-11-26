@@ -103,6 +103,29 @@ pub fn homebrew_child_use(
 }
 
 /// Open a saved element, resuming its draft, or resume a draft by id (spec 10.1).
+/// HC20: a new override of a loaded element (spec 22.1, 22.4).
+#[tauri::command(async)]
+pub fn homebrew_new_override(
+    state: State<'_, AppState>,
+    pack_id: String,
+    element_id: String,
+) -> ApiResult<HomebrewDraftView> {
+    state.homebrew_new_override(&pack_id, &element_id)
+}
+
+/// HC20: Revert an override (spec 22.6): the original returns.
+#[tauri::command]
+pub async fn homebrew_revert_override(
+    app: tauri::AppHandle,
+    pack_id: String,
+    element_id: String,
+) -> ApiResult<HomebrewDeleteResult> {
+    crate::commands_content::blocking(app, move |s, sink| {
+        s.homebrew_revert_override(&pack_id, &element_id, sink)
+    })
+    .await
+}
+
 #[tauri::command(async)]
 pub fn homebrew_open_draft(
     state: State<'_, AppState>,

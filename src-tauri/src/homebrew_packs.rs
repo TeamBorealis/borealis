@@ -17,8 +17,8 @@ use borealis_authoring::form::kind;
 use borealis_authoring::ids::{is_pack_code, IdGenerator};
 use borealis_authoring::pack::{
     bump_patch, content_with, manifest_with, mentions, new_content, new_manifest, pack_edition,
-    parent_of, source_element, source_of, without_elements, CreatorFile, PackSettings,
-    CONTENT_FILE,
+    parent_of, revert_override, source_element, source_of, without_elements, CreatorFile,
+    PackSettings, CONTENT_FILE,
 };
 use borealis_content::validate::validate_elements;
 use borealis_content::{ContentStore, Issue, ParsedPack, Severity};
@@ -486,7 +486,11 @@ impl AppState {
         let pack = self.hb_pack(pack_id)?;
         let hub = self.hub()?;
         let elements = &pack.disk.content.elements;
-        let ids: HashSet<&str> = elements.iter().map(|e| e.id.as_str()).collect();
+        let ids: HashSet<&str> = elements
+            .iter()
+            .chain(&pack.disk.content.overrides)
+            .map(|e| e.id.as_str())
+            .collect();
         let mut counts: HashMap<String, HomebrewProblemCounts> = HashMap::new();
         for issue in validate_elements(&hub.store, &ids) {
             let Some(id) = issue.element.clone() else {
@@ -533,7 +537,30 @@ impl AppState {
                 tags: e.supports.clone(),
                 text: search_text(e),
                 copied_text: copied.contains(&e.id),
+                override_info: None,
             })
+            .chain(pack.disk.content.overrides.iter().map(|e| {
+                let entry = pack.creator.overrides.get(&e.id);
+                HomebrewElementSummary {
+                    id: e.id.clone(),
+                    name: e.name.clone(),
+                    kind: entry
+                        .map(|o| o.kind.clone())
+                        .filter(|k| kind(k).is_some())
+                        .unwrap_or_else(|| {
+                            borealis_authoring::form::kind_for_element(e).id.to_string()
+                        }),
+                    element_type: e.ty.clone(),
+                    parent_id: entry.and_then(|o| o.part_of.clone()),
+                    edition: e.ruleset.filter(|r| *r != Ruleset::Any),
+                    problems: counts.get(&e.id).copied().unwrap_or_default(),
+                    has_draft: drafted.contains(&e.id),
+                    tags: e.supports.clone(),
+                    text: search_text(e),
+                    copied_text: copied.contains(&e.id),
+                    override_info: Some(Self::hb_override_state(&hub, &pack, &e.id)),
+                }
+            }))
             .collect())
     }
 
@@ -607,7 +634,17 @@ impl AppState {
     ) -> ApiResult<HomebrewDeleteResult> {
         let _guard = self.content_lock()?;
         let pack = self.hb_pack(pack_id)?;
-        let ids: HashSet<&str> = element_ids.iter().map(String::as_str).collect();
+        let all: HashSet<&str> = element_ids.iter().map(String::as_str).collect();
+        // HC20: an override among them is reverted (its id is not the pack's: nothing is retired, no character loses it)
+        let overridden: HashSet<&str> = pack
+            .disk
+            .content
+            .overrides
+            .iter()
+            .map(|e| e.id.as_str())
+            .filter(|id| all.contains(id))
+            .collect();
+        let ids: HashSet<&str> = all.difference(&overridden).copied().collect();
         let held: HashSet<&str> = pack
             .disk
             .content
@@ -615,7 +652,7 @@ impl AppState {
             .iter()
             .map(|e| e.id.as_str())
             .collect();
-        if ids.is_empty() || !ids.is_subset(&held) {
+        if all.is_empty() || !ids.is_subset(&held) {
             return Err(ApiError::not_found(
                 "That element isn't in this pack any more.",
             ));
@@ -632,13 +669,20 @@ impl AppState {
                 undo_id: None,
             });
         }
-        let (content, trashed) = without_elements(&pack.disk.content, &ids);
+        let (mut content, mut trashed) = without_elements(&pack.disk.content, &ids);
+        let mut creator = pack.creator.with_retired(ids.iter().copied());
+        for id in &overridden {
+            let (next, record, removed) = revert_override(&content, &creator, id);
+            content = next;
+            creator = record;
+            trashed.extend(removed);
+        }
         let mut manifest = pack.disk.manifest.clone();
         manifest.version = bump_patch(&manifest.version);
         let next = PackWrite {
             manifest,
             content,
-            creator: pack.creator.with_retired(ids.iter().copied()),
+            creator,
             trashed,
         };
         let before = crate::homebrew_undo::PackBefore::of(&pack, &next);

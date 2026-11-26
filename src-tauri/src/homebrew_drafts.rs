@@ -61,6 +61,9 @@ pub struct DraftFile {
     /// pack are given their provisional ids in this order, so a newer draft never takes an older one's (INW8I).
     #[serde(default, skip_serializing_if = "is_zero")]
     pub created: u64,
+    /// HC20: the draft is an override of `element_id` (spec 22.4): saved to the pack's `overrides`, ids kept.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub is_override: bool,
 }
 
 #[allow(clippy::trivially_copy_pass_by_ref)] // serde's skip_serializing_if passes a reference
@@ -324,6 +327,7 @@ mod tests {
             copy: CopyExtras::default(),
             provisional: Vec::new(),
             created: 0,
+            is_override: false,
         }
     }
 

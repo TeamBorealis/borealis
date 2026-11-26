@@ -120,6 +120,7 @@ pub mod homebrew_dto;
 pub mod homebrew_expert;
 pub mod homebrew_files;
 pub mod homebrew_kept_lists;
+pub mod homebrew_overrides;
 pub mod homebrew_packs;
 pub mod homebrew_refs;
 pub mod homebrew_transfer;
@@ -588,6 +589,8 @@ pub fn run() {
             commands_homebrew::homebrew_list_elements,
             commands_homebrew::homebrew_new_draft,
             commands_homebrew::homebrew_open_draft,
+            commands_homebrew::homebrew_new_override,
+            commands_homebrew::homebrew_revert_override,
             commands_homebrew::homebrew_update_draft,
             commands_homebrew::homebrew_check_draft,
             commands_homebrew::homebrew_save_draft,
