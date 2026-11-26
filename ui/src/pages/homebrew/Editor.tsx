@@ -18,6 +18,7 @@ import { CLASS_KIND, GROUP_FIELDS, withClassProficiencies } from "./proficiencyG
 import { noteStatus } from "./statusNote";
 import { NestedPane } from "../builder/DescriptionPane";
 import type { DraftController } from "./useDraft";
+import { OverrideNotice } from "./Overrides";
 import type { AutosaveState } from "./draftSession";
 
 /** The phone's own sub-tab for the live description (spec 16: the description pane becomes PREVIEW). */
@@ -45,6 +46,9 @@ export interface EditorActions {
   onConfirmRemove?: ChildEditing["confirmRemove"];
   /** Something wrote the pack outside this draft (class options made from a choice block, spec 4.8): lists reload. */
   onPackChanged?: () => void;
+  /** HC20: the open override is saved in the pack (its notice offers Revert), and what follows a Revert. */
+  overrideSaved?: boolean;
+  onReverted?: () => void;
 }
 
 /** A field shown for the form's edition (`HomebrewFieldSpec.editions`; no edition = the pack's, every field shows); a field
@@ -188,6 +192,11 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
   const savedWith = companionNames.length > 0
     ? <p className="hb-saved-with" role="note" aria-label="Saved with it">Saved with it: {companionNames.join(", ")}.</p>
     : null;
+  // HC20: an override says what saving does, and when its original changed underneath or is not loaded (spec 22.6)
+  const ov = draft.view?.override;
+  const overrideNotice = ov && draft.view
+    ? <OverrideNotice info={ov} packId={draft.view.packId} saved={actions.overrideSaved ?? false} onReverted={actions.onReverted ?? (() => undefined)} />
+    : null;
   return (
     <CreatorEnvProvider draftId={draft.view?.draftId ?? null} packId={draft.view?.packId ?? null} onPackChanged={actions.onPackChanged} edition={edition} form={form} answer={draft.view?.form ?? null} problems={draft.problems} expert={expert}>
       <section className="hb-editor" aria-label="Element editor" ref={editorRef}>
@@ -197,13 +206,14 @@ export function Editor({ kind, kinds = [kind], draft, tab, onTab, narrow, previe
           <>
             <div className="hb-editor-head" ref={headRef}>{band}{tabBand}</div>
             {error}
+            {overrideNotice}
             {savedWith}
             {problemsPanel}
             {hasExpert && <div className="hb-expert-row">{expertSwitch}</div>}
           </>
         ) : (
           // Desktop (13.2-13.4): the title band, commands, PROBLEMS and the sub-tab band stay; only the form scrolls.
-          <>{band}<div className="hb-cmdrow">{commands}{hasExpert && expertSwitch}</div>{error}{savedWith}{problemsPanel}{tabBand}</>
+          <>{band}<div className="hb-cmdrow">{commands}{hasExpert && expertSwitch}</div>{error}{overrideNotice}{savedWith}{problemsPanel}{tabBand}</>
         )}
         <div role="tabpanel" id="hb-tab-panel" aria-labelledby={`hb-tab-${current}`} className="hb-tabpanel" ref={panelRef}>
           {current === PREVIEW_TAB.id ? <NestedPane.Provider value>{preview}</NestedPane.Provider> : current === DATA_TAB.id ? <DataView generated={draft.view?.generated} /> : current === SPELLCASTING_TAB && (kind.id === "class" || kind.id === "subclass")

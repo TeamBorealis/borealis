@@ -286,3 +286,5 @@ html:not(.phone) .abil-suggest { display: flex; align-items: center; flex-wrap: 
 html:not(.phone) .abil-suggest-text { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
 html:not(.phone) .abil-suggest-title { margin: 0; font-size: 10px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
 html:not(.phone) .abil-suggest-scores { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+/* HC20: "Changed by <pack>" with Revert, above the source (spec 22.6) */
+.desc-changed .desc-revert { font-style: normal; }

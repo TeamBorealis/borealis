@@ -7,20 +7,23 @@ import { ReferencePicker } from "./pickers/ReferencePicker";
 import { enterCreates } from "./flyoutKeys";
 import "../characters/characters.css";
 
-/** Where a new element starts (spec 11): an empty form, an SRD template (bundled elements only, CS1), or a copy of any
- * loaded element (SRD, imported or own). */
-export type StartFrom = "blank" | "template" | "copy";
+/** Where a new element starts (spec 11): an empty form, an SRD template (bundled elements only, CS1), a copy of any
+ * loaded element (SRD, imported or own), or (HC20, spec 22) an override of a loaded element: the original changed in place. */
+export type StartFrom = "blank" | "template" | "copy" | "override";
 
-/** What to copy: the element and, for a class, whether its features and subclasses are copied too. */
+/** What to copy: the element and, for a class, whether its features and subclasses are copied too; `override`: change the
+ * element itself (HC20) instead of making a copy. */
 export interface CopyChoice {
   copyFrom: string;
   deepCopy: boolean;
+  override?: boolean;
 }
 
 const STARTS: { id: StartFrom; label: string; description: string }[] = [
   { id: "blank", label: "Blank", description: "An empty form." },
   { id: "template", label: "Start from a template", description: "A copy of an element of the System Reference Document." },
   { id: "copy", label: "New from copy...", description: "A copy of any loaded element: SRD, imported or your own." },
+  { id: "override", label: "Override the original...", description: "Change a loaded element in place: SRD or imported. Characters that use it get the change." },
 ];
 
 /**
@@ -101,7 +104,7 @@ export function NewElementFlyout({ kinds, initialKind, onCreate, onClose }: {
   const picked = (picks: HomebrewRef[]) => {
     setPicking(false);
     const id = picks[0]?.id;
-    if (id) void run({ copyFrom: id, deepCopy: deep });
+    if (id) void run(start === "override" ? { copyFrom: id, deepCopy: false, override: true } : { copyFrom: id, deepCopy: deep });
   };
   return (
     <Flyout title="New element" onClose={onClose} headAction={<GuideLink guide="homebrew-creator" />}
@@ -124,16 +127,16 @@ export function NewElementFlyout({ kinds, initialKind, onCreate, onClose }: {
         <section className="aur-expander flyout-variant v4-plain" aria-labelledby="hb-start-title">
           <div className="aur-expander-head"><h2 className="aur-expander-toggle" id="hb-start-title"><span className="aur-expander-title">Start from</span></h2></div>
           <div className="aur-expander-body">
-            <p className="hb-field-help" id="hb-start-help">Blank is empty; a copy fills the form, the original stays.</p>
+            <p className="hb-field-help" id="hb-start-help">Blank is empty; a copy fills the form, the original stays; an override changes the original.</p>
             <RadioCards labelledBy="hb-start-title" describedBy="hb-start-help" options={STARTS} value={start} onChange={(id) => setStart(id as StartFrom)} />
-            {start !== "blank" && kind?.id === "class" && (
+            {(start === "template" || start === "copy") && kind?.id === "class" && (
               <label className="hb-inline-check"><CheckBox checked={deep} onChange={(e) => setDeep(e.target.checked)} />Copy its features and subclasses too</label>
             )}
           </div>
         </section>
       </form>
       {picking && kind && (
-        <ReferencePicker title={start === "template" ? `${kind.label} template` : `${kind.label} to copy`} target={{ types: kind.elementTypes }} chosen={[]}
+        <ReferencePicker title={start === "template" ? `${kind.label} template` : start === "override" ? `${kind.label} to override` : `${kind.label} to copy`} target={{ types: kind.elementTypes }} chosen={[]}
           filters={{ srdOnly: start === "template" }} onChoose={picked} onClose={() => setPicking(false)} />
       )}
     </Flyout>

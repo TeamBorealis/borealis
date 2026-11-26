@@ -811,6 +811,17 @@
     "name": "HomebrewDraftView"
    }
   },
+  "homebrew_new_override": {
+   "args": {
+    "elementId": false,
+    "packId": false
+   },
+   "method": "homebrewNewOverride",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewDraftView"
+   }
+  },
   "homebrew_open_draft": {
    "args": {
     "draftId": true,
@@ -835,6 +846,17 @@
    "response": {
     "k": "ref",
     "name": "Page<HomebrewPickerRow>"
+   }
+  },
+  "homebrew_revert_override": {
+   "args": {
+    "elementId": false,
+    "packId": false
+   },
+   "method": "homebrewRevertOverride",
+   "response": {
+    "k": "ref",
+    "name": "HomebrewDeleteResult"
    }
   },
   "homebrew_save_draft": {
@@ -6179,6 +6201,23 @@
     }
    }
   },
+  "ElementChangedBy": {
+   "k": "object",
+   "props": {
+    "packId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "packName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "ElementDetail": {
    "k": "object",
    "props": {
@@ -6187,6 +6226,13 @@
      "t": {
       "k": "ref",
       "name": "ArmorFacts"
+     }
+    },
+    "changedBy": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "ElementChangedBy"
      }
     },
     "descriptionHtml": {
@@ -7310,6 +7356,13 @@
       "name": "HomebrewGeneratedView"
      }
     },
+    "override": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "HomebrewOverrideInfo"
+     }
+    },
     "packId": {
      "opt": false,
      "t": {
@@ -7434,6 +7487,13 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "override": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "HomebrewOverrideInfo"
      }
     },
     "parentId": {
@@ -7908,6 +7968,41 @@
       "t": {
        "k": "prim"
       }
+     }
+    }
+   }
+  },
+  "HomebrewOverrideInfo": {
+   "k": "object",
+   "props": {
+    "changed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "missing": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "originalId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "srd": {
+     "opt": false,
+     "t": {
+      "k": "prim"
      }
     }
    }

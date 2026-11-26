@@ -188,3 +188,13 @@ html.phone .hb-elements .ap-grid td.hb-pick { display: grid; place-items: center
 html.phone.kb-open .hb-commands.eq-pin { display: none; }
 html.phone:not(.kb-open) .hb-ws.narrow .rich-docked .rich-toolbar { top: var(--hb-head-h, 0px); }
 html.phone .hb-multiline { padding: 10px 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text); font: 400 var(--ph-t-body)/1.35 var(--ph-font-ui); }
+
+/* HC20 overrides (spec 22): the editor's notice, the copy dialog's How choice */
+.hb-override { margin: 2px 12px 4px; padding: 4px 8px; font-size: 11px; color: var(--text-secondary); border-left: 3px solid var(--accent-base); flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.hb-override p { margin: 0; flex: 1 1 260px; }
+.hb-override-warn { border-left-color: var(--aur-warning); }
+.hb-override-alert { color: var(--text-primary); }
+.hb-copy-mode { border: 0; margin: 0 0 8px; padding: 0; }
+.hb-copy-mode-row { display: flex; align-items: flex-start; gap: 6px; margin: 4px 0; }
+.hb-copy-mode-label { display: block; }
+.hb-row-override.hb-warning { color: var(--aur-warning); }

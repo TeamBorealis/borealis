@@ -657,7 +657,7 @@ export class MockApi implements Api {
   /* ---------- compendium & content ---------- */
 
   async searchCompendium({ query }: Parameters<Api["searchCompendium"]>[0]) { await this.tick(); return this.content.search(query); }
-  async getElement({ elementId }: { elementId: string }) { await this.tick(); return this.content.element(elementId); }
+  async getElement({ elementId }: { elementId: string }) { await this.tick(); return this.homebrew.overridden(elementId) ?? this.content.element(elementId); }
   async compendiumFacets() { await this.tick(); return this.content.facets(); }
   async search({ request }: Parameters<Api["search"]>[0]) { await this.tick(); return mockSearch(this.content.searchDocs(), request); }
   async searchIndexStatus() { await this.tick(); return { ...MOCK_INDEX_STATUS }; }
@@ -988,6 +988,12 @@ export class MockApi implements Api {
   }
   async homebrewChildUse({ draftId, childKey }: Parameters<Api["homebrewChildUse"]>[0]) { await this.tick(); return this.homebrew.childUse(draftId, childKey); }
   async homebrewOpenDraft({ packId, elementId, draftId }: Parameters<Api["homebrewOpenDraft"]>[0]) { await this.tick(); return this.homebrew.openDraft(packId, elementId, draftId); }
+  async homebrewNewOverride({ packId, elementId }: Parameters<Api["homebrewNewOverride"]>[0]) {
+    await this.tick();
+    const loaded = this.content.search({ query: "", limit: Number.MAX_SAFE_INTEGER, offset: 0 }).items.find((e) => e.id === elementId);
+    return this.homebrew.newOverride(packId, elementId, loaded ? { name: loaded.name, type: loaded.type, sourceName: loaded.sourceName, school: loaded.school ?? undefined } : undefined);
+  }
+  async homebrewRevertOverride({ packId, elementId }: Parameters<Api["homebrewRevertOverride"]>[0]) { await this.tick(); return this.homebrew.revertOverride(packId, elementId); }
   async homebrewUpdateDraft({ draftId, form }: Parameters<Api["homebrewUpdateDraft"]>[0]) { await this.tick(); return this.homebrew.updateDraft(draftId, form); }
   async homebrewCheckDraft({ draftId }: { draftId: string }) { await this.tick(); return this.homebrew.checkDraft(draftId); }
   async homebrewSaveDraft({ draftId }: { draftId: string }) { await this.tick(); return this.homebrew.saveDraft(draftId); }

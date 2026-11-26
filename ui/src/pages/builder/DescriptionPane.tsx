@@ -7,6 +7,7 @@ import { useApi } from "../../state/ApiContext";
 import { useAsync } from "../../state/useAsync";
 import { DescriptionGrants } from "./DescriptionGrants";
 import { useCopyToHomebrew } from "../homebrew/CopyToHomebrew";
+import { ChangedByLine } from "../homebrew/Overrides";
 
 /** Read-aloud via the platform speech engine; absent engines simply disable the button. */
 function useReadAloud() {
@@ -129,7 +130,9 @@ export function DescriptionPane({ elementId, fallback, copyable = false }: { ele
       </button>
     )
     : null;
-  return <>{detailPane(d, openCompendium, copy)}{copier.dialog}</>;
+  // HC20: an overridden element says which pack changed it, with Revert (spec 22.6)
+  const changed = d.changedBy ? <ChangedByLine elementId={d.id} changedBy={d.changedBy} onReverted={el.reload} /> : null;
+  return <>{detailPane(d, openCompendium, copy, changed)}{copier.dialog}</>;
 }
 
 /**
@@ -148,7 +151,7 @@ export function ElementDetailView({ d }: { d: ElementDetail }) {
   return detailPane(d, openCompendium);
 }
 
-function detailPane(d: ElementDetail, openCompendium: ReturnType<typeof useShell>["openCompendium"], commands?: ReactNode): ReactNode {
+function detailPane(d: ElementDetail, openCompendium: ReturnType<typeof useShell>["openCompendium"], commands?: ReactNode, changed?: ReactNode): ReactNode {
   const dupIntro = repeatsBody(d.shortDescription, d.descriptionHtml);
   const facts = d.facts.filter((f) => !HOST_FACTS.includes(f.label));
   const plain = `${d.name}. ${d.shortDescription} ${d.descriptionHtml.replace(/<[^>]+>/g, " ")}`;
@@ -162,6 +165,7 @@ function detailPane(d: ElementDetail, openCompendium: ReturnType<typeof useShell
         </div>
       )}
       <DescriptionGrants grants={d.grants} />
+      {changed}
       <h3 className="desc-h desc-src-h">Source</h3>
       <p className="desc-line"><button type="button" className="desc-source" onClick={() => openCompendium({ query: d.name, source: d.source })}>{sourceLabel(d.sourceName, d.rulesets)}</button></p>
     </PaneShell>

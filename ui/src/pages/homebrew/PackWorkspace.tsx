@@ -289,6 +289,14 @@ export function PackWorkspace() {
 
   /** A new element (spec 10.1), or a copy (spec 11): a copy is named "<Name> (copy)", selected for renaming. */
   const createElement = async (kindId: string, name: string, copy?: CopyChoice) => {
+    if (copy?.override) {
+      // HC20 (spec 22): an override keeps the original's name and id
+      const view = await api.homebrewNewOverride({ packId, elementId: copy.copyFrom });
+      setNewOpen(false);
+      await show(view);
+      setTimeout(() => focusField("name", false), 0);
+      return;
+    }
     const fresh = await api.homebrewNewDraft({ packId, kind: kindId, ...(copy ? { copyFrom: copy.copyFrom, deepCopy: copy.deepCopy } : {}) });
     const view = name ? await api.homebrewUpdateDraft({ draftId: fresh.draftId, form: { ...fresh.form, fields: { ...fresh.form.fields, name } } }) : fresh;
     setNewOpen(false);
@@ -454,7 +462,9 @@ export function PackWorkspace() {
   const editor = openKind && draft.form
     ? <Editor kind={openKind} kinds={kinds.data ?? []} draft={draft} tab={tab} onTab={setTab} narrow={narrow} preview={preview} tryItOpen={tryItOpen}
       actions={{ onSave: () => void save(), onTryIt: tryIt, onTryItClose: () => setTryItOpen(false), onDuplicate: () => void duplicate(), onJump: jump, onNewChild: newChild, onConfirmRemove: confirmRemove,
-        onPackChanged: () => { elements.reload(); packs.reload(); setWritten((n) => n + 1); } }} />
+        onPackChanged: () => { elements.reload(); packs.reload(); setWritten((n) => n + 1); },
+        overrideSaved: rows.some((r) => r.id === openId && r.override),
+        onReverted: () => { void draft.open(null); elements.reload(); packs.reload(); setWritten((n) => n + 1); } }} />
     : <div className="hb-empty"><p>Choose an element in the list, or make a new one.</p><Button onClick={() => setNewOpen(true)} disabled={offered.length === 0}>New element</Button></div>;
   const chosen = rows.filter((r) => selected.has(r.id));
   const list = (

@@ -2,7 +2,7 @@ import type {
   ApiError, BookRuleset, ContentPack, ElementDetail, ElementFact, ElementSummary, ElementType, HomebrewBulkPatch, HomebrewBulkResult, HomebrewCharacterRef, HomebrewDeleteResult, HomebrewDraftSummary,
   HomebrewDraftView, HomebrewElementRef, HomebrewElementSummary, HomebrewForm, HomebrewKindDescriptor, HomebrewKindId, HomebrewPackPatch, HomebrewPackRequest,
   HomebrewPickerRow, HomebrewProblem, HomebrewSaveResult, HomebrewSpellListRow, HomebrewSpellListView, Ruleset,
-  HomebrewExportResult, ImportFileInput, ImportPackResult, ImportPreview, TypeCount,
+  HomebrewExportResult, HomebrewOverrideInfo, ImportFileInput, ImportPackResult, ImportPreview, TypeCount, ElementChangedBy,
 } from "../types";
 import { copiedGenerated, formUse, generatedOf, hasTag, listingClasses, loadedListRow, tagsOf, textOf, withTags } from "./homebrew-expert";
 import { apiError } from "./errors";
@@ -122,6 +122,8 @@ export class MockHomebrew {
   private copiedText = new Set<string>();
   /** Drafts copied from a real copy source (`homebrew-copies.ts`): their DATA view is the backend's copy. */
   private copySources = new Map<string, MockCopySource>();
+  /** HC20: override drafts and the original each one changes (spec 22). */
+  private overrideOf = new Map<string, HomebrewOverrideInfo>();
   /** Pack files waiting in an import preview (spec 14.2). */
   private stagedFiles = new Map<string, { fileName: string; data: MockPackData }>();
   private nextPreview = 1;
@@ -253,7 +255,51 @@ export class MockHomebrew {
     if (existing) return existing;
     const saved = this.own(packId).elements.get(elementId);
     if (!saved) throw apiError("not_found", "That element isn't in this pack any more.");
-    return this.store(packId, elementId, saved.form);
+    const fresh = `draft-${this.nextDraft++}`;
+    if (saved.summary.override) this.overrideOf.set(fresh, { ...saved.summary.override, changed: false });
+    return this.store(packId, elementId, saved.form, fresh);
+  }
+
+  /** HC20 (spec 22.1): an override of a loaded element, every id kept: the SRD copy source's form under the original's
+   * name, else a blank form of its kind; refused as the backend refuses. */
+  newOverride(packId: string, elementId: string, loaded?: { name: string; type: ElementType; sourceName: string; school?: string }): HomebrewDraftView {
+    const own = this.own(packId);
+    if (own.elements.get(elementId)?.summary.override) return this.openDraft(packId, elementId);
+    if (loaded?.type === "source") throw apiError("invalid_argument", "A book element can't be changed.");
+    const home = [...this.packs.values()].find((p) => p.elements.has(elementId) && !p.elements.get(elementId)!.summary.override);
+    if (home) throw apiError("invalid_argument", `That element is in your pack ${home.pack.name}. Open it there to change it.`);
+    const by = this.changedBy(elementId);
+    if (by) throw apiError("invalid_argument", `${by.packName} already changes this element. Change it there, or revert that change first.`);
+    const srd = MOCK_COPY_SOURCES.find((c) => c.row.id === elementId);
+    let form: HomebrewForm;
+    if (srd) form = { ...srd.form, fields: { ...srd.form.fields, name: srd.row.name, ...("source" in srd.form.fields ? { source: srd.row.sourceName } : {}) } };
+    else if (loaded) {
+      const k = KINDS.find((x) => PREVIEW_TYPES[x.id] === loaded.type) ?? KINDS.find((x) => x.id === "other")!;
+      const blank = newForm(k, "e");
+      form = { ...blank, fields: { ...blank.fields, name: loaded.name, source: loaded.sourceName, ...(loaded.school && k.id === "spell" ? { school: loaded.school } : {}) } };
+    } else throw apiError("not_found", "That element isn't loaded any more.");
+    const draftId = `draft-${this.nextDraft++}`;
+    this.overrideOf.set(draftId, { originalId: elementId, sourceName: srd?.row.sourceName ?? loaded?.sourceName ?? "", srd: !!srd, changed: false, missing: false });
+    return this.store(packId, elementId, form, draftId);
+  }
+
+  /** HC20 (spec 22.6): Revert removes the override; undoable like a delete. */
+  revertOverride(packId: string, elementId: string): HomebrewDeleteResult {
+    if (!this.own(packId).elements.get(elementId)?.summary.override) throw apiError("not_found", "This pack doesn't change that element any more.");
+    return this.deleteElements(packId, [elementId]);
+  }
+
+  /** "Changed by <pack>" (spec 22.6): the pack whose override replaces `id`. */
+  changedBy(id: string): ElementChangedBy | null {
+    const pack = [...this.packs.values()].find((p) => p.elements.get(id)?.summary.override);
+    return pack ? { packId: pack.pack.id, packName: pack.pack.name } : null;
+  }
+
+  /** The description pane of an overridden element: the override as saved, with "Changed by". */
+  overridden(id: string): ElementDetail | null {
+    const by = this.changedBy(id);
+    const saved = by ? this.own(by.packId).elements.get(id) : undefined;
+    return by && saved ? { ...this.preview(by.packId, id, saved.form), changedBy: by } : null;
   }
 
   updateDraft(draftId: string, form: HomebrewForm): HomebrewDraftView {
@@ -277,7 +323,9 @@ export class MockHomebrew {
     const summary: HomebrewElementSummary = {
       id, name, kind: k.id, elementType: type, parentId: null, edition: listEdition(draft.form), problems: { errors: 0, warnings: 0 }, hasDraft: false, tags: [], text: "",
       copiedText: this.copiedText.has(draftId) || (own.elements.get(id)?.summary.copiedText ?? false),
+      ...(this.overrideOf.has(draftId) ? { override: { ...this.overrideOf.get(draftId)!, changed: false } } : {}),
     };
+    if (summary.override && !summary.override.srd) summary.copiedText = true;
     const elements = new Map(own.elements).set(id, { summary, form: draft.form });
     const savedWith = (this.companions.get(draftId) ?? []).map((c) => {
       const ck = KINDS.find((x) => x.id === c.kind)!;
@@ -294,6 +342,7 @@ export class MockHomebrew {
     this.touched.delete(draftId);
     this.copiedText.delete(draftId);
     this.copySources.delete(draftId);
+    this.overrideOf.delete(draftId);
     return { pack: this.putPack(pack), elementIds: [id, ...savedWith] };
   }
 
@@ -680,6 +729,7 @@ export class MockHomebrew {
     const view: HomebrewDraftView = {
       draftId, packId, elementId, form, preview: this.preview(packId, elementId ?? draftId, form), problems, updatedAt: now(), baseChanged: false,
       generated: this.generated(packId, elementId, form, draftId), ...this.savedWith(draftId),
+      ...(this.overrideOf.has(draftId) ? { override: this.overrideOf.get(draftId)! } : {}),
     };
     this.drafts.set(draftId, view);
     return view;

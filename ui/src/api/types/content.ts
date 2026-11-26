@@ -152,7 +152,7 @@ export type MigrationIssueCode =
   | "unknown_rule_tag" | "unsupported_construct" | "element_dropped" | "duplicate_child" | "normalized"
   | "index_entry_missing" | "file_skipped" | "duplicate_id" | "element_replaced" | "invalid_id"
   | "non_standard_id" | "missing_required_setter" | "dangling_reference" | "invalid_expression"
-  | "multiclass_id_same_as_class" | "append_target_missing" | "duplicate_select_name" | "undefined_source"
+  | "multiclass_id_same_as_class" | "append_target_missing" | "override_target_missing" | "duplicate_select_name" | "undefined_source"
   | "schema_violation" | "invalid_monster_data" | "non_standard_monster_xp";
 
 /** One conversion finding, located: source file (path inside the imported set), element id and type, line, code. */

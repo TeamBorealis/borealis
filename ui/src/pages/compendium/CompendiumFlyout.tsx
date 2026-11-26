@@ -13,6 +13,7 @@ import { useAsync, useDebounced } from "../../state/useAsync";
 import { RULES_GROUP, SCOPES, badgeOf, footerText, groupRows, highlightParts, initialEdition, rowOfElement, rowOfHit, showSemanticHint, type ResultRow } from "./searchModel";
 import { useSemanticStatus } from "../../state/semantic";
 import { useCopyToHomebrew } from "../homebrew/CopyToHomebrew";
+import { ChangedByLine } from "../homebrew/Overrides";
 import "./compendium.css";
 
 const PAGE = 40;
@@ -41,6 +42,7 @@ function Detail({ id, onSource, onNavigate }: { id: string; onSource: (s: string
       {!statBlock && facts}
       <h4>Source</h4>
       <a href={`#source-${e.source}`} onClick={(ev) => { ev.preventDefault(); onSource(e.source); }}>{e.sourceName}</a>
+      {e.changedBy && <ChangedByLine elementId={e.id} changedBy={e.changedBy} onReverted={d.reload} />}
       {copier.enabled && (
         <>
           <h4>Homebrew</h4>

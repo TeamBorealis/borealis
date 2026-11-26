@@ -7,6 +7,7 @@ import { usePhone } from "../../lib/phone";
 import "../equipment/equipment.css";
 import "../spells/pane.css";
 import { filterRows, isSearching, type ListFilter, nextSelection } from "./search";
+import { overrideNote } from "./Overrides";
 
 /** The row of an open element that has not been saved yet (it has no id until its first save). */
 export interface UnsavedRow {
@@ -151,7 +152,8 @@ export function ElementList({ kind, kinds, rows, unsaved, drafts, onOpenDraft, o
                   <td className="grow">
                     <button type="button" className="ap-name" onClick={(e) => click(e, r)}>{r.name}</button>
                     {searching && <span className="hb-row-kind hide-narrow">{kindLabel(r)}</span>}
-                    <RowDetail parts={[searching && kindLabel(r), editionText(r.edition), r.hasDraft && "Unsaved changes", n > 0 && `${n} ${n === 1 ? "problem" : "problems"}`]} />
+                    {r.override && <span className={`hb-row-kind hb-row-override hide-narrow${r.override.changed || r.override.missing ? " hb-warning" : ""}`}>{overrideNote(r.override)}</span>}
+                    <RowDetail parts={[searching && kindLabel(r), r.override && overrideNote(r.override), editionText(r.edition), r.hasDraft && "Unsaved changes", n > 0 && `${n} ${n === 1 ? "problem" : "problems"}`]} />
                   </td>
                   <td className="hide-narrow">{editionText(r.edition)}</td>
                   <td className="hide-narrow">

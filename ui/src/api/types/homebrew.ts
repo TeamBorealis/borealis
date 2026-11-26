@@ -265,6 +265,22 @@ export interface HomebrewElementSummary {
   text: string;
   /** It holds text copied from a non-SRD pack (CS1, HC8): the export dialog counts these. */
   copiedText: boolean;
+  /** HC20: an override of another pack's element (spec 22); absent for the pack's own elements. */
+  override?: HomebrewOverrideInfo;
+}
+
+/** HC20 (spec 22.6): an override's original and its state, for the creator's notice and the element list's note. */
+export interface HomebrewOverrideInfo {
+  /** The id it shares with its original. */
+  originalId: string;
+  /** The original's book, as the builder shows it. */
+  sourceName: string;
+  /** The original is bundled SRD content. */
+  srd: boolean;
+  /** The original changed since the override was last saved (its book was imported again). */
+  changed: boolean;
+  /** The original is not loaded (its book is off or removed): the override has no effect. */
+  missing: boolean;
 }
 
 /**
@@ -714,6 +730,8 @@ export interface HomebrewDraftView {
   baseChanged: boolean;
   /** The names of the elements a copy saves with it (a deep class copy's subclasses, spec 11); absent when none. */
   savedWith?: string[];
+  /** HC20: the draft is an override of `elementId` (spec 22.4); absent for every other draft. */
+  override?: HomebrewOverrideInfo;
 }
 
 /** Drafts on this device (spec 10.1: "Unsaved changes from <time>"). */

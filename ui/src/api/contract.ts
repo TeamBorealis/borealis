@@ -653,6 +653,13 @@ export interface ApiMethods {
   /** Open a saved element; resumes its draft when one exists. With `draftId` (and no `elementId`), resumes that draft:
    * a new element that was never saved has no element to open it by (`homebrewListDrafts` lists it, `elementId: null`). */
   homebrewOpenDraft(args: { packId: string; elementId?: string; draftId?: string }): Promise<HomebrewDraftView>;
+  /** HC20: an override of the loaded element `elementId` (bundled SRD or imported), opened with every id kept; saved to
+   * the pack's overrides it replaces the original everywhere. Refused (`invalid_argument`, a plain sentence) for a book
+   * element, an element of one of the user's own packs, or one another pack already changes. */
+  homebrewNewOverride(args: { packId: string; elementId: string }): Promise<HomebrewDraftView>;
+  /** HC20: Revert the pack's override of `elementId` (and the child overrides saved with it): the original returns.
+   * Undoable like a delete (`undoId`). */
+  homebrewRevertOverride(args: { packId: string; elementId: string }): Promise<HomebrewDeleteResult>;
   /** Every edit (UI debounce 300 ms): autosaves the draft and returns the live preview, problems and generated data. */
   homebrewUpdateDraft(args: { draftId: string; form: HomebrewForm }): Promise<HomebrewDraftView>;
   /** The heavier engine checks and the 1-20 level sweep (spec 8.1 step 6). */
@@ -934,6 +941,8 @@ export const COMMANDS = {
   homebrewListElements: "homebrew_list_elements",
   homebrewNewDraft: "homebrew_new_draft",
   homebrewOpenDraft: "homebrew_open_draft",
+  homebrewNewOverride: "homebrew_new_override",
+  homebrewRevertOverride: "homebrew_revert_override",
   homebrewUpdateDraft: "homebrew_update_draft",
   homebrewCheckDraft: "homebrew_check_draft",
   homebrewSaveDraft: "homebrew_save_draft",

@@ -123,6 +123,14 @@ export interface ElementDetail extends ElementSummary {
   facts: ElementFact[];
   /** What choosing this element grants, in level order (A6). */
   grants: ElementGrant[];
+  /** HC20: a homebrew pack overrides this element ("Changed by <pack>" with Revert, spec 22.6). */
+  changedBy?: ElementChangedBy;
+}
+
+/** The homebrew pack whose override replaces an element (HC20). */
+export interface ElementChangedBy {
+  packId: string;
+  packName: string;
 }
 
 /** One line of a description's Grants list. */

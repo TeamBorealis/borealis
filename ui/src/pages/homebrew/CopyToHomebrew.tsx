@@ -16,10 +16,19 @@ export interface CopyTarget {
   isClass: boolean;
 }
 
+/** HC20: a variant (a copy with its own id, spec 11) or an override (the original changed in place, spec 22). */
+export type CopyMode = "variant" | "override";
+
+const MODES: { id: CopyMode; label: string; help: string }[] = [
+  { id: "variant", label: "Make a variant (copy)", help: "A new element of your own. The original stays as it is." },
+  { id: "override", label: "Override the original", help: "Change it in place. Characters that use it get the change." },
+];
+
 /**
- * Copy to homebrew (spec 2, 11), from the Compendium and the builder's description pane: choose the homebrew pack (or make
- * one when there is none), copy, and open the copy in the creator with its name selected for renaming. The copy keeps the
- * element's rules, tags, description and edition; a class copies its features and subclasses too unless unticked.
+ * Copy to homebrew (spec 2, 11), from the Compendium and the builder's description pane: choose how (a variant, or since
+ * HC20 an override of the original, spec 22) and the homebrew pack (or make one when there is none), then open it in the
+ * creator. A copy keeps the element's rules, tags, description and edition, with a new id; a class copies its features and
+ * subclasses too unless unticked. An override keeps the original's id and replaces it everywhere once saved.
  */
 export function CopyToHomebrew({ target, onClose, onDone }: { target: CopyTarget; onClose: () => void; onDone?: () => void }) {
   const api = useApi();
@@ -28,6 +37,7 @@ export function CopyToHomebrew({ target, onClose, onDone }: { target: CopyTarget
   const own = (packs.data ?? []).filter((p) => p.kind === "homebrew");
   const [packId, setPackId] = useState<string>("");
   const [deep, setDeep] = useState(true);
+  const [mode, setMode] = useState<CopyMode>("variant");
   const [making, setMaking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +50,9 @@ export function CopyToHomebrew({ target, onClose, onDone }: { target: CopyTarget
   const copy = async (into: string) => {
     setBusy(true);
     try {
-      const view = await api.homebrewNewDraft({ packId: into, kind: "other", copyFrom: target.id, deepCopy: target.isClass ? deep : true });
+      const view = mode === "override"
+        ? await api.homebrewNewOverride({ packId: into, elementId: target.id })
+        : await api.homebrewNewDraft({ packId: into, kind: "other", copyFrom: target.id, deepCopy: target.isClass ? deep : true });
       rememberPack(into);
       onDone?.();
       onClose();
@@ -57,18 +69,27 @@ export function CopyToHomebrew({ target, onClose, onDone }: { target: CopyTarget
   const none = packs.data !== undefined && own.length === 0;
   const footer = none
     ? <><Button onClick={onClose}>Cancel</Button><Button variant="primary" onClick={() => setMaking(true)}>New pack</Button></>
-    : <><Button onClick={onClose}>Cancel</Button><Button variant="primary" data-testid="copy-to-homebrew" disabled={busy || !packId} onClick={() => void copy(packId)}>Copy</Button></>;
+    : <><Button onClick={onClose}>Cancel</Button><Button variant="primary" data-testid="copy-to-homebrew" disabled={busy || !packId} onClick={() => void copy(packId)}>{mode === "override" ? "Override" : "Copy"}</Button></>;
   return (
     <Dialog title="Copy to homebrew" onClose={onClose} footer={footer} className="hb-copy-dialog">
       {packs.error && <Alert tone="danger">{packs.error}</Alert>}
       {none ? (
-        <p>You have no homebrew pack yet. Make one to copy “{target.name}” into.</p>
+        <p>You have no homebrew pack yet. Make one to copy or change “{target.name}” in.</p>
       ) : (
         <>
-          <p>Copy “{target.name}” into a homebrew pack to change it. The original stays as it is.</p>
+          <p>Change “{target.name}” in a homebrew pack.</p>
+          <fieldset className="hb-copy-mode">
+            <legend className="v4-fl">How</legend>
+            {MODES.map((m) => (
+              <label key={m.id} className="radio-row hb-copy-mode-row">
+                <input type="radio" name="hb-copy-mode" value={m.id} checked={mode === m.id} onChange={() => setMode(m.id)} />
+                <span><span className="hb-copy-mode-label">{m.label}</span><span className="hb-field-help">{m.help}</span></span>
+              </label>
+            ))}
+          </fieldset>
           <label className="v4-fl" htmlFor="hb-copy-pack">Pack</label>
           <ComboBox id="hb-copy-pack" value={packId} onChange={setPackId} options={own.map((p) => ({ value: p.id, label: p.name }))} />
-          {target.isClass && (
+          {target.isClass && mode === "variant" && (
             <label className="hb-inline-check"><CheckBox checked={deep} onChange={(e) => setDeep(e.target.checked)} />Copy its features and subclasses too</label>
           )}
         </>
