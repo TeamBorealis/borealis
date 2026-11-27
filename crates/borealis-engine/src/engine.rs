@@ -77,7 +77,7 @@ impl Engine {
         // PF1 (B-235): the two universes are independent, so they are built side by side.
         let [first, second] = all_profiles().map(|p| p.ruleset());
         let before = |r: Ruleset| previous.map(|e| e.universe(r));
-        let universes = std::thread::scope(|scope| {
+        let mut universes = std::thread::scope(|scope| {
             let other = scope
                 .spawn(|| Universe::with_adapter_reusing(store, second, adapter, before(second)));
             let one = Universe::with_adapter_reusing(store, first, adapter, before(first));
@@ -86,6 +86,11 @@ impl Engine {
                 .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
             [one, two]
         });
+        if settings.feature_weapons {
+            for u in &mut universes {
+                u.add_feature_weapons();
+            }
+        }
         Self {
             settings,
             universes,
@@ -139,12 +144,15 @@ impl Engine {
         opts: EvaluateOptions,
     ) -> CharacterSnapshot {
         let uni = self.universe(state.ruleset);
-        let snap = Evaluation::run(uni, state, &self.settings, opts.provenance).snapshot(
+        let mut snap = Evaluation::run(uni, state, &self.settings, opts.provenance).snapshot(
             state,
             &self.settings,
             include_options,
             opts.provenance,
         );
+        if self.settings.infusion_items {
+            crate::infusion_items::annotate(uni, state, &mut snap);
+        }
         if include_options && !opts.provenance {
             crate::invariants::after_derive(self, state, &snap);
         }
@@ -159,7 +167,10 @@ impl Engine {
         state: &CharacterState,
     ) -> CharacterSnapshot {
         let include_options = self.settings.include_options;
-        let snap = ev.snapshot(state, &self.settings, include_options, false);
+        let mut snap = ev.snapshot(state, &self.settings, include_options, false);
+        if self.settings.infusion_items {
+            crate::infusion_items::annotate(self.universe(state.ruleset), state, &mut snap);
+        }
         if include_options {
             crate::invariants::after_derive(self, state, &snap);
         }

@@ -42,6 +42,8 @@ export function RulesTab({ form, set, hasCharacter, openHouseRules }: FormProps 
       <NumberField label="POINT-BUY BUDGET" value={form.pointBuyBudget} min={1} max={60} onChange={(n) => set({ pointBuyBudget: n })} />
       <NumberField label="MINIMUM BASE SCORE" value={form.abilityMinBase} min={1} max={20} onChange={(n) => set({ abilityMinBase: n })} />
       <NumberField label="MAXIMUM BASE SCORE" value={form.abilityMaxBase} min={8} max={30} onChange={(n) => set({ abilityMaxBase: n })} />
+      <SectionTitle>INFUSION ITEMS</SectionTitle>
+      <DescCheck title="Keep an Infusion's Item in the Inventory" description="A feature you pick that makes a magic item adds that item to your inventory, keeps it with the pick, counts it against your infusion limit and warns when you are over it. Off, picks do nothing to your inventory." checked={form.infusionItems} onChange={(v) => set({ infusionItems: v })} />
       <SectionTitle>HOUSE RULES</SectionTitle>
       <SectionDesc>
         House rules belong to one character: unrestricted point buy, ignore feat prerequisites, ignore multiclass prerequisites

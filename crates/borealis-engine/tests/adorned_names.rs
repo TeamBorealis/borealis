@@ -17,6 +17,8 @@ const ARMOR_1: &str = "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_1";
 const WEAPON_1: &str = "ID_WOTC_DMG_MAGIC_ITEM_WEAPON_1";
 const ADAMANTINE: &str = "ID_WOTC_DMG_MAGIC_ITEM_ADAMANTINE_ARMOR";
 const KEEN_BLADE: &str = "ID_T_MAGIC_ITEM_KEEN_LONGSWORD";
+const SHINY_BLADE: &str = "ID_T_WEAPON_SHINY_BLADE";
+const HONED_BLADE: &str = "ID_T_WEAPON_HONED_BLADE";
 
 fn engine() -> Engine {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
@@ -25,7 +27,13 @@ fn engine() -> Engine {
         {"id": KEEN_BLADE, "name": "Keen Longsword", "type": "Magic Item", "source": "Test",
          "setters": [{"name": "category", "value": "Magic Weapons"},
             {"name": "type", "value": "Weapon", "attributes": {"addition": "longsword"}},
-            {"name": "rarity", "value": "Rare"}, {"name": "weapon", "value": "Longsword"}]}
+            {"name": "rarity", "value": "Rare"}, {"name": "weapon", "value": "Longsword"}]},
+        {"id": SHINY_BLADE, "name": "Shiny Blade", "type": "Weapon", "source": "Test",
+         "supports": ["ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE"],
+         "setters": [{"name": "rarity", "value": "Rare"}, {"name": "damage", "value": "1d8", "attributes": {"type": "slashing"}}]},
+        {"id": HONED_BLADE, "name": "Honed Blade", "type": "Weapon", "source": "Test",
+         "supports": ["ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE"],
+         "setters": [{"name": "enhancement", "value": "+1"}, {"name": "damage", "value": "1d8", "attributes": {"type": "slashing"}}]}
     ]}))
     .expect("synthetic content");
     let store = ContentStoreBuilder::new()
@@ -131,4 +139,20 @@ fn generic_magic_armor_needs_a_base_of_the_kind_it_names() {
         .find(|b| b.el.name.starts_with("Hide"))
         .expect("hide armor");
     assert!(!can_adorn(get(ADAMANTINE), hide), "medium, but not hide");
+}
+
+#[test]
+fn a_magic_item_is_never_a_base_for_another() {
+    let e = engine();
+    let uni = e.universe(Ruleset::Dnd2014);
+    let get = |id: &str| uni.get(id).unwrap_or_else(|| panic!("{id}"));
+    assert!(can_adorn(get(WEAPON_1), get(LONGSWORD)), "a mundane base");
+    assert!(
+        !can_adorn(get(WEAPON_1), get(SHINY_BLADE)),
+        "a base with a rarity is magic already"
+    );
+    assert!(
+        !can_adorn(get(WEAPON_1), get(HONED_BLADE)),
+        "so is one with an enhancement bonus"
+    );
 }

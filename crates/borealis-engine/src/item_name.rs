@@ -13,6 +13,11 @@ use crate::universe::{UElem, Universe};
 /// `base` named by the `name-format` of `adorner`; `None` when it has none.
 #[must_use]
 pub fn formatted_name(base: &UElem, adorner: &UElem) -> Option<String> {
+    format_parent(&base.el.name, adorner)
+}
+
+/// `parent` (a name) under the `name-format` of `adorner`; `None` when it has none.
+fn format_parent(parent: &str, adorner: &UElem) -> Option<String> {
     let format = adorner
         .el
         .setter_value("name-format")
@@ -21,8 +26,8 @@ pub fn formatted_name(base: &UElem, adorner: &UElem) -> Option<String> {
     let enhancement = adorner.el.setter_value("enhancement").unwrap_or("").trim();
     Some(
         format
-            .replace("{{parent}}", &base.el.name)
-            .replace("$(parent)", &base.el.name)
+            .replace("{{parent}}", parent)
+            .replace("$(parent)", parent)
             .replace("{{enhancement}}", enhancement)
             .replace("$(enhancement)", enhancement),
     )
@@ -48,5 +53,27 @@ pub fn attack_name(uni: &Universe, it: &InventoryItem) -> Option<String> {
         .as_deref()
         .and_then(|a| uni.get(a))
         .and_then(|a| formatted_name(item, a));
-    Some(formatted.unwrap_or_else(|| item.el.name.clone()))
+    Some(with_infusion(
+        uni,
+        it,
+        formatted.unwrap_or_else(|| item.el.name.clone()),
+    ))
+}
+
+/// `name` of a line with an infusion layered on it ([`InventoryItem::infusion`]): formatted by
+/// the infusion's `name-format` when the line has no adorner of its own, else the line's name
+/// with the infusion's in brackets ("Plate of the Shell (Armor, +1)"). An alternative name is
+/// kept as it is.
+#[must_use]
+pub fn with_infusion(uni: &Universe, it: &InventoryItem, name: String) -> String {
+    let Some(inf) = crate::infusion_items::layer_of(uni, it) else {
+        return name;
+    };
+    if it.alt_name.is_some() {
+        return name;
+    }
+    match (it.adorner.is_some(), format_parent(&name, inf)) {
+        (false, Some(f)) => f,
+        _ => format!("{name} ({})", inf.el.name),
+    }
 }

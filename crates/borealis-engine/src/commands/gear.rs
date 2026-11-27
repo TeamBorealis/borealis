@@ -172,7 +172,16 @@ pub fn reroll_max(engine: &Engine, state: &CharacterState, uid: &str, resource: 
 pub fn remove_item(engine: &Engine, state: &CharacterState, uid: &str) -> CmdResult {
     let i = index_of(state, uid)?;
     let mut next = state.clone();
-    next.inventory.items.remove(i);
+    let gone = next.inventory.items.remove(i);
+    // a pick's item the user deletes stays deleted: the pick is not asked to add it again
+    for link in [gone.infusion_link, gone.infusion_layer_link]
+        .into_iter()
+        .flatten()
+    {
+        if !next.inventory.infusion_declined.contains(&link) {
+            next.inventory.infusion_declined.push(link);
+        }
+    }
     next.inventory.listed_attacks.retain(|u| u != uid);
     next.inventory.attack_abilities.remove(uid);
     Ok(CommandOutcome::new(prune(engine, &next)))

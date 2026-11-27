@@ -99,6 +99,10 @@ export interface AppSettings {
   autoContentUpdate: boolean;
   /** "Check for new versions of Borealis" (default on): at startup ask GitHub for the latest version number, nothing else. */
   checkAppUpdates: boolean;
+  /** Rules: a feature whose text says it "counts as a simple ranged weapon" gets a weapon of its own (default off). */
+  featureWeapons: boolean;
+  /** Rules: the magic item of an infusion pick stays in the inventory with the pick (default off). */
+  infusionItems: boolean;
   rowHeight: RowHeight;
   /** Classic builder "Skills Panel Expanded" (default on). */
   skillsPanelExpanded: boolean;

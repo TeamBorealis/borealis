@@ -3777,7 +3777,19 @@
       "k": "prim"
      }
     },
+    "featureWeapons": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "highContrast": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "infusionItems": {
      "opt": false,
      "t": {
       "k": "prim"

@@ -38,6 +38,10 @@ fn hidden_lines_are_left_out_of_the_gear_list() {
             show_card: false,
             override_requirements: false,
             withheld_grants: Vec::new(),
+            infusion: None,
+            part: None,
+            infusion_linked: false,
+            part_options: Vec::new(),
         });
         let mut item = InventoryItem::new(uid, "ID_TEST_ITEM");
         item.hidden = hidden;

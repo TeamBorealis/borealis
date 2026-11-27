@@ -58,6 +58,7 @@ export function BuildTab({ form, set }: Props) {
       <SectionDesc>The behaviour of character creation.</SectionDesc>
       <div className="aur-set-gap"><AbilityMethodField form={form} set={set} /></div>
       <DescCheck title="Ability Score Maximum (default)" description="You ability score can't exceed the maximum of 20. This can still be increased by certain features or items." checked={form.abilityCapEnabled} onChange={(v) => set({ abilityCapEnabled: v })} />
+      <DescCheck title="Features That Count as a Weapon" description="A feature whose text says it counts as a simple or martial weapon gets a weapon of its own that you can wield, with its damage and range, and that a magic weapon can be put on." checked={form.featureWeapons} onChange={(v) => set({ featureWeapons: v })} />
     </>
   );
 }

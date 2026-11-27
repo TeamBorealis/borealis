@@ -140,8 +140,12 @@ pub fn active_items<'u>(
         };
         let bf = item_facts(base);
         let af = adorner.map(item_facts);
-        let needs_att =
-            bf.requires_attunement || af.as_ref().is_some_and(|f| f.requires_attunement);
+        // an infusion layered on the line (on a part of an item split into parts)
+        let infusion = crate::infusion_items::layer_of(uni, it);
+        let inf_f = infusion.map(item_facts);
+        let needs_att = bf.requires_attunement
+            || af.as_ref().is_some_and(|f| f.requires_attunement)
+            || inf_f.as_ref().is_some_and(|f| f.requires_attunement);
         let Some(slot) = it.equipped else {
             if !bf.equippable {
                 let attuned = take_attunement(
@@ -153,7 +157,10 @@ pub fn active_items<'u>(
                     diags,
                 );
                 let registered = |f: &ItemFacts| !f.requires_attunement || attuned;
-                for (e, f) in std::iter::once((base, &bf)).chain(adorner.zip(af.as_ref())) {
+                for (e, f) in std::iter::once((base, &bf))
+                    .chain(adorner.zip(af.as_ref()))
+                    .chain(infusion.zip(inf_f.as_ref()))
+                {
                     if registered(f) {
                         carried.push(ItemRoot {
                             e,
@@ -191,7 +198,16 @@ pub fn active_items<'u>(
                 attuned,
             });
         }
-        if !(base_registered || adorner_registered) {
+        let infusion_registered = infusion.is_some()
+            && (!inf_f.as_ref().is_some_and(|f| f.requires_attunement) || attuned);
+        if let (Some(i), true) = (infusion, infusion_registered) {
+            roots.push(ItemRoot {
+                e: i,
+                uid: it.uid.clone(),
+                attuned,
+            });
+        }
+        if !(base_registered || adorner_registered || infusion_registered) {
             continue;
         }
         let h = held(base, &bf);
@@ -208,7 +224,7 @@ pub fn active_items<'u>(
             EquipSlot::SecondaryHand => eq.secondary = Some(h),
             EquipSlot::Worn => {}
         }
-        for e in std::iter::once(base).chain(adorner) {
+        for e in std::iter::once(base).chain(adorner).chain(infusion) {
             eq.equipped.insert(e.el.id.to_lowercase());
             if attuned {
                 eq.attuned.insert(e.el.id.to_lowercase());
