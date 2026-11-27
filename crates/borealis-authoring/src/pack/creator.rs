@@ -1,8 +1,8 @@
 //! `creator.json` (spec 14.3): the creator's own record inside a homebrew pack folder.
 //!
 //! `{format "borealis-creator/1", code, createdWith, elements: {<id>: {kind, createdAt, copiedFrom?, nonSrdText}},
-//! retiredIds, overrides?: {<id>: {kind, createdAt, original?, originalDigest, partOf?, nonSrdText}}}` (overrides: HC20,
-//! spec 22.2). It is plain JSON beside `pack.json`: the content loader ignores it, bundles and device sync carry it
+//! retiredIds}`. The records of the pack's overrides (HC20, spec 22.2) are held here in memory but stored in the pack's
+//! overrides file (`borealis_content::OVERRIDES_FILE`, `records`), never in `creator.json`. It is plain JSON beside `pack.json`: the content loader ignores it, bundles and device sync carry it
 //! (it is part of the pack), and a pack without one (an AI-made pack, a pack edited outside the app) gets one the
 //! first time the creator opens it ([`CreatorFile::adopt`]).
 
@@ -88,8 +88,9 @@ pub struct CreatorFile {
     /// different element.
     #[serde(default)]
     pub retired_ids: Vec<String>,
-    /// The pack's overrides (HC20), by the id they share with their original.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    /// The pack's overrides (HC20), by the id they share with their original. Stored in the overrides file
+    /// ([`super::overrides_file`]), not in `creator.json`.
+    #[serde(skip)]
     pub overrides: BTreeMap<String, CreatorOverride>,
 }
 
@@ -208,6 +209,15 @@ impl CreatorFile {
                 ..entry
             },
         );
+        next
+    }
+
+    /// The record with the override records read from the pack's overrides file (each replaces the one of its id).
+    #[must_use]
+    pub fn with_override_records(&self, records: &BTreeMap<String, CreatorOverride>) -> Self {
+        let mut next = self.clone();
+        next.overrides
+            .extend(records.iter().map(|(id, r)| (id.clone(), r.clone())));
         next
     }
 

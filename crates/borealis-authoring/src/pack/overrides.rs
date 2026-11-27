@@ -1,6 +1,8 @@
 //! Overrides in a homebrew pack (HC20, spec 22): elements of other packs (bundled SRD, imported books) changed in place.
 //!
-//! An override lives in the pack's `content.json` `overrides` list, keeps its original's id, type and source, and
+//! An override lives in the pack's overrides file (`borealis_content::OVERRIDES_FILE`, [`overrides_file`]; in memory the
+//! content's `overrides` list, never written into `content.json`, so Borealis 1.5.0 still loads the pack and shows the
+//! originals), keeps its original's id, type and source, and
 //! replaces the original wherever it loads (the engine applies overrides after all other content, spec 22.3).
 //! `creator.json` records each one ([`CreatorOverride`]): the original's pack, the original's digest when the override
 //! was last saved (change detection, spec 22.6), and for a child override the main element of its edit.
@@ -11,8 +13,8 @@
 //! (G7).
 
 use super::creator::{CreatorFile, CreatorOverride};
-use borealis_content::{ContentFile, Element};
-use std::collections::HashSet;
+use borealis_content::{ContentFile, Element, OverridesFile, OverridesFormat};
+use std::collections::{BTreeMap, HashSet};
 
 /// What saving an override draft writes.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -126,6 +128,47 @@ pub fn revert_override(
 #[must_use]
 pub fn original_changed(entry: Option<&CreatorOverride>, digest_now: &str) -> bool {
     entry.is_some_and(|o| !o.original_digest.is_empty() && o.original_digest != digest_now)
+}
+
+/// The pack's overrides file: the content's overrides and their records; `None` when the pack has no override (the
+/// file is then removed).
+#[must_use]
+pub fn overrides_file(content: &ContentFile, creator: &CreatorFile) -> Option<OverridesFile> {
+    if content.overrides.is_empty() {
+        return None;
+    }
+    let records = content
+        .overrides
+        .iter()
+        .filter_map(|e| {
+            let record = creator.overrides.get(&e.id)?;
+            Some((e.id.clone(), serde_json::to_value(record).ok()?))
+        })
+        .collect();
+    Some(OverridesFile {
+        format: OverridesFormat,
+        ruleset: content.ruleset,
+        overrides: content.overrides.clone(),
+        records,
+    })
+}
+
+/// The override records of an overrides file (a record that can't be read is left out; the creator makes a plain one).
+#[must_use]
+pub fn override_records(file: &OverridesFile) -> BTreeMap<String, CreatorOverride> {
+    file.records
+        .iter()
+        .filter_map(|(id, v)| Some((id.clone(), serde_json::from_value(v.clone()).ok()?)))
+        .collect()
+}
+
+/// The content as its content file is written: everything but the overrides, which go to the overrides file.
+#[must_use]
+pub fn content_on_disk(content: &ContentFile) -> ContentFile {
+    ContentFile {
+        overrides: Vec::new(),
+        ..content.clone()
+    }
 }
 
 #[cfg(test)]

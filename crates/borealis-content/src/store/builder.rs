@@ -1,7 +1,9 @@
 use super::{apply_append, load_order, ContentStore, LoadedIndex, Overridden, StoredElement};
 use crate::element::{Append, Element};
 use crate::error::ContentError;
-use crate::file::{ContentFile, IndexFile, PackFileKind, PackManifest, PackOrigin};
+use crate::file::{
+    ContentFile, IndexFile, OverridesFile, PackFileKind, PackManifest, PackOrigin, OVERRIDES_FILE,
+};
 use crate::issue::{Issue, IssueCode};
 use crate::ruleset::Ruleset;
 use rayon::prelude::*;
@@ -49,7 +51,8 @@ enum ParsedEntry {
 }
 
 impl ParsedPack {
-    /// Read a pack directory: `pack.json` plus the files it lists, in manifest order.
+    /// Read a pack directory: `pack.json` plus the files it lists, in manifest order, then the pack's
+    /// [`OVERRIDES_FILE`] when it has one (HC20).
     ///
     /// # Errors
     /// I/O and JSON errors, and [`ContentError::UnsafePath`] for manifest entries that
@@ -72,6 +75,16 @@ impl ParsedPack {
                     IndexFile::from_json_str(&text).map_err(|e| e.in_file(&path))?,
                 ),
             });
+        }
+        // HC20: the pack's overrides, beside the files the manifest lists (spec 22.2)
+        let overrides = dir.join(OVERRIDES_FILE);
+        if overrides.is_file() {
+            let file = OverridesFile::from_json_str(&read_text(&overrides)?)
+                .map_err(|e| e.in_file(&overrides))?;
+            entries.push(ParsedEntry::Content(
+                OVERRIDES_FILE.to_string(),
+                file.to_content(),
+            ));
         }
         Ok(Self::assemble(manifest, entries))
     }

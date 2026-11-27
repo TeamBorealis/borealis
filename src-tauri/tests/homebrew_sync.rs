@@ -268,3 +268,30 @@ fn a_pack_received_under_a_draft_asks_which_to_keep_and_the_newest_edit_wins() {
         .unwrap();
     assert_eq!(v.form.fields["name"], json!("Phone edit"));
 }
+
+#[test]
+fn a_pack_s_overrides_travel_in_their_own_file() {
+    // HC20 (spec 22.2): the overrides file goes with the pack and the override applies on the other device
+    let (a, _) = with_pack("Mac");
+    let v = a.state.homebrew_new_override(PACK, FIREBALL).unwrap();
+    let mut form = v.form.clone();
+    form.fields.insert("range".into(), json!("300 feet"));
+    let v = a.state.homebrew_update_draft(&v.draft_id, &form).unwrap();
+    a.state.homebrew_save_draft(&v.draft_id, &Sink).unwrap();
+    a.edited(60);
+    let b = dev("Phone");
+    let files = tempfile::tempdir().unwrap();
+    let preview = a.bundle_to(&b, files.path(), "overrides");
+    b.sync.accept_bundle(&preview.bundle_id).unwrap();
+    let name = borealis_content::OVERRIDES_FILE;
+    assert_eq!(b.file(name), a.file(name));
+    let hub = b.state.hub().unwrap();
+    assert_eq!(
+        hub.store.element(FIREBALL).unwrap().setter_value("range"),
+        Some("300 feet")
+    );
+    let rows = b.state.homebrew_list_elements(PACK).unwrap();
+    assert!(rows
+        .iter()
+        .any(|r| r.id == FIREBALL && r.override_info.is_some()));
+}

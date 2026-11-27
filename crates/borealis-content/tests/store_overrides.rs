@@ -224,3 +224,89 @@ fn an_ignored_file_s_overrides_are_skipped() {
         "original a"
     );
 }
+
+/// A homebrew pack folder as the creator writes it: `pack.json`, `content.json` with the pack's own elements, and the
+/// overrides in their own file.
+fn pack_folder(root: &std::path::Path) -> std::path::PathBuf {
+    use borealis_content::{OverridesFile, OverridesFormat, OVERRIDES_FILE};
+    let dir = root.join("homebrew-hb");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(
+        dir.join("pack.json"),
+        r#"{"format": "borealis-pack/1", "id": "homebrew-hb", "name": "Hb", "version": "1.0.1", "origin": "custom",
+            "rulesets": ["dnd2024"], "files": [{"path": "content.json", "kind": "content"}]}"#,
+    )
+    .unwrap();
+    let own = ContentFile::new(vec![el("ID_HB_FEAT_OWN", "Feat", "Hb", "mine")]);
+    std::fs::write(dir.join("content.json"), own.to_json_pretty().unwrap()).unwrap();
+    let overrides = OverridesFile {
+        format: OverridesFormat,
+        ruleset: None,
+        overrides: vec![el("ID_SRD_SPELL_A", "Spell", "SRD", "changed a")],
+        records: serde_json::Map::new(),
+    };
+    std::fs::write(
+        dir.join(OVERRIDES_FILE),
+        overrides.to_json_pretty().unwrap(),
+    )
+    .unwrap();
+    dir
+}
+
+#[test]
+fn a_pack_with_overrides_still_loads_the_1_5_0_way_with_the_originals() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = pack_folder(tmp.path());
+    // the content file holds no key 1.5.0 doesn't know
+    let content = std::fs::read_to_string(dir.join("content.json")).unwrap();
+    assert!(!content.contains("overrides"), "{content}");
+    // 1.5.0's folder scan takes `*.json` only: the overrides file is not picked up, the pack's own elements load
+    let scanned = ContentStoreBuilder::new()
+        .add_file("srd-5.1/spells.json", PackOrigin::Core, srd())
+        .add_dir(tmp.path(), PackOrigin::Custom)
+        .unwrap()
+        .build();
+    assert_eq!(
+        scanned.files(),
+        ["srd-5.1/spells.json", "homebrew-hb/content.json"]
+    );
+    assert!(scanned.get("ID_HB_FEAT_OWN").is_some());
+    assert_eq!(
+        scanned.element("ID_SRD_SPELL_A").unwrap().description,
+        "original a"
+    );
+    assert!(scanned
+        .diagnostics()
+        .iter()
+        .all(|d| d.severity != Severity::Error));
+    // 1.5.0's pack read takes the files `pack.json` lists: the same content file, nothing else
+    let manifest: borealis_content::PackManifest = borealis_content::PackManifest::from_json_str(
+        &std::fs::read_to_string(dir.join("pack.json")).unwrap(),
+    )
+    .unwrap();
+    assert!(manifest.files.iter().all(|f| f.path == "content.json"));
+}
+
+#[test]
+fn this_version_reads_the_overrides_file_of_a_pack_folder() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = pack_folder(tmp.path());
+    let store = ContentStoreBuilder::new()
+        .add_file("srd-5.1/spells.json", PackOrigin::Core, srd())
+        .add_pack_dir(&dir)
+        .unwrap()
+        .build();
+    assert_eq!(
+        store.element("ID_SRD_SPELL_A").unwrap().description,
+        "changed a"
+    );
+    assert!(store
+        .get("ID_SRD_SPELL_A")
+        .unwrap()
+        .file
+        .starts_with("homebrew-hb/"));
+    assert!(store.get("ID_HB_FEAT_OWN").is_some());
+    // a broken overrides file is an error of the pack, as a broken content file is
+    std::fs::write(dir.join(borealis_content::OVERRIDES_FILE), "{").unwrap();
+    assert!(ContentStoreBuilder::new().add_pack_dir(&dir).is_err());
+}

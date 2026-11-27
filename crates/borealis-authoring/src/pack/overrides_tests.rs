@@ -169,14 +169,41 @@ fn change_detection_compares_the_recorded_digest() {
 }
 
 #[test]
-fn creator_json_round_trips_overrides_and_leaves_them_out_when_none() {
-    let plain = CreatorFile::new("HB", "1.5.1");
-    assert!(!plain.to_json_pretty().contains("overrides"));
-    let with = plain.with_override("ID_SRD_X", entry(Some("ID_SRD_Y"), "d"));
-    let text = with.to_json_pretty();
-    assert!(text.contains("\"originalDigest\": \"d\""));
-    assert!(text.contains("\"partOf\": \"ID_SRD_Y\""));
-    assert_eq!(CreatorFile::parse(&text).unwrap(), with);
+fn overrides_and_their_records_go_to_the_overrides_file_not_creator_json() {
+    let content = with_overrides(
+        &ContentFile::new(vec![el("ID_HB_OWN", "Spell", "own")]),
+        &[el("ID_SRD_X", "Spell", "x")],
+    );
+    let creator =
+        CreatorFile::new("HB", "1.5.1").with_override("ID_SRD_X", entry(Some("ID_SRD_Y"), "d"));
+    // creator.json and content.json carry nothing Borealis 1.5.0 doesn't know
+    let creator_text = creator.to_json_pretty();
+    assert!(
+        !creator_text.contains("overrides") && !creator_text.contains("ID_SRD_X"),
+        "{creator_text}"
+    );
+    let disk = content_on_disk(&content);
+    assert!(disk.overrides.is_empty());
+    assert_eq!(disk.elements, content.elements);
+    assert!(!disk.to_json_pretty().unwrap().contains("overrides"));
+    // the overrides file holds both, and reads back
+    let file = overrides_file(&content, &creator).expect("a file");
+    let text = file.to_json_pretty().unwrap();
+    assert!(
+        text.contains("\"originalDigest\": \"d\"") && text.contains("\"partOf\": \"ID_SRD_Y\""),
+        "{text}"
+    );
+    let back = borealis_content::OverridesFile::from_json_str(&text).unwrap();
+    assert_eq!(back.overrides, content.overrides);
+    let records = override_records(&back);
+    assert_eq!(
+        CreatorFile::parse(&creator_text)
+            .unwrap()
+            .with_override_records(&records),
+        creator
+    );
+    // no override, no file
+    assert!(overrides_file(&disk, &creator).is_none());
 }
 
 #[test]

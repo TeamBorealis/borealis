@@ -100,7 +100,10 @@ pub struct ContentFile {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub appends: Vec<Append>,
     /// HC20 overrides: complete elements that replace the loaded element of the same id in place, after every file's
-    /// `elements` regardless of load order (homebrew-creator spec 22.3). Written by the creator into homebrew packs.
+    /// `elements` regardless of load order (homebrew-creator spec 22.3). On disk they live in the pack's
+    /// [`OVERRIDES_FILE`] (an [`OverridesFile`]), never in a content file Borealis writes: 1.5.0 rejects a content file
+    /// with an unknown key, so a pack keeps loading there with its originals. In memory (and in the content cache) a
+    /// pack's overrides are this list.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub overrides: Vec<Element>,
     /// Unknown root attributes and children.
@@ -151,6 +154,63 @@ impl ContentFile {
     #[must_use]
     pub fn is_ignored(&self) -> bool {
         self.ignore.unwrap_or(false)
+    }
+}
+
+format_tag!(
+    /// The `"borealis-overrides/1"` marker of an [`OverridesFile`].
+    OverridesFormat,
+    "borealis-overrides/1"
+);
+
+/// The file in a pack folder that holds the pack's overrides (HC20). Not listed in `pack.json` and not a `.json` file,
+/// so Borealis 1.5.0 (which reads only the files `pack.json` lists, and whose folder scan takes `*.json`) never reads it
+/// and shows the originals.
+pub const OVERRIDES_FILE: &str = "overrides.borealis-overrides";
+
+/// A pack's overrides file (homebrew-creator spec 22.2): the override elements and the creator's record of each
+/// (`records`, read by the creator only; the loader ignores it). Unknown keys are kept out of the way for later
+/// versions (no `deny_unknown_fields`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OverridesFile {
+    /// Schema identifier.
+    pub format: OverridesFormat,
+    /// Default ruleset for the overrides.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ruleset: Option<Ruleset>,
+    /// The overrides, each with its original's id.
+    #[serde(default)]
+    pub overrides: Vec<Element>,
+    /// The creator's record of each override, by id (opaque to the loader).
+    #[serde(default, skip_serializing_if = "serde_json::Map::is_empty")]
+    pub records: serde_json::Map<String, serde_json::Value>,
+}
+
+impl OverridesFile {
+    /// Parse a JSON document.
+    ///
+    /// # Errors
+    /// [`ContentError::Json`] for malformed or non-conforming JSON.
+    pub fn from_json_str(text: &str) -> Result<Self, ContentError> {
+        Ok(serde_json::from_str(text)?)
+    }
+
+    /// Serialize as pretty JSON with a trailing newline.
+    ///
+    /// # Errors
+    /// [`ContentError::Json`] if serialization fails.
+    pub fn to_json_pretty(&self) -> Result<String, ContentError> {
+        to_pretty(self)
+    }
+
+    /// The overrides as a content file the loader applies (no elements of its own).
+    #[must_use]
+    pub fn to_content(&self) -> ContentFile {
+        ContentFile {
+            ruleset: self.ruleset,
+            overrides: self.overrides.clone(),
+            ..ContentFile::default()
+        }
     }
 }
 

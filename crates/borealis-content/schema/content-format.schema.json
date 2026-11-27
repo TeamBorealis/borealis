@@ -45,7 +45,7 @@
       "items": {
         "$ref": "#/$defs/Element"
       },
-      "description": "HC20 overrides: complete elements that replace the loaded element of the same id in place, applied after every file's elements regardless of load order and before the appends."
+      "description": "HC20 overrides: complete elements that replace the loaded element of the same id in place, applied after every file's elements regardless of load order and before the appends. Borealis never writes this key into a content file (Borealis 1.5.0 rejects unknown keys): a homebrew pack keeps its overrides in overrides.borealis-overrides beside pack.json."
     },
     "extra": {
       "$ref": "#/$defs/Extra"

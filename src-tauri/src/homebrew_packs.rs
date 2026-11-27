@@ -202,7 +202,9 @@ impl AppState {
         let disk = read_pack(&installed.dir)?;
         let hub = self.hub()?;
         let creator = match &disk.creator {
-            Some(c) if is_pack_code(&c.code) => c.reconciled(&disk.content),
+            Some(c) if is_pack_code(&c.code) => c
+                .with_override_records(&disk.override_records)
+                .reconciled(&disk.content),
             _ => {
                 let taken = self.hb_taken_codes(&hub, Some(pack_id));
                 let own = source_of(&disk.content)
@@ -210,7 +212,9 @@ impl AppState {
                     .map(|a| a.trim().to_ascii_uppercase())
                     .filter(|a| is_pack_code(a) && !taken.contains(a));
                 let code = own.unwrap_or_else(|| suggest_code(&disk.manifest.name, &taken));
-                CreatorFile::adopt(&code, APP_VERSION, &disk.content)
+                CreatorFile::new(&code, APP_VERSION)
+                    .with_override_records(&disk.override_records)
+                    .reconciled(&disk.content)
             }
         };
         Ok(CreatorPack { disk, creator })

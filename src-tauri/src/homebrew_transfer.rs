@@ -19,11 +19,13 @@ use crate::state::AppState;
 use crate::zip_read::{entry_names, read_zip, PACK_LIMITS};
 use borealis_authoring::ids::{is_pack_code, IdGenerator};
 use borealis_authoring::pack::{
-    copy_code, copy_name, pack_copy, pack_id_for, without_copied_text, CreatorFile, CREATOR_FILE,
-    PACK_FILE_SUFFIX, SOURCE_TYPE,
+    content_on_disk, copy_code, copy_name, override_records, overrides_file, pack_copy,
+    pack_id_for, without_copied_text, CreatorFile, CREATOR_FILE, PACK_FILE_SUFFIX, SOURCE_TYPE,
 };
 use borealis_content::validate::validate_elements;
-use borealis_content::{ContentFile, PackFileKind, PackManifest, ParsedPack};
+use borealis_content::{
+    ContentFile, OverridesFile, PackFileKind, PackManifest, ParsedPack, OVERRIDES_FILE,
+};
 use serde::Serialize;
 use std::collections::{BTreeMap, HashSet};
 use std::io::Write as _;
@@ -140,8 +142,16 @@ pub(crate) fn creator_pack_in(files: &[(String, Vec<u8>)]) -> ApiResult<Option<C
     if !is_plain_file_name(&content_path) {
         return Err(damaged("content file"));
     }
-    let content =
+    let mut content =
         ContentFile::from_json_str(&text(&content_path)?).map_err(|_| damaged(&content_path))?;
+    // HC20: the pack's overrides and their records, when it has any (spec 22.2)
+    let mut creator = creator;
+    if entries.contains_key(OVERRIDES_FILE) {
+        let file = OverridesFile::from_json_str(&text(OVERRIDES_FILE)?)
+            .map_err(|_| damaged(OVERRIDES_FILE))?;
+        creator = creator.with_override_records(&override_records(&file));
+        content.overrides = file.overrides;
+    }
     if slug(&manifest.id) != manifest.id || is_reserved_pack_id(&manifest.id) {
         return Err(ApiError::invalid(
             "This pack file names a pack Borealis can't install. Nothing was imported.",
@@ -224,14 +234,21 @@ impl AppState {
         } else {
             (pack.disk.content.clone(), 0)
         };
-        let files = vec![
+        let mut files = vec![
             (
                 MANIFEST_FILE.to_string(),
                 pack.disk.manifest.to_json_pretty()?,
             ),
-            (pack.disk.content_path.clone(), content.to_json_pretty()?),
+            (
+                pack.disk.content_path.clone(),
+                content_on_disk(&content).to_json_pretty()?,
+            ),
             (CREATOR_FILE.to_string(), pack.creator.to_json_pretty()),
         ];
+        // HC20: the overrides travel in their own file (spec 22.2, 22.7)
+        if let Some(file) = overrides_file(&content, &pack.creator) {
+            files.push((OVERRIDES_FILE.to_string(), file.to_json_pretty()?));
+        }
         let stem = crate::ids::file_stem(&pack.disk.manifest.name);
         Ok(PackExportFile {
             file_name: format!("{stem}{PACK_FILE_SUFFIX}"),

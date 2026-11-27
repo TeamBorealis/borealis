@@ -44,8 +44,8 @@ pub use element::{
 pub use error::ContentError;
 pub use extra::{Extra, UnknownNode};
 pub use file::{
-    ContentFile, ContentFormat, IndexEntry, IndexFile, IndexFormat, PackFile, PackFileKind,
-    PackFormat, PackManifest, PackOrigin,
+    ContentFile, ContentFormat, IndexEntry, IndexFile, IndexFormat, OverridesFile, OverridesFormat,
+    PackFile, PackFileKind, PackFormat, PackManifest, PackOrigin, OVERRIDES_FILE,
 };
 pub use info::{Author, Info, Update, UpdateFile};
 pub use issue::{count_severity, Issue, IssueCode, Severity};

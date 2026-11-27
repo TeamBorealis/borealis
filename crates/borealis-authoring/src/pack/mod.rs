@@ -25,8 +25,8 @@ pub use layout::{
     PACK_NAME_MAX, SOURCE_TYPE,
 };
 pub use overrides::{
-    original_changed, override_parts, revert_override, split_override, with_overrides,
-    without_overrides, OverrideSplit,
+    content_on_disk, original_changed, override_parts, override_records, overrides_file,
+    revert_override, split_override, with_overrides, without_overrides, OverrideSplit,
 };
 pub use refs::{id_tokens, mentions, names_any, offers, use_of, uses, UseRelation, UseTarget};
 pub use spell_lists::{

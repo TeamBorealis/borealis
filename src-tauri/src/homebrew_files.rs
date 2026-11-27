@@ -10,8 +10,12 @@
 
 use crate::content_packs::PACK_META_FILE;
 use crate::error::{ApiError, ApiResult, ErrorCode};
-use borealis_authoring::pack::{CreatorFile, CREATOR_FILE};
+use borealis_authoring::pack::{
+    content_on_disk, override_records, overrides_file, CreatorFile, CreatorOverride, CREATOR_FILE,
+};
 use borealis_content::{ContentFile, Element, PackFileKind, PackManifest};
+use borealis_content::{OverridesFile, OVERRIDES_FILE};
+use std::collections::BTreeMap;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
@@ -55,6 +59,8 @@ pub struct PackOnDisk {
     pub creator: Option<CreatorFile>,
     /// Why `creator.json` could not be read, when it exists but can't be (it is set aside on the next write).
     pub creator_problem: Option<String>,
+    /// HC20: the records of the overrides read from the pack's overrides file (its overrides are in `content`).
+    pub override_records: BTreeMap<String, CreatorOverride>,
 }
 
 fn unreadable(file: &str, cause: impl std::fmt::Display) -> ApiError {
@@ -92,7 +98,16 @@ pub fn read_pack(dir: &Path) -> ApiResult<PackOnDisk> {
     }
     let text = std::fs::read_to_string(dir.join(&content_path))
         .map_err(|e| unreadable(&content_path, e))?;
-    let content = ContentFile::from_json_str(&text).map_err(|e| unreadable(&content_path, e))?;
+    let mut content =
+        ContentFile::from_json_str(&text).map_err(|e| unreadable(&content_path, e))?;
+    // HC20: the overrides live in their own file (spec 22.2), in memory beside the pack's own elements
+    let mut records = BTreeMap::new();
+    if let Ok(text) = std::fs::read_to_string(dir.join(OVERRIDES_FILE)) {
+        let file =
+            OverridesFile::from_json_str(&text).map_err(|e| unreadable(OVERRIDES_FILE, e))?;
+        records = override_records(&file);
+        content.overrides = file.overrides;
+    }
     let (creator, creator_problem) = match std::fs::read_to_string(dir.join(CREATOR_FILE)) {
         Err(_) => (None, None),
         Ok(text) => match CreatorFile::parse(&text) {
@@ -110,7 +125,21 @@ pub fn read_pack(dir: &Path) -> ApiResult<PackOnDisk> {
         content,
         creator,
         creator_problem,
+        override_records: records,
     })
+}
+
+/// Write the pack's overrides file, or remove it when the pack has no override (HC20).
+fn write_overrides(dir: &Path, next: &PackWrite) -> std::io::Result<()> {
+    let path = dir.join(OVERRIDES_FILE);
+    match overrides_file(&next.content, &next.creator) {
+        Some(file) => write_atomic(
+            &path,
+            &file.to_json_pretty().map_err(std::io::Error::other)?,
+        ),
+        None if path.exists() => std::fs::remove_file(&path),
+        None => Ok(()),
+    }
 }
 
 /// A file name with no folder part (the creator writes its files at the top of the pack folder).
@@ -155,9 +184,10 @@ pub fn write_pack(pack: &PackOnDisk, next: &PackWrite, now_ms: u128) -> ApiResul
     }
     write_atomic(&dir.join(CREATOR_FILE), &next.creator.to_json_pretty())
         .map_err(|e| ApiError::io("save the homebrew pack", e))?;
+    write_overrides(dir, next).map_err(|e| ApiError::io("save the homebrew pack", e))?;
     write_atomic(
         &dir.join(&pack.content_path),
-        &next.content.to_json_pretty()?,
+        &content_on_disk(&next.content).to_json_pretty()?,
     )
     .map_err(|e| ApiError::io("save the homebrew pack", e))?;
     write_atomic(&dir.join(MANIFEST_FILE), &next.manifest.to_json_pretty()?)
@@ -172,10 +202,13 @@ pub fn write_pack(pack: &PackOnDisk, next: &PackWrite, now_ms: u128) -> ApiResul
 pub fn write_new_pack(dir: &Path, next: &PackWrite, content_path: &str) -> ApiResult<()> {
     std::fs::create_dir_all(dir).map_err(|e| ApiError::io("create the homebrew pack", e))?;
     write_atomic(&dir.join(CREATOR_FILE), &next.creator.to_json_pretty())
+        .and_then(|()| write_overrides(dir, next))
         .and_then(|()| {
             write_atomic(
                 &dir.join(content_path),
-                &next.content.to_json_pretty().unwrap_or_default(),
+                &content_on_disk(&next.content)
+                    .to_json_pretty()
+                    .unwrap_or_default(),
             )
         })
         .and_then(|()| {

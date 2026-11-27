@@ -10,8 +10,12 @@
 //!   overridden;
 //! * the shared pack file leaves the imported book's override out by default and keeps the SRD one.
 
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine as _;
+use borealis_content::OVERRIDES_FILE;
 use borealis_lib::content_dto::ContentProgress;
 use borealis_lib::content_packs::EventSink;
+use borealis_lib::content_preview::{ImportFileInput, PreviewImportRequest};
 use borealis_lib::dto::Ruleset;
 use borealis_lib::homebrew_dto::{HomebrewDraftView, HomebrewPackRequest};
 use borealis_lib::state::{AppPaths, AppState};
@@ -115,6 +119,15 @@ impl App {
             .clone()
     }
 
+    fn has(&self, file: &str) -> bool {
+        self.data
+            .path()
+            .join("library")
+            .join(&self.pack)
+            .join(file)
+            .exists()
+    }
+
     fn range(&self, id: &str) -> String {
         let hub = self.state.hub().unwrap();
         hub.store
@@ -178,18 +191,19 @@ fn an_srd_override_keeps_its_id_replaces_the_original_and_reverts() {
         .unwrap()
         .iter()
         .any(|e| e["id"] == FIREBALL));
-    let ov = &content["overrides"][0];
+    // content.json and creator.json hold nothing Borealis 1.5.0 doesn't know: the overrides have their own file
+    assert!(content.get("overrides").is_none());
+    let creator = app.read("creator.json");
+    assert!(creator.get("overrides").is_none());
+    assert!(creator["retiredIds"].as_array().unwrap().is_empty());
+    let file = app.read(OVERRIDES_FILE);
+    let ov = &file["overrides"][0];
     assert_eq!(ov["id"], FIREBALL);
     assert_ne!(ov["source"], json!("Ember Isles"));
-    let creator = app.read("creator.json");
-    assert_eq!(
-        creator["overrides"][FIREBALL]["original"]["srd"],
-        json!(true)
-    );
-    assert!(creator["overrides"][FIREBALL]["originalDigest"]
+    assert_eq!(file["records"][FIREBALL]["original"]["srd"], json!(true));
+    assert!(file["records"][FIREBALL]["originalDigest"]
         .as_str()
         .is_some_and(|d| !d.is_empty()));
-    assert!(creator["retiredIds"].as_array().unwrap().is_empty());
 
     // it replaces the original everywhere: the store, the description pane
     assert_eq!(app.range(FIREBALL), "300 feet");
@@ -229,7 +243,7 @@ fn an_srd_override_keeps_its_id_replaces_the_original_and_reverts() {
         .unwrap()
         .changed_by
         .is_none());
-    assert!(app.read("content.json").get("overrides").is_none());
+    assert!(!app.has(OVERRIDES_FILE), "no override, no file");
     app.state
         .homebrew_undo(reverted.undo_id.as_deref().unwrap(), &Quiet)
         .unwrap();
@@ -250,8 +264,10 @@ fn an_imported_override_wins_after_its_book_and_notices_a_new_import() {
         .as_ref()
         .is_some_and(|o| !o.srd && o.source_name == "Gloom Tome"));
     assert_eq!(app.range(BOLT), "90 feet");
-    let creator = app.read("creator.json");
-    assert_eq!(creator["overrides"][BOLT]["nonSrdText"], json!(true));
+    assert_eq!(
+        app.read(OVERRIDES_FILE)["records"][BOLT]["nonSrdText"],
+        json!(true)
+    );
 
     // the book's folder loads after the pack's; after a restart the override still wins
     let app = app.restart();
@@ -366,7 +382,7 @@ fn sharing_leaves_the_imported_override_out_and_keeps_the_srd_one() {
     assert_eq!(file.left_out, 1);
     let mut zip = zip::ZipArchive::new(std::io::Cursor::new(file.bytes)).unwrap();
     let mut text = String::new();
-    zip.by_name(&format!("{}/content.json", app.pack))
+    zip.by_name(&format!("{}/{OVERRIDES_FILE}", app.pack))
         .unwrap()
         .read_to_string(&mut text)
         .unwrap();
@@ -395,7 +411,7 @@ fn a_class_override_overrides_only_what_changed() {
     );
     assert_eq!(problems(&v, "error"), Vec::<String>::new());
     app.state.homebrew_save_draft(&v.draft_id, &Quiet).unwrap();
-    let ids: Vec<String> = app.read("content.json")["overrides"]
+    let ids: Vec<String> = app.read(OVERRIDES_FILE)["overrides"]
         .as_array()
         .unwrap()
         .iter()
@@ -414,4 +430,36 @@ fn a_class_override_overrides_only_what_changed() {
             == 1,
         "no new element"
     );
+}
+
+#[test]
+fn a_shared_pack_file_carries_the_overrides_and_imports_with_them() {
+    let app = App::new();
+    app.override_with(FIREBALL, "range", json!("300 feet"));
+    let file = app.state.homebrew_export_file(&app.pack, true).unwrap();
+    // another device: the pack file imports with its override, which applies there too
+    let other = tempfile::tempdir().unwrap();
+    let state = AppState::new(paths(other.path())).unwrap();
+    let input: ImportFileInput = serde_json::from_value(
+        json!({"fileName": file.file_name, "contentBase64": STANDARD.encode(&file.bytes)}),
+    )
+    .unwrap();
+    let preview = state
+        .preview_import_pack(&PreviewImportRequest {
+            files: vec![input],
+            folder: None,
+        })
+        .unwrap();
+    state
+        .install_import_preview_as(&preview.preview_id, None, false, &Quiet)
+        .unwrap();
+    let hub = state.hub().unwrap();
+    assert_eq!(
+        hub.store.element(FIREBALL).unwrap().setter_value("range"),
+        Some("300 feet")
+    );
+    let dir = other.path().join("library").join(&app.pack);
+    assert!(dir.join(OVERRIDES_FILE).is_file());
+    let content = std::fs::read_to_string(dir.join("content.json")).unwrap();
+    assert!(!content.contains("\"overrides\""));
 }
