@@ -54,6 +54,9 @@ pub struct ContentSource {
     pub element_count: usize,
     pub description: String,
     pub playtest: bool,
+    /// The Source element sets `third-party` (playtest material is only `playtest`; homebrew is never
+    /// third-party).
+    pub third_party: bool,
     /// The Source element is flagged `incomplete` / `wip`.
     pub incomplete: bool,
     /// The Source element's `information` setter (an extra note shown to the user); empty = none.

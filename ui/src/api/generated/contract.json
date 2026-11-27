@@ -3813,6 +3813,18 @@
       "k": "prim"
      }
     },
+    "restrictPlaytest": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "restrictThirdParty": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "rowHeight": {
      "opt": false,
      "t": {
@@ -5833,6 +5845,12 @@
      }
     },
     "playtest": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "thirdParty": {
      "opt": false,
      "t": {
       "k": "prim"
