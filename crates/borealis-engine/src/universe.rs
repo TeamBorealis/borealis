@@ -1059,6 +1059,10 @@ impl Universe {
             mc.description.clone()
         };
         m.rules = class.rules.iter().chain(mc.rules.iter()).cloned().collect();
+        // a class that carries its spellcasting block on itself (5etools-format imports, the
+        // homebrew creator) casts as a multiclass too: its spell selects read
+        // `$(spellcasting:list)` from a live block of its name, and the Magic page lists that block
+        m.spellcasting.clone_from(&class.spellcasting);
         let mut parts = Vec::new();
         if !class.requirements.is_empty() {
             parts.push(format!("({})", class.requirements));
