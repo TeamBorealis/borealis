@@ -53,6 +53,7 @@ export function SheetTab({ sheet, onChange }: { sheet: SheetSettings; onChange: 
       <Help>Letter is the US paper size; most other countries print on A4. Until you choose, it follows your device's region.</Help>
       <DescCheck title="Style Formatting (Recommended)" description="Apply some styling for certain fields such as Features & Traits to improve readability. This option can be used in combination with form-fillable." checked={sheet.styleFormatting} onChange={(v) => set({ styleFormatting: v })} />
       <DescCheck title="Invert Ability Score" description="This will switch the location of the ability score and modifier. This includes the companion page if you have it." checked={sheet.swapAbilityPositions} onChange={(v) => set({ swapAbilityPositions: v })} />
+      <DescCheck title="Combine Feature Upgrades" description="Print a feature and the later features that improve it, such as Divine Smite and Improved Divine Smite, as one entry with the upgrade's text added to it. Off lists them separately." checked={sheet.foldFeatureUpgrades} onChange={(v) => set({ foldFeatureUpgrades: v })} />
       <SectionTitle>SPELLCASTING PAGE</SectionTitle>
       <SectionDesc>Options specific to the spellcasting page.</SectionDesc>
       <DescCheck title="Include Non-Prepared Spells" description="Also include spells you have not prepared on the spellcasting page. With the dynamic spellcasting page there is room for all the unprepared spells." checked={sheet.includeNonPreparedSpells} onChange={(v) => set({ includeNonPreparedSpells: v })} />

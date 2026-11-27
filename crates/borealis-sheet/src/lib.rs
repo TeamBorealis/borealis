@@ -11,6 +11,7 @@ mod base64;
 mod bidi;
 mod card_model;
 mod companion;
+mod feature_fold;
 mod fonts;
 mod html_sheet;
 mod image;
@@ -178,6 +179,10 @@ pub struct SheetOptions {
     pub cards_new_page: CardBreaks,
     /// Use the single-page basic spellcasting layout.
     pub legacy_spellcasting: bool,
+    /// Print a feature and the later features that improve it ("Divine Smite" and "Improved
+    /// Divine Smite") as one entry, the upgrade's text appended to it. Off by default: the
+    /// features are then listed separately, as the reference app lists them.
+    pub fold_feature_upgrades: bool,
 }
 
 impl Default for SheetOptions {
@@ -195,6 +200,7 @@ impl Default for SheetOptions {
             cards: CardKinds::default(),
             cards_new_page: CardBreaks::default(),
             legacy_spellcasting: false,
+            fold_feature_upgrades: false,
         }
     }
 }

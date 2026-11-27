@@ -26,6 +26,8 @@ export interface SheetSettings {
   cardsNewPage: { item: boolean; attack: boolean; feature: boolean };
   /** Classic builder "Legacy Spellcasting Page" (default off). */
   legacySpellcastingPage: boolean;
+  /** Print a feature and the later features that improve it as one entry (default off). */
+  foldFeatureUpgrades: boolean;
   /** Paper size; null until the user picks one, when the device region's paper applies (`sheetPaper`). */
   paper: SheetPaper | null;
 }

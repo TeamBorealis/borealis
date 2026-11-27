@@ -15,7 +15,7 @@ export const FORM_FIELDS: readonly (keyof AppSettings)[] = [
 ];
 export const SHEET_FORM_FIELDS: readonly (keyof AppSettings["sheet"])[] = [
   "formFillable", "theme", "edition", "styleFormatting", "swapAbilityPositions", "includeNonPreparedSpells", "cards", "cardsNewPage",
-  "legacySpellcastingPage", "paper", "autoGenerate", "openAfterSave",
+  "legacySpellcastingPage", "foldFeatureUpgrades", "paper", "autoGenerate", "openAfterSave",
 ];
 /** AI ASSISTANT: the switch and the provider wait for Save; the program path is set at once. */
 export const AI_FORM_FIELDS: readonly (keyof AppSettings["ai"])[] = ["enabled", "provider"];
