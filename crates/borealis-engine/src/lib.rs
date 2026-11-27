@@ -19,6 +19,7 @@ pub mod custom_rules;
 pub mod diag;
 pub mod engine;
 pub mod eval;
+pub mod feature_weapon;
 pub mod gear;
 pub mod granted_casting;
 pub mod graph;
